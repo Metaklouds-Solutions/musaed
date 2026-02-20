@@ -1,0 +1,5 @@
+{
+  "name": "AgentOs Dashboard",
+  "description": "A multi-tenant admin and observability dashboard for AI voice agents.",
+  "requestFramePermissions": []
+}
