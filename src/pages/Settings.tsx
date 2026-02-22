@@ -1,13 +1,9 @@
+/**
+ * Clinic Settings: agent profile, policies, tools, integrations, quotas.
+ * Tabbed layout; Save is local state only until persistence is wired.
+ */
 import React from 'react';
-import { 
-  User, 
-  Shield, 
-  Wrench, 
-  Link as LinkIcon, 
-  BarChart,
-  Save,
-  CheckCircle2
-} from 'lucide-react';
+import { User, Shield, Wrench, Link as LinkIcon, BarChart, Save, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const SettingsPage: React.FC = () => {
@@ -20,22 +16,24 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Clinic Settings</h2>
-          <p className="text-zinc-500">Configure your AI agent and clinic policies.</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Clinic Settings</h2>
+          <p className="text-zinc-500 text-sm sm:text-base">Configure this clinic&apos;s AI agent and policies.</p>
         </div>
-        <button 
+        <button
+          type="button"
           onClick={handleSave}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex items-center gap-2 shrink-0"
+          aria-label={saved ? 'Saved' : 'Save changes'}
         >
           {saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
           {saved ? 'Saved' : 'Save Changes'}
         </button>
       </div>
 
-      <div className="flex gap-8 border-b border-border-dark">
+      <div className="flex gap-4 sm:gap-8 border-b border-border-dark overflow-x-auto">
         {[
           { id: 'profile', label: 'Agent Profile', icon: User },
           { id: 'policies', label: 'Policies', icon: Shield },

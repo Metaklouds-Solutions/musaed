@@ -1,16 +1,10 @@
+/**
+ * Patient directory: list of patients with contact and tags.
+ * Responsive table; search and add in header.
+ */
 import React from 'react';
-import { Patient } from '../types';
-import { 
-  Search, 
-  Plus, 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  ChevronRight,
-  Filter,
-  Tag
-} from 'lucide-react';
+import type { Patient } from '../types';
+import { Search, Plus, Mail, Phone, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface PatientsProps {
@@ -20,36 +14,37 @@ interface PatientsProps {
 
 export const Patients: React.FC<PatientsProps> = ({ patients, onViewPatient }) => {
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Patient Directory</h2>
-          <p className="text-zinc-500">Searchable lightweight CRM for your clinic.</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Patient Directory</h2>
+          <p className="text-zinc-500 text-sm sm:text-base">Searchable lightweight CRM for your clinic.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search name, phone, email..." 
-              className="input-field pl-10 text-sm w-64"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={16} aria-hidden />
+            <input
+              type="search"
+              placeholder="Search name, phone, email…"
+              aria-label="Search patients"
+              className="input-field pl-10 text-sm w-full sm:w-64"
             />
           </div>
-          <button className="btn-primary flex items-center gap-2">
-            <Plus size={18} /> Add Patient
+          <button type="button" className="btn-primary flex items-center justify-center gap-2">
+            <Plus size={18} aria-hidden /> Add Patient
           </button>
         </div>
       </div>
 
-      <div className="card p-0 overflow-hidden">
-        <table className="w-full">
+      <div className="card p-0 overflow-x-auto">
+        <table className="w-full min-w-[500px]" role="grid">
           <thead>
             <tr className="text-left text-zinc-500 text-[10px] uppercase tracking-wider border-b border-border-dark bg-black/30">
-              <th className="p-4 font-semibold">Patient Name</th>
-              <th className="p-4 font-semibold">Contact</th>
-              <th className="p-4 font-semibold">Last Interaction</th>
-              <th className="p-4 font-semibold">Tags</th>
-              <th className="p-4 font-semibold text-right">Action</th>
+              <th className="p-3 sm:p-4 font-semibold">Patient Name</th>
+              <th className="p-3 sm:p-4 font-semibold">Contact</th>
+              <th className="p-3 sm:p-4 font-semibold">Last Interaction</th>
+              <th className="p-3 sm:p-4 font-semibold">Tags</th>
+              <th className="p-3 sm:p-4 font-semibold text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-dark">
@@ -62,7 +57,7 @@ export const Patients: React.FC<PatientsProps> = ({ patients, onViewPatient }) =
                 className="hover:bg-white/5 transition-colors group cursor-pointer"
                 onClick={() => onViewPatient(patient.id)}
               >
-                <td className="p-4">
+                <td className="p-3 sm:p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center text-primary font-bold">
                       {patient.name.charAt(0)}
@@ -73,7 +68,7 @@ export const Patients: React.FC<PatientsProps> = ({ patients, onViewPatient }) =
                     </div>
                   </div>
                 </td>
-                <td className="p-4">
+                <td className="p-3 sm:p-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-xs text-zinc-400">
                       <Phone size={12} /> {patient.phone}
@@ -83,10 +78,10 @@ export const Patients: React.FC<PatientsProps> = ({ patients, onViewPatient }) =
                     </div>
                   </div>
                 </td>
-                <td className="p-4 text-xs text-zinc-400">
-                  {new Date(patient.createdAt).toLocaleDateString()}
+                <td className="p-3 sm:p-4 text-xs text-zinc-400 tabular-nums">
+                  {new Intl.DateTimeFormat(undefined, { dateStyle: 'short' }).format(new Date(patient.createdAt))}
                 </td>
-                <td className="p-4">
+                <td className="p-3 sm:p-4">
                   <div className="flex gap-1">
                     {patient.tags?.map(tag => (
                       <span key={tag} className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 rounded-full border border-zinc-700">
@@ -95,9 +90,17 @@ export const Patients: React.FC<PatientsProps> = ({ patients, onViewPatient }) =
                     ))}
                   </div>
                 </td>
-                <td className="p-4 text-right">
-                  <button className="p-2 text-zinc-500 group-hover:text-primary transition-colors">
-                    <ChevronRight size={18} />
+                <td className="p-3 sm:p-4 text-right">
+                  <button
+                    type="button"
+                    aria-label="View patient"
+                    className="p-2 text-zinc-500 hover:text-primary transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewPatient(patient.id);
+                    }}
+                  >
+                    <ChevronRight size={18} aria-hidden />
                   </button>
                 </td>
               </motion.tr>

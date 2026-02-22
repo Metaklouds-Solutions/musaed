@@ -1,15 +1,10 @@
+/**
+ * Bookings list: appointments created by the agent or manually.
+ * Responsive table; optional patient lookup for display.
+ */
 import React from 'react';
-import { Booking, Patient } from '../types';
-import { 
-  Calendar, 
-  Search, 
-  Filter, 
-  User, 
-  MapPin, 
-  Clock, 
-  ChevronRight,
-  ExternalLink
-} from 'lucide-react';
+import type { Booking, Patient } from '../types';
+import { Search, Filter, MapPin, Clock, ExternalLink } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface BookingsProps {
@@ -19,29 +14,30 @@ interface BookingsProps {
 
 export const Bookings: React.FC<BookingsProps> = ({ bookings, patients }) => {
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Bookings</h2>
-          <p className="text-zinc-500">Operational list of bookings created by the agent.</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Bookings</h2>
+          <p className="text-zinc-500 text-sm sm:text-base">Operational list of bookings created by the agent.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search patients, providers..." 
-              className="input-field pl-10 text-sm w-64"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={16} aria-hidden />
+            <input
+              type="search"
+              placeholder="Search patients, providers…"
+              aria-label="Search bookings"
+              className="input-field pl-10 text-sm w-full sm:w-64"
             />
           </div>
-          <button className="px-4 py-2 bg-zinc-800 rounded-lg text-sm flex items-center gap-2 hover:bg-zinc-700 transition-colors">
-            <Filter size={16} /> Filters
+          <button type="button" className="px-4 py-2 bg-zinc-800 rounded-lg text-sm flex items-center gap-2 hover:bg-zinc-700 transition-colors focus-visible:ring-2 focus-visible:ring-primary">
+            <Filter size={16} aria-hidden /> Filters
           </button>
         </div>
       </div>
 
-      <div className="card p-0 overflow-hidden">
-        <table className="w-full">
+      <div className="card p-0 overflow-x-auto">
+        <table className="w-full min-w-[700px]" role="grid">
           <thead>
             <tr className="text-left text-zinc-500 text-[10px] uppercase tracking-wider border-b border-border-dark bg-black/30">
               <th className="p-4 font-semibold">Created</th>

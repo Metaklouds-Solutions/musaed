@@ -1,30 +1,103 @@
+/**
+ * Global styles for Clinic CRM.
+ * - Theme tokens (colors, font)
+ * - Base body and focus/accessibility
+ * - Component utility classes
+ * - Responsive spacing and reduced-motion support
+ */
+
 @import "tailwindcss";
 
+@import "tw-animate-css";
+
+@import "shadcn/tailwind.css";
+
+/*---break---
+ */
+
+@custom-variant dark (&:is(.dark *));
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-primary: #09E6FB;
-  --color-bg-dark: #0A0A0A;
-  --color-card-dark: #141414;
-  --color-border-dark: #262626;
+  /* Legacy tokens for existing components (map to theme vars) */
+  --color-bg-dark: var(--background);
+  --color-card-dark: var(--card);
+  --color-border-dark: var(--border);
 }
 
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
 @layer base {
+  /* color-scheme set by JS when theme toggles (see App theme effect) */
+  html {
+    color-scheme: light dark;
+  }
+
   body {
-    @apply bg-bg-dark text-white font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Visible focus for keyboard users; avoid ring on mouse click (focus-visible) */
+  :focus {
+    @apply outline-none;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  /* Honor reduced motion (Web Design Guidelines) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  * {
+    @apply border-border outline-ring/50;
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Component utilities
+   --------------------------------------------------------------------------- */
 @layer components {
   .btn-primary {
-    @apply bg-primary text-black font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-all active:scale-95 disabled:opacity-50;
+    @apply bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-lg transition-[opacity,transform];
+    @apply hover:opacity-90 active:scale-95 disabled:opacity-50;
+    @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
-  
+
   .card {
-    @apply bg-card-dark border border-border-dark rounded-xl p-6;
+    @apply bg-card border border-border rounded-xl p-4 sm:p-6;
+  }
+
+  /* YouTube-style elevated card: shadow + hover lift (Tenant dashboard, etc.) */
+  .card-elevated {
+    @apply bg-card border border-border rounded-xl p-4 sm:p-6;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .dark .card-elevated {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 6px -2px rgb(0 0 0 / 0.3);
+  }
+
+  .card-elevated:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 10px 15px -3px rgb(0 0 0 / 0.06);
+  }
+
+  .dark .card-elevated:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 10px 15px -3px rgb(0 0 0 / 0.35);
   }
 
   .input-field {
-    @apply bg-black border border-border-dark rounded-lg px-4 py-2 focus:outline-none focus:border-primary transition-colors;
+    @apply bg-background border border-border rounded-lg px-4 py-2 w-full min-w-0 text-foreground;
+    @apply focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors;
   }
 
   .tab-active {
@@ -32,6 +105,183 @@
   }
 
   .tab-inactive {
-    @apply text-zinc-500 hover:text-zinc-300;
+    @apply text-muted-foreground hover:text-foreground;
   }
+
+  /* Touch: remove double-tap zoom delay on buttons/links */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Scroll containment for modals/drawers */
+  .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+
+  /* Flex child truncation: allow text to shrink */
+  .min-w-0 {
+    min-width: 0;
+  }
+}
+/*---break---
+ */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+/* Light mode — matches reference: white/light gray bg, primary #5b5cf6 */
+:root {
+  --background: rgb(255, 255, 255);
+  --foreground: rgb(30, 27, 27);
+  --card: rgb(255, 255, 255);
+  --card-foreground: rgb(30, 27, 27);
+  --popover: rgb(255, 255, 255);
+  --popover-foreground: rgb(30, 27, 27);
+  --primary: rgb(91, 92, 246);
+  --primary-foreground: rgb(255, 255, 255);
+  --secondary: rgb(243, 240, 255);
+  --secondary-foreground: rgb(67, 56, 202);
+  --muted: rgb(248, 247, 255);
+  --muted-foreground: rgb(67, 56, 202);
+  --accent: rgb(243, 240, 255);
+  --accent-foreground: rgb(67, 56, 202);
+  --destructive: rgb(239, 68, 68);
+  --destructive-foreground: rgb(255, 255, 255);
+  --border: rgb(224, 231, 255);
+  --input: rgb(224, 231, 255);
+  --ring: rgb(91, 92, 246);
+  --chart-1: rgb(91, 92, 246);
+  --chart-2: rgb(124, 58, 237);
+  --chart-3: rgb(109, 40, 217);
+  --chart-4: rgb(91, 33, 182);
+  --chart-5: rgb(76, 29, 149);
+  --sidebar: rgb(255, 255, 255);
+  --sidebar-foreground: rgb(30, 27, 27);
+  --sidebar-primary: rgb(91, 92, 246);
+  --sidebar-primary-foreground: rgb(255, 255, 255);
+  --sidebar-accent: rgb(243, 240, 255);
+  --sidebar-accent-foreground: rgb(67, 56, 202);
+  --sidebar-border: rgb(224, 231, 255);
+  --sidebar-ring: rgb(91, 92, 246);
+  --font-sans: Roboto, sans-serif;
+  --font-serif: Playfair Display, serif;
+  --font-mono: Fira Code, monospace;
+  --radius: 0.625rem;
+  --shadow-x: 2px;
+  --shadow-y: 2px;
+  --shadow-blur: 4px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.2;
+  --shadow-color: hsl(255 86% 66%);
+  --shadow-2xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+  --shadow-xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+  --shadow-sm: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+  --shadow: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+  --shadow-md: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 2px 4px -1px hsl(255 86% 66% / 0.20);
+  --shadow-lg: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 4px 6px -1px hsl(255 86% 66% / 0.20);
+  --shadow-xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 8px 10px -1px hsl(255 86% 66% / 0.20);
+  --shadow-2xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.50);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+/* Dark mode — matches reference: primary #8b5cf6, card #1e1b1b, secondary fg #eCe7ff */
+.dark {
+  --background: rgb(12, 10, 28);
+  --foreground: rgb(236, 231, 255);
+  --card: rgb(30, 27, 27);
+  --card-foreground: rgb(236, 231, 255);
+  --popover: rgb(30, 27, 27);
+  --popover-foreground: rgb(236, 231, 255);
+  --primary: rgb(139, 92, 246);
+  --primary-foreground: rgb(255, 255, 255);
+  --secondary: rgb(30, 27, 27);
+  --secondary-foreground: rgb(236, 231, 255);
+  --muted: rgb(40, 36, 36);
+  --muted-foreground: rgb(196, 181, 253);
+  --accent: rgb(67, 56, 202);
+  --accent-foreground: rgb(236, 231, 255);
+  --destructive: rgb(239, 68, 68);
+  --destructive-foreground: rgb(255, 255, 255);
+  --border: rgb(55, 48, 80);
+  --input: rgb(55, 48, 80);
+  --ring: rgb(139, 92, 246);
+  --chart-1: rgb(167, 139, 250);
+  --chart-2: rgb(139, 92, 246);
+  --chart-3: rgb(124, 58, 237);
+  --chart-4: rgb(109, 40, 217);
+  --chart-5: rgb(91, 33, 182);
+  --sidebar: rgb(18, 16, 24);
+  --sidebar-foreground: rgb(236, 231, 255);
+  --sidebar-primary: rgb(139, 92, 246);
+  --sidebar-primary-foreground: rgb(255, 255, 255);
+  --sidebar-accent: rgb(67, 56, 202);
+  --sidebar-accent-foreground: rgb(236, 231, 255);
+  --sidebar-border: rgb(55, 48, 80);
+  --sidebar-ring: rgb(139, 92, 246);
+  --font-sans: Roboto, sans-serif;
+  --font-serif: Playfair Display, serif;
+  --font-mono: Fira Code, monospace;
+  --radius: 0.625rem;
+  --shadow-x: 2px;
+  --shadow-y: 2px;
+  --shadow-blur: 4px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.2;
+  --shadow-color: hsl(255 86% 66%);
+  --shadow-2xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+  --shadow-xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+  --shadow-sm: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+  --shadow: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+  --shadow-md: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 2px 4px -1px hsl(255 86% 66% / 0.20);
+  --shadow-lg: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 4px 6px -1px hsl(255 86% 66% / 0.20);
+  --shadow-xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 8px 10px -1px hsl(255 86% 66% / 0.20);
+  --shadow-2xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.50);
 }

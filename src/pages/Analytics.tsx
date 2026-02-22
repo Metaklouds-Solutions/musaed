@@ -1,14 +1,9 @@
+/**
+ * Analytics: placeholder KPIs and charts for clinic performance.
+ * Responsive grid; data is static until backend is connected.
+ */
 import React from 'react';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  PieChart, 
-  Users, 
-  Clock, 
-  AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight
-} from 'lucide-react';
+import { BarChart3, TrendingUp, PieChart, Users, Clock, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const Analytics: React.FC = () => {
@@ -20,14 +15,14 @@ export const Analytics: React.FC = () => {
   ];
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 md:p-8 pb-16 space-y-6 md:space-y-8 min-h-0">
       <div>
-        <h2 className="text-2xl font-bold">Analytics</h2>
-        <p className="text-zinc-500">Trends and improvements for your AI agent.</p>
+        <h2 className="text-xl sm:text-2xl font-bold">Analytics</h2>
+        <p className="text-zinc-500 text-sm sm:text-base">Trends and improvements for your AI agent.</p>
+        <p className="text-xs text-amber-500/90 mt-1">Coming soon: live charts and metrics from your call data.</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, i) => (
           <motion.div 
             key={stat.label}
@@ -102,34 +97,7 @@ export const Analytics: React.FC = () => {
         </div>
       </div>
 
-      <div className="card">
-        <h3 className="font-semibold mb-6 flex items-center gap-2">
-          <AlertTriangle size={18} className="text-amber-400" /> Top Drop-off Points
-        </h3>
-        <div className="space-y-4">
-          {[
-            { step: 'Insurance Verification', rate: '24%', reason: 'Patient missing ID card' },
-            { step: 'Provider Selection', rate: '12%', reason: 'Preferred provider unavailable' },
-            { step: 'Email Capture', rate: '8%', reason: 'User refused to provide' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between p-4 bg-black/30 rounded-xl border border-border-dark">
-              <div className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500">
-                  0{i+1}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.step}</p>
-                  <p className="text-xs text-zinc-500">{item.reason}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-bold text-red-400">{item.rate}</p>
-                <p className="text-[10px] text-zinc-600 uppercase font-bold">Drop-off</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+     
     </div>
   );
 };

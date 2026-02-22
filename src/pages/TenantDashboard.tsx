@@ -1,82 +1,137 @@
-import React from 'react';
-import { 
-  Phone, 
-  Calendar, 
-  TrendingUp, 
-  AlertTriangle, 
-  Clock, 
-  ChevronRight,
-  PhoneMissed,
-  CheckCircle2
-} from 'lucide-react';
+/**
+ * Tenant (clinic) dashboard: KPIs and recent calls/bookings.
+ * Time range filters data; KPIs are derived from real data. View All navigates to Call Logs / Bookings.
+ */
+import React, { useMemo, useState, useCallback } from 'react';
+import { Phone, Calendar, TrendingUp, AlertTriangle, Clock, ChevronRight, PhoneMissed, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { CallSession, Booking } from '../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { CallSession, Booking } from '../types';
+
+export type DashboardTimeRange = 'today' | '7d' | '30d';
+
+function inTimeRange(iso: string, range: DashboardTimeRange): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (range === 'today') return d >= startOfToday;
+  const days = range === '7d' ? 7 : 30;
+  const start = new Date(now);
+  start.setDate(start.getDate() - days);
+  return d >= start;
+}
+
+function formatAvgDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
 
 interface TenantDashboardProps {
   sessions: CallSession[];
   bookings: Booking[];
   onViewCall: (id: string) => void;
+  onNavigateToTab: (tab: 'calls' | 'bookings') => void;
 }
 
-export const TenantDashboard: React.FC<TenantDashboardProps> = ({ sessions = [], bookings = [], onViewCall }) => {
-  const kpis = [
-    { label: 'Total Calls', value: sessions?.length || 0, icon: Phone, color: 'text-primary' },
-    { label: 'Missed Calls', value: sessions?.filter(s => s.outcome === 'DROPPED').length || 0, icon: PhoneMissed, color: 'text-red-400' },
-    { label: 'Bookings Created', value: bookings?.length || 0, icon: Calendar, color: 'text-emerald-400' },
-    { label: 'Conversion Rate', value: `${Math.round(((bookings?.length || 0) / (sessions?.length || 1)) * 100)}%`, icon: TrendingUp, color: 'text-primary' },
-    { label: 'Avg Handle Time', value: '3m 12s', icon: Clock, color: 'text-zinc-400' },
-    { label: 'AI Flagged', value: sessions?.filter(s => s.aiFlags?.length > 0).length || 0, icon: AlertTriangle, color: 'text-amber-400' },
-  ];
+export const TenantDashboard: React.FC<TenantDashboardProps> = ({
+  sessions = [],
+  bookings = [],
+  onViewCall,
+  onNavigateToTab,
+}) => {
+  const [timeRange, setTimeRange] = useState<DashboardTimeRange>('7d');
+
+  const filtered = useMemo(() => {
+    const s = sessions.filter((s) => inTimeRange(s.startedAt, timeRange));
+    const b = bookings.filter((b) => inTimeRange(b.createdAt, timeRange));
+    const totalDuration = s.reduce((sum, x) => sum + x.duration, 0);
+    const avgHandleSeconds = s.length ? totalDuration / s.length : 0;
+    return { sessions: s, bookings: b, avgHandleSeconds };
+  }, [sessions, bookings, timeRange]);
+
+  const kpis = useMemo(
+    () => [
+      { label: 'Total Calls', value: filtered.sessions.length, icon: Phone, color: 'text-primary' },
+      { label: 'Missed Calls', value: filtered.sessions.filter((s) => s.outcome === 'DROPPED').length, icon: PhoneMissed, color: 'text-red-400' },
+      { label: 'Bookings Created', value: filtered.bookings.length, icon: Calendar, color: 'text-emerald-400' },
+      {
+        label: 'Conversion Rate',
+        value: filtered.sessions.length ? `${Math.round((filtered.bookings.length / filtered.sessions.length) * 100)}%` : '0%',
+        icon: TrendingUp,
+        color: 'text-primary',
+      },
+      { label: 'Avg Handle Time', value: formatAvgDuration(filtered.avgHandleSeconds), icon: Clock, color: 'text-zinc-400' },
+      { label: 'AI Flagged', value: filtered.sessions.filter((s) => (s.aiFlags?.length ?? 0) > 0).length, icon: AlertTriangle, color: 'text-amber-400' },
+    ],
+    [filtered]
+  );
+
+  const handleTimeRangeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTimeRange(e.target.value as DashboardTimeRange);
+  }, []);
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Clinic Dashboard</h2>
-          <p className="text-zinc-500">How are we doing today?</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Clinic Dashboard</h2>
+          <p className="text-zinc-500 text-sm sm:text-base">How are we doing in the selected period?</p>
         </div>
-        <div className="flex gap-2">
-          <select className="input-field text-sm">
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-            <option>Today</option>
+        <label className="flex items-center gap-2">
+          <span className="text-sm text-zinc-500 shrink-0">Time range</span>
+          <select
+            className="input-field text-sm w-full sm:w-auto"
+            value={timeRange}
+            onChange={handleTimeRangeChange}
+            aria-label="Dashboard time range"
+          >
+            <option value="today">Today</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
           </select>
-        </div>
+        </label>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {kpis.map((kpi, i) => (
-          <motion.div 
+          <motion.div
             key={kpi.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="card p-4 space-y-2"
           >
-            <div className="flex items-center justify-between">
-              <kpi.icon size={18} className={kpi.color} />
-              <span className="text-[10px] text-emerald-500 font-medium">+12%</span>
-            </div>
-            <p className="text-2xl font-bold">{kpi.value}</p>
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">{kpi.label}</p>
+            <Card className="card-elevated p-4 space-y-2 h-full">
+              <div className="flex items-center justify-between">
+                <kpi.icon size={18} className={kpi.color} aria-hidden />
+              </div>
+              <p className="text-2xl font-bold tabular-nums">{kpi.value}</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">{kpi.label}</p>
+            </Card>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-8">
-        {/* Recent Calls */}
-        <div className="card space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold">Recent Calls</h3>
-            <button className="text-xs text-primary hover:underline">View All</button>
-          </div>
-          <div className="space-y-3">
-            {sessions?.slice(0, 5).map((session) => (
-              <div 
-                key={session.id} 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        <Card className="card-elevated">
+          <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base font-semibold">Recent Calls</CardTitle>
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary rounded"
+              onClick={() => onNavigateToTab('calls')}
+            >
+              View All
+            </button>
+          </CardHeader>
+          <CardContent className="p-4 space-y-3">
+            {filtered.sessions.slice(0, 5).map((session) => (
+              <button
+                type="button"
+                key={session.id}
                 onClick={() => onViewCall(session.id)}
-                className="flex items-center justify-between p-3 bg-black/30 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
+                className="w-full flex items-center justify-between p-3 bg-black/30 rounded-lg hover:bg-white/5 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded flex items-center justify-center ${
@@ -94,21 +149,29 @@ export const TenantDashboard: React.FC<TenantDashboardProps> = ({ sessions = [],
                     <p className="text-xs text-zinc-400">{new Date(session.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     <p className="text-[10px] text-zinc-600">{Math.floor(session.duration / 60)}m {session.duration % 60}s</p>
                   </div>
-                  <ChevronRight size={14} className="text-zinc-700 group-hover:text-primary transition-colors" />
+                  <ChevronRight size={14} className="text-zinc-700 group-hover:text-primary transition-colors" aria-hidden />
                 </div>
-              </div>
+              </button>
             ))}
-          </div>
-        </div>
+            {filtered.sessions.length === 0 && (
+              <div className="py-6 text-center text-zinc-500 text-sm">No calls in this period.</div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Today's Bookings */}
-        <div className="card space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold">Today's Bookings Created</h3>
-            <button className="text-xs text-primary hover:underline">View All</button>
-          </div>
-          <div className="space-y-3">
-            {bookings?.slice(0, 5).map((booking) => (
+        <Card className="card-elevated">
+          <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base font-semibold">Recent Bookings</CardTitle>
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary rounded"
+              onClick={() => onNavigateToTab('bookings')}
+            >
+              View All
+            </button>
+          </CardHeader>
+          <CardContent className="p-4 space-y-3">
+            {filtered.bookings.slice(0, 5).map((booking) => (
               <div key={booking.id} className="flex items-center justify-between p-3 bg-black/30 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center">
@@ -125,14 +188,14 @@ export const TenantDashboard: React.FC<TenantDashboardProps> = ({ sessions = [],
                 </div>
               </div>
             ))}
-            {bookings?.length === 0 && (
+            {filtered.bookings.length === 0 && (
               <div className="py-8 text-center text-zinc-500">
-                <CheckCircle2 size={32} className="mx-auto mb-2 opacity-20" />
-                <p className="text-sm">No bookings created yet today.</p>
+                <CheckCircle2 size={32} className="mx-auto mb-2 opacity-20" aria-hidden />
+                <p className="text-sm">No bookings in this period.</p>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
