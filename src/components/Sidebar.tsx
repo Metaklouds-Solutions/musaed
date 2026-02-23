@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
       {/* Sidebar: drawer on mobile, fixed on md+ */}
       <aside
         className={`
-          w-64 h-screen bg-card border-r border-border flex flex-col shrink-0
+          w-64 h-screen bg-card-dark border-r border-border-dark flex flex-col shrink-0
           fixed md:static inset-y-0 left-0 z-40
           transform transition-transform duration-200 ease-out
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
