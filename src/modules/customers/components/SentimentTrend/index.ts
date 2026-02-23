@@ -1,0 +1,1 @@
+export { SentimentTrend } from './SentimentTrend';
