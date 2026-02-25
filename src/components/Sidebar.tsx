@@ -55,7 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
 
   const sidebarContent = (
     <>
-      <div className="p-4 sm:p-6 flex items-center gap-3 shrink-0 h">
+      <div className="p-4 sm:p-6 flex items-center gap-3 shrink-0 ">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center" aria-hidden>
           <Zap className="text-primary-foreground w-5 h-5" />
         </div>

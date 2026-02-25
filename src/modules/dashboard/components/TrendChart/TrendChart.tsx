@@ -2,7 +2,7 @@
  * Trend chart: bookings over time from adapter. No revenue; no hardcoded numbers.
  */
 
-import { EmptyState } from '../../../../shared/ui';
+import { EmptyState, Card } from '../../../../shared/ui';
 import type { TrendPoint } from '../../../../shared/types';
 import { TrendingUp } from 'lucide-react';
 
@@ -18,56 +18,45 @@ function formatShortDate(dateStr: string): string {
 export function TrendChart({ points }: TrendChartProps) {
   if (points.length === 0) {
     return (
-      <div
-        className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)] p-5"
-        style={{ minHeight: '200px' }}
-      >
+      <Card className="p-5 min-h-[200px]">
         <EmptyState
           icon={TrendingUp}
           title="No trend data yet"
           description="Bookings trend will appear when booking data is available."
         />
-      </div>
+      </Card>
     );
   }
   const maxBookings = Math.max(...points.map((p) => p.bookings), 1);
+  const barVars = points
+    .map(
+      (p, i) =>
+        `.trend-chart-bar-${i}{--bar-height:${(p.bookings / maxBookings) * 100}%;--bar-min-height:${p.bookings > 0 ? '4px' : '0'}}`,
+    )
+    .join('');
   return (
-    <div
-      className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)] p-5"
-      style={{ minHeight: '200px' }}
-    >
-      <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">
+    <Card className="p-5 min-h-[200px]">
+      <style dangerouslySetInnerHTML={{ __html: barVars }} />
+      <h3 className="font-semibold mb-4 text-(--text-primary)">
         Bookings trend
       </h3>
       <div className="flex gap-2 items-end justify-between h-32">
-        {points.map((p) => (
+        {points.map((p, i) => (
           <div key={p.date} className="flex-1 flex flex-col items-center gap-1">
-            <div
-              className="w-full rounded-t border border-[var(--border-subtle)] border-b-0 flex flex-col justify-end"
-              style={{
-                height: '80%',
-                minHeight: 24,
-                background: 'var(--bg-subtle)',
-              }}
-            >
+            <div className="w-full rounded-t border border-(--border-subtle) border-b-0 flex flex-col justify-end h-[80%] min-h-6 bg-(--bg-subtle)">
               <div
-                className="w-full rounded-t transition-all duration-300"
-                style={{
-                  height: `${(p.bookings / maxBookings) * 100}%`,
-                  minHeight: p.bookings > 0 ? 4 : 0,
-                  background: 'var(--primary)',
-                }}
+                className={`trend-chart-bar-inner trend-chart-bar-${i} w-full rounded-t transition-all duration-300 min-h-0 bg-[linear-gradient(180deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)]`}
               />
             </div>
-            <span className="text-xs text-[var(--text-muted)]">
+            <span className="text-xs text-(--text-muted)">
               {formatShortDate(p.date)}
             </span>
-            <span className="text-xs font-medium text-[var(--text-primary)]">
+            <span className="text-xs font-medium text-(--text-primary)">
               {p.bookings}
             </span>
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

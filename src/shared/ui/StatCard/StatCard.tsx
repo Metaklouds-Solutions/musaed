@@ -1,10 +1,11 @@
 /**
- * StatCard primitive. Design-system: card, typography (label small, value prominent).
- * No business logic.
+ * StatCard primitive. Design.json: glass card, label (caption), primary value.
+ * Uses shared Card + typography scale. For trend + chart use MetricCard.
  */
 
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { Card } from '../Card';
 
 interface StatCardProps {
   label: string;
@@ -14,17 +15,13 @@ interface StatCardProps {
 
 export function StatCard({ label, value, className }: StatCardProps) {
   return (
-    <div
-      className={cn(
-        'bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)] p-5',
-        'hover:border-[var(--border-default)] hover:bg-[var(--bg-elevated)] transition-colors',
-        className
-      )}
-    >
-      <p className="text-xs font-medium text-[var(--text-muted)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
+    <Card className={cn('p-5', className)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+        {label}
+      </p>
+      <p className="mt-2 text-[20px] font-semibold leading-tight text-[var(--text-primary)]">
         {value}
       </p>
-    </div>
+    </Card>
   );
 }

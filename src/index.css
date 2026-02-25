@@ -1,6 +1,6 @@
 /**
- * Design system implementation from .cursor/design-system.md
- * Tokens: colors, radius, shadows, typography. Base: html, body, #root.
+ * Design tokens from .cursor/Design.json — Dark Glass Analytics Dashboard System.
+ * Light theme retained; .dark implements full Design.json spec.
  */
 
 @import "tailwindcss";
@@ -10,14 +10,17 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ---------------------------------------------------------------------------
-   Design tokens (from design-system.md)
+   Design tokens — Design.json (dark glass) + light fallback
    --------------------------------------------------------------------------- */
 
 :root {
-  /* Primary (design-system example: Electric Cyan) */
-  --ds-primary: #09E6FB;
-  --primary-hover: #07C4D6;
-  --primary-glow: rgba(9, 230, 251, 0.15);
+  /* Accent: Design.json gradient #7C5CFF → #B47CFF */
+  --ds-accent-start: #7C5CFF;
+  --ds-accent-end: #B47CFF;
+  --ds-accent-glow: rgba(124, 92, 255, 0.4);
+  --ds-primary: #7C5CFF;
+  --primary-hover: #9370FF;
+  --primary-glow: rgba(124, 92, 255, 0.25);
 
   /* Light theme backgrounds */
   --bg-base: #FFFFFF;
@@ -25,41 +28,45 @@
   --bg-elevated: #FFFFFF;
   --bg-hover: #F3F4F6;
   --bg-subtle: #F9FAFB;
+  --bg-sidebar: #F5F5F5;
 
-  /* Light borders */
+  --surface-card: rgba(0, 0, 0, 0.03);
+  --surface-glass: rgba(0, 0, 0, 0.04);
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --surface-border-card: var(--border-subtle);
+
   --border-subtle: #E4E4E7;
   --border-default: #D4D4D8;
   --border-hover: #A1A1AA;
   --separator: #E4E4E7;
   --separator-strong: #D4D4D8;
 
-  /* Light text (WCAG AA) */
   --text-primary: #18181B;
   --text-secondary: #52525B;
   --text-muted: #71717A;
   --text-disabled: #A1A1AA;
 
-  /* Semantic */
   --success: #22C55E;
   --success-muted: #16A34A;
-  --warning: #EAB308;
+  --warning: #F59E0B;
   --warning-muted: #CA8A04;
   --error: #EF4444;
   --error-muted: #DC2626;
   --info: #3B82F6;
   --info-muted: #2563EB;
 
-  /* Radius (design doc) */
-  --radius-card: 12px;
+  /* Design.json: card 16px, button 12px */
+  --radius-card: 16px;
   --radius-modal: 16px;
-  --radius-button: 8px;
-  --radius-input: 8px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+  --radius-nav: 10px;
 
-  /* Shadows (design doc) */
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.18);
   --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.35);
 
-  /* Spacing (design doc) */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
@@ -67,14 +74,18 @@
   --space-xl: 32px;
   --space-2xl: 48px;
 
-  /* Overlay & glass (drawer/panel) */
   --overlay-bg: rgba(0, 0, 0, 0.45);
   --glass-panel-bg: rgba(249, 250, 251, 0.88);
   --glass-panel-border: var(--border-subtle);
   --drawer-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
   --sidebar-item-hover: var(--bg-hover);
 
-  /* Map to Tailwind/shadcn tokens */
+  --layout-max-width: 1440px;
+  --layout-gutter: 24px;
+  --layout-margin: 32px;
+  --topbar-height: 64px;
+  --sidebar-width: 240px;
+
   --background: var(--bg-base);
   --foreground: var(--text-primary);
   --card: var(--bg-card);
@@ -82,71 +93,85 @@
   --popover: var(--bg-elevated);
   --popover-foreground: var(--text-primary);
   --primary: var(--ds-primary);
-  --primary-foreground: #000000;
+  --primary-foreground: #FFFFFF;
   --secondary: var(--bg-elevated);
   --secondary-foreground: var(--text-primary);
   --muted: var(--bg-subtle);
   --muted-foreground: var(--text-muted);
   --accent: var(--bg-hover);
   --accent-foreground: var(--text-primary);
-  --destructive: #DC2626;
+  --destructive: #EF4444;
   --destructive-foreground: #FAFAFA;
   --border: var(--border-default);
   --input: var(--border-default);
-  --ring: var(--primary);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --radius: 8px;
+  --ring: var(--ds-primary);
+  --font-sans: "Inter", "SF Pro", ui-sans-serif, system-ui, sans-serif;
+  --radius: 12px;
+  --typography-display: 32px;
+  --typography-heading: 20px;
+  --typography-subheading: 16px;
+  --typography-body: 14px;
+  --typography-caption: 12px;
 }
 
 .dark {
-  /* Primary unchanged (design-system) */
-  --ds-primary: #09E6FB;
-  --primary-hover: #07C4D6;
-  --primary-glow: rgba(9, 230, 251, 0.15);
+  /* Design.json: Dark Glass color system */
+  --ds-accent-start: #7C5CFF;
+  --ds-accent-end: #B47CFF;
+  --ds-accent-glow: rgba(124, 92, 255, 0.4);
+  --ds-primary: #7C5CFF;
+  --primary-hover: #9370FF;
+  --primary-glow: rgba(124, 92, 255, 0.25);
 
-  /* Dark theme backgrounds (design doc) */
-  --bg-base: #0A0A0B;
-  --bg-card: #111114;
-  --bg-elevated: #18181B;
-  --bg-hover: #1F1F23;
-  --bg-subtle: #0D0D0F;
+  --bg-base: #0B0F19;
+  --bg-card: #111827;
+  --bg-elevated: #151B2C;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-subtle: #0D1322;
+  --bg-sidebar: #0D1322;
 
-  /* Dark borders */
-  --border-subtle: #1F1F23;
-  --border-default: #27272A;
-  --border-hover: #3F3F46;
-  --separator: #1F1F23;
-  --separator-strong: #27272A;
+  --surface-card: rgba(255, 255, 255, 0.03);
+  --surface-glass: rgba(255, 255, 255, 0.05);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-border-card: rgba(255, 255, 255, 0.06);
 
-  /* Dark text */
-  --text-primary: #FAFAFA;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
-  --text-disabled: #52525B;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --separator: rgba(255, 255, 255, 0.08);
+  --separator-strong: rgba(255, 255, 255, 0.1);
 
-  /* Overlay & glass (drawer/panel) */
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --text-disabled: rgba(255, 255, 255, 0.4);
+
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.4);
+
   --overlay-bg: rgba(0, 0, 0, 0.6);
-  --glass-panel-bg: rgba(17, 17, 20, 0.85);
+  --glass-panel-bg: rgba(13, 19, 34, 0.9);
   --glass-panel-border: var(--border-subtle);
   --drawer-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  --sidebar-item-hover: #1A1A1D;
+  --sidebar-item-hover: rgba(255, 255, 255, 0.05);
 
-  /* Map to Tailwind/shadcn */
   --background: var(--bg-base);
   --foreground: var(--text-primary);
-  --card: var(--bg-card);
+  --card: var(--surface-card);
   --card-foreground: var(--text-primary);
   --popover: var(--bg-elevated);
   --popover-foreground: var(--text-primary);
   --primary: var(--ds-primary);
-  --primary-foreground: #000000;
+  --primary-foreground: #FFFFFF;
   --secondary: var(--bg-elevated);
   --secondary-foreground: var(--text-primary);
   --muted: var(--bg-subtle);
   --muted-foreground: var(--text-muted);
   --accent: var(--bg-hover);
   --accent-foreground: var(--text-primary);
-  --destructive: #DC2626;
+  --destructive: #EF4444;
   --destructive-foreground: #FAFAFA;
   --border: var(--border-default);
   --input: var(--border-default);
@@ -173,15 +198,15 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --font-sans: var(--font-sans);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
 }
 
 /* ---------------------------------------------------------------------------
-   Base: html, body, #root (design doc)
+   Base: html, body, #root — Design.json typography (14px body, Inter)
    --------------------------------------------------------------------------- */
 @layer base {
   html {
@@ -193,6 +218,7 @@
     color: var(--text-primary);
     font-family: var(--font-sans);
     font-size: 14px;
+    font-weight: 400;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -229,37 +255,60 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Component utilities (design doc classes)
+   Component utilities — Design.json glass card, accent button
    --------------------------------------------------------------------------- */
 @layer components {
+  .card-glass {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border-card, var(--border-subtle));
+    border-radius: var(--radius-card);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-glass:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--surface-border, var(--border-subtle));
+  }
+
   .card {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-card);
     padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.2s, background 0.2s, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .card:hover {
     border-color: var(--border-default);
     background: var(--bg-elevated);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
   }
 
   .btn-primary {
-    background: var(--primary);
-    color: #000000;
-    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--ds-accent-start) 0%, var(--ds-accent-end) 100%);
+    color: #FFFFFF;
+    padding: 10px 16px;
     border-radius: var(--radius-button);
     font-weight: 500;
-    transition: background-color 0.2s;
+    box-shadow: var(--shadow-button-primary);
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-primary:hover {
-    background: var(--primary-hover);
+    box-shadow: 0 6px 28px var(--ds-accent-glow);
+    filter: brightness(1.05);
   }
 
   .btn-primary:focus-visible {
-    box-shadow: 0 0 0 2px var(--primary-glow);
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--ds-primary);
     outline-offset: 2px;
   }
 
@@ -276,7 +325,7 @@
   }
 }
 
-/* Skeleton shimmer (design doc) */
+/* Skeleton shimmer */
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -292,4 +341,17 @@
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Trend chart bar: height from CSS variables (set by component) */
+.trend-chart-bar-inner {
+  height: var(--bar-height, 0);
+  min-height: var(--bar-min-height, 0);
+}
+
+/* Magic UI Animated Theme Toggler — View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }

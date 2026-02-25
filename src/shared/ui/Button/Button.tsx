@@ -1,6 +1,6 @@
 /**
- * Button primitives. Design-system: primary, secondary, ghost, danger, success.
- * No business logic.
+ * Button primitives. Design.json: primary = accent gradient + glow shadow;
+ * secondary = glass (rgba(255,255,255,0.05) + border). Radius 12px, padding 10px 16px.
  */
 
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
@@ -15,20 +15,24 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors touch-manipulation ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] disabled:opacity-50 disabled:pointer-events-none';
+  'inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)] font-medium min-h-[40px] px-4 py-2.5 ' +
+  'transition-colors transition-shadow duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] touch-manipulation ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ' +
+  'disabled:opacity-50 disabled:pointer-events-none';
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-[var(--primary)] text-black hover:bg-[var(--primary-hover)] px-4 py-2',
+    'bg-[length:200%_200%] bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white ' +
+    'shadow-[var(--shadow-button-primary)] hover:shadow-[0_6px_28px_var(--ds-accent-glow)] hover:brightness-105',
   secondary:
-    'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-default)] hover:bg-[var(--bg-hover)] px-4 py-2',
+    'bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-[var(--text-primary)] ' +
+    'hover:bg-[rgba(255,255,255,0.08)] dark:bg-[rgba(255,255,255,0.05)] dark:border-[rgba(255,255,255,0.1)]',
   ghost:
-    'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] px-4 py-2',
+    'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]',
   danger:
-    'bg-[#DC2626] text-[#FAFAFA] hover:bg-[#B91C1C] px-4 py-2',
+    'bg-[var(--error)] text-white hover:bg-[var(--error-muted)]',
   success:
-    'bg-[#16A34A] text-[#FAFAFA] hover:bg-[#15803D] px-4 py-2',
+    'bg-[var(--success)] text-white hover:bg-[var(--success-muted)]',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

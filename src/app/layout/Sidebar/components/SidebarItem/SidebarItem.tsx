@@ -1,5 +1,5 @@
 /**
- * Single sidebar nav item: NavLink with hover (subtle dark), active (accent + left bar), focus-visible.
+ * Sidebar nav item. Design.json: radius 10px, padding 10px 14px, active = bg + left accent bar, hover = subtle.
  */
 
 import { NavLink } from 'react-router-dom';
@@ -19,15 +19,15 @@ export function SidebarItem({ to, label, icon: Icon, onClick }: SidebarItemProps
       onClick={onClick}
       className={({ isActive }) =>
         cn(
-          'w-full flex items-center gap-3 py-3 pr-4 transition-colors touch-manipulation',
+          'w-full flex items-center gap-3 rounded-[var(--radius-nav)] py-2.5 px-3.5 transition-colors touch-manipulation',
           'focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]',
           isActive
-            ? 'bg-[var(--primary-glow)] text-[var(--primary)] pl-[13px] border-l-[3px] border-l-[var(--primary)]'
-            : 'pl-4 text-[var(--text-muted)] hover:bg-[var(--sidebar-item-hover)] hover:text-[var(--text-primary)]'
+            ? 'bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] pl-3 border-l-[3px] border-l-[var(--ds-primary)]'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--sidebar-item-hover)] hover:text-[var(--text-primary)]'
         )
       }
     >
-      <Icon size={20} aria-hidden className="shrink-0" />
+      <Icon size={20} aria-hidden className="shrink-0" strokeWidth={1.5} />
       <span className="font-medium">{label}</span>
     </NavLink>
   );

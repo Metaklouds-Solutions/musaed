@@ -8,6 +8,7 @@ import { Zap, Shield, User, Sun, Moon } from 'lucide-react';
 import { useSession } from '../session/SessionContext';
 import type { User as UserType } from '../../shared/types';
 import type { Theme } from '../layout/Header';
+import FloatingLines from '../../components/FloatingLines';
 
 const DEMO_ADMIN: UserType = {
   id: 'u_admin',
@@ -70,15 +71,19 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6 relative">
-      <button
-        type="button"
-        onClick={handleThemeToggle}
-        className="absolute top-4 right-4 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary transition-colors"
-        aria-label={isDark ? 'Light mode' : 'Dark mode'}
-      >
-        {isDark ? <Sun size={22} /> : <Moon size={22} />}
-      </button>
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <FloatingLines
+          linesGradient={isDark ? ['#1e3a5f', '#6366f1', '#a78bfa'] : ['#93c5fd', '#6366f1', '#c4b5fd']}
+          animationSpeed={0.8}
+          interactive
+          parallax
+          mixBlendMode="screen"
+        />
+      </div>
+      <div className="absolute inset-0 z-0 bg-background/70" aria-hidden />
+      <div className="relative z-10 w-full flex flex-col items-center justify-center">
+      
       <div className="max-w-md w-full space-y-8">
         <section className="text-center" aria-label="Welcome">
           <div
@@ -144,6 +149,7 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
             <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
+      </div>
       </div>
     </div>
   );
