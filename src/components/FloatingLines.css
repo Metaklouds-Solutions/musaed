@@ -4,3 +4,7 @@
   position: relative;
   overflow: hidden;
 }
+
+.floating-lines-fallback {
+  /* CSS gradient fallback when WebGL is unavailable */
+}

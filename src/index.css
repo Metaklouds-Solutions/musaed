@@ -85,6 +85,8 @@
   --layout-margin: 32px;
   --topbar-height: 64px;
   --sidebar-width: 240px;
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-compact: 72px;
 
   --background: var(--bg-base);
   --foreground: var(--text-primary);
@@ -112,6 +114,12 @@
   --typography-subheading: 16px;
   --typography-body: 14px;
   --typography-caption: 12px;
+
+  /* Header search bar – neomorphic light */
+  --header-search-bg: #F5F4F8;
+  --header-search-icon-bg: rgba(255, 255, 255, 0.9);
+  --header-search-shadow: 4px 4px 12px rgba(0, 0, 0, 0.06), -2px -2px 8px rgba(255, 255, 255, 0.9);
+  --header-search-shadow-focus: 4px 4px 12px rgba(0, 0, 0, 0.08), -2px -2px 8px rgba(255, 255, 255, 1);
 }
 
 .dark {
@@ -156,6 +164,8 @@
   --glass-panel-border: var(--border-subtle);
   --drawer-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   --sidebar-item-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-compact: 72px;
 
   --background: var(--bg-base);
   --foreground: var(--text-primary);
@@ -176,6 +186,12 @@
   --border: var(--border-default);
   --input: var(--border-default);
   --ring: var(--ds-primary);
+
+  /* Header search bar – neomorphic dark */
+  --header-search-bg: rgba(255, 255, 255, 0.06);
+  --header-search-icon-bg: rgba(255, 255, 255, 0.08);
+  --header-search-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3), -2px -2px 8px rgba(255, 255, 255, 0.03);
+  --header-search-shadow-focus: 4px 4px 12px rgba(0, 0, 0, 0.35), -2px -2px 8px rgba(255, 255, 255, 0.05);
 }
 
 @theme inline {

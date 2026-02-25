@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Scene,
   OrthographicCamera,
@@ -271,6 +271,7 @@ export default function FloatingLines({
   mixBlendMode = 'screen'
 }: FloatingLinesProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [webglUnavailable, setWebglUnavailable] = useState(false);
   const targetMouseRef = useRef<Vector2>(new Vector2(-1000, -1000));
   const currentMouseRef = useRef<Vector2>(new Vector2(-1000, -1000));
   const targetInfluenceRef = useRef<number>(0);
@@ -303,12 +304,19 @@ export default function FloatingLines({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    let renderer: WebGLRenderer;
+    try {
+      renderer = new WebGLRenderer({ antialias: true, alpha: false });
+    } catch {
+      setWebglUnavailable(true);
+      return;
+    }
+
     const scene = new Scene();
 
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
@@ -490,6 +498,23 @@ export default function FloatingLines({
     parallax,
     parallaxStrength
   ]);
+
+  if (webglUnavailable) {
+    const gradientCss =
+      linesGradient && linesGradient.length > 0
+        ? `linear-gradient(135deg, ${linesGradient[0]} 0%, ${linesGradient[Math.min(1, linesGradient.length - 1)]} 50%, ${linesGradient[linesGradient.length - 1]} 100%)`
+        : 'linear-gradient(135deg, #1e3a5f 0%, #6366f1 50%, #a78bfa 100%)';
+    return (
+      <div
+        className="floating-lines-container floating-lines-fallback"
+        style={{
+          background: gradientCss,
+          mixBlendMode: mixBlendMode,
+        }}
+        aria-hidden
+      />
+    );
+  }
 
   return (
     <div
