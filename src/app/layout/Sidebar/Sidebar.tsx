@@ -1,10 +1,10 @@
 /**
  * Variant-driven sidebar: glass-expanded (full labels) | minimal-compact (icon-only).
- * When collapsed, hover on sidebar expands it; mouse leave collapses. Click toggle persists preference.
+ * Open/close only via click on the toggle icon. No hover-to-expand.
  * Same color tokens, nav data, and logic. Admin & Tenant.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -23,7 +23,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useSession } from '../../session/SessionContext';
 import type { Role } from '../../../shared/types';
-import { SidebarItem, type SidebarVariant } from './components/SidebarItem';
+import { SidebarItem } from './components/SidebarItem';
 import { cn } from '@/lib/utils';
 
 function useIsDesktop() {
@@ -39,11 +39,11 @@ function useIsDesktop() {
   return isDesktop;
 }
 
+type SidebarVariant = 'glass-expanded' | 'minimal-compact';
+
 const SIDEBAR_VARIANT_KEY = 'clinic-crm-sidebar-variant';
 const WIDTH_EXPANDED = 240;
 const WIDTH_COMPACT = 72;
-const HOVER_EXPAND_DELAY_MS = 80;
-const HOVER_COLLAPSE_DELAY_MS = 120;
 
 interface NavItem {
   to: string;
@@ -81,66 +81,31 @@ export function Sidebar() {
   const isDesktop = useIsDesktop();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [variant, setVariant] = useState<SidebarVariant>(getStoredVariant);
-  const [hoverExpanded, setHoverExpanded] = useState(false);
-  const enterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_VARIANT_KEY, variant);
   }, [variant]);
-
-  useEffect(() => {
-    return () => {
-      if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
-      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
-    };
-  }, []);
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleVariant = useCallback(() => {
     setVariant((v) => (v === 'glass-expanded' ? 'minimal-compact' : 'glass-expanded'));
   }, []);
 
-  const handleMouseEnter = useCallback(() => {
-    if (leaveTimerRef.current) {
-      clearTimeout(leaveTimerRef.current);
-      leaveTimerRef.current = null;
-    }
-    if (enterTimerRef.current) return;
-    enterTimerRef.current = setTimeout(() => {
-      setHoverExpanded(true);
-      enterTimerRef.current = null;
-    }, HOVER_EXPAND_DELAY_MS);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    if (enterTimerRef.current) {
-      clearTimeout(enterTimerRef.current);
-      enterTimerRef.current = null;
-    }
-    if (leaveTimerRef.current) return;
-    leaveTimerRef.current = setTimeout(() => {
-      setHoverExpanded(false);
-      leaveTimerRef.current = null;
-    }, HOVER_COLLAPSE_DELAY_MS);
-  }, []);
-
   const role = user?.role ?? 'STAFF';
   const items = getNavItems(role);
   const isCompact = variant === 'minimal-compact';
-  const isExpanded = !isCompact || hoverExpanded;
-  const effectiveVariant: SidebarVariant = isExpanded ? 'glass-expanded' : 'minimal-compact';
+  const isExpanded = !isCompact;
 
   const sidebarContent = (
     <>
       <div
         className={cn(
-          'shrink-0 border-b border-[var(--separator)] flex items-center',
+          'shrink-0 border-b border-(var(--separator)) flex items-center',
           !isExpanded ? 'justify-center p-3' : 'gap-3 p-5'
         )}
       >
         <div
-          className="w-8 h-8 rounded-[var(--radius-button)] flex items-center justify-center bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white shrink-0"
+          className="w-8 h-8 rounded-(var(--radius-button)) flex items-center justify-center bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white shrink-0"
           aria-hidden
         >
           <Zap className="w-5 h-5" />
@@ -152,7 +117,7 @@ export function Sidebar() {
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
               transition={{ duration: 0.2 }}
-              className="font-bold text-xl tracking-tight text-[var(--text-primary)] overflow-hidden whitespace-nowrap"
+              className="font-bold text-xl tracking-tight text-(--text-primary) overflow-hidden whitespace-nowrap"
             >
               AgentOs
             </motion.span>
@@ -170,7 +135,7 @@ export function Sidebar() {
             to={item.to}
             label={item.label}
             icon={item.icon}
-            variant={effectiveVariant}
+            variant={variant}
             onClick={closeMobile}
           />
         ))}
@@ -178,7 +143,7 @@ export function Sidebar() {
 
       <div
         className={cn(
-          'shrink-0 border-t border-[var(--separator)] flex flex-col gap-1',
+          'shrink-0 border-t border-(var(--separator)) flex flex-col gap-1',
           !isExpanded ? 'items-center p-2' : 'p-4'
         )}
       >
@@ -186,7 +151,7 @@ export function Sidebar() {
           type="button"
           onClick={toggleVariant}
           className={cn(
-            'flex items-center rounded-[var(--radius-nav)] transition-colors touch-manipulation text-[var(--text-muted)] hover:bg-[var(--sidebar-item-hover)] hover:text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]',
+            'flex items-center rounded-(var(--radius-nav)) transition-colors touch-manipulation text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]',
             !isExpanded ? 'justify-center p-2.5 min-w-[44px]' : 'gap-3 w-full px-4 py-2.5'
           )}
           aria-label={!isExpanded ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -205,7 +170,7 @@ export function Sidebar() {
           type="button"
           onClick={logout}
           className={cn(
-            'flex items-center transition-colors touch-manipulation text-[var(--text-muted)] hover:bg-[var(--sidebar-item-hover)] hover:text-[var(--error)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] rounded-[var(--radius-nav)]',
+            'flex items-center transition-colors touch-manipulation text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--error)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] rounded-(var(--radius-nav))',
             !isExpanded ? 'justify-center p-2.5 min-w-[44px]' : 'gap-3 w-full px-4 py-3'
           )}
           aria-label="Log out"
@@ -223,16 +188,16 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen((o) => !o)}
-        className="md:hidden fixed top-4 left-4 z-20 p-2 rounded-[var(--radius-nav)] bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2"
+        className="md:hidden fixed top-4 left-4 z-20 p-2 rounded-(var(--radius-nav)) bg-(var(--bg-card)) border border-(var(--border-subtle)) text-(var(--text-primary)) transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2"
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-        aria-expanded={mobileOpen}
+        {...(mobileOpen ? { 'aria-expanded': 'true' as const } : { 'aria-expanded': 'false' as const })}
       >
         {mobileOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       <div
         className={cn(
-          'md:hidden fixed inset-0 z-30 transition-opacity bg-[var(--overlay-bg)]',
+          'md:hidden fixed inset-0 z-30 transition-opacity bg-(var(--overlay-bg))',
           mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         aria-hidden
@@ -242,8 +207,8 @@ export function Sidebar() {
       <motion.aside
         className={cn(
           'h-screen flex flex-col shrink-0 fixed md:static inset-y-0 left-0 z-40',
-          'backdrop-blur-md bg-[var(--bg-sidebar)] border-r border-[var(--separator)]',
-          'overflow-hidden rounded-r-0 md:rounded-r-[var(--radius-card)]'
+          'backdrop-blur-md bg-(var(--bg-sidebar)) border-r border-(var(--separator))',
+          'overflow-hidden rounded-r-0 md:rounded-r-(var(--radius-card))'
         )}
         initial={false}
         animate={{
@@ -258,8 +223,6 @@ export function Sidebar() {
           width: { type: 'spring', stiffness: 300, damping: 30 },
           x: { type: 'spring', stiffness: 400, damping: 35 },
         }}
-        onMouseEnter={isDesktop && isCompact ? handleMouseEnter : undefined}
-        onMouseLeave={isDesktop && isCompact ? handleMouseLeave : undefined}
       >
         <div className="h-full flex flex-col min-w-0 w-full">{sidebarContent}</div>
       </motion.aside>

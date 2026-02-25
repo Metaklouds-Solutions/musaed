@@ -105,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
         onClick={() => setMobileOpen((o) => !o)}
         className="md:hidden fixed top-4 left-4 z-20 p-2 rounded-lg bg-card border border-border text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-        aria-expanded={mobileOpen}
+        {...(mobileOpen ? { 'aria-expanded': 'true' as const } : { 'aria-expanded': 'false' as const })}
       >
         {mobileOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
       {/* Sidebar: drawer on mobile, fixed on md+ */}
       <aside
         className={`
-          w-64 h-screen bg-card-dark border-r border-border-dark flex flex-col shrink-0
+          w-64 h-screen bg-card-dark flex flex-col shrink-0
           fixed md:static inset-y-0 left-0 z-40
           transform transition-transform duration-200 ease-out
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}

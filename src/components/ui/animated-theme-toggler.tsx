@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ButtonHTMLAttributes } from "react";
 import { Moon, Sun } from "lucide-react";
 import { flushSync } from "react-dom";
 
@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 
 export type Theme = "light" | "dark";
 
-interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"button"> {
+interface AnimatedThemeTogglerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
   duration?: number;
   /** Called after theme is applied so parent state can sync */
   onThemeToggle?: (nextTheme: Theme) => void;
@@ -90,7 +91,7 @@ export function AnimatedThemeToggler({
       type="button"
       onClick={toggleTheme}
       className={cn(
-        "p-2 rounded-[var(--radius-nav)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-[var(--text-muted)]",
+        "p-2 rounded-lg transition-colors hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-[var(--text-muted)]",
         className
       )}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
