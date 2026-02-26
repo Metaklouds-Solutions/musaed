@@ -1,0 +1,1 @@
+export { AdminRecentTenants } from './AdminRecentTenants';

@@ -2,9 +2,24 @@
  * Local dashboard adapter. Derived metrics from calls/bookings; filters by tenantId.
  */
 
-import { seedCalls } from '../../mock/seedData';
-import { seedBookings } from '../../mock/seedData';
-import type { DashboardMetrics, FunnelStage, TrendPoint } from '../../shared/types';
+import {
+  seedCalls,
+  seedBookings,
+  seedCredits,
+  seedVoiceAgents,
+  seedTenantMemberships,
+  seedSupportTickets,
+} from '../../mock/seedData';
+import type {
+  DashboardMetrics,
+  FunnelStage,
+  TrendPoint,
+  TenantKpis,
+  TenantAgentStatus,
+  TenantStaffCounts,
+  TenantOpenTicket,
+  TenantRecentCall,
+} from '../../shared/types';
 
 function filterByTenant<T extends { tenantId: string }>(items: T[], tenantId: string | undefined): T[] {
   if (tenantId == null) return items;

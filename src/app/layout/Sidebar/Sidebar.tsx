@@ -5,25 +5,12 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  LayoutDashboard,
-  Users,
-  Activity,
-  LogOut,
-  Zap,
-  Phone,
-  Calendar,
-  Menu,
-  X,
-  AlertCircle,
-  CreditCard,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { LogOut, Zap, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSession } from '../../session/SessionContext';
 import type { Role } from '../../../shared/types';
-import { SidebarItem } from './components/SidebarItem';
+import { SidebarItem, SidebarGroup } from './components';
+import { ADMIN_NAV, TENANT_NAV } from './navConfig';
 import { cn } from '@/lib/utils';
 import { FiSidebar } from 'react-icons/fi';
 
@@ -46,29 +33,8 @@ const SIDEBAR_VARIANT_KEY = 'clinic-crm-sidebar-variant';
 const WIDTH_EXPANDED = 240;
 const WIDTH_COMPACT = 72;
 
-interface NavItem {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-}
-
-const ADMIN_ITEMS: NavItem[] = [
-  { to: '/admin/overview', label: 'Platform Overview', icon: LayoutDashboard },
-  { to: '/admin/tenants', label: 'Tenants', icon: Users },
-  { to: '/admin/system', label: 'System Health', icon: Activity },
-];
-
-const TENANT_ITEMS: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/calls', label: 'Calls', icon: Phone },
-  { to: '/customers', label: 'Customers', icon: Users },
-  { to: '/bookings', label: 'Bookings', icon: Calendar },
-  { to: '/alerts', label: 'Alerts', icon: AlertCircle },
-  { to: '/billing', label: 'Billing', icon: CreditCard },
-];
-
-function getNavItems(role: Role): NavItem[] {
-  return role === 'ADMIN' ? ADMIN_ITEMS : TENANT_ITEMS;
+function getNavItems(role: Role) {
+  return role === 'ADMIN' ? ADMIN_NAV : TENANT_NAV;
 }
 
 function getStoredVariant(): SidebarVariant {
@@ -160,16 +126,25 @@ export function Sidebar() {
         className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto min-h-0"
         aria-label="Main navigation"
       >
-        {items.map((item) => (
-          <SidebarItem
-            key={item.to}
-            to={item.to}
-            label={item.label}
-            icon={item.icon}
-            variant={variant}
-            onClick={closeMobile}
-          />
-        ))}
+        {items.map((item) =>
+          item.children?.length ? (
+            <SidebarGroup
+              key={item.to}
+              item={item}
+              variant={variant}
+              onChildClick={closeMobile}
+            />
+          ) : (
+            <SidebarItem
+              key={item.to}
+              to={item.to}
+              label={item.label}
+              icon={item.icon}
+              variant={variant}
+              onClick={closeMobile}
+            />
+          )
+        )}
       </nav>
 
       <div

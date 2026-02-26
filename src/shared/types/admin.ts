@@ -66,3 +66,51 @@ export interface AdminOverviewMetrics {
   usageAnomalies: UsageAnomaly[];
   churnRiskList: ChurnRisk[];
 }
+
+/** Admin dashboard top KPIs. */
+export interface AdminKpis {
+  totalTenants: number;
+  activeTenants: number;
+  trialTenants: number;
+  suspendedTenants: number;
+  callsToday: number;
+  calls7d: number;
+  bookedPercent: number;
+  escalationPercent: number;
+  failedPercent: number;
+  totalCostUsd: number;
+}
+
+/** Recent tenant row for admin dashboard. */
+export interface AdminRecentTenant {
+  id: string;
+  name: string;
+  plan: string;
+  status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED';
+  createdAt: string;
+  onboardingProgress: number;
+}
+
+/** Support inbox snapshot for admin dashboard. */
+export interface AdminSupportSnapshot {
+  openCount: number;
+  criticalCount: number;
+  oldestWaitingDays: number;
+}
+
+/** Recent call row for admin dashboard (cross-tenant). */
+export interface AdminRecentCall {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  agentName: string;
+  outcome: 'booked' | 'escalated' | 'failed' | 'pending';
+  duration: number;
+  startedAt: string;
+}
+
+/** Extended system health with Retell and webhooks. */
+export interface AdminSystemHealthExtended extends SystemHealth {
+  retellSync: 'ok' | 'degraded' | 'error';
+  webhooks: 'ok' | 'degraded' | 'error';
+}

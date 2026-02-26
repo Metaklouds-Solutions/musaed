@@ -1,10 +1,40 @@
-export type { Role, User, Session } from './session';
-export type { Tenant, Agent, Customer, Call, Booking, Alert, Credits } from './entities';
-export type { DashboardMetrics, FunnelStage, TrendPoint } from './dashboard';
+export type { Role, User, Session, TenantRoleSlug } from './session';
+export type {
+  Tenant,
+  Agent,
+  Customer,
+  Call,
+  Booking,
+  Alert,
+  Credits,
+  TenantMembership,
+  StaffProfile,
+  VoiceAgent,
+  SupportTicket,
+  TicketMessage,
+  AgentRun,
+  RunEvent,
+  Skill,
+} from './entities';
+export type {
+  DashboardMetrics,
+  FunnelStage,
+  TrendPoint,
+  TenantKpis,
+  TenantAgentStatus,
+  TenantStaffCounts,
+  TenantOpenTicket,
+  TenantRecentCall,
+} from './dashboard';
 export type { BillingOverview } from './billing';
 export type {
   AdminOverviewMetrics,
   AdminTenantRow,
+  AdminKpis,
+  AdminRecentTenant,
+  AdminSupportSnapshot,
+  AdminRecentCall,
+  AdminSystemHealthExtended,
   SystemHealth,
   TenantPlan,
   PaymentFailure,

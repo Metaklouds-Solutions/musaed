@@ -3,11 +3,27 @@
  * No component may directly access this; use adapters only.
  */
 
-import type { Tenant, Agent, Customer, Call, Booking, Alert, Credits } from '../shared/types/entities';
+import type {
+  Tenant,
+  Agent,
+  Customer,
+  Call,
+  Booking,
+  Alert,
+  Credits,
+  SupportTicket,
+  VoiceAgent,
+} from '../shared/types/entities';
 
 export const seedTenants: Tenant[] = [
   { id: 't_001', name: 'Sunrise Clinic' },
   { id: 't_002', name: 'Metro Dental Group' },
+];
+
+/** Extended tenant data for admin dashboard (status, onboarding). */
+export const seedTenantExtended: { tenantId: string; status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED'; createdAt: string; onboardingStep: number }[] = [
+  { tenantId: 't_001', status: 'ACTIVE', createdAt: '2026-01-15T08:00:00Z', onboardingStep: 4 },
+  { tenantId: 't_002', status: 'TRIAL', createdAt: '2026-02-10T14:30:00Z', onboardingStep: 2 },
 ];
 
 export const seedAgents: Agent[] = [
@@ -125,4 +141,28 @@ export const seedUsageAnomalies: { id: string; tenantId: string; description: st
 /** Admin-only: churn risk indicators. */
 export const seedChurnRisk: { tenantId: string; reason: string; score: number }[] = [
   { tenantId: 't_001', reason: 'Low credit balance + payment failure', score: 72 },
+];
+
+/** Voice agents (Retell) per tenant for agent status card. */
+export const seedVoiceAgents: VoiceAgent[] = [
+  { id: 'va_001', tenantId: 't_001', externalAgentId: 'retell_abc', voice: 'Sarah', language: 'en-US', status: 'active', lastSyncedAt: '2026-02-27T10:00:00Z' },
+  { id: 'va_002', tenantId: 't_002', externalAgentId: 'retell_def', voice: 'James', language: 'en-GB', status: 'active', lastSyncedAt: '2026-02-27T09:30:00Z' },
+];
+
+/** Tenant memberships for staff counts by role. */
+export const seedTenantMemberships: { userId: string; tenantId: string; roleSlug: string; status: string }[] = [
+  { userId: 'u1', tenantId: 't_001', roleSlug: 'tenant_owner', status: 'active' },
+  { userId: 'u2', tenantId: 't_001', roleSlug: 'doctor', status: 'active' },
+  { userId: 'u3', tenantId: 't_001', roleSlug: 'receptionist', status: 'active' },
+  { userId: 'u4', tenantId: 't_001', roleSlug: 'receptionist', status: 'active' },
+  { userId: 'u5', tenantId: 't_002', roleSlug: 'tenant_owner', status: 'active' },
+  { userId: 'u6', tenantId: 't_002', roleSlug: 'doctor', status: 'active' },
+];
+
+/** Support tickets for admin dashboard snapshot and help center. */
+export const seedSupportTickets: SupportTicket[] = [
+  { id: 'st_001', tenantId: 't_001', title: 'Billing discrepancy', category: 'billing', status: 'open', priority: 'high', createdAt: '2026-02-25T09:00:00Z' },
+  { id: 'st_002', tenantId: 't_001', title: 'Agent not responding', category: 'technical', status: 'in_progress', priority: 'critical', createdAt: '2026-02-24T14:30:00Z' },
+  { id: 'st_003', tenantId: 't_002', title: 'Feature request', category: 'general', status: 'open', priority: 'low', createdAt: '2026-02-26T11:00:00Z' },
+  { id: 'st_004', tenantId: 't_002', title: 'Integration setup help', category: 'technical', status: 'resolved', priority: 'medium', createdAt: '2026-02-23T08:00:00Z' },
 ];
