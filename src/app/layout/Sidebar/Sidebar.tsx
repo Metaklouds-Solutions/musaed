@@ -25,6 +25,7 @@ import { useSession } from '../../session/SessionContext';
 import type { Role } from '../../../shared/types';
 import { SidebarItem } from './components/SidebarItem';
 import { cn } from '@/lib/utils';
+import { FiSidebar } from 'react-icons/fi';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -98,31 +99,61 @@ export function Sidebar() {
 
   const sidebarContent = (
     <>
+      {/* Logo area: when open — logo always visible, toggle on left at top on hover; when closed — hover hides logo and shows only expand icon */}
       <div
         className={cn(
-          'shrink-0 border-b border-(var(--separator)) flex items-center',
+          'group/logo shrink-0 border-b border-(var(--separator)) flex items-center relative',
           !isExpanded ? 'justify-center p-3' : 'gap-3 p-5'
         )}
       >
         <div
-          className="w-8 h-8 rounded-(var(--radius-button)) flex items-center justify-center bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white shrink-0"
-          aria-hidden
-        >
-          <Zap className="w-5 h-5" />
-        </div>
-        <AnimatePresence initial={false}>
-          {isExpanded && (
-            <motion.span
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.2 }}
-              className="font-bold text-xl tracking-tight text-(--text-primary) overflow-hidden whitespace-nowrap"
-            >
-              AgentOs
-            </motion.span>
+          className={cn(
+            'flex items-center gap-3 min-w-0 flex-1 opacity-100 transition-opacity duration-150 pointer-events-none',
+            !isExpanded && 'group-hover/logo:opacity-0'
           )}
-        </AnimatePresence>
+        >
+          <div
+            className="w-8 h-8 rounded-(var(--radius-button)) flex items-center justify-center bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white shrink-0"
+            aria-hidden
+          >
+            <Zap className="w-5 h-5" />
+          </div>
+          <AnimatePresence initial={false}>
+            {isExpanded && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="font-bold text-xl tracking-tight text-(--text-primary) overflow-hidden whitespace-nowrap"
+              >
+                AgentOs
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </div>
+        {/* Sidebar toggle: always visible */}
+        {isExpanded ? (
+          <button
+            type="button"
+            onClick={toggleVariant}
+            className="absolute right-3 top-3 p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar)"
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+          >
+            <FiSidebar size={18} aria-hidden />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={toggleVariant}
+            className="opacity-0 group-hover/logo:opacity-100 pointer-events-none group-hover/logo:pointer-events-auto p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) focus-visible:opacity-100 shrink-0"
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <FiSidebar size={18} aria-hidden />
+          </button>
+        )}
       </div>
 
       <nav
@@ -149,28 +180,9 @@ export function Sidebar() {
       >
         <button
           type="button"
-          onClick={toggleVariant}
-          className={cn(
-            'flex items-center rounded-(var(--radius-nav)) transition-colors touch-manipulation text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]',
-            !isExpanded ? 'justify-center p-2.5 min-w-[44px]' : 'gap-3 w-full px-4 py-2.5'
-          )}
-          aria-label={!isExpanded ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={!isExpanded ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {!isExpanded ? (
-            <ChevronRight size={20} aria-hidden className="shrink-0" />
-          ) : (
-            <>
-              <ChevronLeft size={20} aria-hidden className="shrink-0" />
-              <span className="font-medium text-sm">Collapse</span>
-            </>
-          )}
-        </button>
-        <button
-          type="button"
           onClick={logout}
           className={cn(
-            'flex items-center transition-colors touch-manipulation text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--error)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] rounded-(var(--radius-nav))',
+            'flex items-center transition-colors touch-manipulation cursor-pointer text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--error)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] rounded-(var(--radius-nav))',
             !isExpanded ? 'justify-center p-2.5 min-w-[44px]' : 'gap-3 w-full px-4 py-3'
           )}
           aria-label="Log out"

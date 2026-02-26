@@ -1,12 +1,14 @@
 /**
- * Hero metrics: total bookings, conversion, calls handled, escalation, cost saved. Adapter only; no revenue attribution.
+ * Hero metrics: total bookings, conversion, calls handled, escalation, cost saved.
+ * Uses StatCardEnhanced with sparklines and trend indicators.
  */
 
-import { StatCard } from '../../../../shared/ui';
-import type { DashboardMetrics } from '../../../../shared/types';
+import { StatCardEnhanced } from '../../../../shared/ui';
+import type { DashboardMetrics, TrendPoint } from '../../../../shared/types';
 
 interface HeroMetricsProps {
   metrics: DashboardMetrics | null | undefined;
+  trend?: TrendPoint[];
 }
 
 function formatCurrency(n: number): string {
@@ -15,6 +17,15 @@ function formatCurrency(n: number): string {
 
 function formatPercent(n: number): string {
   return `${n.toFixed(1)}%`;
+}
+
+function deriveTrend(points: TrendPoint[]): 'up' | 'down' | 'neutral' {
+  if (points.length < 2) return 'neutral';
+  const first = points[0].bookings;
+  const last = points[points.length - 1].bookings;
+  if (last > first) return 'up';
+  if (last < first) return 'down';
+  return 'neutral';
 }
 
 const EMPTY_METRICS: DashboardMetrics = {
@@ -26,15 +37,30 @@ const EMPTY_METRICS: DashboardMetrics = {
   aiConfidenceScore: 0,
 };
 
-export function HeroMetrics({ metrics }: HeroMetricsProps) {
+export function HeroMetrics({ metrics, trend = [] }: HeroMetricsProps) {
   const m = metrics ?? EMPTY_METRICS;
+  const sparklineData = trend.length > 0 ? trend.map((p) => p.bookings) : undefined;
+  const trendDir = deriveTrend(trend);
+
+  const cards = [
+    { label: 'Total bookings', value: m.totalBookings, trend: trendDir, sparklineData },
+    { label: 'Conversion rate', value: formatPercent(m.conversionRate), trend: undefined as const, sparklineData: undefined },
+    { label: 'Calls handled', value: m.callsHandled, trend: undefined as const, sparklineData: undefined },
+    { label: 'Escalation rate', value: formatPercent(m.escalationRate), trend: undefined as const, sparklineData: undefined },
+    { label: 'Cost saved', value: formatCurrency(m.costSaved), trend: trendDir, sparklineData },
+  ];
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      <StatCard label="Total bookings" value={m.totalBookings} />
-      <StatCard label="Conversion rate" value={formatPercent(m.conversionRate)} />
-      <StatCard label="Calls handled" value={m.callsHandled} />
-      <StatCard label="Escalation rate" value={formatPercent(m.escalationRate)} />
-      <StatCard label="Cost saved" value={formatCurrency(m.costSaved)} />
+      {cards.map((card, i) => (
+        <StatCardEnhanced
+          key={card.label}
+          label={card.label}
+          value={card.value}
+          trend={card.trend}
+          sparklineData={card.sparklineData}
+        />
+      ))}
     </div>
   );
 }
