@@ -12,6 +12,7 @@ import type {
   Alert,
   Credits,
   SupportTicket,
+  TicketMessage,
   VoiceAgent,
 } from '../shared/types/entities';
 
@@ -205,4 +206,16 @@ export const seedSupportTickets: SupportTicket[] = [
   { id: 'st_002', tenantId: 't_001', title: 'Agent not responding', category: 'technical', status: 'in_progress', priority: 'critical', createdAt: '2026-02-24T14:30:00Z' },
   { id: 'st_003', tenantId: 't_002', title: 'Feature request', category: 'general', status: 'open', priority: 'low', createdAt: '2026-02-26T11:00:00Z' },
   { id: 'st_004', tenantId: 't_002', title: 'Integration setup help', category: 'technical', status: 'resolved', priority: 'medium', createdAt: '2026-02-23T08:00:00Z' },
+];
+
+/** Ticket messages for chat thread. authorId = userId from seedStaffUsers or 'admin'. */
+export const seedTicketMessages: TicketMessage[] = [
+  { id: 'tm_001', ticketId: 'st_001', authorId: 'u1', body: 'We were charged twice for last month. Can you please look into this?', createdAt: '2026-02-25T09:00:00Z' },
+  { id: 'tm_002', ticketId: 'st_001', authorId: 'admin', body: 'Thanks for reaching out. I\'ve forwarded this to our billing team. They will respond within 24 hours.', createdAt: '2026-02-25T10:30:00Z' },
+  { id: 'tm_003', ticketId: 'st_002', authorId: 'u2', body: 'Our agent stopped responding to calls this morning. Status shows active but no inbound.', createdAt: '2026-02-24T14:30:00Z' },
+  { id: 'tm_004', ticketId: 'st_002', authorId: 'admin', body: 'Investigating. We\'ve restarted the agent instance. Please try again in 5 minutes.', createdAt: '2026-02-24T15:00:00Z' },
+  { id: 'tm_005', ticketId: 'st_003', authorId: 'u5', body: 'Would love to see bulk export of call transcripts. Is this on the roadmap?', createdAt: '2026-02-26T11:00:00Z' },
+  { id: 'tm_006', ticketId: 'st_004', authorId: 'u5', body: 'Need help connecting our calendar to the booking flow.', createdAt: '2026-02-23T08:00:00Z' },
+  { id: 'tm_007', ticketId: 'st_004', authorId: 'admin', body: 'Here\'s the integration guide: [link]. Let me know if you hit any issues.', createdAt: '2026-02-23T09:15:00Z' },
+  { id: 'tm_008', ticketId: 'st_004', authorId: 'u5', body: 'All set, thanks!', createdAt: '2026-02-23T14:00:00Z' },
 ];

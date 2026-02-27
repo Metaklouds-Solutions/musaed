@@ -27,6 +27,7 @@ export type {
   TenantRecentCall,
 } from './dashboard';
 export type { BillingOverview } from './billing';
+export type { OutcomeBreakdown, PerformanceMetrics } from './reports';
 export type { TenantDetail } from './tenants';
 export type { StaffRow } from './staff';
 export type { TenantAgentDetail } from './agent';

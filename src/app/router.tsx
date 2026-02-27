@@ -18,6 +18,8 @@ import { CallsPage, CallDetailPage } from '../modules/calls';
 import { BookingsPage } from '../modules/bookings';
 import { CustomersPage, CustomerDetailPage } from '../modules/customers';
 import { AlertsPage } from '../modules/alerts';
+import { HelpCenterPage, TicketDetailPage } from '../modules/help';
+import { ReportsPage } from '../modules/reports';
 import { BillingPage } from '../modules/billing';
 import {
   AdminOverviewPage,
@@ -26,6 +28,7 @@ import {
   AdminStaffPage,
   AdminAgentsPage,
   AdminAgentDetailPage,
+  AdminSupportPage,
   AdminSystemPage,
 } from '../modules/admin';
 
@@ -53,9 +56,9 @@ const router = createBrowserRouter([
               { path: 'calls/:id', element: <CallDetailPage /> },
               { path: 'agent', element: <AgentPage /> },
               { path: 'staff', element: <StaffPage /> },
-              { path: 'reports', element: <Placeholder title="Reports" description="Outcomes and performance metrics." /> },
-              { path: 'help', element: <Placeholder title="Help Center" description="Create ticket, my tickets." /> },
-              { path: 'help/tickets/:id', element: <Placeholder title="Ticket" description="Ticket chat thread." /> },
+              { path: 'reports', element: <ReportsPage /> },
+              { path: 'help', element: <HelpCenterPage /> },
+              { path: 'help/tickets/:id', element: <TicketDetailPage /> },
               { path: 'bookings', element: <BookingsPage /> },
               { path: 'customers', element: <CustomersPage /> },
               { path: 'customers/:id', element: <CustomerDetailPage /> },
@@ -75,7 +78,8 @@ const router = createBrowserRouter([
               { path: 'agents', element: <AdminAgentsPage /> },
               { path: 'agents/:id', element: <AdminAgentDetailPage /> },
               { path: 'staff', element: <AdminStaffPage /> },
-              { path: 'support', element: <Placeholder title="Support Inbox" description="Unified tickets, filters, assign." /> },
+              { path: 'support', element: <AdminSupportPage /> },
+              { path: 'support/:id', element: <AdminSupportPage /> },
               { path: 'calls', element: <Placeholder title="Calls" description="Cross-tenant call list." /> },
               { path: 'calls/:id', element: <Placeholder title="Call Detail" description="Transcript, outcome, recording." /> },
               { path: 'runs', element: <Placeholder title="Runs & Logs" description="Agent runs, cost view." /> },

@@ -1,4 +1,5 @@
 export { Button } from './Button';
+export { ViewButton } from './ViewButton';
 export { Card, CardHeader, CardBody, CardFooter } from './Card';
 export { MetricCard } from './MetricCard';
 export { Badge } from './Badge';

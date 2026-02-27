@@ -3,8 +3,7 @@
  */
 
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../../shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton } from '../../../../shared/ui';
 import type { AdminRecentCall } from '../../../../shared/types';
 
 interface AdminRecentCallsProps {
@@ -63,12 +62,7 @@ export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
     >
       <div className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Calls</h2>
-        <Link
-          to="/admin/calls"
-          className="text-sm font-medium text-[var(--ds-primary)] hover:underline"
-        >
-          View all
-        </Link>
+        <ViewButton to="/admin/calls">View all</ViewButton>
       </div>
       <Table>
         <TableHeader>

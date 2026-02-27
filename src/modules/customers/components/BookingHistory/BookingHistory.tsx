@@ -2,7 +2,7 @@
  * Booking history for a customer. Data from props only.
  */
 
-import { Link } from 'react-router-dom';
+import { ViewButton } from '../../../../shared/ui';
 import type { Booking } from '../../../../shared/types';
 
 interface BookingHistoryProps {
@@ -45,12 +45,9 @@ export function BookingHistory({ bookings }: BookingHistoryProps) {
             <span className="text-[var(--text-primary)]">{b.id}</span>
             <span className="text-[var(--text-muted)]">{formatDate(b.createdAt)}</span>
             {b.callId ? (
-              <Link
-                to={`/calls/${b.callId}`}
-                className="text-[var(--primary)] hover:underline shrink-0"
-              >
+              <ViewButton to={`/calls/${b.callId}`} aria-label="View call">
                 View call
-              </Link>
+              </ViewButton>
             ) : null}
           </li>
         ))}

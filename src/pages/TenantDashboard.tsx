@@ -6,6 +6,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { Phone, Calendar, TrendingUp, AlertTriangle, Clock, ChevronRight, PhoneMissed, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ViewButton } from '@/shared/ui';
 import type { CallSession, Booking } from '../types';
 
 export type DashboardTimeRange = 'today' | '7d' | '30d';
@@ -117,13 +118,7 @@ export const TenantDashboard: React.FC<TenantDashboardProps> = ({
         <Card className="card-elevated">
           <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base font-semibold">Recent Calls</CardTitle>
-            <button
-              type="button"
-              className="text-xs text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary rounded"
-              onClick={() => onNavigateToTab('calls')}
-            >
-              View All
-            </button>
+            <ViewButton onClick={() => onNavigateToTab('calls')}>View All</ViewButton>
           </CardHeader>
           <CardContent className="p-4 space-y-3">
             {filtered.sessions.slice(0, 5).map((session) => (
@@ -162,13 +157,7 @@ export const TenantDashboard: React.FC<TenantDashboardProps> = ({
         <Card className="card-elevated">
           <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base font-semibold">Recent Bookings</CardTitle>
-            <button
-              type="button"
-              className="text-xs text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary rounded"
-              onClick={() => onNavigateToTab('bookings')}
-            >
-              View All
-            </button>
+            <ViewButton onClick={() => onNavigateToTab('bookings')}>View All</ViewButton>
           </CardHeader>
           <CardContent className="p-4 space-y-3">
             {filtered.bookings.slice(0, 5).map((booking) => (

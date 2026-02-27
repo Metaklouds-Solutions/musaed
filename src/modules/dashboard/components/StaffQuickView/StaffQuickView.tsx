@@ -3,8 +3,8 @@
  */
 
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
 import { Users, Stethoscope, UserCircle } from 'lucide-react';
+import { ViewButton } from '../../../../shared/ui';
 import type { TenantStaffCounts } from '../../../../shared/types';
 
 interface StaffQuickViewProps {
@@ -21,9 +21,7 @@ export function StaffQuickView({ counts }: StaffQuickViewProps) {
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Staff Quick View</h2>
-        <Link to="/staff" className="text-sm font-medium text-[var(--ds-primary)] hover:underline">
-          View all
-        </Link>
+        <ViewButton to="/staff">View all</ViewButton>
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-lg bg-[var(--bg-elevated)] p-4 flex items-center gap-3">

@@ -10,6 +10,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  ViewButton,
 } from '../../../../shared/ui';
 import type { AdminAgentRow } from '../../../../shared/types';
 
@@ -74,12 +75,7 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
               </TableCell>
               <TableCell>
                 {a.tenantId ? (
-                  <Link
-                    to={`/admin/agents/${a.id}`}
-                    className="text-sm font-medium text-[var(--ds-primary)] hover:underline"
-                  >
-                    View
-                  </Link>
+                  <ViewButton to={`/admin/agents/${a.id}`} aria-label="View agent" />
                 ) : onAssignClick ? (
                   <button
                     type="button"

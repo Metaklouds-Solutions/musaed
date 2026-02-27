@@ -4,8 +4,8 @@
 
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Eye } from 'lucide-react';
-import { PageHeader, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '../../../shared/ui';
+import { UserPlus } from 'lucide-react';
+import { PageHeader, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button, ViewButton } from '../../../shared/ui';
 import { useAdminTenants } from '../hooks';
 import { AddTenantModal } from '../components/AddTenantModal';
 
@@ -55,14 +55,7 @@ export function AdminTenantsPage() {
                   <TableCell className="font-medium text-[var(--text-primary)]">{t.name}</TableCell>
                   <TableCell>{t.plan}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="secondary"
-                      onClick={handleView(t.id)}
-                      className="h-8 px-3 text-sm"
-                    >
-                      <Eye className="w-3.5 h-3.5" aria-hidden />
-                      View
-                    </Button>
+                    <ViewButton onClick={handleView(t.id)} aria-label="View tenant" />
                   </TableCell>
                 </TableRow>
               ))}

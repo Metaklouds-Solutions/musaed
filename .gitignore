@@ -8,3 +8,4 @@ coverage/
 !.env.example
 .cursor
 .agents
+cursor/reports/

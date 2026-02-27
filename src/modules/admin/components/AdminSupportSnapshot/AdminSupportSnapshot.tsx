@@ -3,8 +3,8 @@
  */
 
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
+import { ViewButton } from '../../../../shared/ui';
 import type { AdminSupportSnapshot } from '../../../../shared/types';
 
 interface AdminSupportSnapshotProps {
@@ -21,12 +21,7 @@ export function AdminSupportSnapshot({ snapshot }: AdminSupportSnapshotProps) {
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Support Inbox Snapshot</h2>
-        <Link
-          to="/admin/support"
-          className="text-sm font-medium text-[var(--ds-primary)] hover:underline"
-        >
-          View inbox
-        </Link>
+        <ViewButton to="/admin/support">View inbox</ViewButton>
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-lg bg-[var(--bg-elevated)] p-4">

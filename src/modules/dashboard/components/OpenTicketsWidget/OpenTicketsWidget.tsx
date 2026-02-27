@@ -4,6 +4,7 @@
 
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { ViewButton } from '../../../../shared/ui';
 import { HelpCircle } from 'lucide-react';
 import type { TenantOpenTicket } from '../../../../shared/types';
 
@@ -57,9 +58,7 @@ export function OpenTicketsWidget({ tickets }: OpenTicketsWidgetProps) {
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Support Tickets</h2>
-        <Link to="/help" className="text-sm font-medium text-[var(--ds-primary)] hover:underline">
-          View all
-        </Link>
+        <ViewButton to="/help">View all</ViewButton>
       </div>
       <div className="space-y-3">
         {tickets.map((t) => (

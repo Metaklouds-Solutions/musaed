@@ -447,7 +447,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-SUPPORT] Support / Help Center
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminSupportPage.tsx`
@@ -476,7 +476,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-REPORTS] Reports Module (Tenant)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/tenant/reports/pages/ReportsPage.tsx`

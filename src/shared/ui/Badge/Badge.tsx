@@ -7,7 +7,7 @@ import { type ReactNode } from 'react';
 import { CheckCircle, Clock, MinusCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type Status = 'active' | 'pending' | 'inactive' | 'error';
+type Status = 'active' | 'pending' | 'inactive' | 'error' | 'warning';
 
 const statusConfig: Record<
   Status,
@@ -21,6 +21,11 @@ const statusConfig: Record<
   pending: {
     bg: 'rgba(234, 179, 8, 0.1)',
     text: '#EAB308',
+    icon: Clock,
+  },
+  warning: {
+    bg: 'rgba(245, 158, 11, 0.1)',
+    text: '#F59E0B',
     icon: Clock,
   },
   inactive: {
@@ -42,7 +47,8 @@ interface BadgeProps {
 }
 
 export function Badge({ status, children, className }: BadgeProps) {
-  const { bg, text, icon: Icon } = statusConfig[status];
+  const config = statusConfig[status] ?? statusConfig.inactive;
+  const { bg, text, icon: Icon } = config;
   return (
     <span
       className={cn(

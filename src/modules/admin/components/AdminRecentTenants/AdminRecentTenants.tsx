@@ -4,7 +4,7 @@
 
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../../shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton } from '../../../../shared/ui';
 import { Badge } from '../../../../shared/ui';
 import type { AdminRecentTenant } from '../../../../shared/types';
 
@@ -44,12 +44,7 @@ export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
     >
       <div className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Tenants</h2>
-        <Link
-          to="/admin/tenants"
-          className="text-sm font-medium text-[var(--ds-primary)] hover:underline"
-        >
-          View all
-        </Link>
+        <ViewButton to="/admin/tenants">View all</ViewButton>
       </div>
       <Table>
         <TableHeader>

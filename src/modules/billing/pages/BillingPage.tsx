@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { PageHeader, StatCard, Button } from '../../../shared/ui';
+import { PageHeader, StatCard, Button, ViewButton } from '../../../shared/ui';
 import { useBilling } from '../hooks';
 
 function formatCurrency(n: number): string {
@@ -252,9 +252,7 @@ export function BillingPage() {
       <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">Recent Activity</h3>
-          <button className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-            View all
-          </button>
+          <ViewButton onClick={() => {}}>View all</ViewButton>
         </div>
         <div className="space-y-3">
           {[ 

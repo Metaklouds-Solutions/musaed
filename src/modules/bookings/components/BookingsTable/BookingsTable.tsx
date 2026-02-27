@@ -2,7 +2,6 @@
  * Bookings table. Data from props only; no adapter access.
  */
 
-import { Link } from 'react-router-dom';
 import {
   Table,
   TableHeader,
@@ -10,6 +9,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  ViewButton,
 } from '../../../../shared/ui';
 import type { Booking } from '../../../../shared/types';
 
@@ -61,12 +61,9 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
               </TableCell>
               <TableCell>
                 {b.callId ? (
-                  <Link
-                    to={`/calls/${b.callId}`}
-                    className="text-[var(--primary)] hover:underline text-sm font-medium"
-                  >
+                  <ViewButton to={`/calls/${b.callId}`} aria-label="View call">
                     View call
-                  </Link>
+                  </ViewButton>
                 ) : (
                   <span className="text-[var(--text-muted)]">—</span>
                 )}

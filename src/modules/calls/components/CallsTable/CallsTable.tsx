@@ -2,7 +2,6 @@
  * Calls table. Data from props only; no adapter access.
  */
 
-import { Link } from 'react-router-dom';
 import {
   Table,
   TableHeader,
@@ -10,6 +9,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  ViewButton,
 } from '../../../../shared/ui';
 import { SentimentBadge } from '../SentimentBadge';
 import type { Call } from '../../../../shared/types';
@@ -67,12 +67,7 @@ export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
                 )}
               </TableCell>
               <TableCell>
-                <Link
-                  to={`/calls/${call.id}`}
-                  className="text-[var(--primary)] hover:underline text-sm font-medium"
-                >
-                  View
-                </Link>
+                <ViewButton to={`/calls/${call.id}`} aria-label="View call" />
               </TableCell>
             </TableRow>
           ))}

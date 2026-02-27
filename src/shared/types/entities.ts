@@ -99,6 +99,8 @@ export interface SupportTicket {
   status: 'open' | 'in_progress' | 'resolved';
   priority: 'low' | 'medium' | 'high' | 'critical';
   createdAt: string;
+  /** Admin user ID when assigned. */
+  assignedTo?: string;
 }
 
 /** Message in a support ticket thread. */

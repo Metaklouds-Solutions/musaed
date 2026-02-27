@@ -2,7 +2,6 @@
  * Customers table. Data from props only; no adapter access.
  */
 
-import { Link } from 'react-router-dom';
 import {
   Table,
   TableHeader,
@@ -10,6 +9,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  ViewButton,
 } from '../../../../shared/ui';
 import type { Customer } from '../../../../shared/types';
 
@@ -39,12 +39,7 @@ export function CustomersTable({ customers }: CustomersTableProps) {
                 {c.email ?? '—'}
               </TableCell>
               <TableCell>
-                <Link
-                  to={`/customers/${c.id}`}
-                  className="text-[var(--primary)] hover:underline text-sm font-medium"
-                >
-                  View
-                </Link>
+                <ViewButton to={`/customers/${c.id}`} aria-label="View customer" />
               </TableCell>
             </TableRow>
           ))}

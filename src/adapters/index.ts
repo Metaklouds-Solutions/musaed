@@ -9,6 +9,8 @@ import * as localCustomers from './local/customers.adapter';
 import * as localAlerts from './local/alerts.adapter';
 import * as localBilling from './local/billing.adapter';
 import * as localStaff from './local/staff.adapter';
+import * as localSupport from './local/support.adapter';
+import * as localReports from './local/reports.adapter';
 import * as localAdmin from './local/admin.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
@@ -28,6 +30,8 @@ export const customersAdapter = isLocal ? localCustomers.customersAdapter : apiC
 export const alertsAdapter = isLocal ? localAlerts.alertsAdapter : apiAlerts.alertsAdapter;
 export const billingAdapter = isLocal ? localBilling.billingAdapter : apiBilling.billingAdapter;
 export const staffAdapter = isLocal ? localStaff.staffAdapter : localStaff.staffAdapter;
+export const supportAdapter = isLocal ? localSupport.supportAdapter : localSupport.supportAdapter;
+export const reportsAdapter = isLocal ? localReports.reportsAdapter : localReports.reportsAdapter;
 export const adminAdapter = isLocal ? localAdmin.adminAdapter : apiAdmin.adminAdapter;
 
 export type { DashboardMetrics, FunnelStage, TrendPoint } from '../shared/types';
