@@ -17,5 +17,10 @@ export function useReports(tenantId: string | undefined, dateRange?: DateRangeFi
     [tenantId, dateRange]
   );
 
-  return { outcomes, performance };
+  const outcomesByVersion = useMemo(
+    () => reportsAdapter.getOutcomesByVersion(tenantId, dateRange),
+    [tenantId, dateRange]
+  );
+
+  return { outcomes, performance, outcomesByVersion };
 }

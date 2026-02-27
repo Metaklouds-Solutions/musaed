@@ -19,9 +19,9 @@
 | Phase 5 (Guards) | ✅ DONE | — |
 | Phase 6 (Data) | ✅ DONE | — |
 | Phase 7A (Enhancements) | ✅ DONE | — |
-| Phase 7B–7C (Enhancements) | ⬜ TODO | — |
+| Phase 7B–7C (Enhancements) | ✅ DONE | — |
 
-**Say "Start Phase 7B" to continue.**
+**Phase 7C complete. See backlog for remaining enhancements.**
 
 ---
 
@@ -926,7 +926,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7C-PWA] PWA / Offline Support
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `vite.config.ts` (PWA plugin)
@@ -946,17 +946,18 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7C-AB-TESTING] A/B Testing for Agents
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
-- Agent settings: version A/B split config
-- Reports: comparison by agent version
-- `src/adapters/local/agents.adapter.ts` (extend)
+- Agent page: `AgentABTestSection` (version A/B split config)
+- Reports: `ABComparisonReport` (comparison by agent version)
+- `src/adapters/local/abTest.adapter.ts` (create)
+- `src/adapters/local/reports.adapter.ts` (extend getOutcomesByVersion)
 
 **Tasks:**
-1. Store agent version per call/run
-2. Split traffic config (e.g. 50/50)
-3. Comparison report: outcomes by version
+1. Store agent version per call/run ✅
+2. Split traffic config (e.g. 50/50) ✅
+3. Comparison report: outcomes by version ✅
 
 **Review checkpoint:** Admin can run A/B test and compare outcomes.
 

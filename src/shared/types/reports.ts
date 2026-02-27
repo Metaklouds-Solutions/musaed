@@ -18,3 +18,16 @@ export interface PerformanceMetrics {
   totalBookings: number;
   sentimentAvg: number;
 }
+
+/** A/B test comparison: outcomes by agent version. */
+export interface ABTestOutcomeRow {
+  version: string;
+  totalCalls: number;
+  booked: number;
+  escalated: number;
+  failed: number;
+  conversionRate: number;
+  escalationRate: number;
+  avgDurationSec: number;
+  sentimentAvg: number;
+}

@@ -8,6 +8,7 @@ import { PageHeader, EmptyState } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { OutcomeBreakdown } from '../components/OutcomeBreakdown';
 import { PerformanceMetrics } from '../components/PerformanceMetrics';
+import { ABComparisonReport } from '../components/ABComparisonReport/ABComparisonReport';
 import { useReports } from '../hooks/useReports';
 import { useSession } from '../../../app/session/SessionContext';
 
@@ -23,7 +24,7 @@ export function ReportsPage() {
   const tenantId = user?.tenantId;
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
-  const { outcomes, performance } = useReports(tenantId, dateRangeFilter);
+  const { outcomes, performance, outcomesByVersion } = useReports(tenantId, dateRangeFilter);
 
   if (!tenantId) {
     return (
@@ -57,6 +58,12 @@ export function ReportsPage() {
         <OutcomeBreakdown outcomes={outcomes} />
         <PerformanceMetrics metrics={performance} />
       </div>
+
+      {outcomesByVersion.length > 0 && (
+        <div className="mt-6">
+          <ABComparisonReport rows={outcomesByVersion} />
+        </div>
+      )}
     </div>
   );
 }

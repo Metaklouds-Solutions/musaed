@@ -37,6 +37,8 @@ export interface Call {
   bookingCreated: boolean;
   bookingId?: string;
   createdAt: string;
+  /** A/B test version (e.g. 'A' | 'B') when agent A/B testing is enabled. */
+  agentVersion?: string;
 }
 
 export interface Booking {
@@ -125,6 +127,8 @@ export interface AgentRun {
   tenantId: string;
   usage: { cost?: number; tokens?: number };
   startedAt: string;
+  /** A/B test version (e.g. 'A' | 'B') when agent A/B testing is enabled. */
+  agentVersion?: string;
 }
 
 /** Run event for debugging. */

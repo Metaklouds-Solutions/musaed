@@ -48,5 +48,8 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in"
+  },
+  "offline": {
+    "banner": "You're offline. Some features may be unavailable."
   }
 }

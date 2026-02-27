@@ -69,6 +69,7 @@ export const seedCalls: Call[] = [
     bookingCreated: true,
     bookingId: 'b_001',
     createdAt: '2026-02-20T10:00:00Z',
+    agentVersion: 'A',
   },
   {
     id: 'call_002',
@@ -80,6 +81,7 @@ export const seedCalls: Call[] = [
     escalationFlag: true,
     bookingCreated: false,
     createdAt: '2026-02-20T11:30:00Z',
+    agentVersion: 'B',
   },
   {
     id: 'call_003',
@@ -92,6 +94,7 @@ export const seedCalls: Call[] = [
     bookingCreated: true,
     bookingId: 'b_002',
     createdAt: '2026-02-21T09:15:00Z',
+    agentVersion: 'A',
   },
   {
     id: 'call_004',
@@ -104,6 +107,7 @@ export const seedCalls: Call[] = [
     bookingCreated: true,
     bookingId: 'b_003',
     createdAt: '2026-02-21T14:00:00Z',
+    agentVersion: 'B',
   },
   {
     id: 'call_005',
@@ -115,6 +119,7 @@ export const seedCalls: Call[] = [
     escalationFlag: true,
     bookingCreated: false,
     createdAt: '2026-02-22T08:45:00Z',
+    agentVersion: 'A',
   },
 ];
 
@@ -240,11 +245,11 @@ export const seedTicketMessages: TicketMessage[] = [
 
 /** Agent runs (AI execution per call). */
 export const seedAgentRuns: AgentRun[] = [
-  { id: 'run_001', callId: 'call_001', tenantId: 't_001', usage: { cost: 0.12, tokens: 2400 }, startedAt: '2026-02-20T10:00:00Z' },
-  { id: 'run_002', callId: 'call_002', tenantId: 't_001', usage: { cost: 0.09, tokens: 1800 }, startedAt: '2026-02-20T11:30:00Z' },
-  { id: 'run_003', callId: 'call_003', tenantId: 't_001', usage: { cost: 0.15, tokens: 3200 }, startedAt: '2026-02-21T09:15:00Z' },
-  { id: 'run_004', callId: 'call_004', tenantId: 't_002', usage: { cost: 0.10, tokens: 1950 }, startedAt: '2026-02-21T14:00:00Z' },
-  { id: 'run_005', callId: 'call_005', tenantId: 't_002', usage: { cost: 0.05, tokens: 900 }, startedAt: '2026-02-22T08:45:00Z' },
+  { id: 'run_001', callId: 'call_001', tenantId: 't_001', usage: { cost: 0.12, tokens: 2400 }, startedAt: '2026-02-20T10:00:00Z', agentVersion: 'A' },
+  { id: 'run_002', callId: 'call_002', tenantId: 't_001', usage: { cost: 0.09, tokens: 1800 }, startedAt: '2026-02-20T11:30:00Z', agentVersion: 'B' },
+  { id: 'run_003', callId: 'call_003', tenantId: 't_001', usage: { cost: 0.15, tokens: 3200 }, startedAt: '2026-02-21T09:15:00Z', agentVersion: 'A' },
+  { id: 'run_004', callId: 'call_004', tenantId: 't_002', usage: { cost: 0.10, tokens: 1950 }, startedAt: '2026-02-21T14:00:00Z', agentVersion: 'B' },
+  { id: 'run_005', callId: 'call_005', tenantId: 't_002', usage: { cost: 0.05, tokens: 900 }, startedAt: '2026-02-22T08:45:00Z', agentVersion: 'A' },
 ];
 
 /** Run events for debugging (step-by-step execution). */

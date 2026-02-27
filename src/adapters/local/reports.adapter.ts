@@ -25,7 +25,7 @@ const defaultScheduledConfig: ScheduledReportConfig = {
   dayOfWeek: 1,
   dayOfMonth: 1,
 };
-import type { OutcomeBreakdown, PerformanceMetrics } from '../../shared/types/reports';
+import type { OutcomeBreakdown, PerformanceMetrics, ABTestOutcomeRow } from '../../shared/types/reports';
 
 export interface DateRangeFilter {
   start: Date;
@@ -113,5 +113,37 @@ export const reportsAdapter = {
     } catch {
       // ignore
     }
+  },
+
+  /** A/B test comparison: outcomes by agent version. */
+  getOutcomesByVersion(tenantId: string | undefined, dateRange?: DateRangeFilter): ABTestOutcomeRow[] {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const byVersion = new Map<string, typeof calls>();
+    for (const c of calls) {
+      const v = c.agentVersion ?? 'default';
+      if (!byVersion.has(v)) byVersion.set(v, []);
+      byVersion.get(v)!.push(c);
+    }
+    const rows: ABTestOutcomeRow[] = [];
+    for (const [version, versionCalls] of byVersion) {
+      const total = versionCalls.length;
+      const booked = versionCalls.filter((c) => c.bookingCreated).length;
+      const escalated = versionCalls.filter((c) => c.escalationFlag && !c.bookingCreated).length;
+      const failed = total - booked - escalated;
+      const totalDuration = versionCalls.reduce((s, c) => s + c.duration, 0);
+      const totalSentiment = versionCalls.reduce((s, c) => s + c.sentimentScore, 0);
+      rows.push({
+        version,
+        totalCalls: total,
+        booked,
+        escalated,
+        failed,
+        conversionRate: total > 0 ? Math.round((booked / total) * 100) : 0,
+        escalationRate: total > 0 ? Math.round((escalated / total) * 100) : 0,
+        avgDurationSec: total > 0 ? Math.round(totalDuration / total) : 0,
+        sentimentAvg: total > 0 ? Math.round(totalSentiment / total * 100) / 100 : 0,
+      });
+    }
+    return rows.sort((a, b) => a.version.localeCompare(b.version));
   },
 };
