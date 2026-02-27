@@ -5,7 +5,6 @@
 
 import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
-import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,16 +59,13 @@ export function PopoverSelect({
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
-          onCloseAutoFocus={(e) => e.preventDefault()}
           sideOffset={4}
           align="start"
           className={cn(
             'z-50 min-w-[180px] max-h-[280px] overflow-y-auto',
             'rounded-[var(--radius-card)] card-glass border border-[var(--border-subtle)]',
             'p-2 shadow-lg',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'transition-all duration-200 ease-out',
             contentClassName
           )}
         >

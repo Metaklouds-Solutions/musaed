@@ -3,10 +3,11 @@
  */
 
 import { useState, useCallback } from 'react';
-import { UserPlus, Upload } from 'lucide-react';
+import { toast } from 'sonner';
+import { UserPlus, Upload, Download } from 'lucide-react';
 import { PageHeader, Button } from '../../../shared/ui';
 import { StaffTable, AddStaffModal, StaffFilters } from '../../shared/staff';
-import { staffAdapter } from '../../../adapters/local/staff.adapter';
+import { staffAdapter, exportAdapter } from '../../../adapters';
 import { useAdminStaff } from '../hooks';
 
 export function AdminStaffPage() {
@@ -24,8 +25,10 @@ export function AdminStaffPage() {
 
   const handleAddStaff = useCallback(
     (data: { name: string; email: string; roleSlug: string; tenantId: string }) => {
-      staffAdapter.add({ ...data, tenantId: data.tenantId });
+      const added = staffAdapter.add({ ...data, tenantId: data.tenantId });
       refetch();
+      if (added) toast.success('Staff added');
+      else toast.error('Failed to add staff');
     },
     [refetch]
   );
@@ -33,6 +36,18 @@ export function AdminStaffPage() {
   const handleImportCsv = useCallback(() => {
     alert('CSV import coming soon. Use Add Staff for now.');
   }, []);
+
+  const handleExport = useCallback(() => {
+    const rows = staff.map((s) => ({
+      Name: s.name,
+      Email: s.email,
+      Role: s.roleLabel,
+      Tenant: s.tenantName ?? s.tenantId,
+      Status: s.status,
+    }));
+    exportAdapter.exportCsv(rows, `staff-admin-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success('Staff exported');
+  }, [staff]);
 
   return (
     <div className="space-y-6">
@@ -49,6 +64,10 @@ export function AdminStaffPage() {
           >
             <Upload className="w-4 h-4" aria-hidden />
             Import CSV
+          </Button>
+          <Button variant="secondary" onClick={handleExport} className="shrink-0">
+            <Download className="w-4 h-4" aria-hidden />
+            Export CSV
           </Button>
           <Button
             onClick={() => setAddModalOpen(true)}

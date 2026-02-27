@@ -2,13 +2,15 @@
  * Tenant help center. Create ticket, my tickets list.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { PageHeader, Button, Modal, ModalHeader } from '../../../shared/ui';
 import { TicketList, CreateTicketForm } from '../../shared/support';
 import { useHelpCenter } from '../hooks/useHelpCenter';
 import { useSession } from '../../../app/session/SessionContext';
-import { Plus } from 'lucide-react';
+import { exportAdapter } from '../../../adapters';
+import { Plus, Download } from 'lucide-react';
 
 export function HelpCenterPage() {
   const navigate = useNavigate();
@@ -25,8 +27,25 @@ export function HelpCenterPage() {
   }) => {
     const ticket = createTicket(data);
     setCreateOpen(false);
-    if (ticket) navigate(`/help/tickets/${ticket.id}`);
+    if (ticket) {
+      toast.success('Ticket created');
+      navigate(`/help/tickets/${ticket.id}`);
+    } else {
+      toast.error('Failed to create ticket');
+    }
   };
+
+  const handleExport = useCallback(() => {
+    const rows = tickets.map((t) => ({
+      Title: t.title,
+      Category: t.category,
+      Status: t.status,
+      Priority: t.priority,
+      Created: new Date(t.createdAt).toLocaleDateString(),
+    }));
+    exportAdapter.exportCsv(rows, `my-tickets-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success('Tickets exported');
+  }, [tickets]);
 
   return (
     <div className="space-y-6">
@@ -35,10 +54,16 @@ export function HelpCenterPage() {
           title="Help Center"
           description="Create a ticket or view your support requests"
         />
-        <Button onClick={() => setCreateOpen(true)} className="shrink-0">
-          <Plus className="w-4 h-4" aria-hidden />
-          New Ticket
-        </Button>
+        <div className="flex gap-2 shrink-0">
+          <Button variant="secondary" onClick={handleExport}>
+            <Download className="w-4 h-4" aria-hidden />
+            Export CSV
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="w-4 h-4" aria-hidden />
+            New Ticket
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-[var(--radius-card)] card-glass p-4">

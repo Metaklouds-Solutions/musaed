@@ -4,7 +4,7 @@
 
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton } from '../../../../shared/ui';
+import { DataTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton, PillTag } from '../../../../shared/ui';
 import type { TenantRecentCall } from '../../../../shared/types';
 
 interface RecentCallsTableProps {
@@ -26,17 +26,14 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function OutcomeBadge({ outcome }: { outcome: TenantRecentCall['outcome'] }) {
-  const colors = {
-    booked: 'text-[var(--success)]',
-    escalated: 'text-[var(--warning)]',
-    failed: 'text-[var(--error)]',
-  };
-  return (
-    <span className={`font-medium capitalize ${colors[outcome]}`}>
-      {outcome}
-    </span>
-  );
+function OutcomePill({ outcome }: { outcome: TenantRecentCall['outcome'] }) {
+  const variant =
+    outcome === 'booked'
+      ? 'outcomeBooked'
+      : outcome === 'escalated'
+        ? 'outcomeEscalated'
+        : 'outcomeFailed';
+  return <PillTag variant={variant}>{outcome}</PillTag>;
 }
 
 export function RecentCallsTable({ calls }: RecentCallsTableProps) {
@@ -64,6 +61,7 @@ export function RecentCallsTable({ calls }: RecentCallsTableProps) {
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Calls</h2>
         <ViewButton to="/calls">View all</ViewButton>
       </div>
+      <DataTable minWidth="min-w-[400px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -77,7 +75,7 @@ export function RecentCallsTable({ calls }: RecentCallsTableProps) {
             <TableRow key={c.id}>
               <TableCell>
                 <Link to={`/calls/${c.id}`} className="font-medium text-[var(--ds-primary)] hover:underline">
-                  <OutcomeBadge outcome={c.outcome} />
+                  <OutcomePill outcome={c.outcome} />
                 </Link>
               </TableCell>
               <TableCell className="text-[var(--text-muted)]">{formatDuration(c.duration)}</TableCell>
@@ -86,6 +84,7 @@ export function RecentCallsTable({ calls }: RecentCallsTableProps) {
           ))}
         </TableBody>
       </Table>
+      </DataTable>
     </motion.section>
   );
 }

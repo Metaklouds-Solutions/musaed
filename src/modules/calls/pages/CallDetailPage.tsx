@@ -1,19 +1,36 @@
 /**
  * Call detail page. Layout only; data from useCallDetail hook.
+ * Run events (debug console) visible to auditors only.
  */
 
+import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { EmptyState, Button } from '../../../shared/ui';
 import { useCallDetail } from '../hooks';
+import { usePermissions } from '../../../shared/hooks/usePermissions';
+import { runsAdapter } from '../../../adapters';
 import { CallMetaPanel } from '../components/CallMetaPanel';
 import { TranscriptViewer } from '../components/TranscriptViewer';
 import { SentimentBadge } from '../components/SentimentBadge';
 import { AudioMockPlayer } from '../components/AudioMockPlayer';
+import { RunEventsViewer } from '../../admin/components/RunEventsViewer';
 import { Phone } from 'lucide-react';
 
 export function CallDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user, call, linkedBooking } = useCallDetail(id);
+  const { canAccessRunEvents } = usePermissions();
+  const runEvents = useMemo(
+    () =>
+      call && user?.tenantId && canAccessRunEvents
+        ? runsAdapter.getRunByCallId(call.id, user.tenantId)
+        : null,
+    [call, user?.tenantId, canAccessRunEvents]
+  );
+  const events = useMemo(
+    () => (runEvents ? runsAdapter.getRunEvents(runEvents.id) : []),
+    [runEvents]
+  );
 
   if (!user) {
     return (
@@ -95,6 +112,15 @@ export function CallDetailPage() {
         </div>
 
         <TranscriptViewer transcript={call.transcript} />
+
+        {canAccessRunEvents && (
+          <div>
+            <h3 className="text-base font-semibold text-[var(--text-primary)] mb-2">
+              Run events (auditor)
+            </h3>
+            <RunEventsViewer events={events} />
+          </div>
+        )}
       </div>
     </>
   );

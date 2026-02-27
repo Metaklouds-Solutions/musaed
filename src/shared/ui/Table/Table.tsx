@@ -42,7 +42,7 @@ export function TableHead({ className, ...props }: HTMLAttributes<HTMLTableCellE
   return (
     <th
       className={cn(
-        'text-left py-3 px-4 text-[var(--text-secondary)] text-sm font-medium border-b border-[var(--border-default)]',
+        'text-left py-3 px-4 sm:px-6 text-[var(--text-secondary)] text-sm font-medium border-b border-[var(--border-default)]',
         className
       )}
       {...props}
@@ -53,7 +53,7 @@ export function TableHead({ className, ...props }: HTMLAttributes<HTMLTableCellE
 export function TableCell({ className, ...props }: HTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
-      className={cn('py-3 px-4 text-[var(--text-primary)]', className)}
+      className={cn('py-3 px-4 sm:px-6 text-[var(--text-primary)]', className)}
       {...props}
     />
   );

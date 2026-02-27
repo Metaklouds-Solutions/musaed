@@ -21,6 +21,7 @@ import { AlertsPage } from '../modules/alerts';
 import { HelpCenterPage, TicketDetailPage } from '../modules/help';
 import { ReportsPage } from '../modules/reports';
 import { BillingPage } from '../modules/billing';
+import { SettingsPage } from '../modules/settings';
 import {
   AdminOverviewPage,
   AdminTenantsPage,
@@ -29,6 +30,11 @@ import {
   AdminAgentsPage,
   AdminAgentDetailPage,
   AdminSupportPage,
+  AdminRunsPage,
+  AdminRunDetailPage,
+  AdminSkillsPage,
+  AdminBillingPage,
+  AdminSettingsPage,
   AdminSystemPage,
 } from '../modules/admin';
 
@@ -64,7 +70,7 @@ const router = createBrowserRouter([
               { path: 'customers/:id', element: <CustomerDetailPage /> },
               { path: 'alerts', element: <AlertsPage /> },
               { path: 'billing', element: <BillingPage /> },
-              { path: 'settings', element: <Placeholder title="Settings" description="Clinic profile, business hours, notifications." /> },
+              { path: 'settings', element: <SettingsPage /> },
             ],
           },
           {
@@ -82,11 +88,11 @@ const router = createBrowserRouter([
               { path: 'support/:id', element: <AdminSupportPage /> },
               { path: 'calls', element: <Placeholder title="Calls" description="Cross-tenant call list." /> },
               { path: 'calls/:id', element: <Placeholder title="Call Detail" description="Transcript, outcome, recording." /> },
-              { path: 'runs', element: <Placeholder title="Runs & Logs" description="Agent runs, cost view." /> },
-              { path: 'runs/:id', element: <Placeholder title="Run Events" description="Debug console." /> },
-              { path: 'skills', element: <Placeholder title="Skills Catalog" description="Coming soon." /> },
-              { path: 'billing', element: <Placeholder title="Billing" description="Tenant plans, usage." /> },
-              { path: 'settings', element: <Placeholder title="Settings" description="Admin users, integrations, retention." /> },
+              { path: 'runs', element: <AdminRunsPage /> },
+              { path: 'runs/:id', element: <AdminRunDetailPage /> },
+              { path: 'skills', element: <AdminSkillsPage /> },
+              { path: 'billing', element: <AdminBillingPage /> },
+              { path: 'settings', element: <AdminSettingsPage /> },
               { path: 'system', element: <AdminSystemPage /> },
             ],
           },

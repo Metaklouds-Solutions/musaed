@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { PopoverSelect } from '../shared/ui';
 import type { CallSession } from '../types';
 import Search from 'lucide-react/dist/esm/icons/search';
 import Phone from 'lucide-react/dist/esm/icons/phone';
@@ -78,19 +79,20 @@ export const CallLogs: React.FC<CallLogsProps> = ({ sessions, onViewCall }) => {
           </div>
           <label className="flex items-center gap-2">
             <span className="text-sm text-zinc-500 shrink-0">Outcome</span>
-            <select
-              className="input-field text-sm w-full sm:w-32"
+            <PopoverSelect
               value={outcomeFilter}
-              onChange={(e) => setOutcomeFilter(e.target.value as OutcomeFilter)}
+              onChange={(v) => setOutcomeFilter(v as OutcomeFilter)}
+              options={[
+                { value: 'ALL', label: 'All' },
+                { value: 'BOOKED', label: 'Booked' },
+                { value: 'PENDING', label: 'Pending' },
+                { value: 'ESCALATED', label: 'Escalated' },
+                { value: 'DROPPED', label: 'Dropped' },
+                { value: 'FAILED', label: 'Failed' },
+              ]}
+              triggerClassName="text-sm w-full sm:w-32"
               aria-label="Filter by outcome"
-            >
-              <option value="ALL">All</option>
-              <option value="BOOKED">Booked</option>
-              <option value="PENDING">Pending</option>
-              <option value="ESCALATED">Escalated</option>
-              <option value="DROPPED">Dropped</option>
-              <option value="FAILED">Failed</option>
-            </select>
+            />
           </label>
         </div>
       </div>

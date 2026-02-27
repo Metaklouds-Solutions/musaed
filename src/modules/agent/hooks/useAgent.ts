@@ -4,7 +4,7 @@
 
 import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
-import { agentsAdapter } from '../../../adapters/local/agents.adapter';
+import { agentsAdapter } from '../../../adapters';
 
 export function useAgent() {
   const { user } = useSession();

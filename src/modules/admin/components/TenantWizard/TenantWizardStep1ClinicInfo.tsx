@@ -2,6 +2,8 @@
  * Step 1: Clinic info form. Name, owner, email, phone, address, timezone, plan, locale.
  */
 
+import { PopoverSelect } from '../../../../shared/ui';
+
 const PLAN_OPTIONS = ['STARTER', 'PRO', 'ENTERPRISE'];
 const TIMEZONE_OPTIONS = ['UTC', 'America/New_York', 'Europe/London', 'Asia/Karachi'];
 const LOCALE_OPTIONS = ['en-US', 'en-GB', 'ar-SA'];
@@ -115,25 +117,25 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <FormField label="Plan" id="plan">
-          <select id="plan" value={data.plan} onChange={(e) => set('plan')(e.target.value)} className={inputClass}>
-            {PLAN_OPTIONS.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
+          <PopoverSelect
+            value={data.plan}
+            onChange={(v) => set('plan')(v)}
+            options={PLAN_OPTIONS.map((p) => ({ value: p, label: p }))}
+          />
         </FormField>
         <FormField label="Timezone" id="timezone">
-          <select id="timezone" value={data.timezone} onChange={(e) => set('timezone')(e.target.value)} className={inputClass}>
-            {TIMEZONE_OPTIONS.map((tz) => (
-              <option key={tz} value={tz}>{tz}</option>
-            ))}
-          </select>
+          <PopoverSelect
+            value={data.timezone}
+            onChange={(v) => set('timezone')(v)}
+            options={TIMEZONE_OPTIONS.map((tz) => ({ value: tz, label: tz }))}
+          />
         </FormField>
         <FormField label="Locale" id="locale">
-          <select id="locale" value={data.locale} onChange={(e) => set('locale')(e.target.value)} className={inputClass}>
-            {LOCALE_OPTIONS.map((loc) => (
-              <option key={loc} value={loc}>{loc}</option>
-            ))}
-          </select>
+          <PopoverSelect
+            value={data.locale}
+            onChange={(v) => set('locale')(v)}
+            options={LOCALE_OPTIONS.map((loc) => ({ value: loc, label: loc }))}
+          />
         </FormField>
       </div>
     </div>

@@ -35,14 +35,14 @@ export function NotificationDrawer({
   const isEmpty = filtered.length === 0;
 
   return (
-    <Drawer open={open} onClose={onClose} title="Notifications" widthRem={22} side="right">
+    <Drawer open={open} onClose={onClose} title="Notifications" widthRem={24} side="right">
       <DrawerHeader title="Notifications" onClose={onClose} />
-      <div className="flex gap-1 px-5 py-3 border-b border-[var(--separator)]">
+      <div className="flex gap-2 px-4 sm:px-5 py-3 border-b border-[var(--separator)]">
         <button
           type="button"
           onClick={() => setFilter('all')}
           className={cn(
-            'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+            'flex-1 sm:flex-none px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm font-medium rounded-xl sm:rounded-lg transition-colors cursor-pointer',
             'focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]'
           )}
           style={
@@ -57,7 +57,7 @@ export function NotificationDrawer({
           type="button"
           onClick={() => setFilter('unread')}
           className={cn(
-            'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+            'flex-1 sm:flex-none px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm font-medium rounded-xl sm:rounded-lg transition-colors cursor-pointer',
             'focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]'
           )}
           style={
@@ -71,24 +71,24 @@ export function NotificationDrawer({
       </div>
       <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+          <div className="flex flex-col items-center justify-center py-16 sm:py-12 px-6 text-center">
             <div
-              className="w-14 h-14 rounded-xl flex items-center justify-center mb-4"
+              className="w-16 h-16 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-5 sm:mb-4"
               style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-subtle)',
               }}
             >
-              <Bell className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
+              <Bell className="w-8 h-8 sm:w-7 sm:h-7" style={{ color: 'var(--text-muted)' }} />
             </div>
             <p
-              className="text-sm font-medium"
+              className="text-base sm:text-sm font-semibold"
               style={{ color: 'var(--text-primary)' }}
             >
               No notifications
             </p>
             <p
-              className="mt-1 text-sm"
+              className="mt-2 text-sm"
               style={{ color: 'var(--text-muted)' }}
             >
               {filter === 'unread'
@@ -99,7 +99,7 @@ export function NotificationDrawer({
         ) : (
           <ul className="divide-y divide-[var(--separator)]">
             {filtered.map((item) => (
-              <li key={item.id} className="px-5 py-4">
+              <li key={item.id} className="px-4 sm:px-5 py-4 sm:py-4">
                 <div className="flex gap-3">
                   {item.unread && (
                     <span

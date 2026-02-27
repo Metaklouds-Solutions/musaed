@@ -241,6 +241,17 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Hide scrollbars site-wide — sidebar and content scroll but scrollbar hidden
+   --------------------------------------------------------------------------- */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
    Base: html, body, #root — Design.json typography (14px body, Inter)
    --------------------------------------------------------------------------- */
 @layer base {
@@ -263,6 +274,14 @@
     min-height: 100vh;
     background: var(--bg-base);
     color: var(--text-primary);
+  }
+
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    cursor: pointer;
   }
 
   :focus {
@@ -389,4 +408,72 @@
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+/* ---------------------------------------------------------------------------
+   Toast Pop — White/light background, colored icons, pill shape
+   --------------------------------------------------------------------------- */
+[data-sonner-toaster] [data-sonner-toast] {
+  --toast-success: var(--success);
+  --toast-warning: var(--warning);
+  --toast-error: var(--error);
+  --toast-info: var(--info);
+}
+
+.toast-pop {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 14px 18px !important;
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  color: var(--text-primary) !important;
+  min-width: 280px !important;
+  max-width: 400px !important;
+}
+
+/* Colored icons for each toast type */
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: var(--success) !important;
+}
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: var(--warning) !important;
+}
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: var(--error) !important;
+}
+[data-sonner-toast][data-type="info"] [data-icon] {
+  color: var(--info) !important;
+}
+
+.toast-pop-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.toast-pop-title {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: var(--text-primary) !important;
+}
+
+.toast-pop-desc {
+  font-size: 12px !important;
+  color: var(--text-muted) !important;
+  margin-top: 2px !important;
+}
+
+.toast-pop-close {
+  color: var(--text-muted) !important;
+  opacity: 0.7 !important;
+  padding: 4px !important;
+  border-radius: 6px !important;
+}
+.toast-pop-close:hover {
+  opacity: 1 !important;
+  background: var(--bg-hover) !important;
 }

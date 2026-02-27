@@ -1,8 +1,10 @@
 /**
  * Calls table. Data from props only; no adapter access.
+ * Responsive with DataTable, PillTag for booking outcome.
  */
 
 import {
+  DataTable,
   Table,
   TableHeader,
   TableBody,
@@ -10,6 +12,7 @@ import {
   TableHead,
   TableCell,
   ViewButton,
+  PillTag,
 } from '../../../../shared/ui';
 import { SentimentBadge } from '../SentimentBadge';
 import type { Call } from '../../../../shared/types';
@@ -36,7 +39,7 @@ function formatDate(iso: string): string {
 export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
   if (calls.length === 0) return null;
   return (
-    <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
+    <DataTable minWidth="min-w-[640px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -61,7 +64,7 @@ export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
               </TableCell>
               <TableCell>
                 {call.bookingCreated ? (
-                  <span className="text-[var(--success)]">Yes</span>
+                  <PillTag variant="status">Booked</PillTag>
                 ) : (
                   <span className="text-[var(--text-muted)]">—</span>
                 )}
@@ -73,6 +76,6 @@ export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </DataTable>
   );
 }

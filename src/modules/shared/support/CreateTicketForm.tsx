@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { Button } from '../../../shared/ui';
+import { Button, PopoverSelect } from '../../../shared/ui';
 import type { SupportTicket } from '../../../shared/types/entities';
 
 const inputClass =
@@ -73,27 +73,19 @@ export function CreateTicketForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Category</label>
-          <select
+          <PopoverSelect
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className={inputClass}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
+            onChange={setCategory}
+            options={CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+          />
         </div>
         <div>
           <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Priority</label>
-          <select
+          <PopoverSelect
             value={priority}
-            onChange={(e) => setPriority(e.target.value as SupportTicket['priority'])}
-            className={inputClass}
-          >
-            {PRIORITIES.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
+            onChange={(v) => setPriority(v as SupportTicket['priority'])}
+            options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
+          />
         </div>
       </div>
       <div>

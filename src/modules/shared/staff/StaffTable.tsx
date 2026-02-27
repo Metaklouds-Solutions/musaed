@@ -1,8 +1,10 @@
 /**
  * Shared staff table. Admin shows tenant column; tenant view hides it.
+ * Responsive with DataTable, Avatar, PillTag, StatusDot.
  */
 
 import {
+  DataTable,
   Table,
   TableHeader,
   TableBody,
@@ -28,12 +30,11 @@ export function StaffTable({ staff, showTenant = false }: StaffTableProps) {
   }
 
   return (
-    <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
+    <DataTable minWidth="min-w-[640px]">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
             {showTenant && <TableHead>Tenant</TableHead>}
             <TableHead>Status</TableHead>
@@ -45,6 +46,6 @@ export function StaffTable({ staff, showTenant = false }: StaffTableProps) {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </DataTable>
   );
 }

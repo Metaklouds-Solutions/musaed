@@ -1,5 +1,6 @@
 /**
  * Local dashboard adapter. Derived metrics from calls/bookings; filters by tenantId.
+ * Optional dateRange filters by createdAt.
  */
 
 import {
@@ -21,18 +22,33 @@ import type {
   TenantRecentCall,
 } from '../../shared/types';
 
+export interface DateRangeFilter {
+  start: Date;
+  end: Date;
+}
+
 function filterByTenant<T extends { tenantId: string }>(items: T[], tenantId: string | undefined): T[] {
   if (tenantId == null) return items;
   return items.filter((x) => x.tenantId === tenantId);
+}
+
+function filterByDateRange<T extends { createdAt: string }>(items: T[], range?: DateRangeFilter): T[] {
+  if (!range) return items;
+  const startMs = range.start.getTime();
+  const endMs = range.end.getTime() + 86400000;
+  return items.filter((c) => {
+    const ms = new Date(c.createdAt).getTime();
+    return ms >= startMs && ms < endMs;
+  });
 }
 
 const COST_PER_MINUTE_HUMAN = 0.15;
 const COST_PER_MINUTE_AI = 0.02;
 
 export const dashboardAdapter = {
-  getMetrics(tenantId: string | undefined): DashboardMetrics {
-    const calls = filterByTenant(seedCalls, tenantId);
-    const bookings = filterByTenant(seedBookings, tenantId);
+  getMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): DashboardMetrics {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
     const totalCalls = calls.length;
     const totalMinutes = calls.reduce((s, c) => s + c.duration / 60, 0);
     const totalBookings = bookings.length;
@@ -53,9 +69,9 @@ export const dashboardAdapter = {
       aiConfidenceScore,
     };
   },
-  getFunnel(tenantId: string | undefined): FunnelStage[] {
-    const calls = filterByTenant(seedCalls, tenantId);
-    const bookings = filterByTenant(seedBookings, tenantId);
+  getFunnel(tenantId: string | undefined, dateRange?: DateRangeFilter): FunnelStage[] {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
     const withBooking = calls.filter((c) => c.bookingCreated).length;
     return [
       { stage: 'Calls', count: calls.length },
@@ -63,8 +79,8 @@ export const dashboardAdapter = {
       { stage: 'Confirmed', count: bookings.length },
     ];
   },
-  getTrend(tenantId: string | undefined): TrendPoint[] {
-    const bookings = filterByTenant(seedBookings, tenantId);
+  getTrend(tenantId: string | undefined, dateRange?: DateRangeFilter): TrendPoint[] {
+    const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
     const byDate = new Map<string, number>();
     for (const b of bookings) {
       const date = b.createdAt.slice(0, 10);
@@ -75,8 +91,8 @@ export const dashboardAdapter = {
   },
 
   /** Tenant dashboard KPIs. */
-  getTenantKpis(tenantId: string | undefined): TenantKpis {
-    const calls = filterByTenant(seedCalls, tenantId);
+  getTenantKpis(tenantId: string | undefined, dateRange?: DateRangeFilter): TenantKpis {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
     const credits = tenantId ? seedCredits.find((c) => c.tenantId === tenantId) : null;
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
@@ -149,8 +165,8 @@ export const dashboardAdapter = {
   },
 
   /** Recent calls for tenant. */
-  getTenantRecentCalls(tenantId: string | undefined, limit = 10): TenantRecentCall[] {
-    return filterByTenant(seedCalls, tenantId)
+  getTenantRecentCalls(tenantId: string | undefined, limit = 10, dateRange?: DateRangeFilter): TenantRecentCall[] {
+    return filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange)
       .map((c) => ({
         id: c.id,
         outcome: (c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed') as TenantRecentCall['outcome'],

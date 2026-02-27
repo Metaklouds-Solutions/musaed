@@ -1,7 +1,9 @@
 /**
  * Staff filters. Tenant dropdown for admin; role filter optional.
+ * Uses PopoverSelect for smooth dropdown UX.
  */
 
+import { PopoverSelect } from '../../../shared/ui';
 import type { AdminTenantRow } from '../../../shared/types';
 
 interface StaffFiltersProps {
@@ -28,30 +30,32 @@ export function StaffFilters({
   onRoleChange,
   showTenantFilter = false,
 }: StaffFiltersProps) {
+  const tenantOptions = [
+    { value: '', label: 'All tenants' },
+    ...tenants.map((t) => ({ value: t.id, label: t.name })),
+  ];
+
+  const roleOptions = ROLES.map((r) => ({ value: r.value, label: r.label }));
+
   return (
     <div className="flex flex-wrap gap-3">
       {showTenantFilter && tenants.length > 0 && (
-        <select
+        <PopoverSelect
           value={selectedTenantId ?? ''}
-          onChange={(e) => onTenantChange(e.target.value || null)}
-          className="px-4 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-sm"
-        >
-          <option value="">All tenants</option>
-          {tenants.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </select>
+          onChange={(v) => onTenantChange(v || null)}
+          options={tenantOptions}
+          title="Tenant"
+          aria-label="Filter by tenant"
+        />
       )}
       {onRoleChange && (
-        <select
+        <PopoverSelect
           value={roleFilter ?? ''}
-          onChange={(e) => onRoleChange(e.target.value || null)}
-          className="px-4 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-sm"
-        >
-          {ROLES.map((r) => (
-            <option key={r.value || 'all'} value={r.value}>{r.label}</option>
-          ))}
-        </select>
+          onChange={(v) => onRoleChange(v || null)}
+          options={roleOptions}
+          title="Role"
+          aria-label="Filter by role"
+        />
       )}
     </div>
   );

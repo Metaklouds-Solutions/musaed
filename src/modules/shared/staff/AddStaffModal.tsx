@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Modal, ModalHeader } from '../../../shared/ui';
+import { Modal, ModalHeader, PopoverSelect } from '../../../shared/ui';
 import { AddStaffForm } from './AddStaffForm';
 
 const inputClass =
@@ -49,16 +49,13 @@ export function AddStaffModal({
         {showTenantSelect && tenants.length > 0 && (
           <div>
             <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Tenant *</label>
-            <select
+            <PopoverSelect
               value={selectedTenantId}
-              onChange={(e) => setSelectedTenantId(e.target.value)}
-              className={inputClass}
+              onChange={setSelectedTenantId}
+              options={tenants.map((t) => ({ value: t.id, label: t.name }))}
+              placeholder="Select tenant"
               aria-label="Select tenant"
-            >
-              {tenants.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+            />
           </div>
         )}
         <AddStaffForm

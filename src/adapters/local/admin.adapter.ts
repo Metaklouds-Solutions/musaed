@@ -25,6 +25,7 @@ import type {
   AdminSupportSnapshot,
   AdminRecentCall,
   AdminSystemHealthExtended,
+  AdminBillingRow,
   SystemHealth,
   PaymentFailure,
   PlanDistributionItem,
@@ -195,6 +196,25 @@ export const adminAdapter = {
       })
       .sort((a, b) => (b.startedAt > a.startedAt ? 1 : -1))
       .slice(0, limit);
+  },
+
+  /** Admin billing: cross-tenant plans + usage. */
+  getBillingOverview(): AdminBillingRow[] {
+    const RATE_PER_MINUTE = 0.02;
+    return seedTenants.map((t) => {
+      const planRow = seedTenantPlans.find((p) => p.tenantId === t.id);
+      const credits = seedCredits.find((c) => c.tenantId === t.id);
+      const minutesUsed = credits?.minutesUsed ?? 0;
+      return {
+        tenantId: t.id,
+        tenantName: t.name,
+        plan: planRow?.plan ?? '—',
+        mrr: planRow?.mrr ?? 0,
+        minutesUsed,
+        creditBalance: credits?.balance ?? 0,
+        usageCostUsd: minutesUsed * RATE_PER_MINUTE,
+      };
+    });
   },
 
   /** Admin dashboard: extended system health (Retell, webhooks). */

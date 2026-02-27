@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { LogOut, Zap, Menu, X } from 'lucide-react';
+import { Zap, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSession } from '../../session/SessionContext';
 import type { Role } from '../../../shared/types';
@@ -44,7 +44,7 @@ function getStoredVariant(): SidebarVariant {
 }
 
 export function Sidebar() {
-  const { user, logout } = useSession();
+  const { user } = useSession();
   const isDesktop = useIsDesktop();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [variant, setVariant] = useState<SidebarVariant>(getStoredVariant);
@@ -98,28 +98,30 @@ export function Sidebar() {
             )}
           </AnimatePresence>
         </div>
-        {/* Sidebar toggle: always visible */}
-        {isExpanded ? (
-          <button
-            type="button"
-            onClick={toggleVariant}
-            className="absolute right-3 top-3 p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar)"
-            aria-label="Collapse sidebar"
-            title="Collapse sidebar"
-          >
-            <FiSidebar size={18} aria-hidden />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={toggleVariant}
-            className="opacity-0 group-hover/logo:opacity-100 pointer-events-none group-hover/logo:pointer-events-auto p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) focus-visible:opacity-100 shrink-0"
-            aria-label="Expand sidebar"
-            title="Expand sidebar"
-          >
-            <FiSidebar size={18} aria-hidden />
-          </button>
-        )}
+        {/* Sidebar toggle: desktop only (hidden on mobile) */}
+        <div className="hidden md:block">
+          {isExpanded ? (
+            <button
+              type="button"
+              onClick={toggleVariant}
+              className="absolute right-3 top-3 p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) cursor-pointer"
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+            >
+              <FiSidebar size={18} aria-hidden />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={toggleVariant}
+              className="opacity-0 group-hover/logo:opacity-100 pointer-events-none group-hover/logo:pointer-events-auto p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) focus-visible:opacity-100 shrink-0 cursor-pointer"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <FiSidebar size={18} aria-hidden />
+            </button>
+          )}
+        </div>
       </div>
 
       <nav
@@ -147,26 +149,6 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div
-        className={cn(
-          'shrink-0 border-t border-(var(--separator)) flex flex-col gap-1',
-          !isExpanded ? 'items-center p-2' : 'p-4'
-        )}
-      >
-        <button
-          type="button"
-          onClick={logout}
-          className={cn(
-            'flex items-center transition-colors touch-manipulation cursor-pointer text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--error)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] rounded-(var(--radius-nav))',
-            !isExpanded ? 'justify-center p-2.5 min-w-[44px]' : 'gap-3 w-full px-4 py-3'
-          )}
-          aria-label="Log out"
-          title="Log out"
-        >
-          <LogOut size={20} aria-hidden className="shrink-0" />
-          {isExpanded && <span className="font-medium">Logout</span>}
-        </button>
-      </div>
     </>
   );
 
@@ -175,7 +157,7 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen((o) => !o)}
-        className="md:hidden fixed top-4 left-4 z-20 p-2 rounded-(var(--radius-nav)) bg-(var(--bg-card)) border border-(var(--border-subtle)) text-(var(--text-primary)) transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2"
+        className="md:hidden fixed top-4 left-4 z-20 p-2 rounded-(var(--radius-nav)) bg-(var(--bg-card)) border border-(var(--border-subtle)) text-(var(--text-primary)) transition-colors focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2"
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         {...(mobileOpen ? { 'aria-expanded': 'true' as const } : { 'aria-expanded': 'false' as const })}
       >
@@ -193,9 +175,11 @@ export function Sidebar() {
 
       <motion.aside
         className={cn(
-          'h-screen flex flex-col shrink-0 fixed md:static inset-y-0 left-0 z-40',
-          'backdrop-blur-md bg-(var(--bg-sidebar)) border-r border-(var(--separator))',
-          'overflow-hidden rounded-r-0 md:rounded-r-(var(--radius-card))'
+          'flex flex-col shrink-0 fixed md:static z-40',
+          'top-3 left-3 bottom-3 md:top-auto md:left-auto md:bottom-auto md:inset-auto',
+          'h-[calc(100vh-24px)] md:h-full',
+          'bg-(var(--bg-sidebar)) md:backdrop-blur-md border-r border-(var(--separator))',
+          'overflow-hidden rounded-2xl'
         )}
         initial={false}
         animate={{

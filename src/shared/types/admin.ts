@@ -141,3 +141,14 @@ export interface AdminSystemHealthExtended extends SystemHealth {
   retellSync: 'ok' | 'degraded' | 'error';
   webhooks: 'ok' | 'degraded' | 'error';
 }
+
+/** Admin billing: tenant plans + usage for cross-tenant billing overview. */
+export interface AdminBillingRow {
+  tenantId: string;
+  tenantName: string;
+  plan: string;
+  mrr: number;
+  minutesUsed: number;
+  creditBalance: number;
+  usageCostUsd: number;
+}

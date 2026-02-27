@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Bot, RefreshCw, Sparkles } from 'lucide-react';
 import { PageHeader } from '../../../shared/ui';
-import { agentsAdapter } from '../../../adapters/local/agents.adapter';
+import { agentsAdapter } from '../../../adapters';
 import { useParams } from 'react-router-dom';
 
 function formatRelativeTime(iso: string): string {

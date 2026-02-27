@@ -26,7 +26,7 @@ interface ViewButtonAsButton extends ViewButtonBaseProps {
 type ViewButtonProps = ViewButtonAsLink | ViewButtonAsButton;
 
 const viewButtonClasses =
-  'inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium ' +
+  'inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium min-h-[44px] min-w-[44px] touch-manipulation ' +
   'transition-colors transition-shadow duration-200 ' +
   'bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-sm ' +
   'dark:bg-[#2B3342] dark:text-white dark:border-[rgba(255,255,255,0.1)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] ' +

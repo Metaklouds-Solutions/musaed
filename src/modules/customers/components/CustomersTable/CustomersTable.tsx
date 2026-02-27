@@ -1,8 +1,10 @@
 /**
  * Customers table. Data from props only; no adapter access.
+ * Responsive with DataTable, Avatar.
  */
 
 import {
+  DataTable,
   Table,
   TableHeader,
   TableBody,
@@ -10,6 +12,7 @@ import {
   TableHead,
   TableCell,
   ViewButton,
+  Avatar,
 } from '../../../../shared/ui';
 import type { Customer } from '../../../../shared/types';
 
@@ -20,20 +23,25 @@ interface CustomersTableProps {
 export function CustomersTable({ customers }: CustomersTableProps) {
   if (customers.length === 0) return null;
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-card)]">
+    <DataTable minWidth="min-w-[640px]">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead aria-hidden />
+            <TableHead className="w-[80px] min-w-[80px]" aria-hidden />
           </TableRow>
         </TableHeader>
         <TableBody>
           {customers.map((c) => (
             <TableRow key={c.id}>
-              <TableCell className="font-medium text-[var(--text-primary)]">
-                {c.name}
+              <TableCell>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar name={c.name} size="md" />
+                  <span className="font-medium text-[var(--text-primary)] truncate">
+                    {c.name}
+                  </span>
+                </div>
               </TableCell>
               <TableCell className="text-[var(--text-secondary)] text-sm">
                 {c.email ?? '—'}
@@ -45,6 +53,6 @@ export function CustomersTable({ customers }: CustomersTableProps) {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </DataTable>
   );
 }

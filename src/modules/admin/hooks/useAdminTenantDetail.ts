@@ -4,7 +4,7 @@
 
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { tenantsAdapter } from '../../../adapters/local/tenants.adapter';
+import { tenantsAdapter } from '../../../adapters';
 import type { TenantDetail } from '../../../shared/types';
 
 export function useAdminTenantDetail(): {

@@ -121,15 +121,17 @@ export function Drawer({
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'fixed inset-y-0 z-50 flex flex-col overflow-hidden ease-out transition-transform',
+          'fixed z-50 flex flex-col overflow-hidden ease-out transition-transform rounded-2xl',
+          'border border-[var(--glass-panel-border)]',
           side === 'left'
-            ? 'left-0 border-r border-[var(--glass-panel-border)]'
-            : 'right-0 border-l border-[var(--glass-panel-border)]',
+            ? 'left-3 top-3 bottom-3'
+            : 'right-3 top-3 bottom-3 left-[auto]',
           className
         )}
         style={{
-          width: `${widthRem}rem`,
-          maxWidth: '100vw',
+          width: `min(${widthRem}rem, calc(100vw - 1.5rem))`,
+          maxWidth: 'calc(100vw - 1.5rem)',
+          minHeight: 'min(400px, calc(100vh - 1.5rem))',
           background: 'var(--glass-panel-bg)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
@@ -137,7 +139,7 @@ export function Drawer({
           transform:
             side === 'left'
               ? open ? 'translateX(0)' : 'translateX(-100%)'
-              : open ? 'translateX(0)' : 'translateX(100%)',
+              : open ? 'translateX(0)' : 'translateX(calc(100% + 1rem))',
           transitionDuration: open ? `${DRAWER_OPEN_MS}ms` : `${DRAWER_CLOSE_MS}ms`,
           transitionTimingFunction: open ? 'ease-out' : 'ease-in',
         }}
@@ -175,7 +177,7 @@ export function DrawerHeader({
       <button
         type="button"
         onClick={onClose}
-        className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+        className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] cursor-pointer"
         style={{ color: 'var(--text-muted)' }}
         aria-label="Close"
       >

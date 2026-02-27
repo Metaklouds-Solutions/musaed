@@ -3,10 +3,11 @@
  */
 
 import { useState, useCallback } from 'react';
-import { UserPlus, Upload } from 'lucide-react';
+import { toast } from 'sonner';
+import { UserPlus, Upload, Download } from 'lucide-react';
 import { PageHeader, Button } from '../../../shared/ui';
 import { StaffTable, AddStaffModal } from '../../shared/staff';
-import { staffAdapter } from '../../../adapters/local/staff.adapter';
+import { staffAdapter, exportAdapter } from '../../../adapters';
 import { useStaff } from '../hooks';
 
 export function StaffPage() {
@@ -15,8 +16,10 @@ export function StaffPage() {
 
   const handleAddStaff = useCallback(
     (data: { name: string; email: string; roleSlug: string; tenantId: string }) => {
-      staffAdapter.add({ ...data, tenantId: data.tenantId });
+      const added = staffAdapter.add({ ...data, tenantId: data.tenantId });
       refetch();
+      if (added) toast.success('Staff added');
+      else toast.error('Failed to add staff');
     },
     [refetch]
   );
@@ -24,6 +27,17 @@ export function StaffPage() {
   const handleImportCsv = useCallback(() => {
     alert('CSV import coming soon. Use Add Staff for now.');
   }, []);
+
+  const handleExport = useCallback(() => {
+    const rows = staff.map((s) => ({
+      Name: s.name,
+      Email: s.email,
+      Role: s.roleLabel,
+      Status: s.status,
+    }));
+    exportAdapter.exportCsv(rows, `staff-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success('Staff exported');
+  }, [staff]);
 
   if (!tenantId) {
     return (
@@ -45,6 +59,10 @@ export function StaffPage() {
           <Button variant="secondary" onClick={handleImportCsv} className="shrink-0">
             <Upload className="w-4 h-4" aria-hidden />
             Import CSV
+          </Button>
+          <Button variant="secondary" onClick={handleExport} className="shrink-0">
+            <Download className="w-4 h-4" aria-hidden />
+            Export CSV
           </Button>
           <Button onClick={() => setAddModalOpen(true)} className="shrink-0">
             <UserPlus className="w-4 h-4" aria-hidden />

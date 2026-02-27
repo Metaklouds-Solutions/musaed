@@ -23,6 +23,25 @@ const DEMO_TENANT_OWNER: UserType = {
   name: 'Clinic Owner',
   role: 'TENANT_OWNER',
   tenantId: 't_001',
+  tenantRole: 'tenant_owner',
+};
+
+const DEMO_STAFF: UserType = {
+  id: 'u_staff',
+  email: 'staff@clinic.demo',
+  name: 'Receptionist',
+  role: 'STAFF',
+  tenantId: 't_001',
+  tenantRole: 'receptionist',
+};
+
+const DEMO_STAFF_AUDITOR: UserType = {
+  id: 'u_auditor',
+  email: 'auditor@clinic.demo',
+  name: 'Auditor',
+  role: 'STAFF',
+  tenantId: 't_001',
+  tenantRole: 'auditor',
 };
 
 interface LoginPageProps {
@@ -55,10 +74,10 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   }, [onThemeToggle]);
 
   const handleLogin = useCallback(
-    (role: 'ADMIN' | 'TENANT_OWNER') => {
+    (user: UserType) => {
       setLoading(true);
       setTimeout(() => {
-        login(role === 'ADMIN' ? DEMO_ADMIN : DEMO_TENANT_OWNER);
+        login(user);
         setLoading(false);
       }, 600);
     },
@@ -103,7 +122,7 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
         <div className="grid gap-4 mt-10">
           <button
             type="button"
-            onClick={() => handleLogin('ADMIN')}
+            onClick={() => handleLogin(DEMO_ADMIN)}
             disabled={loading}
             className="group flex items-center gap-4 p-4 sm:p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Login as Admin"
@@ -124,10 +143,10 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
 
           <button
             type="button"
-            onClick={() => handleLogin('TENANT_OWNER')}
+            onClick={() => handleLogin(DEMO_TENANT_OWNER)}
             disabled={loading}
             className="group flex items-center gap-4 p-4 sm:p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label="Login as Tenant"
+            aria-label="Login as Tenant Owner"
           >
             <div
               className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center group-hover:bg-primary/20 shrink-0"
@@ -136,9 +155,51 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
               <User className="text-muted-foreground group-hover:text-primary" size={24} />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-lg text-foreground">Tenant</p>
+              <p className="font-semibold text-lg text-foreground">Tenant Owner</p>
               <p className="text-sm text-muted-foreground">
                 Dashboard, calls, customers, billing
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleLogin(DEMO_STAFF)}
+            disabled={loading}
+            className="group flex items-center gap-4 p-4 sm:p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label="Login as Staff"
+          >
+            <div
+              className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center group-hover:bg-primary/20 shrink-0"
+              aria-hidden
+            >
+              <User className="text-muted-foreground group-hover:text-primary" size={24} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-lg text-foreground">Staff</p>
+              <p className="text-sm text-muted-foreground">
+                Receptionist — tenant portal
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleLogin(DEMO_STAFF_AUDITOR)}
+            disabled={loading}
+            className="group flex items-center gap-4 p-4 sm:p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label="Login as Auditor"
+          >
+            <div
+              className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center group-hover:bg-primary/20 shrink-0"
+              aria-hidden
+            >
+              <User className="text-muted-foreground group-hover:text-primary" size={24} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-lg text-foreground">Auditor</p>
+              <p className="text-sm text-muted-foreground">
+                Run events, debug console per call
               </p>
             </div>
           </button>

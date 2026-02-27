@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { Modal, ModalHeader, Button } from '../../../../shared/ui';
+import { Modal, ModalHeader, Button, PopoverSelect } from '../../../../shared/ui';
 import type { AdminAgentRow, AdminTenantRow } from '../../../../shared/types';
 
 const inputClass =
@@ -42,19 +42,16 @@ export function AssignAgentModal({ open, onClose, agent, tenants, onAssign }: As
           <label htmlFor="tenant" className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
             Tenant *
           </label>
-          <select
-            id="tenant"
+          <PopoverSelect
             value={tenantId}
-            onChange={(e) => setTenantId(e.target.value)}
-            className={inputClass}
-            required
+            onChange={setTenantId}
+            options={[
+              { value: '', label: 'Select tenant' },
+              ...tenants.map((t) => ({ value: t.id, label: t.name })),
+            ]}
+            placeholder="Select tenant"
             aria-label="Select tenant"
-          >
-            <option value="">Select tenant</option>
-            {tenants.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+          />
         </div>
         <div className="flex justify-end gap-3 pt-4 border-t border-[var(--separator)]">
           <Button type="button" variant="ghost" onClick={onClose}>

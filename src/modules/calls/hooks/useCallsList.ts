@@ -5,15 +5,16 @@
 import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { callsAdapter, customersAdapter } from '../../../adapters';
+import type { DateRangeFilter } from '../../../adapters/local/calls.adapter';
 
-export function useCallsList() {
+export function useCallsList(dateRange?: DateRangeFilter) {
   const { user } = useSession();
   const tenantId = useMemo(() => {
     if (!user || user.role === 'ADMIN') return undefined;
     return user.tenantId;
   }, [user]);
 
-  const calls = useMemo(() => callsAdapter.getCalls(tenantId), [tenantId]);
+  const calls = useMemo(() => callsAdapter.getCalls(tenantId, dateRange), [tenantId, dateRange]);
   const customers = useMemo(() => customersAdapter.getCustomers(tenantId), [tenantId]);
   const customerMap = useMemo(() => {
     const m = new Map<string, string>();

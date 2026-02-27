@@ -4,8 +4,7 @@
 
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton } from '../../../../shared/ui';
-import { Badge } from '../../../../shared/ui';
+import { DataTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton, PillTag } from '../../../../shared/ui';
 import type { AdminRecentTenant } from '../../../../shared/types';
 
 interface AdminRecentTenantsProps {
@@ -16,9 +15,9 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function StatusBadge({ status }: { status: AdminRecentTenant['status'] }) {
-  const badgeStatus = status === 'ACTIVE' ? 'active' : status === 'TRIAL' ? 'pending' : 'error';
-  return <Badge status={badgeStatus}>{status}</Badge>;
+function StatusPill({ status }: { status: AdminRecentTenant['status'] }) {
+  const variant = status === 'ACTIVE' ? 'status' : status === 'TRIAL' ? 'outcome' : 'outcomeFailed';
+  return <PillTag variant={variant}>{status}</PillTag>;
 }
 
 export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
@@ -46,6 +45,7 @@ export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Tenants</h2>
         <ViewButton to="/admin/tenants">View all</ViewButton>
       </div>
+      <DataTable minWidth="min-w-[480px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -65,13 +65,14 @@ export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
                 </Link>
               </TableCell>
               <TableCell>{t.plan}</TableCell>
-              <TableCell><StatusBadge status={t.status} /></TableCell>
+              <TableCell><StatusPill status={t.status} /></TableCell>
               <TableCell className="text-[var(--text-muted)]">{formatDate(t.createdAt)}</TableCell>
               <TableCell>{t.onboardingProgress}%</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      </DataTable>
     </motion.section>
   );
 }

@@ -14,8 +14,8 @@ export function PageContent({ children, className }: PageContentProps) {
   return (
     <div
       className={cn(
-        'w-full max-w-[var(--layout-max-width,1440px)] mx-auto',
-        'px-[var(--layout-margin)] py-0',
+        'w-full min-w-0 max-w-[var(--layout-max-width,1440px)] mx-auto',
+        'px-4 sm:px-[var(--layout-margin)] py-0',
         'box-border',
         className
       )}

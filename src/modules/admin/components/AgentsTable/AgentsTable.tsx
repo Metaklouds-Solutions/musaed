@@ -1,9 +1,11 @@
 /**
  * Admin agents table. Name, Retell ID, Voice, Language, Linked Tenant, Status, Last Synced.
+ * Responsive with DataTable, StatusDot, PillTag.
  */
 
 import { Link } from 'react-router-dom';
 import {
+  DataTable,
   Table,
   TableHeader,
   TableBody,
@@ -11,6 +13,8 @@ import {
   TableHead,
   TableCell,
   ViewButton,
+  StatusDot,
+  PillTag,
 } from '../../../../shared/ui';
 import type { AdminAgentRow } from '../../../../shared/types';
 
@@ -29,7 +33,7 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
   }
 
   return (
-    <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
+    <DataTable minWidth="min-w-[640px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -58,17 +62,18 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
               <TableCell>{a.language}</TableCell>
               <TableCell>
                 {a.tenantId ? (
-                  <Link to={`/admin/tenants/${a.tenantId}`} className="text-[var(--ds-primary)] hover:underline">
-                    {a.tenantName ?? a.tenantId}
+                  <Link to={`/admin/tenants/${a.tenantId}`} className="hover:opacity-80">
+                    <PillTag variant="plan">{a.tenantName ?? a.tenantId}</PillTag>
                   </Link>
                 ) : (
                   <span className="text-[var(--text-muted)]">—</span>
                 )}
               </TableCell>
               <TableCell>
-                <span className={`text-sm capitalize ${a.status === 'active' ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'}`}>
-                  {a.status}
-                </span>
+                <StatusDot
+                  variant={a.status === 'active' ? 'active' : 'offline'}
+                  label={a.status}
+                />
               </TableCell>
               <TableCell className="text-sm text-[var(--text-muted)]">
                 {a.lastSyncedAt === '—' ? '—' : new Date(a.lastSyncedAt).toLocaleDateString()}
@@ -90,6 +95,6 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </DataTable>
   );
 }

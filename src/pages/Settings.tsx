@@ -3,12 +3,14 @@
  * Tabbed layout; Save is local state only until persistence is wired.
  */
 import React from 'react';
+import { PopoverSelect } from '../shared/ui';
 import { User, Shield, Wrench, Link as LinkIcon, BarChart, Save, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<'profile' | 'policies' | 'tools' | 'integrations' | 'quotas'>('profile');
   const [saved, setSaved] = React.useState(false);
+  const [language, setLanguage] = React.useState('en-US');
 
   const handleSave = () => {
     setSaved(true);
@@ -71,11 +73,15 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-zinc-500">Language</label>
-                  <select className="input-field w-full">
-                    <option>English (US)</option>
-                    <option>Spanish</option>
-                    <option>French</option>
-                  </select>
+                  <PopoverSelect
+                    value={language}
+                    onChange={setLanguage}
+                    options={[
+                      { value: 'en-US', label: 'English (US)' },
+                      { value: 'es', label: 'Spanish' },
+                      { value: 'fr', label: 'French' },
+                    ]}
+                  />
                 </div>
               </div>
             </div>

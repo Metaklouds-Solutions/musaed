@@ -5,6 +5,12 @@
 export interface Tenant {
   id: string;
   name: string;
+  /** Tenant lifecycle status. */
+  status?: 'ACTIVE' | 'TRIAL' | 'SUSPENDED';
+  /** Onboarding progress step (0–4). */
+  onboardingStep?: number;
+  /** Whether onboarding is complete. */
+  onboardingComplete?: boolean;
 }
 
 export interface Agent {

@@ -2,10 +2,10 @@
  * Admin tenants list. Table with View button. Add Tenant opens modal.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
-import { PageHeader, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button, ViewButton } from '../../../shared/ui';
+import { PageHeader, DataTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button, ViewButton, PillTag, TableFilters } from '../../../shared/ui';
 import { useAdminTenants } from '../hooks';
 import { AddTenantModal } from '../components/AddTenantModal';
 
@@ -14,6 +14,17 @@ export function AdminTenantsPage() {
   const { tenants } = useAdminTenants(refreshKey);
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [planFilter, setPlanFilter] = useState<string | null>(null);
+
+  const filteredTenants = useMemo(() => {
+    if (!planFilter) return tenants;
+    return tenants.filter((t) => t.plan.toLowerCase() === planFilter.toLowerCase());
+  }, [tenants, planFilter]);
+
+  const plans = useMemo(() => {
+    const set = new Set(tenants.map((t) => t.plan));
+    return Array.from(set).map((p) => ({ value: p.toLowerCase(), label: p }));
+  }, [tenants]);
 
   const handleAddSuccess = useCallback(() => setRefreshKey((k) => k + 1), []);
 
@@ -38,7 +49,13 @@ export function AdminTenantsPage() {
       {tenants.length === 0 ? (
         <p className="text-sm text-[var(--text-muted)]">No tenants.</p>
       ) : (
-        <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
+        <>
+          <TableFilters
+            plans={plans}
+            selectedPlan={planFilter}
+            onPlanChange={setPlanFilter}
+          />
+          <DataTable minWidth="min-w-[640px]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -49,11 +66,13 @@ export function AdminTenantsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tenants.map((t) => (
+              {filteredTenants.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell className="font-mono text-sm text-[var(--text-secondary)]">{t.id}</TableCell>
                   <TableCell className="font-medium text-[var(--text-primary)]">{t.name}</TableCell>
-                  <TableCell>{t.plan}</TableCell>
+                  <TableCell>
+                    <PillTag variant="plan">{t.plan}</PillTag>
+                  </TableCell>
                   <TableCell>
                     <ViewButton onClick={handleView(t.id)} aria-label="View tenant" />
                   </TableCell>
@@ -61,7 +80,8 @@ export function AdminTenantsPage() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </DataTable>
+        </>
       )}
 
       <AddTenantModal

@@ -3,8 +3,9 @@
  */
 
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Modal, ModalHeader, Button } from '../../../../shared/ui';
-import { tenantsAdapter } from '../../../../adapters/local/tenants.adapter';
+import { tenantsAdapter, auditAdapter } from '../../../../adapters';
 import {
   TenantWizardProgress,
   TenantWizardStep1ClinicInfo,
@@ -59,20 +60,28 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
   const handleComplete = useCallback(
     (agentId?: string) => {
       setIsDeploying(true);
-      tenantsAdapter.createTenant({
-      name: clinicData.name.trim(),
-      plan: clinicData.plan,
-      ownerEmail: clinicData.ownerEmail.trim(),
-      ownerName: clinicData.ownerName.trim() || undefined,
-      phone: clinicData.phone.trim() || undefined,
-      address: clinicData.address.trim() || undefined,
-      timezone: clinicData.timezone,
-      locale: clinicData.locale,
-      agentId,
-    });
-      reset();
-      onClose();
-      onSuccess?.();
+      try {
+        const tenant = tenantsAdapter.createTenant({
+          name: clinicData.name.trim(),
+          plan: clinicData.plan,
+          ownerEmail: clinicData.ownerEmail.trim(),
+          ownerName: clinicData.ownerName.trim() || undefined,
+          phone: clinicData.phone.trim() || undefined,
+          address: clinicData.address.trim() || undefined,
+          timezone: clinicData.timezone,
+          locale: clinicData.locale,
+          agentId,
+        });
+        auditAdapter.log('tenant.created', { tenantId: tenant.id, name: tenant.name, plan: tenant.plan });
+        reset();
+        onClose();
+        onSuccess?.();
+        toast.success('Tenant created successfully');
+      } catch {
+        toast.error('Failed to create tenant');
+      } finally {
+        setIsDeploying(false);
+      }
     },
     [clinicData, reset, onClose, onSuccess]
   );

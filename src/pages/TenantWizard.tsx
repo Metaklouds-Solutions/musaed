@@ -14,6 +14,7 @@ import {
   PlusCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { PopoverSelect } from '../shared/ui';
 
 interface TenantWizardProps {
   onClose: () => void;
@@ -143,27 +144,27 @@ export const TenantWizard: React.FC<TenantWizardProps> = ({ onClose, onCreated }
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-zinc-400">Plan</label>
-                      <select 
+                      <PopoverSelect
                         value={formData.plan}
-                        onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
-                        className="input-field w-full"
-                      >
-                        <option value="FREE">Free</option>
-                        <option value="PRO">Pro</option>
-                        <option value="ENTERPRISE">Enterprise</option>
-                      </select>
+                        onChange={(v) => setFormData({ ...formData, plan: v })}
+                        options={[
+                          { value: 'FREE', label: 'Free' },
+                          { value: 'PRO', label: 'Pro' },
+                          { value: 'ENTERPRISE', label: 'Enterprise' },
+                        ]}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-zinc-400">Timezone</label>
-                      <select 
+                      <PopoverSelect
                         value={formData.timezone}
-                        onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                        className="input-field w-full"
-                      >
-                        <option value="UTC">UTC</option>
-                        <option value="Asia/Karachi">Asia/Karachi</option>
-                        <option value="America/New_York">America/New_York</option>
-                      </select>
+                        onChange={(v) => setFormData({ ...formData, timezone: v })}
+                        options={[
+                          { value: 'UTC', label: 'UTC' },
+                          { value: 'Asia/Karachi', label: 'Asia/Karachi' },
+                          { value: 'America/New_York', label: 'America/New_York' },
+                        ]}
+                      />
                     </div>
                   </div>
                 </motion.div>
@@ -191,19 +192,20 @@ export const TenantWizard: React.FC<TenantWizardProps> = ({ onClose, onCreated }
                           }}
                           className="input-field flex-1"
                         />
-                        <select 
+                        <PopoverSelect
                           value={member.role}
-                          onChange={(e) => {
+                          onChange={(v) => {
                             const newMembers = [...formData.members];
-                            newMembers[i].role = e.target.value;
+                            newMembers[i].role = v;
                             setFormData({ ...formData, members: newMembers });
                           }}
-                          className="input-field w-40"
-                        >
-                          <option value="ADMIN">Admin</option>
-                          <option value="MANAGER">Manager</option>
-                          <option value="AGENT_VIEWER">Viewer</option>
-                        </select>
+                          options={[
+                            { value: 'ADMIN', label: 'Admin' },
+                            { value: 'MANAGER', label: 'Manager' },
+                            { value: 'AGENT_VIEWER', label: 'Viewer' },
+                          ]}
+                          triggerClassName="w-40"
+                        />
                       </div>
                     ))}
                     <button 

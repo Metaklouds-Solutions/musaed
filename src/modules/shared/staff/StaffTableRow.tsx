@@ -1,8 +1,8 @@
 /**
- * Single staff table row.
+ * Single staff table row. Avatar, PillTag for role, StatusDot for status.
  */
 
-import { TableRow, TableCell } from '../../../shared/ui';
+import { TableRow, TableCell, Avatar, PillTag, StatusDot } from '../../../shared/ui';
 import type { StaffRow } from '../../../shared/types';
 
 interface StaffTableRowProps {
@@ -13,16 +13,28 @@ interface StaffTableRowProps {
 export function StaffTableRow({ staff, showTenant = false }: StaffTableRowProps) {
   return (
     <TableRow>
-      <TableCell className="font-medium text-[var(--text-primary)]">{staff.name}</TableCell>
-      <TableCell className="text-[var(--text-secondary)]">{staff.email}</TableCell>
-      <TableCell>{staff.roleLabel}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar name={staff.name} size="md" />
+          <div className="min-w-0">
+            <p className="font-medium text-[var(--text-primary)] truncate">{staff.name}</p>
+            <p className="text-sm text-[var(--text-muted)] truncate">{staff.email}</p>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell>
+        <PillTag variant="role">{staff.roleLabel}</PillTag>
+      </TableCell>
       {showTenant && (
-        <TableCell className="text-[var(--text-muted)]">{staff.tenantName ?? staff.tenantId}</TableCell>
+        <TableCell className="text-[var(--text-muted)] text-sm">
+          {staff.tenantName ?? staff.tenantId}
+        </TableCell>
       )}
       <TableCell>
-        <span className={`text-sm capitalize ${staff.status === 'active' ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'}`}>
-          {staff.status}
-        </span>
+        <StatusDot
+          variant={staff.status === 'active' ? 'active' : 'offline'}
+          label={staff.status}
+        />
       </TableCell>
     </TableRow>
   );

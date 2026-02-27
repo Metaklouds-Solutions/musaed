@@ -6,7 +6,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { Phone, Calendar, TrendingUp, AlertTriangle, Clock, ChevronRight, PhoneMissed, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ViewButton } from '@/shared/ui';
+import { ViewButton, PopoverSelect } from '@/shared/ui';
 import type { CallSession, Booking } from '../types';
 
 export type DashboardTimeRange = 'today' | '7d' | '30d';
@@ -82,16 +82,17 @@ export const TenantDashboard: React.FC<TenantDashboardProps> = ({
         </div>
         <label className="flex items-center gap-2">
           <span className="text-sm text-zinc-500 shrink-0">Time range</span>
-          <select
-            className="input-field text-sm w-full sm:w-auto"
+          <PopoverSelect
             value={timeRange}
-            onChange={handleTimeRangeChange}
+            onChange={(v) => setTimeRange(v as DashboardTimeRange)}
+            options={[
+              { value: 'today', label: 'Today' },
+              { value: '7d', label: 'Last 7 Days' },
+              { value: '30d', label: 'Last 30 Days' },
+            ]}
+            triggerClassName="text-sm w-full sm:w-auto"
             aria-label="Dashboard time range"
-          >
-            <option value="today">Today</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </select>
+          />
         </label>
       </div>
 

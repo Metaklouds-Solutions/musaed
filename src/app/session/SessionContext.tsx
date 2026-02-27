@@ -18,6 +18,8 @@ interface SessionContextValue {
   logout: () => void;
   isAuthenticated: boolean;
   user: User | null;
+  /** Tenant ID for tenant users (TENANT_OWNER, STAFF). Set on login from user.tenantId. */
+  tenantId: string | null;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -40,6 +42,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       logout,
       isAuthenticated: session !== null,
       user: session?.user ?? null,
+      tenantId: session?.user?.tenantId ?? null,
     }),
     [session, login, logout]
   );

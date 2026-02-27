@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { Button } from '../../../shared/ui';
+import { Button, PopoverSelect } from '../../../shared/ui';
 
 const ROLES = [
   { value: 'doctor', label: 'Doctor' },
@@ -57,15 +57,12 @@ export function AddStaffForm({ tenantId, onSubmit, onCancel }: AddStaffFormProps
       </div>
       <div>
         <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Role</label>
-        <select
+        <PopoverSelect
           value={roleSlug}
-          onChange={(e) => setRoleSlug(e.target.value)}
-          className={inputClass}
-        >
-          {ROLES.map((r) => (
-            <option key={r.value} value={r.value}>{r.label}</option>
-          ))}
-        </select>
+          onChange={setRoleSlug}
+          options={ROLES.map((r) => ({ value: r.value, label: r.label }))}
+          placeholder="Select role"
+        />
       </div>
       <div className="flex gap-3">
         <Button type="submit" disabled={!name.trim() || !email.trim()}>

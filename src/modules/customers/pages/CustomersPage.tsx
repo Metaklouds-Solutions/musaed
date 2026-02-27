@@ -2,13 +2,25 @@
  * Customers list page. Layout only; data from useCustomersList hook.
  */
 
-import { PageHeader, EmptyState } from '../../../shared/ui';
+import { useMemo, useState } from 'react';
+import { PageHeader, EmptyState, TableFilters } from '../../../shared/ui';
 import { useCustomersList } from '../hooks';
 import { CustomersTable } from '../components/CustomersTable';
 import { Users } from 'lucide-react';
 
 export function CustomersPage() {
   const { user, customers } = useCustomersList();
+  const [search, setSearch] = useState('');
+
+  const filteredCustomers = useMemo(() => {
+    if (!search.trim()) return customers;
+    const q = search.toLowerCase().trim();
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.email?.toLowerCase().includes(q) ?? false)
+    );
+  }, [customers, search]);
 
   if (!user) {
     return (
@@ -31,12 +43,17 @@ export function CustomersPage() {
   }
 
   return (
-    <>
+    <div className="space-y-4">
       <PageHeader
         title="Customers"
         description="Customer list and interaction history."
       />
-      <CustomersTable customers={customers} />
-    </>
+      <TableFilters
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name or email…"
+      />
+      <CustomersTable customers={filteredCustomers} />
+    </div>
   );
 }

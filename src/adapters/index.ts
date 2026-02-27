@@ -1,5 +1,7 @@
 /**
  * Adapter entry. VITE_DATA_MODE=local | api. No component may directly access mock data.
+ * When api mode: dashboard, calls, bookings, customers, alerts, billing, admin use api adapters.
+ * staff, support, reports, runs, tenants, agents: local only (api stubs not yet implemented).
  */
 
 import * as localDashboard from './local/dashboard.adapter';
@@ -12,6 +14,12 @@ import * as localStaff from './local/staff.adapter';
 import * as localSupport from './local/support.adapter';
 import * as localReports from './local/reports.adapter';
 import * as localAdmin from './local/admin.adapter';
+import * as localRuns from './local/runs.adapter';
+import * as localTenants from './local/tenants.adapter';
+import * as localAgents from './local/agents.adapter';
+import * as localExport from './local/export.adapter';
+import * as localAudit from './local/audit.adapter';
+import * as localSearch from './local/search.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
 import * as apiCalls from './api/calls.adapter';
@@ -29,10 +37,17 @@ export const bookingsAdapter = isLocal ? localBookings.bookingsAdapter : apiBook
 export const customersAdapter = isLocal ? localCustomers.customersAdapter : apiCustomers.customersAdapter;
 export const alertsAdapter = isLocal ? localAlerts.alertsAdapter : apiAlerts.alertsAdapter;
 export const billingAdapter = isLocal ? localBilling.billingAdapter : apiBilling.billingAdapter;
-export const staffAdapter = isLocal ? localStaff.staffAdapter : localStaff.staffAdapter;
-export const supportAdapter = isLocal ? localSupport.supportAdapter : localSupport.supportAdapter;
-export const reportsAdapter = isLocal ? localReports.reportsAdapter : localReports.reportsAdapter;
+export const staffAdapter = localStaff.staffAdapter;
+export const supportAdapter = localSupport.supportAdapter;
+export const reportsAdapter = localReports.reportsAdapter;
 export const adminAdapter = isLocal ? localAdmin.adminAdapter : apiAdmin.adminAdapter;
+export const runsAdapter = localRuns.runsAdapter;
+export const tenantsAdapter = localTenants.tenantsAdapter;
+export const agentsAdapter = localAgents.agentsAdapter;
+export const exportAdapter = localExport.exportAdapter;
+export const auditAdapter = localAudit.auditAdapter;
+export const searchAdapter = localSearch.searchAdapter;
 
 export type { DashboardMetrics, FunnelStage, TrendPoint } from '../shared/types';
 export type { AdminOverviewMetrics, PaymentFailure, UsageAnomaly, ChurnRisk } from '../shared/types';
+export type { SearchResult, SearchResultType } from './local/search.adapter';

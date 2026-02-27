@@ -47,4 +47,5 @@ export type {
   PlanDistributionItem,
   UsageAnomaly,
   ChurnRisk,
+  AdminBillingRow,
 } from './admin';

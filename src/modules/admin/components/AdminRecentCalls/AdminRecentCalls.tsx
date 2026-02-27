@@ -3,7 +3,7 @@
  */
 
 import { motion } from 'motion/react';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton } from '../../../../shared/ui';
+import { DataTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton, PillTag } from '../../../../shared/ui';
 import type { AdminRecentCall } from '../../../../shared/types';
 
 interface AdminRecentCallsProps {
@@ -25,18 +25,16 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function OutcomeBadge({ outcome }: { outcome: AdminRecentCall['outcome'] }) {
-  const colors = {
-    booked: 'text-[var(--success)]',
-    escalated: 'text-[var(--warning)]',
-    failed: 'text-[var(--error)]',
-    pending: 'text-[var(--text-muted)]',
-  };
-  return (
-    <span className={`font-medium capitalize ${colors[outcome]}`}>
-      {outcome}
-    </span>
-  );
+function OutcomePill({ outcome }: { outcome: AdminRecentCall['outcome'] }) {
+  const variant =
+    outcome === 'booked'
+      ? 'outcomeBooked'
+      : outcome === 'escalated'
+        ? 'outcomeEscalated'
+        : outcome === 'failed'
+          ? 'outcomeFailed'
+          : 'outcomePending';
+  return <PillTag variant={variant}>{outcome}</PillTag>;
 }
 
 export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
@@ -64,6 +62,7 @@ export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Calls</h2>
         <ViewButton to="/admin/calls">View all</ViewButton>
       </div>
+      <DataTable minWidth="min-w-[480px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -79,13 +78,14 @@ export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
             <TableRow key={c.id}>
               <TableCell className="font-medium text-[var(--text-primary)]">{c.tenantName}</TableCell>
               <TableCell className="text-[var(--text-secondary)]">{c.agentName}</TableCell>
-              <TableCell><OutcomeBadge outcome={c.outcome} /></TableCell>
+              <TableCell><OutcomePill outcome={c.outcome} /></TableCell>
               <TableCell className="text-[var(--text-muted)]">{formatDuration(c.duration)}</TableCell>
               <TableCell className="text-[var(--text-muted)]">{formatDateTime(c.startedAt)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      </DataTable>
     </motion.section>
   );
 }

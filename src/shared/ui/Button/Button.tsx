@@ -15,7 +15,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)] font-medium min-h-[40px] px-4 py-2.5 ' +
+  'inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)] font-medium min-h-[40px] px-4 py-2.5 cursor-pointer ' +
   'transition-colors transition-shadow duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] touch-manipulation ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ' +
   'disabled:opacity-50 disabled:pointer-events-none';

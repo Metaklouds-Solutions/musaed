@@ -3,8 +3,10 @@
  * Tenant-scoped KPIs, agent status, recent calls, staff, support tickets.
  */
 
+import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { PageHeader, EmptyState, LottiePlayer, LOTTIE_ASSETS } from '../../../shared/ui';
+import { DateRangePicker } from '../../../components/DateRangePicker';
 import { TenantKpiCards } from '../components/TenantKpiCards';
 import { AgentStatusCard } from '../components/AgentStatusCard';
 import { RecentCallsTable } from '../components/RecentCallsTable';
@@ -25,7 +27,16 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
+const DEFAULT_RANGE = (() => {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 6);
+  return { start, end };
+})();
+
 export function DashboardPage() {
+  const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
+  const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const {
     user,
     metrics,
@@ -36,7 +47,7 @@ export function DashboardPage() {
     staffCounts,
     openTickets,
     recentCalls,
-  } = useDashboard();
+  } = useDashboard(dateRangeFilter);
 
   if (!user) {
     return (
@@ -70,7 +81,10 @@ export function DashboardPage() {
           <p className="text-[var(--text-secondary)] text-sm">
             {getGreeting()}, {displayName}
           </p>
-          <QuickActions />
+          <div className="flex flex-wrap items-center gap-2">
+            <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />
+            <QuickActions />
+          </div>
         </div>
       </motion.header>
       <div className="space-y-6">

@@ -14,11 +14,15 @@ import type {
   SupportTicket,
   TicketMessage,
   VoiceAgent,
+  AgentRun,
+  RunEvent,
+  StaffProfile,
+  Skill,
 } from '../shared/types/entities';
 
 export const seedTenants: Tenant[] = [
-  { id: 't_001', name: 'Sunrise Clinic' },
-  { id: 't_002', name: 'Metro Dental Group' },
+  { id: 't_001', name: 'Sunrise Clinic', status: 'ACTIVE', onboardingStep: 4, onboardingComplete: true },
+  { id: 't_002', name: 'Metro Dental Group', status: 'TRIAL', onboardingStep: 2, onboardingComplete: false },
 ];
 
 /** Extended tenant data for admin dashboard (status, onboarding). */
@@ -158,11 +162,11 @@ export const seedPlatformAgents: { id: string; name: string; voice: string; lang
 ];
 
 /** Skills catalog (can be enabled per agent). */
-export const seedSkills: { id: string; name: string; description: string }[] = [
-  { id: 'sk_001', name: 'Appointment Booking', description: 'Book and reschedule appointments' },
-  { id: 'sk_002', name: 'Billing Inquiry', description: 'Answer billing questions' },
-  { id: 'sk_003', name: 'Prescription Refill', description: 'Handle refill requests' },
-  { id: 'sk_004', name: 'Office Hours', description: 'Provide office hours info' },
+export const seedSkills: Skill[] = [
+  { id: 'sk_001', name: 'Appointment Booking', description: 'Book and reschedule appointments', deprecated: false },
+  { id: 'sk_002', name: 'Billing Inquiry', description: 'Answer billing questions', deprecated: false },
+  { id: 'sk_003', name: 'Prescription Refill', description: 'Handle refill requests', deprecated: false },
+  { id: 'sk_004', name: 'Office Hours', description: 'Provide office hours info', deprecated: false },
 ];
 
 /** Agent-to-skill mapping: voiceAgentId -> [{ skillId, priority }]. */
@@ -188,6 +192,14 @@ export const seedStaffUsers: { userId: string; name: string; email: string }[] =
   { userId: 'u4', name: 'Lisa Brown', email: 'lisa@sunrise.com' },
   { userId: 'u5', name: 'Dr. David Lee', email: 'david@metro.com' },
   { userId: 'u6', name: 'Dr. Anna Park', email: 'anna@metro.com' },
+];
+
+/** Staff profiles (doctor availability, specialties). */
+export const seedStaffProfiles: StaffProfile[] = [
+  { userId: 'u1', tenantId: 't_001', availability: [{ day: 'mon', start: '09:00', end: '17:00' }, { day: 'tue', start: '09:00', end: '17:00' }, { day: 'wed', start: '09:00', end: '17:00' }], specialties: ['General Practice'] },
+  { userId: 'u2', tenantId: 't_001', availability: [{ day: 'thu', start: '10:00', end: '18:00' }, { day: 'fri', start: '10:00', end: '18:00' }], specialties: ['Pediatrics'] },
+  { userId: 'u5', tenantId: 't_002', availability: [{ day: 'mon', start: '08:00', end: '16:00' }, { day: 'wed', start: '08:00', end: '16:00' }], specialties: ['Dental'] },
+  { userId: 'u6', tenantId: 't_002', availability: [{ day: 'tue', start: '09:00', end: '17:00' }, { day: 'thu', start: '09:00', end: '17:00' }], specialties: ['Orthodontics'] },
 ];
 
 /** Tenant memberships for staff counts by role. */
@@ -218,4 +230,36 @@ export const seedTicketMessages: TicketMessage[] = [
   { id: 'tm_006', ticketId: 'st_004', authorId: 'u5', body: 'Need help connecting our calendar to the booking flow.', createdAt: '2026-02-23T08:00:00Z' },
   { id: 'tm_007', ticketId: 'st_004', authorId: 'admin', body: 'Here\'s the integration guide: [link]. Let me know if you hit any issues.', createdAt: '2026-02-23T09:15:00Z' },
   { id: 'tm_008', ticketId: 'st_004', authorId: 'u5', body: 'All set, thanks!', createdAt: '2026-02-23T14:00:00Z' },
+];
+
+/** Agent runs (AI execution per call). */
+export const seedAgentRuns: AgentRun[] = [
+  { id: 'run_001', callId: 'call_001', tenantId: 't_001', usage: { cost: 0.12, tokens: 2400 }, startedAt: '2026-02-20T10:00:00Z' },
+  { id: 'run_002', callId: 'call_002', tenantId: 't_001', usage: { cost: 0.09, tokens: 1800 }, startedAt: '2026-02-20T11:30:00Z' },
+  { id: 'run_003', callId: 'call_003', tenantId: 't_001', usage: { cost: 0.15, tokens: 3200 }, startedAt: '2026-02-21T09:15:00Z' },
+  { id: 'run_004', callId: 'call_004', tenantId: 't_002', usage: { cost: 0.10, tokens: 1950 }, startedAt: '2026-02-21T14:00:00Z' },
+  { id: 'run_005', callId: 'call_005', tenantId: 't_002', usage: { cost: 0.05, tokens: 900 }, startedAt: '2026-02-22T08:45:00Z' },
+];
+
+/** Run events for debugging (step-by-step execution). */
+export const seedRunEvents: RunEvent[] = [
+  { id: 'ev_001', runId: 'run_001', eventType: 'call_started', payload: { callId: 'call_001', agentId: 'va_001' }, timestamp: '2026-02-20T10:00:00.100Z' },
+  { id: 'ev_002', runId: 'run_001', eventType: 'intent_detected', payload: { intent: 'book_appointment', confidence: 0.95 }, timestamp: '2026-02-20T10:00:05.200Z' },
+  { id: 'ev_003', runId: 'run_001', eventType: 'skill_invoked', payload: { skillId: 'sk_001', skillName: 'Appointment Booking' }, timestamp: '2026-02-20T10:00:06.100Z' },
+  { id: 'ev_004', runId: 'run_001', eventType: 'booking_created', payload: { slot: '2026-02-25T14:00:00Z', patientId: 'c_001' }, timestamp: '2026-02-20T10:04:05.500Z' },
+  { id: 'ev_005', runId: 'run_001', eventType: 'call_ended', payload: { outcome: 'booked', duration: 245 }, timestamp: '2026-02-20T10:04:05.800Z' },
+  { id: 'ev_006', runId: 'run_002', eventType: 'call_started', payload: { callId: 'call_002', agentId: 'va_001' }, timestamp: '2026-02-20T11:30:00.050Z' },
+  { id: 'ev_007', runId: 'run_002', eventType: 'intent_detected', payload: { intent: 'billing_inquiry', confidence: 0.88 }, timestamp: '2026-02-20T11:30:03.100Z' },
+  { id: 'ev_008', runId: 'run_002', eventType: 'escalation_triggered', payload: { reason: 'billing_dispute', targetRole: 'receptionist' }, timestamp: '2026-02-20T11:32:45.200Z' },
+  { id: 'ev_009', runId: 'run_002', eventType: 'call_ended', payload: { outcome: 'escalated', duration: 180 }, timestamp: '2026-02-20T11:33:00.100Z' },
+  { id: 'ev_010', runId: 'run_003', eventType: 'call_started', payload: { callId: 'call_003', agentId: 'va_001' }, timestamp: '2026-02-21T09:15:00.000Z' },
+  { id: 'ev_011', runId: 'run_003', eventType: 'call_ended', payload: { outcome: 'booked', duration: 320 }, timestamp: '2026-02-21T09:20:20.000Z' },
+];
+
+/** Audit log entries (admin actions). */
+export const seedAuditLog: { id: string; action: string; userId: string; tenantId?: string; meta?: Record<string, unknown>; timestamp: string }[] = [
+  { id: 'audit_001', action: 'tenant.created', userId: 'admin', tenantId: 't_001', meta: { name: 'Sunrise Clinic', plan: 'PRO' }, timestamp: '2026-01-15T08:00:00Z' },
+  { id: 'audit_002', action: 'agent.assigned', userId: 'admin', tenantId: 't_001', meta: { agentId: 'a_001', agentName: 'Agent Sarah' }, timestamp: '2026-01-15T08:05:00Z' },
+  { id: 'audit_003', action: 'tenant.created', userId: 'admin', tenantId: 't_002', meta: { name: 'Metro Dental Group', plan: 'ENTERPRISE' }, timestamp: '2026-02-10T14:30:00Z' },
+  { id: 'audit_004', action: 'ticket.assigned', userId: 'admin', meta: { ticketId: 'st_002', tenantId: 't_001' }, timestamp: '2026-02-24T15:00:00Z' },
 ];

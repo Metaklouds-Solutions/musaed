@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { PopoverSelect } from '../shared/ui';
 
 interface TenantDetailProps {
   tenant: Tenant;
@@ -24,6 +25,7 @@ interface TenantDetailProps {
 
 export const TenantDetail: React.FC<TenantDetailProps> = ({ tenant, onBack, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [language, setLanguage] = useState(tenant.agentProfile.language);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -189,11 +191,15 @@ export const TenantDetail: React.FC<TenantDetailProps> = ({ tenant, onBack, onUp
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-zinc-500">Language</label>
-                  <select defaultValue={tenant.agentProfile.language} className="input-field w-full">
-                    <option value="en">English</option>
-                    <option value="es">Spanish</option>
-                    <option value="fr">French</option>
-                  </select>
+                  <PopoverSelect
+                    value={language}
+                    onChange={setLanguage}
+                    options={[
+                      { value: 'en', label: 'English' },
+                      { value: 'es', label: 'Spanish' },
+                      { value: 'fr', label: 'French' },
+                    ]}
+                  />
                 </div>
               </div>
             </div>

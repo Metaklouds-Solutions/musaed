@@ -2,17 +2,28 @@
  * Tenant reports page. Outcomes and performance metrics.
  */
 
+import { useState, useMemo } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { PageHeader, EmptyState } from '../../../shared/ui';
+import { DateRangePicker } from '../../../components/DateRangePicker';
 import { OutcomeBreakdown } from '../components/OutcomeBreakdown';
 import { PerformanceMetrics } from '../components/PerformanceMetrics';
 import { useReports } from '../hooks/useReports';
 import { useSession } from '../../../app/session/SessionContext';
 
+const DEFAULT_RANGE = (() => {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 6);
+  return { start, end };
+})();
+
 export function ReportsPage() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
-  const { outcomes, performance } = useReports(tenantId);
+  const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
+  const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
+  const { outcomes, performance } = useReports(tenantId, dateRangeFilter);
 
   if (!tenantId) {
     return (
@@ -34,10 +45,13 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Reports"
-        description="Call outcomes and agent performance"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <PageHeader
+          title="Reports"
+          description="Call outcomes and agent performance"
+        />
+        <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <OutcomeBreakdown outcomes={outcomes} />

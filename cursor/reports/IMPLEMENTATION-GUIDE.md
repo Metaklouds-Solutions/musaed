@@ -15,12 +15,13 @@
 | Phase 1 (Foundation) | ✅ DONE | — |
 | Phase 2 (Sidebar) | ✅ DONE | — |
 | Phase 3 (Routing) | ✅ DONE | — |
-| Phase 4 (Modules) | 🔄 In progress | [PHASE-4-TENANT-DETAILS] |
-| Phase 5 (Guards) | ⬜ TODO | — |
-| Phase 6 (Data) | ⬜ TODO | — |
-| Phase 7A–7C (Enhancements) | ⬜ TODO | — |
+| Phase 4 (Modules) | ✅ DONE | — |
+| Phase 5 (Guards) | ✅ DONE | — |
+| Phase 6 (Data) | ✅ DONE | — |
+| Phase 7A (Enhancements) | ✅ DONE | — |
+| Phase 7B–7C (Enhancements) | ⬜ TODO | — |
 
-**Say "Start Phase 4" or "Start [PHASE-4-ADMIN-DASHBOARD]" to begin the next module.**
+**Say "Start Phase 7B" to continue.**
 
 ---
 
@@ -498,7 +499,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-RUNS] Runs & Logs
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminRunsPage.tsx`
@@ -523,7 +524,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-SETTINGS] Settings (Admin + Tenant)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminSettingsPage.tsx`
@@ -545,7 +546,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-SKILLS] Skills Catalog (Coming Soon)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminSkillsPage.tsx`
@@ -562,7 +563,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-ADMIN-BILLING] Admin Billing
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminBillingPage.tsx`
@@ -590,7 +591,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-5-GUARDS] Enhance Guards
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/app/guards/TenantGuard.tsx`
@@ -616,7 +617,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-6-SEED] Seed Data Extensions
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/mock/seedData.ts`
@@ -633,7 +634,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-6-ADAPTERS] Adapter Index & Exports
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/adapters/index.ts`
@@ -656,7 +657,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7A-TOAST] Toast Notifications
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/components/Toast/ToastProvider.tsx` (or add Sonner/Radix)
@@ -674,7 +675,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7A-EXPORT] CSV Export
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/adapters/exportAdapter.ts`
@@ -693,7 +694,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7A-AUDIT] Audit Log (Basic)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/adapters/auditAdapter.ts`
@@ -713,7 +714,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7A-DATERANGE] Custom Date Range Filters
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/components/DateRangePicker/DateRangePicker.tsx`
@@ -732,7 +733,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7A-COMMAND] Command Palette (⌘K)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/components/CommandPalette/CommandPalette.tsx`
@@ -1105,19 +1106,7 @@ For a lean first release:
 
 ---
 
-## Estimated Effort (from Plan)
 
-- Phase 1 (Foundation): 0.5 day
-- Phase 2 (Sidebar): 0.5 day
-- Phase 3 (Routing): 0.5 day
-- Phase 4 (Modules): 4–6 days
-- Phase 5 (Guards): 0.25 day
-- Phase 6 (Data): 1–2 days
-- Phase 7A (Enhancements): 2–3 days
-- Phase 7B (Enhancements): 3–5 days
-- Phase 7C (Enhancements): 2–4 days (backlog)
-
-**Total core (Phases 1–6):** ~7–10 days. **Milestone 1 lean:** ~4–5 days.
 
 ---
 

@@ -3,7 +3,7 @@
  */
 
 import { Link } from 'react-router-dom';
-import { Badge } from '../../../shared/ui';
+import { PillTag } from '../../../shared/ui';
 import type { SupportTicket } from '../../../shared/types/entities';
 
 interface TicketRowProps {
@@ -13,17 +13,17 @@ interface TicketRowProps {
   to: string;
 }
 
-const priorityColors: Record<SupportTicket['priority'], 'error' | 'warning' | 'pending' | 'active'> = {
-  critical: 'error',
-  high: 'warning',
-  medium: 'pending',
-  low: 'active',
+const priorityVariant: Record<SupportTicket['priority'], 'outcomeFailed' | 'outcomeEscalated' | 'outcome' | 'outcomePending'> = {
+  critical: 'outcomeFailed',
+  high: 'outcomeEscalated',
+  medium: 'outcome',
+  low: 'outcomePending',
 };
 
-const statusColors: Record<SupportTicket['status'], 'error' | 'warning' | 'pending' | 'active'> = {
-  open: 'warning',
-  in_progress: 'pending',
-  resolved: 'active',
+const statusVariant: Record<SupportTicket['status'], 'outcomeEscalated' | 'outcome' | 'outcomeBooked'> = {
+  open: 'outcomeEscalated',
+  in_progress: 'outcome',
+  resolved: 'outcomeBooked',
 };
 
 function formatDate(iso: string): string {
@@ -48,8 +48,8 @@ export function TicketRow({ ticket, tenantName, showTenant, to }: TicketRowProps
             {showTenant && tenantName && (
               <span className="text-xs text-[var(--text-muted)]">{tenantName}</span>
             )}
-            <Badge status={priorityColors[ticket.priority]}>{ticket.priority}</Badge>
-            <Badge status={statusColors[ticket.status]}>{ticket.status.replace('_', ' ')}</Badge>
+            <PillTag variant={priorityVariant[ticket.priority]}>{ticket.priority}</PillTag>
+            <PillTag variant={statusVariant[ticket.status]}>{ticket.status.replace('_', ' ')}</PillTag>
             <span className="text-xs text-[var(--text-muted)]">{formatDate(ticket.createdAt)}</span>
           </div>
         </div>

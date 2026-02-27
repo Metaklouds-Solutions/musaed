@@ -1,8 +1,10 @@
 /**
  * Bookings table. Data from props only; no adapter access.
+ * Responsive with DataTable, PillTag for status.
  */
 
 import {
+  DataTable,
   Table,
   TableHeader,
   TableBody,
@@ -10,6 +12,7 @@ import {
   TableHead,
   TableCell,
   ViewButton,
+  PillTag,
 } from '../../../../shared/ui';
 import type { Booking } from '../../../../shared/types';
 
@@ -28,7 +31,7 @@ function formatDate(iso: string): string {
 export function BookingsTable({ bookings }: BookingsTableProps) {
   if (bookings.length === 0) return null;
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-card)]">
+    <DataTable minWidth="min-w-[640px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -49,15 +52,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
                 {b.id}
               </TableCell>
               <TableCell>
-                <span
-                  className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium capitalize"
-                  style={{
-                    background: 'rgba(34, 197, 94, 0.1)',
-                    color: 'var(--success)',
-                  }}
-                >
-                  {b.status}
-                </span>
+                <PillTag variant="status">{b.status}</PillTag>
               </TableCell>
               <TableCell>
                 {b.callId ? (
@@ -73,6 +68,6 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </DataTable>
   );
 }

@@ -111,7 +111,7 @@ export function Modal({
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'fixed inset-0 z-50 flex items-center justify-center p-4',
+          'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6',
           className
         )}
         style={{ pointerEvents: open ? 'auto' : 'none' }}
@@ -122,7 +122,7 @@ export function Modal({
             'transition-all duration-200 ease-out'
           )}
           style={{
-            maxWidth: `${maxWidthRem}rem`,
+            maxWidth: `min(95vw, ${maxWidthRem}rem)`,
             opacity: open ? 1 : 0,
             transform: open ? 'scale(1)' : 'scale(0.96)',
           }}
@@ -157,7 +157,7 @@ export function ModalHeader({
       <button
         type="button"
         onClick={onClose}
-        className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-[var(--text-muted)]"
+        className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-[var(--text-muted)] cursor-pointer"
         aria-label="Close"
       >
         <X className="w-5 h-5" aria-hidden />
