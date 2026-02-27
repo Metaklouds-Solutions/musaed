@@ -758,7 +758,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7B-GLOBAL-SEARCH] Global Search
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/components/GlobalSearch/GlobalSearch.tsx`
@@ -778,7 +778,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7B-SCHEDULED-REPORTS] Scheduled Reports
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - Admin Settings > Scheduled Reports section
@@ -798,7 +798,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7B-CALENDAR] Calendar View
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/components/Calendar/CalendarView.tsx`
@@ -839,7 +839,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7B-I18N] i18n + RTL
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/i18n/` (config, translations en.json, ar.json)
@@ -866,7 +866,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7C-FEATURE-FLAGS] Feature Flags
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/adapters/local/featureFlags.adapter.ts`
@@ -886,7 +886,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7C-AGENT-SANDBOX] Agent Sandbox
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminAgentSandboxPage.tsx`
@@ -906,7 +906,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-7C-WEBHOOK-LOG] Webhook Event Log
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - Admin Settings > Integrations > Webhook Event Log

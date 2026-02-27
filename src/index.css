@@ -477,3 +477,46 @@
   opacity: 1 !important;
   background: var(--bg-hover) !important;
 }
+
+/* ---------------------------------------------------------------------------
+   FullCalendar — Theme overrides (Design.json tokens)
+   FullCalendar 6 auto-injects CSS; we override via custom properties.
+   --------------------------------------------------------------------------- */
+:root {
+  --fc-page-bg-color: var(--bg-base);
+  --fc-neutral-bg-color: var(--bg-hover);
+  --fc-neutral-text-color: var(--text-muted);
+  --fc-border-color: var(--border-subtle);
+
+  --fc-button-text-color: #fff;
+  --fc-button-bg-color: var(--ds-primary);
+  --fc-button-border-color: var(--ds-primary);
+  --fc-button-hover-bg-color: var(--primary-hover);
+  --fc-button-hover-border-color: var(--primary-hover);
+  --fc-button-active-bg-color: var(--primary-hover);
+  --fc-button-active-border-color: var(--primary-hover);
+
+  --fc-event-bg-color: var(--ds-primary);
+  --fc-event-border-color: var(--ds-primary);
+  --fc-event-text-color: #fff;
+  --fc-event-selected-overlay-color: rgba(0, 0, 0, 0.25);
+
+  --fc-more-link-bg-color: var(--bg-hover);
+  --fc-more-link-text-color: var(--text-primary);
+
+  --fc-non-business-color: var(--bg-subtle);
+  --fc-bg-event-color: var(--bg-hover);
+  --fc-bg-event-opacity: 0.5;
+  --fc-highlight-color: rgba(124, 92, 255, 0.15);
+  --fc-today-bg-color: rgba(124, 92, 255, 0.08);
+  --fc-now-indicator-color: var(--ds-primary);
+}
+
+.dark {
+  --fc-page-bg-color: var(--bg-base);
+  --fc-neutral-bg-color: var(--bg-hover);
+  --fc-neutral-text-color: var(--text-muted);
+  --fc-border-color: var(--border-subtle);
+  --fc-more-link-bg-color: var(--bg-hover);
+  --fc-more-link-text-color: var(--text-primary);
+}

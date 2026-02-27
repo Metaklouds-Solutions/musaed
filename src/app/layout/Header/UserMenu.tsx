@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { useAccountModal } from '../../account/AccountModalContext';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
@@ -17,6 +18,7 @@ function getRoleLabel(role: string): string {
 }
 
 export function UserMenu() {
+  const { t } = useTranslation();
   const { user, logout } = useSession();
   const navigate = useNavigate();
   const { openModal } = useAccountModal();
@@ -46,7 +48,7 @@ export function UserMenu() {
           'hover:bg-(var(--bg-hover)) transition-colors cursor-pointer',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2'
         )}
-        aria-label="User menu"
+        aria-label={t('userMenu.userMenu')}
       >
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white">
           <User size={18} aria-hidden />
@@ -85,7 +87,7 @@ export function UserMenu() {
               )}
             >
               <Settings size={18} className="shrink-0 text-(var(--text-muted))" />
-              Manage account
+              {t('userMenu.manageAccount')}
             </button>
             <button
               type="button"
@@ -96,7 +98,7 @@ export function UserMenu() {
               )}
             >
               <LogOut size={18} className="shrink-0" />
-              Logout
+              {t('userMenu.logout')}
             </button>
           </div>
         </PopoverPrimitive.Content>

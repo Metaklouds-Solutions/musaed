@@ -57,9 +57,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
     <>
       <div className="p-4 sm:p-6 flex items-center gap-3 shrink-0 ">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center" aria-hidden>
-          <Zap className="text-primary-foreground w-5 h-5" />
+          <Zap className="text-primary-foreground rounded w-5 h-5" />
         </div>
-        <span className="font-bold text-xl tracking-tight text-foreground">AgentOs</span>
+        <span className="font-bold text-xl tracking-tight text-primary-foreground">AgentOs</span>
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto" aria-label="Main navigation">

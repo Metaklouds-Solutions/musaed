@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, Users, Phone, UserPlus, Headphones } from 'lucide-react';
 import { useSession } from '../../app/session/SessionContext';
 import { searchAdapter, type SearchResult } from '../../adapters';
@@ -22,7 +23,8 @@ interface GlobalSearchProps {
   placeholder?: string;
 }
 
-export function GlobalSearch({ className, placeholder = 'Search...' }: GlobalSearchProps) {
+export function GlobalSearch({ className, placeholder }: GlobalSearchProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useSession();
   const [query, setQuery] = useState('');
@@ -87,7 +89,7 @@ export function GlobalSearch({ className, placeholder = 'Search...' }: GlobalSea
   return (
     <div ref={containerRef} className={cn('relative flex-1 min-w-0 max-w-[280px] sm:max-w-[320px]', className)}>
       <label htmlFor="global-search" className="sr-only">
-        Search
+        {t('common.search')}
       </label>
       <div
         className={cn(
@@ -110,7 +112,7 @@ export function GlobalSearch({ className, placeholder = 'Search...' }: GlobalSea
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('common.searchPlaceholder')}
           className={cn(
             'w-full min-w-0 bg-transparent border-0 outline-none text-(var(--text-primary))',
             'placeholder:text-(var(--text-muted)) text-sm',
@@ -132,7 +134,7 @@ export function GlobalSearch({ className, placeholder = 'Search...' }: GlobalSea
         >
           {results.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-(var(--text-muted))">
-              No results for &quot;{query}&quot;
+              {t('common.noResults', { query })}
             </div>
           ) : (
             results.map((r, i) => (

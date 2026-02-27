@@ -7,24 +7,31 @@ import { PageHeader, Button } from '../../../shared/ui';
 import {
   AdminUsersSection,
   IntegrationsSection,
+  WebhookEventLogSection,
   RetentionSection,
   AuditLogSection,
+  ScheduledReportsSection,
 } from '../components/settings';
-import { settingsAdapter } from '../../../adapters/local/settings.adapter';
+import { settingsAdapter, reportsAdapter } from '../../../adapters';
 import type { AdminSettings } from '../../../adapters/local/settings.adapter';
+import type { ScheduledReportConfig } from '../../../adapters/local/reports.adapter';
 import { CheckCircle2, Save } from 'lucide-react';
 
 export function AdminSettingsPage() {
   const [settings, setSettings] = useState<AdminSettings>(() =>
     settingsAdapter.getAdminSettings()
   );
+  const [scheduledConfig, setScheduledConfig] = useState<ScheduledReportConfig>(() =>
+    reportsAdapter.getScheduledReportConfig()
+  );
   const [saved, setSaved] = useState(false);
 
   const handleSave = useCallback(() => {
     settingsAdapter.saveAdminSettings(settings);
+    reportsAdapter.setScheduledReportConfig(scheduledConfig);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-  }, [settings]);
+  }, [settings, scheduledConfig]);
 
   const handleRetentionToggle = useCallback((id: string, enabled: boolean) => {
     setSettings((s) => ({
@@ -64,11 +71,13 @@ export function AdminSettingsPage() {
       <div className="space-y-8 max-w-3xl">
         <AdminUsersSection users={settings.adminUsers} />
         <IntegrationsSection integrations={settings.integrations} />
+        <WebhookEventLogSection />
         <RetentionSection
           policies={settings.retentionPolicies}
           onToggle={handleRetentionToggle}
           onDaysChange={handleRetentionDaysChange}
         />
+        <ScheduledReportsSection config={scheduledConfig} onChange={setScheduledConfig} />
         <AuditLogSection />
       </div>
     </div>

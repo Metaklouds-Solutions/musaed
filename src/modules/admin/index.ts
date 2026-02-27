@@ -4,6 +4,7 @@ export { AdminTenantDetailPage } from './pages/AdminTenantDetailPage';
 export { AdminStaffPage } from './pages/AdminStaffPage';
 export { AdminAgentsPage } from './pages/AdminAgentsPage';
 export { AdminAgentDetailPage } from './pages/AdminAgentDetailPage';
+export { AdminAgentSandboxPage } from './pages/AdminAgentSandboxPage';
 export { AdminSupportPage } from './pages/AdminSupportPage';
 export { AdminRunsPage } from './pages/AdminRunsPage';
 export { AdminRunDetailPage } from './pages/AdminRunDetailPage';

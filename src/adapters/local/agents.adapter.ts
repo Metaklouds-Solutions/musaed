@@ -58,6 +58,11 @@ export const agentsAdapter = {
     return [...fromVoice, ...fromPlatform, ...fromAssigned];
   },
 
+  /** List only voice agents (deployed/assigned). For sandbox testing. Excludes unassigned platform agents. */
+  listVoiceAgents(): AdminAgentRow[] {
+    return [...this.list().filter((a) => a.tenantId != null && a.status !== 'available')];
+  },
+
   /** Assign platform agent to tenant. */
   assign(agentId: string, tenantId: string): void {
     const pa = seedPlatformAgents.find((p) => p.id === agentId);

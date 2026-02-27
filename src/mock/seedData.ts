@@ -37,6 +37,12 @@ export const seedTenantSettings: { tenantId: string; timezone: string; locale: s
   { tenantId: 't_002', timezone: 'Europe/London', locale: 'en-GB', businessHours: 'Mon–Sat 8am–6pm' },
 ];
 
+/** Tenant feature flags. Per-tenant toggles for Reports, Calendar, etc. */
+export const seedTenantFeatureFlags: { tenantId: string; featureFlags: { enableReports?: boolean; enableCalendar?: boolean } }[] = [
+  { tenantId: 't_001', featureFlags: { enableReports: true, enableCalendar: true } },
+  { tenantId: 't_002', featureFlags: { enableReports: true, enableCalendar: false } },
+];
+
 export const seedAgents: Agent[] = [
   { id: 'a_001', tenantId: 't_001', name: 'Agent Sarah' },
   { id: 'a_002', tenantId: 't_001', name: 'Agent Mike' },
@@ -257,6 +263,15 @@ export const seedRunEvents: RunEvent[] = [
 ];
 
 /** Audit log entries (admin actions). */
+/** Webhook event log for Admin Settings > Integrations. */
+export const seedWebhookEvents: { id: string; endpoint: string; eventType: string; status: 'success' | 'failed' | 'pending'; statusCode?: number; attemptedAt: string; retryCount: number; lastError?: string }[] = [
+  { id: 'wh_001', endpoint: 'https://api.example.com/webhooks/call-ended', eventType: 'call.ended', status: 'success', statusCode: 200, attemptedAt: '2026-02-27T14:30:00Z', retryCount: 0 },
+  { id: 'wh_002', endpoint: 'https://api.example.com/webhooks/booking-created', eventType: 'booking.created', status: 'success', statusCode: 200, attemptedAt: '2026-02-27T14:25:00Z', retryCount: 0 },
+  { id: 'wh_003', endpoint: 'https://api.example.com/webhooks/call-ended', eventType: 'call.ended', status: 'failed', statusCode: 504, attemptedAt: '2026-02-27T14:20:00Z', retryCount: 2, lastError: 'Gateway timeout' },
+  { id: 'wh_004', endpoint: 'https://hooks.tenant.com/events', eventType: 'call.ended', status: 'failed', statusCode: 401, attemptedAt: '2026-02-27T14:15:00Z', retryCount: 1, lastError: 'Unauthorized' },
+  { id: 'wh_005', endpoint: 'https://api.example.com/webhooks/booking-created', eventType: 'booking.created', status: 'pending', attemptedAt: '2026-02-27T14:10:00Z', retryCount: 0 },
+];
+
 export const seedAuditLog: { id: string; action: string; userId: string; tenantId?: string; meta?: Record<string, unknown>; timestamp: string }[] = [
   { id: 'audit_001', action: 'tenant.created', userId: 'admin', tenantId: 't_001', meta: { name: 'Sunrise Clinic', plan: 'PRO' }, timestamp: '2026-01-15T08:00:00Z' },
   { id: 'audit_002', action: 'agent.assigned', userId: 'admin', tenantId: 't_001', meta: { agentId: 'a_001', agentName: 'Agent Sarah' }, timestamp: '2026-01-15T08:05:00Z' },

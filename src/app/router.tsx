@@ -7,7 +7,7 @@ import {
   Navigate,
   RouterProvider,
 } from 'react-router-dom';
-import { RequireAuth, TenantGuard, AdminGuard, DefaultRedirect } from './guards';
+import { RequireAuth, TenantGuard, AdminGuard, DefaultRedirect, FeatureFlagGuard } from './guards';
 import { MainLayout } from './layout/MainLayout';
 import { LoginPage } from './pages/LoginPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
@@ -15,7 +15,7 @@ import { DashboardPage } from '../modules/dashboard';
 import { StaffPage } from '../modules/staff';
 import { AgentPage } from '../modules/agent';
 import { CallsPage, CallDetailPage } from '../modules/calls';
-import { BookingsPage } from '../modules/bookings';
+import { BookingsPage, CalendarPage } from '../modules/bookings';
 import { CustomersPage, CustomerDetailPage } from '../modules/customers';
 import { AlertsPage } from '../modules/alerts';
 import { HelpCenterPage, TicketDetailPage } from '../modules/help';
@@ -29,6 +29,7 @@ import {
   AdminStaffPage,
   AdminAgentsPage,
   AdminAgentDetailPage,
+  AdminAgentSandboxPage,
   AdminSupportPage,
   AdminRunsPage,
   AdminRunDetailPage,
@@ -62,10 +63,11 @@ const router = createBrowserRouter([
               { path: 'calls/:id', element: <CallDetailPage /> },
               { path: 'agent', element: <AgentPage /> },
               { path: 'staff', element: <StaffPage /> },
-              { path: 'reports', element: <ReportsPage /> },
+              { path: 'reports', element: <FeatureFlagGuard flag="enableReports"><ReportsPage /></FeatureFlagGuard> },
               { path: 'help', element: <HelpCenterPage /> },
               { path: 'help/tickets/:id', element: <TicketDetailPage /> },
               { path: 'bookings', element: <BookingsPage /> },
+              { path: 'bookings/calendar', element: <FeatureFlagGuard flag="enableCalendar"><CalendarPage /></FeatureFlagGuard> },
               { path: 'customers', element: <CustomersPage /> },
               { path: 'customers/:id', element: <CustomerDetailPage /> },
               { path: 'alerts', element: <AlertsPage /> },
@@ -83,6 +85,7 @@ const router = createBrowserRouter([
               { path: 'tenants/:id', element: <AdminTenantDetailPage /> },
               { path: 'agents', element: <AdminAgentsPage /> },
               { path: 'agents/:id', element: <AdminAgentDetailPage /> },
+              { path: 'sandbox', element: <AdminAgentSandboxPage /> },
               { path: 'staff', element: <AdminStaffPage /> },
               { path: 'support', element: <AdminSupportPage /> },
               { path: 'support/:id', element: <AdminSupportPage /> },

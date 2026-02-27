@@ -2,14 +2,15 @@
  * Tenant settings page. Clinic profile, business hours, notifications.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PageHeader, Button } from '../../../shared/ui';
 import {
   ClinicProfileSection,
   BusinessHoursSection,
   NotificationsSection,
+  FeatureFlagsSection,
 } from '../components';
-import { settingsAdapter } from '../../../adapters/local/settings.adapter';
+import { settingsAdapter, featureFlagsAdapter } from '../../../adapters';
 import type { TenantSettings } from '../../../adapters/local/settings.adapter';
 import { useSession } from '../../../app/session/SessionContext';
 import { CheckCircle2, Save } from 'lucide-react';
@@ -20,7 +21,17 @@ export function SettingsPage() {
   const [settings, setSettings] = useState<TenantSettings>(() =>
     settingsAdapter.getTenantSettings(tenantId)
   );
+  const [featureFlags, setFeatureFlags] = useState<{ enableReports: boolean; enableCalendar: boolean }>({
+    enableReports: true,
+    enableCalendar: true,
+  });
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (tenantId) {
+      setFeatureFlags(featureFlagsAdapter.getFeatureFlags(tenantId));
+    }
+  }, [tenantId]);
 
   const handleSave = useCallback(() => {
     settingsAdapter.saveTenantSettings(settings, tenantId);
@@ -54,6 +65,11 @@ export function SettingsPage() {
         <NotificationsSection
           notifications={settings.notifications}
           onChange={(notifications) => setSettings((s) => ({ ...s, notifications }))}
+        />
+        <FeatureFlagsSection
+          tenantId={tenantId}
+          flags={featureFlags}
+          onChange={setFeatureFlags}
         />
       </div>
     </div>

@@ -1,9 +1,30 @@
 /**
  * Local reports adapter. Outcomes and performance from calls/bookings.
  * Optional dateRange filters by createdAt.
+ * Scheduled reports config (localStorage; actual email sending requires backend).
  */
 
 import { seedCalls, seedBookings } from '../../mock/seedData';
+
+const SCHEDULED_REPORTS_KEY = 'clinic-crm-scheduled-reports';
+
+export interface ScheduledReportConfig {
+  enabled: boolean;
+  frequency: 'weekly' | 'monthly';
+  recipients: string[];
+  /** Day of week for weekly (0=Sun, 1=Mon, …, 6=Sat). */
+  dayOfWeek?: number;
+  /** Day of month for monthly (1–31). */
+  dayOfMonth?: number;
+}
+
+const defaultScheduledConfig: ScheduledReportConfig = {
+  enabled: false,
+  frequency: 'weekly',
+  recipients: [],
+  dayOfWeek: 1,
+  dayOfMonth: 1,
+};
 import type { OutcomeBreakdown, PerformanceMetrics } from '../../shared/types/reports';
 
 export interface DateRangeFilter {
@@ -67,5 +88,30 @@ export const reportsAdapter = {
       escalationRate: totalCalls > 0 ? Math.round((escalated / totalCalls) * 100) : 0,
       sentimentAvg: totalCalls > 0 ? Math.round(totalSentiment / totalCalls * 100) / 100 : 0,
     };
+  },
+
+  /** Get scheduled report config (admin digest). */
+  getScheduledReportConfig(): ScheduledReportConfig {
+    try {
+      const stored = localStorage.getItem(SCHEDULED_REPORTS_KEY);
+      if (!stored) return { ...defaultScheduledConfig };
+      const parsed = JSON.parse(stored) as Partial<ScheduledReportConfig>;
+      return {
+        ...defaultScheduledConfig,
+        ...parsed,
+        recipients: Array.isArray(parsed.recipients) ? parsed.recipients : [],
+      };
+    } catch {
+      return { ...defaultScheduledConfig };
+    }
+  },
+
+  /** Save scheduled report config. */
+  setScheduledReportConfig(config: ScheduledReportConfig): void {
+    try {
+      localStorage.setItem(SCHEDULED_REPORTS_KEY, JSON.stringify(config));
+    } catch {
+      // ignore
+    }
   },
 };
