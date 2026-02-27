@@ -21,15 +21,7 @@ import type { NavItem } from './types';
 
 export const ADMIN_NAV: NavItem[] = [
   { to: '/admin/overview', label: 'Dashboard', icon: LayoutDashboard },
-  {
-    to: '/admin/tenants',
-    label: 'Tenants',
-    icon: Users,
-    children: [
-      { to: '/admin/tenants/add', label: 'Add Tenant', icon: UserPlus },
-      { to: '/admin/tenants', label: 'Tenant Directory', icon: Users },
-    ],
-  },
+  { to: '/admin/tenants', label: 'Tenants', icon: Users },
   { to: '/admin/agents', label: 'Agents', icon: Bot },
   { to: '/admin/staff', label: 'Staff', icon: UserPlus },
   { to: '/admin/support', label: 'Support Inbox', icon: Headphones },

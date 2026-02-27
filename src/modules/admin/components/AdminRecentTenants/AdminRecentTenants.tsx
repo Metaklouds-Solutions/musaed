@@ -27,7 +27,7 @@ export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
       <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-6"
+        className="rounded-[var(--radius-card)] card-glass p-6"
       >
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Recent Tenants</h2>
         <p className="text-sm text-[var(--text-muted)]">No tenants yet.</p>
@@ -40,7 +40,7 @@ export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.05 }}
-      className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] overflow-hidden"
+      className="rounded-[var(--radius-card)] card-glass overflow-hidden"
     >
       <div className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Tenants</h2>

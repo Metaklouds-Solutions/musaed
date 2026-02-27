@@ -15,7 +15,7 @@
 | Phase 1 (Foundation) | ✅ DONE | — |
 | Phase 2 (Sidebar) | ✅ DONE | — |
 | Phase 3 (Routing) | ✅ DONE | — |
-| Phase 4 (Modules) | 🔄 In progress | [PHASE-4-TENANT-DASHBOARD] |
+| Phase 4 (Modules) | 🔄 In progress | [PHASE-4-TENANT-DETAILS] |
 | Phase 5 (Guards) | ⬜ TODO | — |
 | Phase 6 (Data) | ⬜ TODO | — |
 | Phase 7A–7C (Enhancements) | ⬜ TODO | — |
@@ -288,7 +288,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-TENANT-DASHBOARD] Tenant Dashboard Widgets
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/dashboard/pages/DashboardPage.tsx`
@@ -316,7 +316,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-TENANT-DETAILS] Admin Tenant Details Page
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminTenantDetailPage.tsx`
@@ -341,7 +341,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-TENANT-WIZARD] Add Tenant Wizard (Admin)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminTenantWizardPage.tsx`
@@ -368,7 +368,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-STAFF] Staff Module (Admin + Tenant)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminStaffPage.tsx`
@@ -397,7 +397,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-TENANT-AGENT] Tenant Agent Overview Page
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/tenant/agent/pages/AgentPage.tsx`
@@ -422,7 +422,7 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ## [PHASE-4-AGENTS] Agents Module (Admin)
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
 
 **Files:**
 - `src/modules/admin/pages/AdminAgentsPage.tsx`

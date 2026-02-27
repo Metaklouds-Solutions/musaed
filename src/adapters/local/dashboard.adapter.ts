@@ -73,4 +73,91 @@ export const dashboardAdapter = {
     const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
     return sorted.map(([date, count]) => ({ date, bookings: count }));
   },
+
+  /** Tenant dashboard KPIs. */
+  getTenantKpis(tenantId: string | undefined): TenantKpis {
+    const calls = filterByTenant(seedCalls, tenantId);
+    const credits = tenantId ? seedCredits.find((c) => c.tenantId === tenantId) : null;
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const callsToday = calls.filter((c) => c.createdAt >= todayStart).length;
+    const calls7d = calls.filter((c) => c.createdAt >= sevenDaysAgo).length;
+    const booked = calls.filter((c) => c.bookingCreated).length;
+    const escalated = calls.filter((c) => c.escalationFlag).length;
+    const failed = calls.filter((c) => !c.bookingCreated && !c.escalationFlag).length;
+    const totalDuration = calls.reduce((s, c) => s + c.duration, 0);
+    const avgDuration = calls.length > 0 ? Math.round(totalDuration / calls.length) : 0;
+    const outcomes = { booked, escalated, failed };
+    const topOutcome = outcomes.booked >= outcomes.escalated && outcomes.booked >= outcomes.failed
+      ? 'Booked'
+      : outcomes.escalated >= outcomes.failed
+        ? 'Escalated'
+        : 'Failed';
+    const minutesUsed = credits?.minutesUsed ?? 0;
+    const creditBalance = credits?.balance ?? 0;
+    return {
+      callsToday,
+      calls7d,
+      appointmentsBooked: booked,
+      escalations: escalated,
+      missedNoAnswer: 0,
+      failedCalls: failed,
+      avgDurationSec: avgDuration,
+      topOutcome,
+      minutesUsed,
+      creditBalance,
+    };
+  },
+
+  /** Agent status for tenant. */
+  getTenantAgentStatus(tenantId: string | undefined): TenantAgentStatus | null {
+    if (!tenantId) return null;
+    const va = seedVoiceAgents.find((a) => a.tenantId === tenantId);
+    if (!va) return null;
+    return {
+      voice: va.voice,
+      language: va.language,
+      status: va.status === 'active' ? 'active' : 'paused',
+      lastSyncedAt: va.lastSyncedAt,
+    };
+  },
+
+  /** Staff counts by role for tenant. */
+  getTenantStaffCounts(tenantId: string | undefined): TenantStaffCounts {
+    const members = tenantId
+      ? seedTenantMemberships.filter((m) => m.tenantId === tenantId && m.status === 'active')
+      : [];
+    const doctors = members.filter((m) => m.roleSlug === 'doctor').length;
+    const receptionists = members.filter((m) => m.roleSlug === 'receptionist').length;
+    return { doctors, receptionists, total: members.length };
+  },
+
+  /** Open tickets for tenant. */
+  getTenantOpenTickets(tenantId: string | undefined, limit = 5): TenantOpenTicket[] {
+    const tickets = filterByTenant(seedSupportTickets, tenantId)
+      .filter((t) => t.status !== 'resolved')
+      .sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))
+      .slice(0, limit);
+    return tickets.map((t) => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      createdAt: t.createdAt,
+    }));
+  },
+
+  /** Recent calls for tenant. */
+  getTenantRecentCalls(tenantId: string | undefined, limit = 10): TenantRecentCall[] {
+    return filterByTenant(seedCalls, tenantId)
+      .map((c) => ({
+        id: c.id,
+        outcome: (c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed') as TenantRecentCall['outcome'],
+        duration: c.duration,
+        createdAt: c.createdAt,
+      }))
+      .sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))
+      .slice(0, limit);
+  },
 };

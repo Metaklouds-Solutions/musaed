@@ -27,8 +27,13 @@ export type {
   TenantRecentCall,
 } from './dashboard';
 export type { BillingOverview } from './billing';
+export type { TenantDetail } from './tenants';
+export type { StaffRow } from './staff';
+export type { TenantAgentDetail } from './agent';
 export type {
   AdminOverviewMetrics,
+  AdminAgentRow,
+  AdminAgentDetail,
   AdminTenantRow,
   AdminKpis,
   AdminRecentTenant,

@@ -1,0 +1,41 @@
+/**
+ * Tenant dashboard top KPIs.
+ */
+
+import { motion } from 'motion/react';
+import { TenantKpiCard } from './TenantKpiCard';
+import type { TenantKpis } from '../../../../shared/types';
+
+interface TenantKpiCardsProps {
+  kpis: TenantKpis;
+}
+
+function formatDuration(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+export function TenantKpiCards({ kpis }: TenantKpiCardsProps) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4"
+    >
+      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Key Metrics</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <TenantKpiCard label="Calls Today" value={kpis.callsToday} />
+        <TenantKpiCard label="Calls 7d" value={kpis.calls7d} />
+        <TenantKpiCard label="Booked" value={kpis.appointmentsBooked} trend="up" />
+        <TenantKpiCard label="Escalations" value={kpis.escalations} />
+        <TenantKpiCard label="Failed" value={kpis.failedCalls} />
+        <TenantKpiCard label="Avg Duration" value={formatDuration(kpis.avgDurationSec)} />
+        <TenantKpiCard label="Top Outcome" value={kpis.topOutcome} />
+        <TenantKpiCard label="Minutes Used" value={kpis.minutesUsed.toLocaleString()} />
+        <TenantKpiCard label="Credits" value={kpis.creditBalance} />
+      </div>
+    </motion.section>
+  );
+}

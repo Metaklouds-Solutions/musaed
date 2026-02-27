@@ -1,0 +1,1 @@
+export { RecentCallsTable } from './RecentCallsTable';

@@ -1,0 +1,1 @@
+export { StaffQuickView } from './StaffQuickView';

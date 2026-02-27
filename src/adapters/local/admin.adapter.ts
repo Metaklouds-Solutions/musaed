@@ -2,6 +2,7 @@
  * Local admin adapter. Platform-wide metrics from seed; no tenant filter.
  */
 
+import { tenantsAdapter } from './tenants.adapter';
 import {
   seedTenants,
   seedAgents,
@@ -97,10 +98,7 @@ export const adminAdapter = {
   },
 
   getTenants(): AdminTenantRow[] {
-    return seedTenants.map((t) => {
-      const planRow = seedTenantPlans.find((p) => p.tenantId === t.id);
-      return { id: t.id, name: t.name, plan: planRow?.plan ?? '—' };
-    });
+    return tenantsAdapter.getAllTenants();
   },
 
   getSystemHealth(): SystemHealth {

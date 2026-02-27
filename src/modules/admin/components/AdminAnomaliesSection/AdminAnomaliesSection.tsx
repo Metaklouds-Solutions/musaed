@@ -29,7 +29,7 @@ export function AdminAnomaliesSection({ usageAnomalies, churnRiskList }: AdminAn
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 min-h-[120px]"
+          className="rounded-[var(--radius-card)] card-glass p-5 min-h-[120px]"
         >
           <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-[var(--warning)]" />
@@ -77,7 +77,7 @@ export function AdminAnomaliesSection({ usageAnomalies, churnRiskList }: AdminAn
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.15 }}
-          className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 min-h-[120px]"
+          className="rounded-[var(--radius-card)] card-glass p-5 min-h-[120px]"
         >
           <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3">
             Churn risk list

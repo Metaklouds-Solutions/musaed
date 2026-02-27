@@ -66,6 +66,7 @@
   --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.18);
   --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.35);
+  --shadow-card-glass: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(124, 92, 255, 0.06);
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -158,6 +159,7 @@
   --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.6);
   --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.5);
   --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.4);
+  --shadow-card-glass: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
 
   --overlay-bg: rgba(0, 0, 0, 0.6);
   --glass-panel-bg: rgba(13, 19, 34, 0.9);
@@ -192,6 +194,23 @@
   --header-search-icon-bg: rgba(255, 255, 255, 0.08);
   --header-search-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3), -2px -2px 8px rgba(255, 255, 255, 0.03);
   --header-search-shadow-focus: 4px 4px 12px rgba(0, 0, 0, 0.35), -2px -2px 8px rgba(255, 255, 255, 0.05);
+}
+
+/* Enhanced card: glass background, subtle accent, used for modals and key sections */
+.card-glass {
+  background: var(--glass-panel-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card-glass);
+  border: 1px solid var(--surface-border-card);
+}
+:root:not(.dark) .card-glass {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(124, 92, 255, 0.08);
+}
+.dark .card-glass {
+  background: rgba(17, 24, 39, 0.85);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 @theme inline {

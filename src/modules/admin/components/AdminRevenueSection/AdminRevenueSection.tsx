@@ -55,7 +55,7 @@ export function AdminRevenueSection({ metrics }: AdminRevenueSectionProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 min-h-[80px]"
+          className="rounded-[var(--radius-card)] card-glass p-5 min-h-[80px]"
         >
           <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3">
             Active subscriptions / plan distribution
@@ -81,7 +81,7 @@ export function AdminRevenueSection({ metrics }: AdminRevenueSectionProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.25 }}
-          className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 min-h-[80px]"
+          className="rounded-[var(--radius-card)] card-glass p-5 min-h-[80px]"
         >
           <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3">
             Recent payment failures

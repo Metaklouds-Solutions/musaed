@@ -26,6 +26,12 @@ export const seedTenantExtended: { tenantId: string; status: 'ACTIVE' | 'TRIAL' 
   { tenantId: 't_002', status: 'TRIAL', createdAt: '2026-02-10T14:30:00Z', onboardingStep: 2 },
 ];
 
+/** Tenant settings (timezone, locale, business hours). */
+export const seedTenantSettings: { tenantId: string; timezone: string; locale: string; businessHours: string }[] = [
+  { tenantId: 't_001', timezone: 'America/New_York', locale: 'en-US', businessHours: 'Mon–Fri 9am–5pm' },
+  { tenantId: 't_002', timezone: 'Europe/London', locale: 'en-GB', businessHours: 'Mon–Sat 8am–6pm' },
+];
+
 export const seedAgents: Agent[] = [
   { id: 'a_001', tenantId: 't_001', name: 'Agent Sarah' },
   { id: 'a_002', tenantId: 't_001', name: 'Agent Mike' },
@@ -143,10 +149,44 @@ export const seedChurnRisk: { tenantId: string; reason: string; score: number }[
   { tenantId: 't_001', reason: 'Low credit balance + payment failure', score: 72 },
 ];
 
+/** Platform agents (Retell catalog) available for deployment to tenants. */
+export const seedPlatformAgents: { id: string; name: string; voice: string; language: string }[] = [
+  { id: 'pa_001', name: 'Clinic Assistant', voice: 'Sarah', language: 'en-US' },
+  { id: 'pa_002', name: 'Reception Bot', voice: 'James', language: 'en-GB' },
+  { id: 'pa_003', name: 'Arabic Assistant', voice: 'Layla', language: 'ar-SA' },
+];
+
+/** Skills catalog (can be enabled per agent). */
+export const seedSkills: { id: string; name: string; description: string }[] = [
+  { id: 'sk_001', name: 'Appointment Booking', description: 'Book and reschedule appointments' },
+  { id: 'sk_002', name: 'Billing Inquiry', description: 'Answer billing questions' },
+  { id: 'sk_003', name: 'Prescription Refill', description: 'Handle refill requests' },
+  { id: 'sk_004', name: 'Office Hours', description: 'Provide office hours info' },
+];
+
+/** Agent-to-skill mapping: voiceAgentId -> [{ skillId, priority }]. */
+export const seedAgentSkills: { agentId: string; skillId: string; priority: number }[] = [
+  { agentId: 'va_001', skillId: 'sk_001', priority: 1 },
+  { agentId: 'va_001', skillId: 'sk_002', priority: 2 },
+  { agentId: 'va_001', skillId: 'sk_004', priority: 3 },
+  { agentId: 'va_002', skillId: 'sk_001', priority: 1 },
+  { agentId: 'va_002', skillId: 'sk_004', priority: 2 },
+];
+
 /** Voice agents (Retell) per tenant for agent status card. */
 export const seedVoiceAgents: VoiceAgent[] = [
   { id: 'va_001', tenantId: 't_001', externalAgentId: 'retell_abc', voice: 'Sarah', language: 'en-US', status: 'active', lastSyncedAt: '2026-02-27T10:00:00Z' },
   { id: 'va_002', tenantId: 't_002', externalAgentId: 'retell_def', voice: 'James', language: 'en-GB', status: 'active', lastSyncedAt: '2026-02-27T09:30:00Z' },
+];
+
+/** Staff user profiles (name, email) for staff list. */
+export const seedStaffUsers: { userId: string; name: string; email: string }[] = [
+  { userId: 'u1', name: 'Dr. Sarah Chen', email: 'sarah@sunrise.com' },
+  { userId: 'u2', name: 'Dr. Mike Johnson', email: 'mike@sunrise.com' },
+  { userId: 'u3', name: 'Emma Wilson', email: 'emma@sunrise.com' },
+  { userId: 'u4', name: 'Lisa Brown', email: 'lisa@sunrise.com' },
+  { userId: 'u5', name: 'Dr. David Lee', email: 'david@metro.com' },
+  { userId: 'u6', name: 'Dr. Anna Park', email: 'anna@metro.com' },
 ];
 
 /** Tenant memberships for staff counts by role. */

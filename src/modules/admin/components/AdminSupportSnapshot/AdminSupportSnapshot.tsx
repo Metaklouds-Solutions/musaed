@@ -17,7 +17,7 @@ export function AdminSupportSnapshot({ snapshot }: AdminSupportSnapshotProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5"
+      className="rounded-[var(--radius-card)] card-glass p-5"
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Support Inbox Snapshot</h2>

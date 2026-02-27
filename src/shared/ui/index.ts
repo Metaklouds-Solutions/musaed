@@ -13,3 +13,4 @@ export { SuccessFeedback } from './SuccessFeedback';
 export { EmptyState } from './EmptyState';
 export { Skeleton } from './Skeleton';
 export { Drawer, DrawerHeader } from './Drawer';
+export { Modal, ModalHeader } from './Modal';

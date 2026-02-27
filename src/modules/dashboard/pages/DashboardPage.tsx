@@ -1,9 +1,15 @@
 /**
  * Dashboard page: layout only. Data from useDashboard hook.
+ * Tenant-scoped KPIs, agent status, recent calls, staff, support tickets.
  */
 
 import { motion } from 'motion/react';
 import { PageHeader, EmptyState, LottiePlayer, LOTTIE_ASSETS } from '../../../shared/ui';
+import { TenantKpiCards } from '../components/TenantKpiCards';
+import { AgentStatusCard } from '../components/AgentStatusCard';
+import { RecentCallsTable } from '../components/RecentCallsTable';
+import { StaffQuickView } from '../components/StaffQuickView';
+import { OpenTicketsWidget } from '../components/OpenTicketsWidget';
 import { HeroMetrics } from '../components/HeroMetrics';
 import { ConversionFunnel } from '../components/ConversionFunnel';
 import { AgentIntelligence } from '../components/AgentIntelligence';
@@ -20,7 +26,17 @@ function getGreeting(): string {
 }
 
 export function DashboardPage() {
-  const { user, metrics, funnel, trend } = useDashboard();
+  const {
+    user,
+    metrics,
+    funnel,
+    trend,
+    kpis,
+    agentStatus,
+    staffCounts,
+    openTickets,
+    recentCalls,
+  } = useDashboard();
 
   if (!user) {
     return (
@@ -48,7 +64,7 @@ export function DashboardPage() {
         </div>
         <PageHeader
           title="Dashboard"
-          description="Revenue impact and conversion from your AI calls."
+          description="Clinic command center: calls, agent, staff, and support."
         />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
           <p className="text-[var(--text-secondary)] text-sm">
@@ -58,6 +74,15 @@ export function DashboardPage() {
         </div>
       </motion.header>
       <div className="space-y-6">
+        <TenantKpiCards kpis={kpis} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <AgentStatusCard agent={agentStatus} />
+          <StaffQuickView counts={staffCounts} />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RecentCallsTable calls={recentCalls} />
+          <OpenTicketsWidget tickets={openTickets} />
+        </div>
         <HeroMetrics metrics={metrics} trend={trend} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ConversionFunnel stages={funnel} />

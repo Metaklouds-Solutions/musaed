@@ -64,10 +64,8 @@ export function StatCardEnhanced({
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       whileHover={{ scale: 1.02, boxShadow: '0 12px 40px rgba(0,0,0,0.12)' }}
       className={cn(
-        'rounded-[var(--radius-card)] overflow-hidden p-5',
-        'bg-[var(--surface-card)] border border-[var(--surface-border-card,var(--border-subtle))]',
-        'shadow-[var(--shadow-card)] transition-colors duration-200',
-        'hover:border-[var(--surface-border,var(--border-default))]',
+        'rounded-[var(--radius-card)] overflow-hidden p-5 card-glass',
+        'transition-colors duration-200',
         className
       )}
     >

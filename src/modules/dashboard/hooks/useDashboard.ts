@@ -18,6 +18,22 @@ export function useDashboard() {
   const metrics = useMemo(() => dashboardAdapter.getMetrics(tenantId), [tenantId]);
   const funnel = useMemo(() => dashboardAdapter.getFunnel(tenantId), [tenantId]);
   const trend = useMemo(() => dashboardAdapter.getTrend(tenantId), [tenantId]);
+  const kpis = useMemo(() => dashboardAdapter.getTenantKpis(tenantId), [tenantId]);
+  const agentStatus = useMemo(() => dashboardAdapter.getTenantAgentStatus(tenantId), [tenantId]);
+  const staffCounts = useMemo(() => dashboardAdapter.getTenantStaffCounts(tenantId), [tenantId]);
+  const openTickets = useMemo(() => dashboardAdapter.getTenantOpenTickets(tenantId, 5), [tenantId]);
+  const recentCalls = useMemo(() => dashboardAdapter.getTenantRecentCalls(tenantId, 10), [tenantId]);
 
-  return { user, tenantId, metrics, funnel, trend };
+  return {
+    user,
+    tenantId,
+    metrics,
+    funnel,
+    trend,
+    kpis,
+    agentStatus,
+    staffCounts,
+    openTickets,
+    recentCalls,
+  };
 }

@@ -36,7 +36,7 @@ function formatDate(iso: string): string {
 export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
   if (calls.length === 0) return null;
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-card)]">
+    <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>

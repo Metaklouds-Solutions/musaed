@@ -18,7 +18,7 @@ export function AudioMockPlayer({ durationSeconds }: AudioMockPlayerProps) {
   const label = `${m}:${s.toString().padStart(2, '0')} / ${Math.floor(durationSeconds / 60)}:${(durationSeconds % 60).toString().padStart(2, '0')}`;
   return (
     <div
-      className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 flex items-center gap-4"
+      className="rounded-[var(--radius-card)] card-glass p-5 flex items-center gap-4"
       style={{ minHeight: '80px' }}
     >
       <button

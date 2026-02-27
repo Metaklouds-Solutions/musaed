@@ -22,7 +22,7 @@ export function TrendChart({ points }: TrendChartProps) {
 
   if (points.length === 0) {
     return (
-      <Card className="p-5 min-h-[200px]">
+      <Card variant="glass" className="p-5 min-h-[200px]">
         <EmptyState
           icon={TrendingUp}
           title="No trend data yet"
@@ -37,7 +37,7 @@ export function TrendChart({ points }: TrendChartProps) {
   const displayPoints = points.length > 7 ? points.slice(-7) : points;
 
   return (
-    <Card className="p-5 min-h-[200px]">
+    <Card variant="glass" className="p-5 min-h-[200px]">
       <h3 className="font-semibold mb-4 text-[var(--text-primary)]">
         Bookings trend
       </h3>

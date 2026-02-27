@@ -13,7 +13,7 @@ export function PlaceholderPage({ title, description = 'Coming soon.' }: Placeho
   return (
     <div className="space-y-6">
       <PageHeader title={title} description={description} />
-      <div className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-8 text-center">
+      <div className="rounded-[var(--radius-card)] card-glass p-8 text-center">
         <p className="text-[var(--text-muted)] text-sm">{description}</p>
       </div>
     </div>

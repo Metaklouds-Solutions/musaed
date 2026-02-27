@@ -37,6 +37,33 @@ export interface ChurnRisk {
   score: number;
 }
 
+/** Admin agent row for agents table. */
+export interface AdminAgentRow {
+  id: string;
+  name: string;
+  externalAgentId: string;
+  voice: string;
+  language: string;
+  tenantId: string | null;
+  tenantName: string | null;
+  status: string;
+  lastSyncedAt: string;
+}
+
+/** Admin agent detail for agent detail page. */
+export interface AdminAgentDetail {
+  id: string;
+  name: string;
+  externalAgentId: string;
+  voice: string;
+  language: string;
+  tenantId: string | null;
+  tenantName: string | null;
+  status: string;
+  lastSyncedAt: string;
+  enabledSkills: { id: string; name: string; priority: number }[];
+}
+
 /** Admin tenant row for tenant list page. */
 export interface AdminTenantRow {
   id: string;

@@ -29,7 +29,7 @@ function formatDate(iso: string): string {
 export function CallMetaPanel({ call, linkedBooking }: CallMetaPanelProps) {
   return (
     <div
-      className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5"
+      className="rounded-[var(--radius-card)] card-glass p-5"
       style={{ minHeight: '120px' }}
     >
       <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">
