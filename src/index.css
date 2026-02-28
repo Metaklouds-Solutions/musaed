@@ -80,6 +80,8 @@
   --glass-panel-border: var(--border-subtle);
   --drawer-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
   --sidebar-item-hover: var(--bg-hover);
+  /* Sidebar active item: light purple tint (#966BFF light) */
+  --sidebar-item-active: rgba(150, 107, 255, 0.12);
 
   --layout-max-width: 1440px;
   --layout-gutter: 24px;
@@ -166,6 +168,8 @@
   --glass-panel-border: var(--border-subtle);
   --drawer-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   --sidebar-item-hover: rgba(255, 255, 255, 0.05);
+  /* Sidebar active item: light purple tint (#966BFF light) for dark mode */
+  --sidebar-item-active: rgba(150, 107, 255, 0.18);
   --sidebar-width-expanded: 240px;
   --sidebar-width-compact: 72px;
 

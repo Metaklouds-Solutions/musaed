@@ -99,36 +99,36 @@ export function AdminTenantsPage() {
           </div>
         </div>
 
-        {/* Tab switcher - polished pill design */}
+        {/* Tab switcher - unified with Settings */}
         <div
           role="tablist"
           aria-label="View mode"
-          className="inline-flex w-full sm:w-auto rounded-xl p-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm"
+          className="inline-flex flex-wrap w-full sm:w-auto gap-1.5 p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm ring-1 ring-black/5"
         >
           <button
             role="tab"
             aria-selected={viewMode === 'list'}
             onClick={() => setViewMode('list')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
               viewMode === 'list'
-                ? 'bg-[var(--bg-base)] text-[var(--text-primary)] shadow-md border border-[var(--border-subtle)]'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/50'
+                ? 'bg-[var(--bg-base)] text-[var(--ds-primary)] shadow-md border border-[var(--border-subtle)] ring-1 ring-[var(--ds-primary)]/20'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60'
             }`}
           >
-            <Users size={18} aria-hidden />
+            <Users size={16} aria-hidden className="shrink-0" />
             Tenants
           </button>
           <button
             role="tab"
             aria-selected={viewMode === 'compare'}
             onClick={() => setViewMode('compare')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
               viewMode === 'compare'
-                ? 'bg-[var(--bg-base)] text-[var(--text-primary)] shadow-md border border-[var(--border-subtle)]'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/50'
+                ? 'bg-[var(--bg-base)] text-[var(--ds-primary)] shadow-md border border-[var(--border-subtle)] ring-1 ring-[var(--ds-primary)]/20'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60'
             }`}
           >
-            <GitCompare size={18} aria-hidden />
+            <GitCompare size={16} aria-hidden className="shrink-0" />
             Compare Tenants
           </button>
         </div>

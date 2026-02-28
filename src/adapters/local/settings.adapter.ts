@@ -34,6 +34,13 @@ export interface AdminSettings {
   retentionPolicies: RetentionPolicy[];
 }
 
+export interface AppointmentRemindersConfig {
+  /** Minutes before appointment to send reminder. */
+  advanceMinutes: number;
+  /** Channel: email or sms. */
+  channel: 'email' | 'sms';
+}
+
 export interface TenantSettings {
   timezone: string;
   locale: string;
@@ -45,6 +52,8 @@ export interface TenantSettings {
     ticketAlerts: boolean;
     bookingReminders: boolean;
   };
+  /** Appointment reminder config (when bookingReminders is on). */
+  appointmentReminders?: AppointmentRemindersConfig;
 }
 
 const defaultAdminSettings: AdminSettings = {
@@ -72,6 +81,10 @@ const defaultTenantSettings: TenantSettings = {
     emailDigest: true,
     ticketAlerts: true,
     bookingReminders: true,
+  },
+  appointmentReminders: {
+    advanceMinutes: 60,
+    channel: 'email',
   },
 };
 
@@ -106,7 +119,14 @@ export const settingsAdapter = {
   /** Get tenant settings. Merges with seed when tenantId provided and no stored override. */
   getTenantSettings(tenantId?: string): TenantSettings {
     const stored = tenantId ? load<TenantSettings>(TENANT_SETTINGS_KEY, tenantId) : load<TenantSettings>(TENANT_SETTINGS_KEY);
-    if (stored) return stored;
+    if (stored) {
+      return {
+        ...defaultTenantSettings,
+        ...stored,
+        notifications: { ...defaultTenantSettings.notifications, ...stored.notifications },
+        appointmentReminders: stored.appointmentReminders ?? defaultTenantSettings.appointmentReminders,
+      };
+    }
     const seed = tenantId ? seedTenantSettings.find((s) => s.tenantId === tenantId) : null;
     return {
       ...defaultTenantSettings,

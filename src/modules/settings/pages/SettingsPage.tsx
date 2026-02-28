@@ -1,10 +1,13 @@
 /**
- * Tenant settings page. Clinic profile, business hours, notifications.
+ * Tenant settings page. Tab switcher: Profile | Hours | Availability | Notifications | Features.
+ * Relevant sections grouped into tabs (like Admin Settings).
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { PageHeader, Button } from '../../../shared/ui';
 import {
+  AppointmentRemindersSection,
   ClinicProfileSection,
   BusinessHoursSection,
   NotificationsSection,
@@ -14,11 +17,31 @@ import {
 import { settingsAdapter, featureFlagsAdapter } from '../../../adapters';
 import type { TenantSettings } from '../../../adapters/local/settings.adapter';
 import { useSession } from '../../../app/session/SessionContext';
-import { CheckCircle2, Save } from 'lucide-react';
+import {
+  CheckCircle2,
+  Save,
+  Building2,
+  Clock,
+  CalendarRange,
+  Bell,
+  Sparkles,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type SettingsTab = 'profile' | 'hours' | 'availability' | 'notifications' | 'features';
+
+const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
+  { id: 'profile', label: 'Profile', icon: Building2 },
+  { id: 'hours', label: 'Hours', icon: Clock },
+  { id: 'availability', label: 'Availability', icon: CalendarRange },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'features', label: 'Features', icon: Sparkles },
+];
 
 export function SettingsPage() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [settings, setSettings] = useState<TenantSettings>(() =>
     settingsAdapter.getTenantSettings(tenantId)
   );
@@ -40,40 +63,134 @@ export function SettingsPage() {
     setTimeout(() => setSaved(false), 2000);
   }, [settings, tenantId]);
 
+  const showSaveButton =
+    activeTab === 'profile' || activeTab === 'hours' || activeTab === 'notifications';
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <PageHeader
-          title="Clinic Settings"
-          description="Configure timezone, business hours, and notifications."
-        />
-        <Button
-          onClick={handleSave}
-          className="shrink-0 flex items-center gap-2"
-          aria-label={saved ? 'Saved' : 'Save changes'}
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0">
+            <PageHeader
+              title="Clinic Settings"
+              description="Configure your clinic profile, hours, availability, and preferences. Switch tabs to manage each area."
+            />
+          </div>
+          {showSaveButton && (
+            <Button
+              onClick={handleSave}
+              className="shrink-0 flex items-center gap-2"
+              aria-label={saved ? 'Saved' : 'Save changes'}
+            >
+              {saved ? <CheckCircle2 size={18} aria-hidden /> : <Save size={18} aria-hidden />}
+              {saved ? 'Saved' : 'Save Changes'}
+            </Button>
+          )}
+        </div>
+
+        {/* Tab switcher - polished pill design like Admin Settings */}
+        <div
+          role="tablist"
+          aria-label="Settings section"
+          className="inline-flex flex-wrap w-full sm:w-auto gap-1.5 p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm ring-1 ring-black/5"
         >
-          {saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
-          {saved ? 'Saved' : 'Save Changes'}
-        </Button>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200',
+                activeTab === tab.id
+                  ? 'bg-[var(--bg-base)] text-[var(--ds-primary)] shadow-md border border-[var(--border-subtle)] ring-1 ring-[var(--ds-primary)]/20'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60'
+              )}
+            >
+              <tab.icon size={16} aria-hidden className="shrink-0" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-8 max-w-3xl">
-        <ClinicProfileSection settings={settings} onChange={setSettings} />
-        <BusinessHoursSection
-          businessHours={settings.businessHours}
-          onChange={(businessHours) => setSettings((s) => ({ ...s, businessHours }))}
-        />
-        <ProviderAvailabilitySection tenantId={tenantId} />
-        <NotificationsSection
-          notifications={settings.notifications}
-          onChange={(notifications) => setSettings((s) => ({ ...s, notifications }))}
-        />
-        <FeatureFlagsSection
-          tenantId={tenantId}
-          flags={featureFlags}
-          onChange={setFeatureFlags}
-        />
-      </div>
+      <AnimatePresence mode="wait">
+        {activeTab === 'profile' && (
+          <motion.div
+            key="profile"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <ClinicProfileSection settings={settings} onChange={setSettings} />
+          </motion.div>
+        )}
+        {activeTab === 'hours' && (
+          <motion.div
+            key="hours"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <BusinessHoursSection
+              businessHours={settings.businessHours}
+              onChange={(businessHours) => setSettings((s) => ({ ...s, businessHours }))}
+            />
+          </motion.div>
+        )}
+        {activeTab === 'availability' && (
+          <motion.div
+            key="availability"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-4xl"
+          >
+            <ProviderAvailabilitySection tenantId={tenantId} />
+          </motion.div>
+        )}
+        {activeTab === 'notifications' && (
+          <motion.div
+            key="notifications"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <NotificationsSection
+              notifications={settings.notifications}
+              onChange={(notifications) => setSettings((s) => ({ ...s, notifications }))}
+            />
+            <AppointmentRemindersSection
+              config={settings.appointmentReminders ?? { advanceMinutes: 60, channel: 'email' }}
+              onChange={(appointmentReminders) => setSettings((s) => ({ ...s, appointmentReminders }))}
+              disabled={!settings.notifications.bookingReminders}
+            />
+          </motion.div>
+        )}
+        {activeTab === 'features' && (
+          <motion.div
+            key="features"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <FeatureFlagsSection
+              tenantId={tenantId}
+              flags={featureFlags}
+              onChange={setFeatureFlags}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

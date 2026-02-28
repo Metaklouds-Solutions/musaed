@@ -40,10 +40,10 @@ export function SidebarItem({
           isCompact ? compactClasses : expandedClasses,
           'focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]',
           isActive
-            ? 'bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)]'
+            ? 'bg-[var(--sidebar-item-active)] text-[var(--ds-primary)]'
             : 'text-[var(--text-secondary)] hover:bg-[var(--sidebar-item-hover)] hover:text-[var(--text-primary)]',
           isCompact && 'justify-center pl-0',
-          !isCompact && isActive && 'pl-3 border-l-[3px] border-l-[var(--ds-primary)]'
+          !isCompact && isActive && 'pl-3 border-l-[3px] border-l-[var(--ds-primary)] font-semibold'
         )
       }
     >

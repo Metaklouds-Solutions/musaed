@@ -107,6 +107,23 @@
     - **Settings:** Tenant or app configuration (timezone, business hours, feature flags, integrations). Not user identity.
     - **Sidebar:** Navigation only. No dropdowns or nested menus unless the IA clearly requires it. Keep the sidebar flat and scannable.
     - **Single entry point:** Each concern has one primary location. Avoid duplicating the same feature across Settings, Account, and sidebar.
+12. **Codebase structure:** Pages live in `src/modules/<feature>/pages/`. No duplicate pages in `src/pages/`. Use `src/app/router.tsx` for routing. Legacy `src/App.tsx` and `src/pages/` have been removed.
+13. **Component size:** Prefer &lt;80 lines per component. Extract when approaching 150+ lines. Split into `ComponentName/SubPart.tsx` or dedicated hooks.
+14. **Documentation:** Add JSDoc to exported components, hooks, and adapter methods. Include purpose, params, and return type.
+
+---
+
+## Codebase Structure (Post-Cleanup)
+
+| Path | Purpose |
+|------|---------|
+| `src/app/` | Routing, layout, guards, session, account modal context |
+| `src/modules/` | Feature modules: admin, settings, calls, customers, dashboard, agent, staff, bookings, etc. |
+| `src/adapters/` | Data access layer. Local + API adapters. No direct seed access from components. |
+| `src/shared/` | Shared UI, types, hooks |
+| `src/components/` | Global components (CommandPalette, MaintenanceBanner, OfflineBanner) |
+
+**Removed (legacy):** `src/App.tsx`, `src/components/Header.tsx`, `src/components/Sidebar.tsx`, `src/pages/*` (13 files). The app uses `AppRouter` and `MainLayout` with `app/layout/` components.
 
 ---
 
@@ -1174,7 +1191,7 @@ These are tagged for backlog; implement when Phase 7A–7C are done or as needed
 | [PHASE-7-HEALTH-DASHBOARD] | Health dashboard (Retell, DB, API) | 7.4 ✅ DONE |
 | [PHASE-7-SOFT-DELETE] | Soft delete (tenants, staff) | 7.4 ✅ DONE |
 | [PHASE-7-PROVIDER-AVAILABILITY] | Provider availability matrix | 7.5 ✅ DONE |
-| [PHASE-7-APPOINTMENT-REMINDERS] | Appointment reminders config | 7.5 |
+| [PHASE-7-APPOINTMENT-REMINDERS] | Appointment reminders config | 7.5 ✅ DONE |
 | [PHASE-7-PMS-INTEGRATION] | PMS integration stubs | 7.5 |
 | [PHASE-7-MULTI-LOCATION] | Multi-location support | 7.5 |
 | [PHASE-7-CUSTOM-PROMPTS] | Custom prompts per tenant | 7.6 |

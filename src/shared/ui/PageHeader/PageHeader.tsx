@@ -1,7 +1,10 @@
 /**
- * PageHeader. Design.json: display 32px/600, description body/caption.
+ * Page header with title and optional description.
+ * Design.json: display 32px/600, description body/caption.
+ * @param title - Main heading text
+ * @param description - Optional subtitle or ReactNode
+ * @param className - Additional CSS classes
  */
-
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 

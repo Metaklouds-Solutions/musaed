@@ -1,8 +1,9 @@
 /**
  * Button primitives. Design.json: primary = accent gradient + glow shadow;
  * secondary = glass (rgba(255,255,255,0.05) + border). Radius 12px, padding 10px 16px.
+ * @param variant - primary | secondary | ghost | danger | success | outline
+ * @param loading - Shows spinner and disables interaction
  */
-
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';

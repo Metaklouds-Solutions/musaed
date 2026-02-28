@@ -72,27 +72,29 @@ export function AdminSettingsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:gap-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <PageHeader
-            title="Settings"
-            description="Admin users, integrations, retention, webhooks, reports."
-          />
+          <div className="min-w-0">
+            <PageHeader
+              title="Settings"
+              description="Admin users, integrations, retention, webhooks, reports. Switch tabs to manage each area."
+            />
+          </div>
           {showSaveButton && (
             <Button
               onClick={handleSave}
               className="shrink-0 flex items-center gap-2"
               aria-label={saved ? 'Saved' : 'Save changes'}
             >
-              {saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
+              {saved ? <CheckCircle2 size={18} aria-hidden /> : <Save size={18} aria-hidden />}
               {saved ? 'Saved' : 'Save Changes'}
             </Button>
           )}
         </div>
 
-        {/* Tab switcher - like Tenants page */}
+        {/* Tab switcher - unified with Tenant Settings */}
         <div
           role="tablist"
           aria-label="Settings section"
-          className="inline-flex flex-wrap gap-1 p-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm"
+          className="inline-flex flex-wrap w-full sm:w-auto gap-1.5 p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm ring-1 ring-black/5"
         >
           {TABS.map((tab) => (
             <button
@@ -101,13 +103,13 @@ export function AdminSettingsPage() {
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200',
+                'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200',
                 activeTab === tab.id
-                  ? 'bg-[var(--bg-base)] text-[var(--text-primary)] shadow-md border border-[var(--border-subtle)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/50'
+                  ? 'bg-[var(--bg-base)] text-[var(--ds-primary)] shadow-md border border-[var(--border-subtle)] ring-1 ring-[var(--ds-primary)]/20'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60'
               )}
             >
-              <tab.icon size={16} aria-hidden />
+              <tab.icon size={16} aria-hidden className="shrink-0" />
               {tab.label}
             </button>
           ))}
