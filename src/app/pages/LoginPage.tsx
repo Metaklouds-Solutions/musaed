@@ -1,11 +1,14 @@
 /**
  * Login: Admin or Tenant. No credentials (prototype). Session in memory.
+ * When 2FA enabled for user, prompts for TOTP code before completing login.
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Zap, Shield, User, Sun, Moon } from 'lucide-react';
 import { useSession } from '../session/SessionContext';
+import { twoFactorAdapter } from '../../adapters';
+import { TwoFactorVerify } from '../../modules/auth/components/TwoFactorVerify';
 import type { User as UserType } from '../../shared/types';
 import type { Theme } from '../layout/Header';
 import FloatingLines from '../../components/FloatingLines';
@@ -52,6 +55,7 @@ interface LoginPageProps {
 export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   const { isAuthenticated, user, login } = useSession();
   const [loading, setLoading] = useState(false);
+  const [pendingUser, setPendingUser] = useState<UserType | null>(null);
   const [localTheme, setLocalTheme] = useState<Theme>(() =>
     typeof themeProp === 'string' ? themeProp : 'dark'
   );
@@ -74,19 +78,54 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   }, [onThemeToggle]);
 
   const handleLogin = useCallback(
-    (user: UserType) => {
+    (selectedUser: UserType) => {
+      if (twoFactorAdapter.isEnabled(selectedUser.id)) {
+        setPendingUser(selectedUser);
+        return;
+      }
       setLoading(true);
       setTimeout(() => {
-        login(user);
+        login(selectedUser);
         setLoading(false);
       }, 600);
     },
     [login]
   );
 
+  const handle2FAVerify = useCallback(() => {
+    if (pendingUser) {
+      login(pendingUser);
+      setPendingUser(null);
+    }
+  }, [login, pendingUser]);
+
+  const handle2FABack = useCallback(() => {
+    setPendingUser(null);
+  }, []);
+
   if (isAuthenticated && user) {
     if (user.role === 'ADMIN') return <Navigate to="/admin/overview" replace />;
     return <Navigate to="/dashboard" replace />;
+  }
+
+  if (pendingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <FloatingLines
+            linesGradient={isDark ? ['#1e3a5f', '#6366f1', '#a78bfa'] : ['#93c5fd', '#6366f1', '#c4b5fd']}
+            animationSpeed={0.8}
+            interactive
+            parallax
+            mixBlendMode="screen"
+          />
+        </div>
+        <div className="absolute inset-0 z-0 bg-background/70" aria-hidden />
+        <div className="relative z-10 w-full max-w-md">
+          <TwoFactorVerify user={pendingUser} onVerify={handle2FAVerify} onBack={handle2FABack} />
+        </div>
+      </div>
+    );
   }
 
   return (

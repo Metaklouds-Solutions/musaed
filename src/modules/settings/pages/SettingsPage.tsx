@@ -9,6 +9,7 @@ import {
   BusinessHoursSection,
   NotificationsSection,
   FeatureFlagsSection,
+  TwoFactorSection,
 } from '../components';
 import { settingsAdapter, featureFlagsAdapter } from '../../../adapters';
 import type { TenantSettings } from '../../../adapters/local/settings.adapter';
@@ -71,6 +72,9 @@ export function SettingsPage() {
           flags={featureFlags}
           onChange={setFeatureFlags}
         />
+        {(user?.role === 'ADMIN' || user?.role === 'TENANT_OWNER') && user && (
+          <TwoFactorSection userId={user.id} userEmail={user.email} />
+        )}
       </div>
     </div>
   );

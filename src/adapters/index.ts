@@ -24,6 +24,7 @@ import * as localSettings from './local/settings.adapter';
 import * as localFeatureFlags from './local/featureFlags.adapter';
 import * as localWebhooks from './local/webhooks.adapter';
 import * as localABTest from './local/abTest.adapter';
+import * as localTwoFactor from './local/twoFactor.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
 import * as apiCalls from './api/calls.adapter';
@@ -55,6 +56,7 @@ export const settingsAdapter = localSettings.settingsAdapter;
 export const featureFlagsAdapter = localFeatureFlags.featureFlagsAdapter;
 export const webhooksAdapter = localWebhooks.webhooksAdapter;
 export const abTestAdapter = localABTest.abTestAdapter;
+export const twoFactorAdapter = localTwoFactor.twoFactorAdapter;
 
 export type { DashboardMetrics, FunnelStage, TrendPoint } from '../shared/types';
 export type { AdminOverviewMetrics, PaymentFailure, UsageAnomaly, ChurnRisk } from '../shared/types';

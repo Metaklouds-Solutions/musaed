@@ -7,7 +7,7 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'outline';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -33,6 +33,8 @@ const variants: Record<Variant, string> = {
     'bg-[var(--error)] text-white hover:bg-[var(--error-muted)]',
   success:
     'bg-[var(--success)] text-white hover:bg-[var(--success-muted)]',
+  outline:
+    'border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

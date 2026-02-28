@@ -4,6 +4,7 @@
 
 import { useState, useCallback } from 'react';
 import { PageHeader, Button } from '../../../shared/ui';
+import { useSession } from '../../../app/session/SessionContext';
 import {
   AdminUsersSection,
   IntegrationsSection,
@@ -12,12 +13,14 @@ import {
   AuditLogSection,
   ScheduledReportsSection,
 } from '../components/settings';
+import { TwoFactorSection } from '../../settings/components';
 import { settingsAdapter, reportsAdapter } from '../../../adapters';
 import type { AdminSettings } from '../../../adapters/local/settings.adapter';
 import type { ScheduledReportConfig } from '../../../adapters/local/reports.adapter';
 import { CheckCircle2, Save } from 'lucide-react';
 
 export function AdminSettingsPage() {
+  const { user } = useSession();
   const [settings, setSettings] = useState<AdminSettings>(() =>
     settingsAdapter.getAdminSettings()
   );
@@ -78,6 +81,7 @@ export function AdminSettingsPage() {
           onDaysChange={handleRetentionDaysChange}
         />
         <ScheduledReportsSection config={scheduledConfig} onChange={setScheduledConfig} />
+        {user && <TwoFactorSection userId={user.id} userEmail={user.email} />}
         <AuditLogSection />
       </div>
     </div>
