@@ -19,6 +19,7 @@ export { LottiePlayer, LOTTIE_ASSETS } from './LottiePlayer';
 export { SuccessFeedback } from './SuccessFeedback';
 export { EmptyState } from './EmptyState';
 export { Skeleton } from './Skeleton';
+export { SavedFiltersDropdown } from './SavedFiltersDropdown';
 export { Drawer, DrawerHeader } from './Drawer';
 export { Modal, ModalHeader } from './Modal';
 export { PasswordInput } from './PasswordInput';

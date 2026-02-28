@@ -1,9 +1,11 @@
 /**
  * Calls list page. Layout only; data from useCallsList hook.
+ * Saved filters: save/apply view presets.
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button } from '../../../shared/ui';
+import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown } from '../../../shared/ui';
+import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
@@ -29,6 +31,31 @@ export function CallsPage() {
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
+
+  const currentFilters = useMemo(
+    () => ({
+      outcome: outcomeFilter,
+      dateRangeStart: dateRange.start.toISOString(),
+      dateRangeEnd: dateRange.end.toISOString(),
+    }),
+    [outcomeFilter, dateRange]
+  );
+
+  const handleApplyFilters = useCallback((f: Record<string, unknown>) => {
+    setOutcomeFilter((f.outcome as string) || null);
+    if (f.dateRangeStart && f.dateRangeEnd) {
+      setDateRange({
+        start: new Date(f.dateRangeStart as string),
+        end: new Date(f.dateRangeEnd as string),
+      });
+    }
+  }, []);
+
+  const savedFilters = useSavedFilters({
+    pageKey: 'calls',
+    currentFilters,
+    onApply: handleApplyFilters,
+  });
 
   const filteredCalls = useMemo(() => {
     if (!outcomeFilter) return calls;
@@ -82,15 +109,26 @@ export function CallsPage() {
           </Button>
         </div>
       </div>
-      <TableFilters
-        outcomes={[
-          { value: 'booked', label: 'Booked' },
-          { value: 'escalated', label: 'Escalated' },
-          { value: 'failed', label: 'Failed' },
-        ]}
-        selectedOutcome={outcomeFilter}
-        onOutcomeChange={setOutcomeFilter}
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <TableFilters
+          outcomes={[
+            { value: 'booked', label: 'Booked' },
+            { value: 'escalated', label: 'Escalated' },
+            { value: 'failed', label: 'Failed' },
+          ]}
+          selectedOutcome={outcomeFilter}
+          onOutcomeChange={setOutcomeFilter}
+        />
+        <SavedFiltersDropdown
+          saved={savedFilters.saved}
+          onSave={(name) => {
+            savedFilters.saveCurrent(name);
+            toast.success(`View "${name}" saved`);
+          }}
+          onApply={savedFilters.apply}
+          onDelete={savedFilters.deleteFilter}
+        />
+      </div>
       <CallsTable
         calls={filteredCalls}
         getCustomerName={(id) => customerMap.get(id) ?? id}

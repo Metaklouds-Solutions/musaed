@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../session/SessionContext';
 import { GlobalSearch } from '../../../components/GlobalSearch';
@@ -20,11 +20,13 @@ export type Theme = 'light' | 'dark';
 interface HeaderProps {
   theme: Theme;
   onThemeToggle: (newTheme?: Theme) => void;
+  onOpenCommandPalette?: () => void;
+  onOpenShortcutsHelp?: () => void;
 }
 
 const THEME_STORAGE_KEY = 'clinic-crm-theme';
 
-export function Header({ theme, onThemeToggle }: HeaderProps) {
+export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShortcutsHelp }: HeaderProps) {
   const { t } = useTranslation();
   useSession(); // SessionProvider required for UserMenu
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -43,9 +45,23 @@ export function Header({ theme, onThemeToggle }: HeaderProps) {
     <div
       className="h-[var(--topbar-height)] w-full flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 md:px-8 backdrop-blur-md sticky top-0 z-10 shrink-0 rounded-xl border border-(var(--separator)) bg-(var(--bg-base))"
     >
-      <GlobalSearch placeholder={t('common.searchPlaceholder')} />
+      <GlobalSearch
+        placeholder={t('common.searchPlaceholder')}
+        onOpenCommandPalette={onOpenCommandPalette}
+      />
 
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        {onOpenShortcutsHelp && (
+          <button
+            type="button"
+            onClick={onOpenShortcutsHelp}
+            className="p-2 rounded-(var(--radius-nav)) hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-(var(--text-muted))"
+            aria-label={t('shortcuts.showHelp', 'Show keyboard shortcuts')}
+            title={t('shortcuts.showHelp', 'Show keyboard shortcuts')}
+          >
+            <HelpCircle size={20} aria-hidden />
+          </button>
+        )}
         <LanguageSwitcher />
         <AnimatedThemeToggler
           storageKey={THEME_STORAGE_KEY}

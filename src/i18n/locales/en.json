@@ -51,5 +51,16 @@
   },
   "offline": {
     "banner": "You're offline. Some features may be unavailable."
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "commandPalette": "Command palette",
+    "goDashboard": "Go to Dashboard",
+    "goCalls": "Go to Calls",
+    "goSupport": "Go to Support inbox",
+    "goHelp": "Go to Help Center",
+    "goTenants": "Go to Tenants",
+    "goOverview": "Go to Admin overview",
+    "showHelp": "Show this help"
   }
 }

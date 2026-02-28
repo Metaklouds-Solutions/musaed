@@ -973,11 +973,33 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 These are tagged for backlog; implement when Phase 7A–7C are done or as needed.
 
+## [PHASE-7-SAVED-FILTERS] Saved Filters / Views
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/adapters/local/savedFilters.adapter.ts`
+- `src/shared/hooks/useSavedFilters.ts`
+- `src/shared/ui/SavedFiltersDropdown/SavedFiltersDropdown.tsx`
+- CallsPage, AdminSupportPage
+
+**Tasks:**
+1. Create savedFiltersAdapter (list, save, get, delete) — localStorage
+2. Create useSavedFilters hook
+3. Create SavedFiltersDropdown (save current, apply saved)
+4. Integrate into CallsPage (outcome, dateRange), AdminSupportPage (tenant, status, priority)
+
+**Review checkpoint:** User can save filter presets and apply them.
+
+> **MODULE COMPLETE** — [PHASE-7-SAVED-FILTERS] done. Say: **"Start next module"** to continue.
+
+---
+
 | Tag | Enhancement | Section |
 |-----|-------------|---------|
 | [PHASE-7-BULK-ACTIONS] | Bulk actions (multi-select, bulk assign/archive/export) | 7.1 |
-| [PHASE-7-SAVED-FILTERS] | Saved filters / views | 7.1 |
-| [PHASE-7-KEYBOARD-SHORTCUTS] | Keyboard shortcuts (N, G+D, etc.) | 7.1 |
+| [PHASE-7-SAVED-FILTERS] | Saved filters / views | 7.1 ✅ DONE |
+| [PHASE-7-KEYBOARD-SHORTCUTS] | Keyboard shortcuts (N, G+D, etc.) | 7.1 ✅ DONE |
 | [PHASE-7-SCHEDULED-REPORTS] | Scheduled reports (email digests) | 7.2 |
 | [PHASE-7-COMPARISON-VIEWS] | Comparison views (tenants, time periods) | 7.2 |
 | [PHASE-7-CALL-ANALYTICS] | Call analytics (sentiment, outcomes, peak hours) | 7.2 |

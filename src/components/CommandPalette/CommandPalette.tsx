@@ -4,6 +4,7 @@
 
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '../../app/session/SessionContext';
 import { ADMIN_NAV, TENANT_NAV } from '../../app/layout/Sidebar/navConfig';
 import { tenantsAdapter, agentsAdapter, supportAdapter } from '../../adapters';
@@ -17,12 +18,15 @@ export interface CommandItem {
   icon?: React.ReactNode;
 }
 
-function flattenNav(items: typeof ADMIN_NAV | typeof TENANT_NAV): CommandItem[] {
+function flattenNav(
+  items: typeof ADMIN_NAV | typeof TENANT_NAV,
+  t: (key: string) => string
+): CommandItem[] {
   const result: CommandItem[] = [];
   for (const item of items) {
-    result.push({ id: item.to, label: item.label, path: item.to, icon: item.icon });
+    result.push({ id: item.to, label: t(item.label), path: item.to, icon: item.icon });
     for (const child of item.children ?? []) {
-      result.push({ id: child.to, label: child.label, path: child.to, icon: child.icon });
+      result.push({ id: child.to, label: t(child.label), path: child.to, icon: child.icon });
     }
   }
   return result;
@@ -46,6 +50,7 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useSession();
   const [query, setQuery] = React.useState('');
   const [selected, setSelected] = React.useState(0);
@@ -53,7 +58,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const listRef = React.useRef<HTMLDivElement>(null);
 
   const isAdmin = user?.role === 'ADMIN';
-  const navItems = React.useMemo(() => flattenNav(isAdmin ? ADMIN_NAV : TENANT_NAV), [isAdmin]);
+  const navItems = React.useMemo(
+    () => flattenNav(isAdmin ? ADMIN_NAV : TENANT_NAV, t),
+    [isAdmin, t]
+  );
 
   const tenants = React.useMemo(() => tenantsAdapter.getAllTenants(), []);
   const agents = React.useMemo(() => agentsAdapter.list(), []);
@@ -190,7 +198,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                 )}
               >
-                {item.icon && <span className="text-[var(--text-muted)]">{item.icon}</span>}
+                {item.icon && (
+                  <span className="text-[var(--text-muted)] shrink-0">
+                    {React.createElement(item.icon as React.ComponentType<{ className?: string }>, { className: 'w-4 h-4' })}
+                  </span>
+                )}
                 <span className="flex-1 truncate">{item.label}</span>
                 {item.meta && (
                   <span className="text-xs text-[var(--text-muted)] truncate">{item.meta}</span>

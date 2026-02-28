@@ -1,11 +1,13 @@
 /**
  * Admin support inbox. Unified tickets, filters, assign, reply.
+ * Saved filters: save/apply view presets.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { PageHeader, Button, Badge, PopoverSelect } from '../../../shared/ui';
+import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown } from '../../../shared/ui';
+import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
 import { exportAdapter, auditAdapter } from '../../../adapters';
 import { Download } from 'lucide-react';
 import { TicketList, TicketChatThread } from '../../shared/support';
@@ -61,6 +63,30 @@ export function AdminSupportPage() {
     },
     [addMessage]
   );
+
+  const currentFilters = useMemo(
+    () => ({
+      tenantFilter: filters.tenantFilter,
+      statusFilter: filters.statusFilter,
+      priorityFilter: filters.priorityFilter,
+    }),
+    [filters]
+  );
+
+  const handleApplySupportFilters = useCallback(
+    (f: Record<string, unknown>) => {
+      setTenantFilter((f.tenantFilter as string) ?? '');
+      setStatusFilter((f.statusFilter as SupportTicket['status']) ?? '');
+      setPriorityFilter((f.priorityFilter as SupportTicket['priority']) ?? '');
+    },
+    [setTenantFilter, setStatusFilter, setPriorityFilter]
+  );
+
+  const savedFilters = useSavedFilters({
+    pageKey: 'admin-support',
+    currentFilters,
+    onApply: handleApplySupportFilters,
+  });
 
   const handleExport = useCallback(() => {
     const rows = tickets.map((t) => ({
@@ -130,7 +156,7 @@ export function AdminSupportPage() {
           Export CSV
         </Button>
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <PopoverSelect
           value={filters.tenantFilter}
           onChange={setTenantFilter}
@@ -160,6 +186,15 @@ export function AdminSupportPage() {
           ]}
           title="Priority"
           aria-label="Filter by priority"
+        />
+        <SavedFiltersDropdown
+          saved={savedFilters.saved}
+          onSave={(name) => {
+            savedFilters.saveCurrent(name);
+            toast.success(`View "${name}" saved`);
+          }}
+          onApply={savedFilters.apply}
+          onDelete={savedFilters.deleteFilter}
         />
       </div>
       <div className="rounded-[var(--radius-card)] card-glass p-4">

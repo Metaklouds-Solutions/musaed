@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Users, Phone, UserPlus, Headphones } from 'lucide-react';
+import { Search, Users, Phone, UserPlus, Headphones, Command } from 'lucide-react';
 import { useSession } from '../../app/session/SessionContext';
 import { searchAdapter, type SearchResult } from '../../adapters';
 import { cn } from '@/lib/utils';
@@ -18,12 +18,16 @@ const TYPE_ICONS: Record<SearchResult['type'], React.ReactNode> = {
   nav: <Search size={16} />,
 };
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/i.test(navigator.userAgent || '');
+
 interface GlobalSearchProps {
   className?: string;
   placeholder?: string;
+  /** Opens the command palette when the shortcut badge is clicked */
+  onOpenCommandPalette?: () => void;
 }
 
-export function GlobalSearch({ className, placeholder }: GlobalSearchProps) {
+export function GlobalSearch({ className, placeholder, onOpenCommandPalette }: GlobalSearchProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useSession();
@@ -116,7 +120,7 @@ export function GlobalSearch({ className, placeholder }: GlobalSearchProps) {
           className={cn(
             'w-full min-w-0 bg-transparent border-0 outline-none text-(var(--text-primary))',
             'placeholder:text-(var(--text-muted)) text-sm',
-            'pl-9 pr-3'
+            'pl-9 pr-16'
           )}
           aria-label="Search"
           aria-expanded={showDropdown}
@@ -124,6 +128,29 @@ export function GlobalSearch({ className, placeholder }: GlobalSearchProps) {
           aria-controls="global-search-results"
           aria-activedescendant={results[selected] ? `search-result-${results[selected].id}` : undefined}
         />
+        {onOpenCommandPalette && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenCommandPalette();
+            }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-2 py-1 rounded-md text-xs font-medium text-(var(--text-muted)) hover:text-(var(--text-primary)) hover:bg-(var(--bg-hover)) transition-colors border border-transparent hover:border-(var(--border-subtle))"
+            title={t('shortcuts.commandPalette', 'Open command palette')}
+            aria-label={t('shortcuts.commandPalette', 'Open command palette')}
+          >
+            <span className="flex items-center gap-0.5 font-sans">
+              {isMac ? (
+                <>
+                  <Command size={12} className="shrink-0" aria-hidden />
+                  <span>K</span>
+                </>
+              ) : (
+                <span>Ctrl+K</span>
+              )}
+            </span>
+          </button>
+        )}
       </div>
 
       {showDropdown && (
