@@ -60,10 +60,15 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
               </TableCell>
               <TableCell>{a.voice}</TableCell>
               <TableCell>{a.language}</TableCell>
-              <TableCell>
+              <TableCell className="min-w-0 max-w-[140px] sm:max-w-[180px]">
                 {a.tenantId ? (
-                  <Link to={`/admin/tenants/${a.tenantId}`} className="hover:opacity-80">
-                    <PillTag variant="plan">{a.tenantName ?? a.tenantId}</PillTag>
+                  <Link
+                    to={`/admin/tenants/${a.tenantId}`}
+                    className="inline-flex max-w-full min-w-0 hover:opacity-80 overflow-hidden"
+                  >
+                    <PillTag variant="plan" className="truncate min-w-0 max-w-full">
+                      {a.tenantName ?? a.tenantId}
+                    </PillTag>
                   </Link>
                 ) : (
                   <span className="text-[var(--text-muted)]">—</span>

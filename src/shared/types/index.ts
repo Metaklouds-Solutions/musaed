@@ -20,6 +20,7 @@ export type {
   DashboardMetrics,
   FunnelStage,
   TrendPoint,
+  RoiMetrics,
   TenantKpis,
   TenantAgentStatus,
   TenantStaffCounts,

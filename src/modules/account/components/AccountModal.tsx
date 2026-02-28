@@ -1,24 +1,50 @@
 /**
- * Manage account modal. Profile (email), Security (password change).
+ * Manage account modal. Profile, Security (password, 2FA, session).
+ * User identity and security live here—not in Settings (tenant/app config).
+ * Security has sub-tabs so each area stays clean (no mess in password area).
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal, ModalHeader, Button, PasswordInput } from '../../../shared/ui';
 import { useSession } from '../../../app/session/SessionContext';
 import { useAccountModal } from '../../../app/account/AccountModalContext';
-import { User, Shield } from 'lucide-react';
+import { TwoFactorSection } from '../../../modules/settings/components';
+import { SessionManagementSection } from '../../../modules/settings/components';
+import { gdprAdapter } from '../../../adapters';
+import { User, Shield, Key, ShieldCheck, Clock, Download, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type AccountTab = 'profile' | 'security';
+type SecuritySubTab = 'password' | 'two-factor' | 'session';
 
 export function AccountModal() {
-  const { user } = useSession();
+  const { user, logout } = useSession();
+  const navigate = useNavigate();
   const { open, closeModal } = useAccountModal();
   const [activeTab, setActiveTab] = useState<AccountTab>('profile');
+  const [securitySubTab, setSecuritySubTab] = useState<SecuritySubTab>('password');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  const handleExportMyData = useCallback(() => {
+    if (user) {
+      gdprAdapter.exportUserData(user);
+      closeModal();
+    }
+  }, [user, closeModal]);
+
+  const handleDeleteAccount = useCallback(() => {
+    if (!user) return;
+    gdprAdapter.deleteUserData(user.id, () => {
+      closeModal();
+      logout();
+      navigate('/login');
+    });
+  }, [user, closeModal, logout, navigate]);
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +73,10 @@ export function AccountModal() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === 'security') setSecuritySubTab('password');
+              }}
               className={cn(
                 'flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer',
                 activeTab === tab.id
@@ -109,83 +138,152 @@ export function AccountModal() {
                   </button>
                 </div>
               </div>
+              <div className="border-t border-[var(--border-subtle)] pt-4 space-y-3">
+                <p className="text-xs text-[var(--text-muted)]">GDPR: export or delete your data.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    className="cursor-pointer flex items-center gap-2"
+                    onClick={handleExportMyData}
+                  >
+                    <Download size={16} />
+                    Export my data
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
           {activeTab === 'security' && (
-            <div className="p-6 space-y-6">
-              <h3 className="font-semibold text-[var(--text-primary)]">Security</h3>
+            <div className="p-6">
+              <h3 className="font-semibold text-[var(--text-primary)] mb-4">Security</h3>
 
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm font-medium text-[var(--text-muted)]">Password</span>
-                  <button type="button" className="text-sm font-medium text-[var(--ds-primary)] cursor-pointer hover:underline">
-                    Set password
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1.5">
-                    Current password
-                  </label>
-                  <PasswordInput
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1.5">
-                    New password
-                  </label>
-                  <PasswordInput
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1.5">
-                    Confirm new password
-                  </label>
-                  <PasswordInput
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={!newPassword || newPassword !== confirmPassword}
-                  className="cursor-pointer"
-                >
-                  {passwordSaved ? 'Saved' : 'Update password'}
-                </Button>
-              </form>
-
-              <div className="border-t border-[var(--border-subtle)] pt-4">
-                <p className="text-sm font-medium text-[var(--text-primary)] mb-2">
-                  Active devices
-                </p>
-                <p className="text-sm text-[var(--text-muted)] mb-2">
-                  Manage your active sessions and devices.
-                </p>
-                <div className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-sm">
-                  <p className="font-medium text-[var(--text-primary)]">Windows · This device</p>
-                  <p className="text-[var(--text-muted)]">Chrome · Today</p>
-                </div>
-              </div>
-
-              <div className="border-t border-[var(--border-subtle)] pt-4">
+              {/* Security sub-tabs: Password | Two-factor | Session */}
+              <div className="flex flex-wrap gap-1 mb-6 p-1 rounded-lg bg-[var(--bg-subtle)] w-fit">
                 <button
                   type="button"
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-[var(--radius-button)] bg-[var(--error)] text-white font-medium text-sm hover:bg-[var(--error-muted)] cursor-pointer transition-colors"
+                  onClick={() => setSecuritySubTab('password')}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+                    securitySubTab === 'password'
+                      ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  )}
                 >
-                  Delete account
+                  <Key size={16} />
+                  Password
+                </button>
+                {(user.role === 'ADMIN' || user.role === 'TENANT_OWNER') && (
+                  <button
+                    type="button"
+                    onClick={() => setSecuritySubTab('two-factor')}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+                      securitySubTab === 'two-factor'
+                        ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                    )}
+                  >
+                    <ShieldCheck size={16} />
+                    Two-factor
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSecuritySubTab('session')}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+                    securitySubTab === 'session'
+                      ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  )}
+                >
+                  <Clock size={16} />
+                  Session
                 </button>
               </div>
+
+              {securitySubTab === 'password' && (
+                <div className="space-y-6">
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-muted)] mb-1.5">
+                        Current password
+                      </label>
+                      <PasswordInput
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-muted)] mb-1.5">
+                        New password
+                      </label>
+                      <PasswordInput
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--text-muted)] mb-1.5">
+                        Confirm new password
+                      </label>
+                      <PasswordInput
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!newPassword || newPassword !== confirmPassword}
+                      className="cursor-pointer"
+                    >
+                      {passwordSaved ? 'Saved' : 'Update password'}
+                    </Button>
+                  </form>
+                  <div className="border-t border-[var(--border-subtle)] pt-4">
+                    {deleteConfirm ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-[var(--text-muted)]">Permanently delete your account and data?</p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="danger"
+                            className="cursor-pointer"
+                            onClick={handleDeleteAccount}
+                          >
+                            Yes, delete
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="cursor-pointer"
+                            onClick={() => setDeleteConfirm(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirm(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-button)] bg-[var(--error)] text-white font-medium text-sm hover:bg-[var(--error-muted)] cursor-pointer transition-colors"
+                      >
+                        <Trash2 size={16} />
+                        Delete account
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {securitySubTab === 'two-factor' && (user.role === 'ADMIN' || user.role === 'TENANT_OWNER') && (
+                <TwoFactorSection userId={user.id} userEmail={user.email} />
+              )}
+
+              {securitySubTab === 'session' && <SessionManagementSection />}
             </div>
           )}
         </div>

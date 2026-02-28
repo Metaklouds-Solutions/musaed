@@ -1,4 +1,5 @@
 export { AdminOverviewPage } from './pages/AdminOverviewPage';
+export { AdminCallsPage } from './pages/AdminCallsPage';
 export { AdminTenantsPage } from './pages/AdminTenantsPage';
 export { AdminTenantDetailPage } from './pages/AdminTenantDetailPage';
 export { AdminStaffPage } from './pages/AdminStaffPage';

@@ -1,10 +1,11 @@
 /**
- * Admin settings page. Admin users, Integrations, Retention policies.
+ * Admin settings page. Tab switcher: Admin Users | Integrations | Retention | Webhooks | Reports | Audit.
+ * Single Settings item in sidebar; switch sections via tabs (like Tenants page).
  */
 
 import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { PageHeader, Button } from '../../../shared/ui';
-import { useSession } from '../../../app/session/SessionContext';
 import {
   AdminUsersSection,
   IntegrationsSection,
@@ -13,14 +14,25 @@ import {
   AuditLogSection,
   ScheduledReportsSection,
 } from '../components/settings';
-import { TwoFactorSection } from '../../settings/components';
 import { settingsAdapter, reportsAdapter } from '../../../adapters';
 import type { AdminSettings } from '../../../adapters/local/settings.adapter';
 import type { ScheduledReportConfig } from '../../../adapters/local/reports.adapter';
-import { CheckCircle2, Save } from 'lucide-react';
+import { CheckCircle2, Save, Users, Plug, FileText, Webhook, BarChart3, ClipboardList } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type SettingsTab = 'admin-users' | 'integrations' | 'retention' | 'webhooks' | 'reports' | 'audit';
+
+const TABS: { id: SettingsTab; label: string; icon: typeof Users }[] = [
+  { id: 'admin-users', label: 'Admin Users', icon: Users },
+  { id: 'integrations', label: 'Integrations', icon: Plug },
+  { id: 'retention', label: 'Retention', icon: FileText },
+  { id: 'webhooks', label: 'Webhooks', icon: Webhook },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { id: 'audit', label: 'Audit', icon: ClipboardList },
+];
 
 export function AdminSettingsPage() {
-  const { user } = useSession();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('admin-users');
   const [settings, setSettings] = useState<AdminSettings>(() =>
     settingsAdapter.getAdminSettings()
   );
@@ -54,36 +66,132 @@ export function AdminSettingsPage() {
     }));
   }, []);
 
+  const showSaveButton = activeTab === 'admin-users' || activeTab === 'integrations' || activeTab === 'retention' || activeTab === 'reports';
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <PageHeader
-          title="Settings"
-          description="Admin users, integrations, retention policies."
-        />
-        <Button
-          onClick={handleSave}
-          className="shrink-0 flex items-center gap-2"
-          aria-label={saved ? 'Saved' : 'Save changes'}
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <PageHeader
+            title="Settings"
+            description="Admin users, integrations, retention, webhooks, reports."
+          />
+          {showSaveButton && (
+            <Button
+              onClick={handleSave}
+              className="shrink-0 flex items-center gap-2"
+              aria-label={saved ? 'Saved' : 'Save changes'}
+            >
+              {saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
+              {saved ? 'Saved' : 'Save Changes'}
+            </Button>
+          )}
+        </div>
+
+        {/* Tab switcher - like Tenants page */}
+        <div
+          role="tablist"
+          aria-label="Settings section"
+          className="inline-flex flex-wrap gap-1 p-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm"
         >
-          {saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
-          {saved ? 'Saved' : 'Save Changes'}
-        </Button>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200',
+                activeTab === tab.id
+                  ? 'bg-[var(--bg-base)] text-[var(--text-primary)] shadow-md border border-[var(--border-subtle)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/50'
+              )}
+            >
+              <tab.icon size={16} aria-hidden />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-8 max-w-3xl">
-        <AdminUsersSection users={settings.adminUsers} />
-        <IntegrationsSection integrations={settings.integrations} />
-        <WebhookEventLogSection />
-        <RetentionSection
-          policies={settings.retentionPolicies}
-          onToggle={handleRetentionToggle}
-          onDaysChange={handleRetentionDaysChange}
-        />
-        <ScheduledReportsSection config={scheduledConfig} onChange={setScheduledConfig} />
-        {user && <TwoFactorSection userId={user.id} userEmail={user.email} />}
-        <AuditLogSection />
-      </div>
+      <AnimatePresence mode="wait">
+        {activeTab === 'admin-users' && (
+          <motion.div
+            key="admin-users"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <AdminUsersSection users={settings.adminUsers} />
+          </motion.div>
+        )}
+        {activeTab === 'integrations' && (
+          <motion.div
+            key="integrations"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <IntegrationsSection integrations={settings.integrations} />
+          </motion.div>
+        )}
+        {activeTab === 'retention' && (
+          <motion.div
+            key="retention"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <RetentionSection
+              policies={settings.retentionPolicies}
+              onToggle={handleRetentionToggle}
+              onDaysChange={handleRetentionDaysChange}
+            />
+          </motion.div>
+        )}
+        {activeTab === 'webhooks' && (
+          <motion.div
+            key="webhooks"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <WebhookEventLogSection />
+          </motion.div>
+        )}
+        {activeTab === 'reports' && (
+          <motion.div
+            key="reports"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <ScheduledReportsSection config={scheduledConfig} onChange={setScheduledConfig} />
+          </motion.div>
+        )}
+        {activeTab === 'audit' && (
+          <motion.div
+            key="audit"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <AuditLogSection />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

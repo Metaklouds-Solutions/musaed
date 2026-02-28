@@ -9,7 +9,7 @@ import {
   BusinessHoursSection,
   NotificationsSection,
   FeatureFlagsSection,
-  TwoFactorSection,
+  ProviderAvailabilitySection,
 } from '../components';
 import { settingsAdapter, featureFlagsAdapter } from '../../../adapters';
 import type { TenantSettings } from '../../../adapters/local/settings.adapter';
@@ -63,6 +63,7 @@ export function SettingsPage() {
           businessHours={settings.businessHours}
           onChange={(businessHours) => setSettings((s) => ({ ...s, businessHours }))}
         />
+        <ProviderAvailabilitySection tenantId={tenantId} />
         <NotificationsSection
           notifications={settings.notifications}
           onChange={(notifications) => setSettings((s) => ({ ...s, notifications }))}
@@ -72,9 +73,6 @@ export function SettingsPage() {
           flags={featureFlags}
           onChange={setFeatureFlags}
         />
-        {(user?.role === 'ADMIN' || user?.role === 'TENANT_OWNER') && user && (
-          <TwoFactorSection userId={user.id} userEmail={user.email} />
-        )}
       </div>
     </div>
   );

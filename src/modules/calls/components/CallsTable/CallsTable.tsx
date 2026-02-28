@@ -20,6 +20,10 @@ import type { Call } from '../../../../shared/types';
 interface CallsTableProps {
   calls: Call[];
   getCustomerName: (customerId: string) => string;
+  /** Base path for view link (e.g. '/admin/calls' for admin). Default: '/calls' */
+  viewBasePath?: string;
+  /** When provided, show Tenant column (admin cross-tenant view) */
+  getTenantName?: (tenantId: string) => string;
 }
 
 function formatDuration(seconds: number): string {
@@ -36,13 +40,20 @@ function formatDate(iso: string): string {
   });
 }
 
-export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
+export function CallsTable({
+  calls,
+  getCustomerName,
+  viewBasePath = '/calls',
+  getTenantName,
+}: CallsTableProps) {
   if (calls.length === 0) return null;
+  const showTenant = Boolean(getTenantName);
   return (
     <DataTable minWidth="min-w-[640px]">
       <Table>
         <TableHeader>
           <TableRow>
+            {showTenant && <TableHead>Tenant</TableHead>}
             <TableHead>Date</TableHead>
             <TableHead>Customer</TableHead>
             <TableHead>Duration</TableHead>
@@ -54,6 +65,11 @@ export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
         <TableBody>
           {calls.map((call) => (
             <TableRow key={call.id}>
+              {showTenant && (
+                <TableCell className="text-[var(--text-secondary)] text-sm">
+                  {getTenantName!(call.tenantId)}
+                </TableCell>
+              )}
               <TableCell className="text-[var(--text-secondary)] text-sm">
                 {formatDate(call.createdAt)}
               </TableCell>
@@ -70,7 +86,7 @@ export function CallsTable({ calls, getCustomerName }: CallsTableProps) {
                 )}
               </TableCell>
               <TableCell>
-                <ViewButton to={`/calls/${call.id}`} aria-label="View call" />
+                <ViewButton to={`${viewBasePath}/${call.id}`} aria-label="View call" />
               </TableCell>
             </TableRow>
           ))}

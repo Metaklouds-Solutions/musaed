@@ -19,6 +19,50 @@ export interface PerformanceMetrics {
   sentimentAvg: number;
 }
 
+/** Tenant comparison row: metrics for one tenant. */
+export interface TenantComparisonRow {
+  tenantId: string;
+  tenantName: string;
+  totalCalls: number;
+  totalBookings: number;
+  conversionRate: number;
+  escalationRate: number;
+  avgDurationSec: number;
+  sentimentAvg: number;
+}
+
+/** Time period comparison: current vs previous period. */
+export interface PeriodComparison {
+  current: number;
+  previous: number;
+  changePercent: number;
+  label: string;
+}
+
+/** Sentiment distribution bucket. */
+export interface SentimentBucket {
+  label: string;
+  range: string;
+  count: number;
+  percentage: number;
+}
+
+/** Peak hours: calls per hour (0–23). */
+export interface PeakHourPoint {
+  hour: number;
+  label: string;
+  count: number;
+}
+
+/** Outcomes by day for trend. */
+export interface OutcomesByDay {
+  date: string;
+  booked: number;
+  escalated: number;
+  failed: number;
+  total: number;
+}
+
 /** A/B test comparison: outcomes by agent version. */
 export interface ABTestOutcomeRow {
   version: string;

@@ -1,7 +1,9 @@
 /**
  * Local staff adapter. List, add, import CSV (stub).
+ * Soft-deleted staff are excluded from lists.
  */
 
+import { softDeleteAdapter } from './softDelete.adapter';
 import {
   seedTenantMemberships,
   seedStaffUsers,
@@ -21,10 +23,12 @@ const tenantName = (id: string) => seedTenants.find((t) => t.id === id)?.name ??
 const addedStaff: StaffRow[] = [];
 
 export const staffAdapter = {
-  /** List staff. Pass tenantId for tenant-scoped, omit for admin (all tenants). */
+  /** List staff. Pass tenantId for tenant-scoped, omit for admin (all tenants). Excludes soft-deleted. */
   list(tenantId?: string): StaffRow[] {
+    const deleted = softDeleteAdapter.getDeletedStaffKeys();
     const fromSeed = seedTenantMemberships
       .filter((m) => !tenantId || m.tenantId === tenantId)
+      .filter((m) => !deleted.has(`${m.userId}::${m.tenantId}`))
       .map((m) => {
         const user = seedStaffUsers.find((u) => u.userId === m.userId);
         return {
@@ -38,7 +42,9 @@ export const staffAdapter = {
           status: m.status,
         } satisfies StaffRow;
       });
-    const fromAdded = addedStaff.filter((s) => !tenantId || s.tenantId === tenantId);
+    const fromAdded = addedStaff.filter(
+      (s) => (!tenantId || s.tenantId === tenantId) && !deleted.has(`${s.userId}::${s.tenantId}`)
+    );
     return [...fromSeed, ...fromAdded];
   },
 

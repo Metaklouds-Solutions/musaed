@@ -22,6 +22,15 @@ export interface TrendPoint {
   bookings: number;
 }
 
+/** ROI metrics for dashboard widget. */
+export interface RoiMetrics {
+  revenue: number;
+  aiCost: number;
+  costSaved: number;
+  roiPercent: number;
+  totalMinutes: number;
+}
+
 /** Tenant dashboard KPIs. */
 export interface TenantKpis {
   callsToday: number;

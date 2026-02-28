@@ -22,5 +22,39 @@ export function useReports(tenantId: string | undefined, dateRange?: DateRangeFi
     [tenantId, dateRange]
   );
 
-  return { outcomes, performance, outcomesByVersion };
+  const periodComparison = useMemo(() => {
+    if (!tenantId) return null;
+    const thisWeek = reportsAdapter.getPerformanceForPeriod(tenantId, 'thisWeek');
+    const lastWeek = reportsAdapter.getPerformanceForPeriod(tenantId, 'lastWeek');
+    return {
+      current: thisWeek,
+      previous: lastWeek,
+      label: 'vs last week',
+    };
+  }, [tenantId]);
+
+  const sentimentDistribution = useMemo(
+    () => reportsAdapter.getSentimentDistribution(tenantId, dateRange),
+    [tenantId, dateRange]
+  );
+
+  const peakHours = useMemo(
+    () => reportsAdapter.getPeakHours(tenantId, dateRange),
+    [tenantId, dateRange]
+  );
+
+  const outcomesByDay = useMemo(
+    () => reportsAdapter.getOutcomesByDay(tenantId, dateRange),
+    [tenantId, dateRange]
+  );
+
+  return {
+    outcomes,
+    performance,
+    outcomesByVersion,
+    periodComparison,
+    sentimentDistribution,
+    peakHours,
+    outcomesByDay,
+  };
 }

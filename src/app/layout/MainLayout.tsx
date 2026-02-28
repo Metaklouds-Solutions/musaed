@@ -11,6 +11,7 @@ import { PageContent } from './PageContent';
 import { AccountModalProvider } from '../account/AccountModalContext';
 import { AccountModal } from '../../modules/account/components/AccountModal';
 import { CommandPalette } from '../../components/CommandPalette';
+import { MaintenanceBanner } from '../../components/MaintenanceBanner';
 import { KeyboardShortcutsHelp } from '../../components/KeyboardShortcutsHelp';
 import { useHotkeys } from '../../shared/hooks/useHotkeys';
 import { useSession } from '../session/SessionContext';
@@ -64,6 +65,7 @@ export function MainLayout() {
           <Sidebar />
         </div>
         <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 gap-3 pl-14 md:pl-0">
+          <MaintenanceBanner />
           <Header
           theme={theme}
           onThemeToggle={onThemeToggle}

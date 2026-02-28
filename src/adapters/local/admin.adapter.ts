@@ -103,13 +103,22 @@ export const adminAdapter = {
   },
 
   getSystemHealth(): SystemHealth {
+    return this.getSystemHealthExtended();
+  },
+
+  /** Health dashboard: Retell, DB, API, Webhooks. */
+  getSystemHealthExtended(): AdminSystemHealthExtended {
     return {
       status: 'ok',
       integrations: [
-        { name: 'Stripe', status: 'ok' },
-        { name: 'AI Provider', status: 'ok' },
+        { name: 'Retell (Voice API)', status: 'ok' },
         { name: 'Database', status: 'ok' },
+        { name: 'API (Backend)', status: 'ok' },
+        { name: 'Stripe', status: 'ok' },
+        { name: 'Webhooks', status: 'ok' },
       ],
+      retellSync: 'ok',
+      webhooks: 'ok',
     };
   },
 
@@ -217,19 +226,4 @@ export const adminAdapter = {
     });
   },
 
-  /** Admin dashboard: extended system health (Retell, webhooks). */
-  getSystemHealthExtended(): AdminSystemHealthExtended {
-    return {
-      status: 'ok',
-      integrations: [
-        { name: 'Stripe', status: 'ok' },
-        { name: 'AI Provider', status: 'ok' },
-        { name: 'Database', status: 'ok' },
-        { name: 'Retell', status: 'ok' },
-        { name: 'Webhooks', status: 'ok' },
-      ],
-      retellSync: 'ok',
-      webhooks: 'ok',
-    };
-  },
 };

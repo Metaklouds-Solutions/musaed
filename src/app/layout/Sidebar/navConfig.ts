@@ -33,16 +33,7 @@ export const ADMIN_NAV: NavItem[] = [
   { to: '/admin/skills', label: 'common.skillsCatalog', icon: BookOpen },
   { to: '/admin/billing', label: 'common.billing', icon: CreditCard },
   { to: '/admin/system', label: 'common.systemHealth', icon: Activity },
-  {
-    to: '/admin/settings',
-    label: 'common.settings',
-    icon: Settings,
-    children: [
-      { to: '/admin/settings', label: 'common.adminUsers', icon: Settings },
-      { to: '/admin/settings', label: 'common.integrations', icon: Activity },
-      { to: '/admin/settings', label: 'common.retentionPolicies', icon: FileText },
-    ],
-  },
+  { to: '/admin/settings', label: 'common.settings', icon: Settings },
 ];
 
 export const TENANT_NAV: NavItem[] = [

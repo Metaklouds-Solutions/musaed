@@ -24,6 +24,7 @@ export function useDashboard(dateRange?: DateRangeFilter) {
   const staffCounts = useMemo(() => dashboardAdapter.getTenantStaffCounts(tenantId), [tenantId]);
   const openTickets = useMemo(() => dashboardAdapter.getTenantOpenTickets(tenantId, 5), [tenantId]);
   const recentCalls = useMemo(() => dashboardAdapter.getTenantRecentCalls(tenantId, 10, dateRange), [tenantId, dateRange]);
+  const roi = useMemo(() => dashboardAdapter.getRoiMetrics(tenantId, dateRange), [tenantId, dateRange]);
 
   return {
     user,
@@ -36,5 +37,6 @@ export function useDashboard(dateRange?: DateRangeFilter) {
     staffCounts,
     openTickets,
     recentCalls,
+    roi,
   };
 }

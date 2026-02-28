@@ -1,7 +1,9 @@
 /**
  * Local tenants adapter. Tenant detail for admin. In-memory additions for Add Tenant.
+ * Soft-deleted tenants are excluded from lists.
  */
 
+import { softDeleteAdapter } from './softDelete.adapter';
 import {
   seedTenants,
   seedTenantExtended,
@@ -15,13 +17,17 @@ import type { TenantDetail, AdminTenantRow } from '../../shared/types';
 const addedTenants: AdminTenantRow[] = [];
 
 export const tenantsAdapter = {
-  /** Get all tenants for admin list (seed + added). */
+  /** Get all tenants for admin list (seed + added). Excludes soft-deleted. */
   getAllTenants(): AdminTenantRow[] {
-    const fromSeed = seedTenants.map((t) => {
-      const plan = seedTenantPlans.find((p) => p.tenantId === t.id);
-      return { id: t.id, name: t.name, plan: plan?.plan ?? '—' };
-    });
-    return [...fromSeed, ...addedTenants];
+    const deleted = softDeleteAdapter.getDeletedTenantIds();
+    const fromSeed = seedTenants
+      .filter((t) => !deleted.has(t.id))
+      .map((t) => {
+        const plan = seedTenantPlans.find((p) => p.tenantId === t.id);
+        return { id: t.id, name: t.name, plan: plan?.plan ?? '—' };
+      });
+    const fromAdded = addedTenants.filter((t) => !deleted.has(t.id));
+    return [...fromSeed, ...fromAdded];
   },
 
   /** Get platform agents available for deployment. */
@@ -47,8 +53,9 @@ export const tenantsAdapter = {
     return row;
   },
 
-  /** Get full tenant detail by ID. */
+  /** Get full tenant detail by ID. Returns null for soft-deleted tenants. */
   getTenantDetail(id: string): TenantDetail | null {
+    if (softDeleteAdapter.isTenantDeleted(id)) return null;
     const fromAdded = addedTenants.find((t) => t.id === id);
     if (fromAdded) {
       return {

@@ -4,7 +4,7 @@
  * Scheduled reports config (localStorage; actual email sending requires backend).
  */
 
-import { seedCalls, seedBookings } from '../../mock/seedData';
+import { seedCalls, seedBookings, seedTenants } from '../../mock/seedData';
 
 const SCHEDULED_REPORTS_KEY = 'clinic-crm-scheduled-reports';
 
@@ -25,7 +25,15 @@ const defaultScheduledConfig: ScheduledReportConfig = {
   dayOfWeek: 1,
   dayOfMonth: 1,
 };
-import type { OutcomeBreakdown, PerformanceMetrics, ABTestOutcomeRow } from '../../shared/types/reports';
+import type {
+  OutcomeBreakdown,
+  PerformanceMetrics,
+  ABTestOutcomeRow,
+  TenantComparisonRow,
+  SentimentBucket,
+  PeakHourPoint,
+  OutcomesByDay,
+} from '../../shared/types/reports';
 
 export interface DateRangeFilter {
   start: Date;
@@ -145,5 +153,121 @@ export const reportsAdapter = {
       });
     }
     return rows.sort((a, b) => a.version.localeCompare(b.version));
+  },
+
+  /** Tenant comparison: metrics for multiple tenants (admin). */
+  getTenantComparison(tenantIds: string[], dateRange?: DateRangeFilter): TenantComparisonRow[] {
+    const rows: TenantComparisonRow[] = [];
+    for (const tenantId of tenantIds) {
+      const perf = this.getPerformance(tenantId, dateRange);
+      const tenant = seedTenants.find((t) => t.id === tenantId);
+      rows.push({
+        tenantId,
+        tenantName: tenant?.name ?? tenantId,
+        totalCalls: perf.totalCalls,
+        totalBookings: perf.totalBookings,
+        conversionRate: perf.conversionRate,
+        escalationRate: perf.escalationRate,
+        avgDurationSec: perf.avgDurationSec,
+        sentimentAvg: perf.sentimentAvg,
+      });
+    }
+    return rows;
+  },
+
+  /** Performance for a specific period (for time comparison). */
+  getPerformanceForPeriod(
+    tenantId: string | undefined,
+    period: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth'
+  ): PerformanceMetrics {
+    const now = new Date();
+    let start: Date;
+    let end: Date;
+    if (period === 'thisWeek') {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      start = new Date(now);
+      start.setDate(diff);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+    } else if (period === 'lastWeek') {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      start = new Date(now);
+      start.setDate(diff - 7);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setDate(diff - 1);
+      end.setHours(23, 59, 59, 999);
+    } else if (period === 'thisMonth') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    }
+    return this.getPerformance(tenantId, { start, end });
+  },
+
+  /** Sentiment distribution: positive / neutral / negative buckets. */
+  getSentimentDistribution(tenantId: string | undefined, dateRange?: DateRangeFilter): SentimentBucket[] {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const total = calls.length;
+    if (total === 0) {
+      return [
+        { label: 'Positive', range: '0.8–1.0', count: 0, percentage: 0 },
+        { label: 'Neutral', range: '0.5–0.8', count: 0, percentage: 0 },
+        { label: 'Negative', range: '0–0.5', count: 0, percentage: 0 },
+      ];
+    }
+    const positive = calls.filter((c) => c.sentimentScore >= 0.8).length;
+    const neutral = calls.filter((c) => c.sentimentScore >= 0.5 && c.sentimentScore < 0.8).length;
+    const negative = total - positive - neutral;
+    return [
+      { label: 'Positive', range: '0.8–1.0', count: positive, percentage: Math.round((positive / total) * 100) },
+      { label: 'Neutral', range: '0.5–0.8', count: neutral, percentage: Math.round((neutral / total) * 100) },
+      { label: 'Negative', range: '0–0.5', count: negative, percentage: Math.round((negative / total) * 100) },
+    ];
+  },
+
+  /** Peak hours: calls per hour (0–23). */
+  getPeakHours(tenantId: string | undefined, dateRange?: DateRangeFilter): PeakHourPoint[] {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const byHour = new Map<number, number>();
+    for (let h = 0; h < 24; h++) byHour.set(h, 0);
+    for (const c of calls) {
+      const hour = new Date(c.createdAt).getUTCHours();
+      byHour.set(hour, (byHour.get(hour) ?? 0) + 1);
+    }
+    return Array.from(byHour.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([hour, count]) => {
+        const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        const ampm = hour < 12 ? 'am' : 'pm';
+        return { hour, label: `${h}${ampm}`, count };
+      });
+  },
+
+  /** Outcomes by day for trend chart. */
+  getOutcomesByDay(tenantId: string | undefined, dateRange?: DateRangeFilter): OutcomesByDay[] {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const byDate = new Map<string, { booked: number; escalated: number; failed: number }>();
+    for (const c of calls) {
+      const date = c.createdAt.slice(0, 10);
+      if (!byDate.has(date)) byDate.set(date, { booked: 0, escalated: 0, failed: 0 });
+      const row = byDate.get(date)!;
+      if (c.bookingCreated) row.booked++;
+      else if (c.escalationFlag) row.escalated++;
+      else row.failed++;
+    }
+    return Array.from(byDate.entries())
+      .map(([date, row]) => ({
+        date,
+        ...row,
+        total: row.booked + row.escalated + row.failed,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   },
 };

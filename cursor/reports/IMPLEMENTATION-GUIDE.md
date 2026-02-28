@@ -101,6 +101,12 @@
 7. **Modern UI & animations:** Use Framer Motion, GSAP, React Spline, Anime.js, or React Transition Group for smooth, polished animations. Keep animations performant (prefer `transform`/`opacity`, avoid layout thrashing).
 8. **Performance:** Write fast code — lazy-load routes, memoize expensive computations, avoid unnecessary re-renders. Use `React.memo`, `useMemo`, `useCallback` where appropriate. Keep bundle size lean.
 9. **Responsive design:** All code must be responsive. Use mobile-first CSS, breakpoints (sm/md/lg/xl), and test on viewports 320px–1920px+. Touch targets ≥44px on mobile.
+10. **Charts:** When displaying chart data (bar, line, pie, area, etc.), use **shadcn charts** (`@/components/ui/chart`). Do not build custom CSS-only charts; use `ChartContainer`, `ChartTooltip`, and Recharts primitives (BarChart, LineChart, PieChart, etc.) from the shadcn chart component.
+11. **UI organization (industry standard):** Do not cluster unrelated features in one place. Follow patterns used by Google, Microsoft, Stripe, and other large products:
+    - **Account (Manage Account / Profile):** User identity, security, and session. Place here: profile, password, 2FA, active session, connected accounts. Accessed from header avatar → Manage Account.
+    - **Settings:** Tenant or app configuration (timezone, business hours, feature flags, integrations). Not user identity.
+    - **Sidebar:** Navigation only. No dropdowns or nested menus unless the IA clearly requires it. Keep the sidebar flat and scannable.
+    - **Single entry point:** Each concern has one primary location. Avoid duplicating the same feature across Settings, Account, and sidebar.
 
 ---
 
@@ -816,9 +822,53 @@ When a task is done, mark: `[PHASE-1-ROLES] ✅ DONE`
 
 ---
 
+## [PHASE-7-COMPARISON-VIEWS] Comparison Views
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/modules/admin/components/TenantComparisonView/` — Admin tenant comparison
+- `src/modules/reports/components/PeriodComparison/` — Tenant time period comparison
+- `src/adapters/local/reports.adapter.ts` — getTenantComparison(), getPerformanceForPeriod()
+
+**Tasks:**
+1. Tenant comparison: Admin selects 2 tenants, sees metrics side by side (calls, bookings, conversion, escalation, duration, sentiment)
+2. Time period comparison: Tenant Reports shows "vs last week" with % change indicators
+3. Adapter: getTenantComparison(tenantIds, dateRange), getPerformanceForPeriod(tenantId, period)
+
+**Review checkpoint:** Admin can compare tenants; tenants see period-over-period changes.
+
+> **MODULE COMPLETE** — [PHASE-7-COMPARISON-VIEWS] done. Say: **"Start next module"** to continue.
+
+---
+
+## [PHASE-7-CALL-ANALYTICS] Call Analytics
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/modules/reports/components/SentimentChart/` — Sentiment distribution (positive/neutral/negative)
+- `src/modules/reports/components/PeakHoursChart/` — Calls per hour (0–23)
+- `src/modules/reports/components/OutcomesOverTimeChart/` — Outcomes by day (stacked bars)
+- `src/adapters/local/reports.adapter.ts` — getSentimentDistribution(), getPeakHours(), getOutcomesByDay()
+
+**Tasks:**
+1. Sentiment distribution: buckets (positive ≥0.8, neutral 0.5–0.8, negative <0.5)
+2. Peak hours: calls per hour with bar chart
+3. Outcomes over time: booked/escalated/failed by day with stacked bars
+4. Integrate into Reports page (tenant view)
+
+**Review checkpoint:** Tenant Reports shows sentiment, peak hours, and outcomes-over-time charts.
+
+> **MODULE COMPLETE** — [PHASE-7-CALL-ANALYTICS] done. Say: **"Start next module"** to continue.
+
+---
+
 ## [PHASE-7B-2FA] 2FA / MFA
 
-**Status:** ⬜ TODO
+**Status:** ✅ DONE
+
+**Placement:** Header → Manage Account → Security tab (not in Settings).
 
 **Files:**
 - `src/modules/auth/components/TwoFactorSetup.tsx`
@@ -995,22 +1045,135 @@ These are tagged for backlog; implement when Phase 7A–7C are done or as needed
 
 ---
 
+## [PHASE-7-SESSION-MGMT] Session Management (Timeout, Active Sessions)
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/app/session/SessionContext.tsx` — idle timeout, activity tracking, extendSession
+- `src/app/session/sessionConfig.ts` — timeout config (60 min)
+- `src/modules/settings/components/SessionManagementSection/` — Active session UI
+- `src/modules/account/components/AccountModal.tsx` — Session + 2FA in Security tab (Manage Account)
+
+**Tasks:**
+1. Idle timeout: 60 min inactivity → auto-logout with toast
+2. Activity tracking: mousemove, keydown, click, scroll, touchstart
+3. Warning toast 1 min before expiry
+4. SessionManagementSection: started, last activity, expires in, Extend Session button
+5. **Placement:** Header → Manage Account → Security tab. Not in Settings (per UI organization rule).
+
+**Review checkpoint:** Session expires after 60 min idle; user extends via Manage Account → Security.
+
+> **MODULE COMPLETE** — [PHASE-7-SESSION-MGMT] done. Say: **"Start next module"** to continue.
+
+---
+
+## [PHASE-7-PII-MASKING] PII Masking Utility
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/shared/utils/piiMask.ts` — maskEmail, maskPhone, maskName, maskInText
+- `src/shared/hooks/usePiiMask.ts` — hook with toggle for auditors
+- `src/shared/hooks/usePermissions.ts` — canViewUnmaskedPII (auditor, admin)
+- TranscriptViewer, CustomersTable, CustomerDetailPage — integrated
+
+**Tasks:**
+1. maskEmail: j***@example.com
+2. maskPhone: ***-***-1234
+3. maskName: J*** D***
+4. maskInText: replace emails/phones in transcripts
+5. usePiiMask: masked by default; auditors can toggle Reveal PII
+6. Transcript, customer list, customer detail: PII masked
+
+**Review checkpoint:** PII masked in transcripts and customer data; auditors see Reveal PII toggle.
+
+> **MODULE COMPLETE** — [PHASE-7-PII-MASKING] done. Say: **"Start next module"** to continue.
+
+---
+
+## [PHASE-7-DATA-EXPORT-DELETE] Data Export / Delete (GDPR)
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/adapters/local/gdpr.adapter.ts` — exportUserData, exportCustomerData, deleteUserData, deleteCustomerData
+- `src/adapters/local/customers.adapter.ts` — filter soft-deleted customers
+- Account modal: Export my data, Delete account (with confirmation)
+- CustomerDetailPage: Export data, Delete customer (tenant_owner, clinic_admin)
+
+**Tasks:**
+1. exportUserData: JSON download (profile, 2FA status)
+2. exportCustomerData: JSON download (customer, calls, bookings)
+3. deleteUserData: clear 2FA, logout
+4. deleteCustomerData: soft delete (localStorage), filter in customersAdapter
+5. Account: Export my data + Delete account with confirmation
+6. Customer detail: Export data + Delete customer with confirmation
+
+**Review checkpoint:** User can export/delete account; tenant can export/delete customer (GDPR).
+
+> **MODULE COMPLETE** — [PHASE-7-DATA-EXPORT-DELETE] done. Say: **"Start next module"** to continue.
+
+---
+
+## [PHASE-7-MAINTENANCE-MODE] Maintenance Mode Banner
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/adapters/local/maintenance.adapter.ts` — isEnabled, setEnabled, getMessage
+- `src/components/MaintenanceBanner/` — banner component
+- `src/app/layout/MainLayout.tsx` — banner above Header
+- Admin System page — Enable/Disable toggle
+
+**Tasks:**
+1. maintenanceAdapter: localStorage, MAINTENANCE_CHANGED event
+2. MaintenanceBanner: shows when enabled, custom message
+3. MainLayout: banner at top for all authenticated users
+4. Admin System: toggle button
+
+**Review checkpoint:** Admin enables maintenance; banner appears for all users.
+
+> **MODULE COMPLETE** — [PHASE-7-MAINTENANCE-MODE] done. Say: **"Start next module"** to continue.
+
+---
+
+## [PHASE-7-HEALTH-DASHBOARD] Health Dashboard (Retell, DB, API)
+
+**Status:** ✅ DONE
+
+**Files:**
+- `src/adapters/local/admin.adapter.ts` — getSystemHealthExtended (Retell, DB, API, Stripe, Webhooks)
+- `src/modules/admin/components/HealthDashboardSection/` — card layout for core services
+- Admin System page — Health dashboard section
+
+**Tasks:**
+1. getSystemHealthExtended: Retell (Voice API), Database, API (Backend), Stripe, Webhooks
+2. HealthDashboardSection: cards for Retell, DB, API with status badges
+3. Admin System page: Health dashboard above Overall status
+
+**Review checkpoint:** Admin sees Retell, DB, API health cards on System page.
+
+> **MODULE COMPLETE** — [PHASE-7-HEALTH-DASHBOARD] done. Say: **"Start next module"** to continue.
+
+---
+
 | Tag | Enhancement | Section |
 |-----|-------------|---------|
 | [PHASE-7-BULK-ACTIONS] | Bulk actions (multi-select, bulk assign/archive/export) | 7.1 |
 | [PHASE-7-SAVED-FILTERS] | Saved filters / views | 7.1 ✅ DONE |
 | [PHASE-7-KEYBOARD-SHORTCUTS] | Keyboard shortcuts (N, G+D, etc.) | 7.1 ✅ DONE |
-| [PHASE-7-SCHEDULED-REPORTS] | Scheduled reports (email digests) | 7.2 |
-| [PHASE-7-COMPARISON-VIEWS] | Comparison views (tenants, time periods) | 7.2 |
-| [PHASE-7-CALL-ANALYTICS] | Call analytics (sentiment, outcomes, peak hours) | 7.2 |
-| [PHASE-7-ROI-DASHBOARD] | ROI dashboard widget | 7.2 |
-| [PHASE-7-SESSION-MGMT] | Session management (timeout, active sessions) | 7.3 |
-| [PHASE-7-PII-MASKING] | PII masking utility | 7.3 |
-| [PHASE-7-DATA-EXPORT-DELETE] | Data export / delete (GDPR) | 7.3 |
-| [PHASE-7-MAINTENANCE-MODE] | Maintenance mode banner | 7.4 |
-| [PHASE-7-HEALTH-DASHBOARD] | Health dashboard (Retell, DB, API) | 7.4 |
-| [PHASE-7-SOFT-DELETE] | Soft delete (tenants, staff) | 7.4 |
-| [PHASE-7-PROVIDER-AVAILABILITY] | Provider availability matrix | 7.5 |
+| [PHASE-7-SCHEDULED-REPORTS] | Scheduled reports (email digests) | 7.2 ✅ DONE |
+| [PHASE-7-COMPARISON-VIEWS] | Comparison views (tenants, time periods) | 7.2 ✅ DONE |
+| [PHASE-7-CALL-ANALYTICS] | Call analytics (sentiment, outcomes, peak hours) | 7.2 ✅ DONE |
+| [PHASE-7-ROI-DASHBOARD] | ROI dashboard widget | 7.2 ✅ DONE |
+| [PHASE-7-SESSION-MGMT] | Session management (timeout, active sessions) | 7.3 ✅ DONE |
+| [PHASE-7-PII-MASKING] | PII masking utility | 7.3 ✅ DONE |
+| [PHASE-7-DATA-EXPORT-DELETE] | Data export / delete (GDPR) | 7.3 ✅ DONE |
+| [PHASE-7-MAINTENANCE-MODE] | Maintenance mode banner | 7.4 ✅ DONE |
+| [PHASE-7-HEALTH-DASHBOARD] | Health dashboard (Retell, DB, API) | 7.4 ✅ DONE |
+| [PHASE-7-SOFT-DELETE] | Soft delete (tenants, staff) | 7.4 ✅ DONE |
+| [PHASE-7-PROVIDER-AVAILABILITY] | Provider availability matrix | 7.5 ✅ DONE |
 | [PHASE-7-APPOINTMENT-REMINDERS] | Appointment reminders config | 7.5 |
 | [PHASE-7-PMS-INTEGRATION] | PMS integration stubs | 7.5 |
 | [PHASE-7-MULTI-LOCATION] | Multi-location support | 7.5 |

@@ -9,6 +9,10 @@ import { DateRangePicker } from '../../../components/DateRangePicker';
 import { OutcomeBreakdown } from '../components/OutcomeBreakdown';
 import { PerformanceMetrics } from '../components/PerformanceMetrics';
 import { ABComparisonReport } from '../components/ABComparisonReport/ABComparisonReport';
+import { PeriodComparison } from '../components/PeriodComparison/PeriodComparison';
+import { SentimentChart } from '../components/SentimentChart/SentimentChart';
+import { PeakHoursChart } from '../components/PeakHoursChart/PeakHoursChart';
+import { OutcomesOverTimeChart } from '../components/OutcomesOverTimeChart/OutcomesOverTimeChart';
 import { useReports } from '../hooks/useReports';
 import { useSession } from '../../../app/session/SessionContext';
 
@@ -24,7 +28,15 @@ export function ReportsPage() {
   const tenantId = user?.tenantId;
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
-  const { outcomes, performance, outcomesByVersion } = useReports(tenantId, dateRangeFilter);
+  const {
+    outcomes,
+    performance,
+    outcomesByVersion,
+    periodComparison,
+    sentimentDistribution,
+    peakHours,
+    outcomesByDay,
+  } = useReports(tenantId, dateRangeFilter);
 
   if (!tenantId) {
     return (
@@ -58,6 +70,20 @@ export function ReportsPage() {
         <OutcomeBreakdown outcomes={outcomes} />
         <PerformanceMetrics metrics={performance} />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SentimentChart buckets={sentimentDistribution} />
+        <PeakHoursChart points={peakHours} />
+        <OutcomesOverTimeChart data={outcomesByDay} />
+      </div>
+
+      {periodComparison && (
+        <PeriodComparison
+          current={periodComparison.current}
+          previous={periodComparison.previous}
+          label={periodComparison.label}
+        />
+      )}
 
       {outcomesByVersion.length > 0 && (
         <div className="mt-6">

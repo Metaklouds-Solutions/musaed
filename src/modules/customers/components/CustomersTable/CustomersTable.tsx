@@ -1,6 +1,6 @@
 /**
  * Customers table. Data from props only; no adapter access.
- * Responsive with DataTable, Avatar.
+ * PII (name, email) masked by default; auditors can reveal.
  */
 
 import {
@@ -14,6 +14,7 @@ import {
   ViewButton,
   Avatar,
 } from '../../../../shared/ui';
+import { usePiiMask } from '../../../../shared/hooks/usePiiMask';
 import type { Customer } from '../../../../shared/types';
 
 interface CustomersTableProps {
@@ -21,6 +22,7 @@ interface CustomersTableProps {
 }
 
 export function CustomersTable({ customers }: CustomersTableProps) {
+  const { maskName, maskEmail } = usePiiMask();
   if (customers.length === 0) return null;
   return (
     <DataTable minWidth="min-w-[640px]">
@@ -37,14 +39,14 @@ export function CustomersTable({ customers }: CustomersTableProps) {
             <TableRow key={c.id}>
               <TableCell>
                 <div className="flex items-center gap-3 min-w-0">
-                  <Avatar name={c.name} size="md" />
+                  <Avatar name={maskName(c.name)} size="md" />
                   <span className="font-medium text-[var(--text-primary)] truncate">
-                    {c.name}
+                    {maskName(c.name)}
                   </span>
                 </div>
               </TableCell>
               <TableCell className="text-[var(--text-secondary)] text-sm">
-                {c.email ?? '—'}
+                {maskEmail(c.email)}
               </TableCell>
               <TableCell>
                 <ViewButton to={`/customers/${c.id}`} aria-label="View customer" />

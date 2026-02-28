@@ -24,6 +24,7 @@ import { BillingPage } from '../modules/billing';
 import { SettingsPage } from '../modules/settings';
 import {
   AdminOverviewPage,
+  AdminCallsPage,
   AdminTenantsPage,
   AdminTenantDetailPage,
   AdminStaffPage,
@@ -89,7 +90,7 @@ const router = createBrowserRouter([
               { path: 'staff', element: <AdminStaffPage /> },
               { path: 'support', element: <AdminSupportPage /> },
               { path: 'support/:id', element: <AdminSupportPage /> },
-              { path: 'calls', element: <Placeholder title="Calls" description="Cross-tenant call list." /> },
+              { path: 'calls', element: <AdminCallsPage /> },
               { path: 'calls/:id', element: <Placeholder title="Call Detail" description="Transcript, outcome, recording." /> },
               { path: 'runs', element: <AdminRunsPage /> },
               { path: 'runs/:id', element: <AdminRunDetailPage /> },

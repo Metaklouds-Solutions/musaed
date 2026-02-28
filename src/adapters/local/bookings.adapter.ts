@@ -3,7 +3,8 @@
  * Calendar: appointments and availability from staff_profiles.
  */
 
-import { seedBookings, seedStaffProfiles, seedStaffUsers, seedCustomers } from '../../mock/seedData';
+import { seedBookings, seedStaffUsers, seedCustomers } from '../../mock/seedData';
+import { staffProfileAdapter } from './staffProfile.adapter';
 import type { Booking } from '../../shared/types';
 
 function filterByTenant<T extends { tenantId: string }>(items: T[], tenantId: string | undefined): T[] {
@@ -89,7 +90,7 @@ export const bookingsAdapter = {
     start: Date,
     end: Date
   ): CalendarAvailability[] {
-    const profiles = filterByTenant(seedStaffProfiles, tenantId);
+    const profiles = tenantId ? staffProfileAdapter.getProfiles(tenantId) : [];
     const slots: CalendarAvailability[] = [];
     const cur = new Date(start);
     cur.setHours(0, 0, 0, 0);

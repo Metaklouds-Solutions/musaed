@@ -12,6 +12,8 @@ export interface Permissions {
   canAccessRunEvents: boolean;
   /** Can assign tickets to staff (admin, clinic_admin, tenant_owner). */
   canAssignTickets: boolean;
+  /** Can toggle PII masking to view full data (auditor, admin). */
+  canViewUnmaskedPII: boolean;
 }
 
 /**
@@ -28,12 +30,11 @@ export function usePermissions(): Permissions {
  */
 export function computePermissions(user: User | null): Permissions {
   if (!user) {
-    return { canAccessRunEvents: false, canAssignTickets: false };
+    return { canAccessRunEvents: false, canAssignTickets: false, canViewUnmaskedPII: false };
   }
   if (user.role === 'ADMIN') {
-    return { canAccessRunEvents: true, canAssignTickets: true };
+    return { canAccessRunEvents: true, canAssignTickets: true, canViewUnmaskedPII: true };
   }
-  // Tenant users: permissions from tenantRole
   const tenantRole = user.tenantRole;
   return {
     canAccessRunEvents: tenantRole === 'auditor',
@@ -41,5 +42,6 @@ export function computePermissions(user: User | null): Permissions {
       tenantRole === 'tenant_owner' ||
       tenantRole === 'clinic_admin' ||
       tenantRole === 'auditor',
+    canViewUnmaskedPII: tenantRole === 'auditor',
   };
 }

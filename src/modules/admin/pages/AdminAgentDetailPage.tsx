@@ -72,9 +72,12 @@ export function AdminAgentDetailPage() {
             </div>
             <div>
               <dt className="text-[var(--text-muted)]">Linked Tenant</dt>
-              <dd className="font-medium text-[var(--text-primary)]">
+              <dd className="font-medium text-[var(--text-primary)] min-w-0">
                 {agent.tenantId ? (
-                  <Link to={`/admin/tenants/${agent.tenantId}`} className="text-[var(--ds-primary)] hover:underline">
+                  <Link
+                    to={`/admin/tenants/${agent.tenantId}`}
+                    className="inline-block max-w-full truncate text-[var(--ds-primary)] hover:underline"
+                  >
                     {agent.tenantName ?? agent.tenantId}
                   </Link>
                 ) : (

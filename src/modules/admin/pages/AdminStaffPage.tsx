@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { UserPlus, Upload, Download } from 'lucide-react';
 import { PageHeader, Button } from '../../../shared/ui';
 import { StaffTable, AddStaffModal, StaffFilters } from '../../shared/staff';
-import { staffAdapter, exportAdapter } from '../../../adapters';
+import { staffAdapter, exportAdapter, softDeleteAdapter } from '../../../adapters';
 import { useAdminStaff } from '../hooks';
 
 export function AdminStaffPage() {
@@ -36,6 +36,16 @@ export function AdminStaffPage() {
   const handleImportCsv = useCallback(() => {
     alert('CSV import coming soon. Use Add Staff for now.');
   }, []);
+
+  const handleArchive = useCallback(
+    (s: { userId: string; tenantId: string }) => {
+      if (!window.confirm('Archive this staff member? They will be hidden from the list.')) return;
+      softDeleteAdapter.softDeleteStaff(s.userId, s.tenantId);
+      refetch();
+      toast.success('Staff archived');
+    },
+    [refetch]
+  );
 
   const handleExport = useCallback(() => {
     const rows = staff.map((s) => ({
@@ -97,7 +107,7 @@ export function AdminStaffPage() {
         onSubmit={handleAddStaff}
       />
 
-      <StaffTable staff={staff} showTenant />
+      <StaffTable staff={staff} showTenant showArchiveAction onArchive={handleArchive} />
     </div>
   );
 }

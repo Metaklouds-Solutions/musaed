@@ -15,6 +15,7 @@ import type {
   DashboardMetrics,
   FunnelStage,
   TrendPoint,
+  RoiMetrics,
   TenantKpis,
   TenantAgentStatus,
   TenantStaffCounts,
@@ -88,6 +89,25 @@ export const dashboardAdapter = {
     }
     const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
     return sorted.map(([date, count]) => ({ date, bookings: count }));
+  },
+
+  /** ROI metrics: revenue from bookings, AI cost, cost saved, ROI %. */
+  getRoiMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): RoiMetrics {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
+    const totalMinutes = calls.reduce((s, c) => s + c.duration / 60, 0);
+    const revenue = bookings.reduce((s, b) => s + b.amount, 0);
+    const aiCost = totalMinutes * COST_PER_MINUTE_AI;
+    const costSaved = totalMinutes * (COST_PER_MINUTE_HUMAN - COST_PER_MINUTE_AI);
+    const roiPercent = aiCost > 0 ? Math.round(((revenue - aiCost) / aiCost) * 100) : 0;
+
+    return {
+      revenue,
+      aiCost,
+      costSaved,
+      roiPercent,
+      totalMinutes,
+    };
   },
 
   /** Tenant dashboard KPIs. */

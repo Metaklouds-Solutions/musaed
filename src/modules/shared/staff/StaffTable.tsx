@@ -18,9 +18,12 @@ import type { StaffRow } from '../../../shared/types';
 interface StaffTableProps {
   staff: StaffRow[];
   showTenant?: boolean;
+  /** When true, shows Archive action (admin context). */
+  showArchiveAction?: boolean;
+  onArchive?: (staff: StaffRow) => void;
 }
 
-export function StaffTable({ staff, showTenant = false }: StaffTableProps) {
+export function StaffTable({ staff, showTenant = false, showArchiveAction, onArchive }: StaffTableProps) {
   if (staff.length === 0) {
     return (
       <p className="text-sm text-[var(--text-muted)] py-8 text-center">
@@ -38,11 +41,18 @@ export function StaffTable({ staff, showTenant = false }: StaffTableProps) {
             <TableHead>Role</TableHead>
             {showTenant && <TableHead>Tenant</TableHead>}
             <TableHead>Status</TableHead>
+            {showArchiveAction && <TableHead className="w-[80px]">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {staff.map((s) => (
-            <StaffTableRow key={s.userId} staff={s} showTenant={showTenant} />
+            <StaffTableRow
+              key={`${s.userId}::${s.tenantId}`}
+              staff={s}
+              showTenant={showTenant}
+              showArchiveAction={showArchiveAction}
+              onArchive={onArchive}
+            />
           ))}
         </TableBody>
       </Table>

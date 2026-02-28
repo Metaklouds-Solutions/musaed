@@ -16,6 +16,7 @@ import { HeroMetrics } from '../components/HeroMetrics';
 import { ConversionFunnel } from '../components/ConversionFunnel';
 import { AgentIntelligence } from '../components/AgentIntelligence';
 import { TrendChart } from '../components/TrendChart';
+import { RoiDashboardWidget } from '../components/RoiDashboardWidget';
 import { QuickActions } from '../components/QuickActions';
 import { useDashboard } from '../hooks';
 import { LayoutDashboard } from 'lucide-react';
@@ -47,6 +48,7 @@ export function DashboardPage() {
     staffCounts,
     openTickets,
     recentCalls,
+    roi,
   } = useDashboard(dateRangeFilter);
 
   if (!user) {
@@ -89,6 +91,7 @@ export function DashboardPage() {
       </motion.header>
       <div className="space-y-6">
         <TenantKpiCards kpis={kpis} />
+        <RoiDashboardWidget roi={roi} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <AgentStatusCard agent={agentStatus} />
           <StaffQuickView counts={staffCounts} />
