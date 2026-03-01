@@ -1,0 +1,119 @@
+/**
+ * PMS integration section. Connect to practice management systems (Athena, Epic, etc.). Stubs only.
+ */
+
+import { useState, useCallback } from 'react';
+import { PopoverSelect, Button } from '../../../../shared/ui';
+import { pmsAdapter } from '../../../../adapters';
+import type { PmsProvider, PmsConnectionConfig } from '../../../../adapters/local/pms.adapter';
+import { Plug, RefreshCw, Link2, Unlink } from 'lucide-react';
+
+const PROVIDER_OPTIONS = [
+  { value: 'athena', label: 'Athena Health' },
+  { value: 'epic', label: 'Epic' },
+  { value: 'cerner', label: 'Cerner' },
+  { value: 'custom', label: 'Custom' },
+];
+
+interface PMSSectionProps {
+  tenantId: string | undefined;
+}
+
+export function PMSSection({ tenantId }: PMSSectionProps) {
+  const [config, setConfig] = useState<PmsConnectionConfig | null>(() =>
+    tenantId ? pmsAdapter.getConfig(tenantId) : null
+  );
+  const [syncing, setSyncing] = useState(false);
+
+  const handleConnect = useCallback(() => {
+    if (!tenantId) return;
+    const provider = (config?.provider ?? 'athena') as PmsProvider;
+    setConfig(pmsAdapter.connect(provider, tenantId));
+  }, [tenantId, config?.provider]);
+
+  const handleDisconnect = useCallback(() => {
+    if (!tenantId) return;
+    setConfig(pmsAdapter.disconnect(tenantId));
+  }, [tenantId]);
+
+  const handleSync = useCallback(
+    (type: 'patients' | 'appointments') => {
+      if (!tenantId || config?.status !== 'connected') return;
+      setSyncing(true);
+      const fn = type === 'patients' ? pmsAdapter.syncPatients : pmsAdapter.syncAppointments;
+      fn(tenantId).then(() => {
+        setConfig(pmsAdapter.getConfig(tenantId));
+        setSyncing(false);
+      });
+    },
+    [tenantId, config?.status]
+  );
+
+  if (!tenantId) return null;
+
+  const isConnected = config?.status === 'connected';
+  const provider = (config?.provider ?? 'athena') as PmsProvider;
+
+  return (
+    <div className="rounded-[var(--radius-card)] card-glass p-6 space-y-4">
+      <h3 className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        <Plug size={18} aria-hidden />
+        Practice Management (PMS)
+      </h3>
+      <p className="text-sm text-[var(--text-muted)]">
+        Connect to your PMS to sync patients and appointments. Integration stubs — real API wiring coming later.
+      </p>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Provider</label>
+          <PopoverSelect
+            value={provider}
+            onChange={(v) => setConfig((c) => (c ? { ...c, provider: v as PmsProvider } : { provider: v as PmsProvider, status: 'disconnected' }))}
+            options={PROVIDER_OPTIONS}
+            placeholder="Select provider"
+            title="PMS Provider"
+            aria-label="PMS provider"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {isConnected ? (
+            <>
+              <Button onClick={handleDisconnect} variant="outline" aria-label="Disconnect PMS">
+                <Unlink size={16} aria-hidden />
+                Disconnect
+              </Button>
+              <Button
+                onClick={() => handleSync('patients')}
+                disabled={syncing}
+                variant="outline"
+                aria-label="Sync patients"
+              >
+                <RefreshCw size={16} aria-hidden className={syncing ? 'animate-spin' : ''} />
+                Sync Patients
+              </Button>
+              <Button
+                onClick={() => handleSync('appointments')}
+                disabled={syncing}
+                variant="outline"
+                aria-label="Sync appointments"
+              >
+                <RefreshCw size={16} aria-hidden className={syncing ? 'animate-spin' : ''} />
+                Sync Appointments
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleConnect} aria-label="Connect PMS">
+              <Link2 size={16} aria-hidden />
+              Connect
+            </Button>
+          )}
+        </div>
+        {isConnected && config?.lastSyncAt && (
+          <p className="text-xs text-[var(--text-muted)]">
+            Last sync: {new Date(config.lastSyncAt).toLocaleString()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

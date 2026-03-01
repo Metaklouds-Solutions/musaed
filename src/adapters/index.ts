@@ -29,6 +29,7 @@ import * as localGdpr from './local/gdpr.adapter';
 import * as localMaintenance from './local/maintenance.adapter';
 import * as localSoftDelete from './local/softDelete.adapter';
 import * as localStaffProfile from './local/staffProfile.adapter';
+import * as localPms from './local/pms.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
 import * as apiCalls from './api/calls.adapter';
@@ -65,6 +66,7 @@ export const gdprAdapter = localGdpr.gdprAdapter;
 export const maintenanceAdapter = localMaintenance.maintenanceAdapter;
 export const softDeleteAdapter = localSoftDelete.softDeleteAdapter;
 export const staffProfileAdapter = localStaffProfile.staffProfileAdapter;
+export const pmsAdapter = localPms.pmsAdapter;
 export { MAINTENANCE_CHANGED } from './local/maintenance.adapter';
 export { SOFT_DELETE_CHANGED } from './local/softDelete.adapter';
 

@@ -13,6 +13,7 @@ import {
   NotificationsSection,
   FeatureFlagsSection,
   ProviderAvailabilitySection,
+  PMSSection,
 } from '../components';
 import { settingsAdapter, featureFlagsAdapter } from '../../../adapters';
 import type { TenantSettings } from '../../../adapters/local/settings.adapter';
@@ -25,16 +26,18 @@ import {
   CalendarRange,
   Bell,
   Sparkles,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type SettingsTab = 'profile' | 'hours' | 'availability' | 'notifications' | 'features';
+type SettingsTab = 'profile' | 'hours' | 'availability' | 'notifications' | 'integrations' | 'features';
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: 'profile', label: 'Profile', icon: Building2 },
   { id: 'hours', label: 'Hours', icon: Clock },
   { id: 'availability', label: 'Availability', icon: CalendarRange },
   { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'integrations', label: 'Integrations', icon: Plug },
   { id: 'features', label: 'Features', icon: Sparkles },
 ];
 
@@ -172,6 +175,18 @@ export function SettingsPage() {
               onChange={(appointmentReminders) => setSettings((s) => ({ ...s, appointmentReminders }))}
               disabled={!settings.notifications.bookingReminders}
             />
+          </motion.div>
+        )}
+        {activeTab === 'integrations' && (
+          <motion.div
+            key="integrations"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <PMSSection tenantId={tenantId} />
           </motion.div>
         )}
         {activeTab === 'features' && (

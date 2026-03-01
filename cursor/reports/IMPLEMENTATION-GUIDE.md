@@ -1192,7 +1192,7 @@ These are tagged for backlog; implement when Phase 7A–7C are done or as needed
 | [PHASE-7-SOFT-DELETE] | Soft delete (tenants, staff) | 7.4 ✅ DONE |
 | [PHASE-7-PROVIDER-AVAILABILITY] | Provider availability matrix | 7.5 ✅ DONE |
 | [PHASE-7-APPOINTMENT-REMINDERS] | Appointment reminders config | 7.5 ✅ DONE |
-| [PHASE-7-PMS-INTEGRATION] | PMS integration stubs | 7.5 |
+| [PHASE-7-PMS-INTEGRATION] | PMS integration stubs | 7.5 ✅ DONE |
 | [PHASE-7-MULTI-LOCATION] | Multi-location support | 7.5 |
 | [PHASE-7-CUSTOM-PROMPTS] | Custom prompts per tenant | 7.6 |
 | [PHASE-7-CALL-REPLAY] | Call replay (step-through transcript) | 7.6 |
