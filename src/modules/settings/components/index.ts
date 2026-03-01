@@ -1,6 +1,7 @@
 export { AppointmentRemindersSection } from './AppointmentRemindersSection';
 export { PMSSection } from './PMSSection';
 export { ClinicProfileSection } from './ClinicProfileSection';
+export { CustomPromptsSection } from './CustomPromptsSection';
 export { BusinessHoursSection } from './BusinessHoursSection';
 export { NotificationsSection } from './NotificationsSection';
 export { FeatureFlagsSection } from './FeatureFlagsSection';

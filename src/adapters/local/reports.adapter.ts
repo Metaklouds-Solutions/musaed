@@ -33,6 +33,7 @@ import type {
   SentimentBucket,
   PeakHourPoint,
   OutcomesByDay,
+  IntentBucket,
 } from '../../shared/types/reports';
 
 export interface DateRangeFilter {
@@ -248,6 +249,48 @@ export const reportsAdapter = {
         const ampm = hour < 12 ? 'am' : 'pm';
         return { hour, label: `${h}${ampm}`, count };
       });
+  },
+
+  /** Intent distribution: derived from transcript keywords. */
+  getIntentDistribution(tenantId: string | undefined, dateRange?: DateRangeFilter): IntentBucket[] {
+    const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
+    const total = calls.length;
+    const intents = ['complaint', 'billing', 'reschedule', 'booking', 'general'];
+    const keywords: Record<string, string[]> = {
+      complaint: ['upset', 'complaint', 'wait time', 'angry', 'frustrated'],
+      billing: ['billing', 'charged', 'charge', 'payment', 'invoice'],
+      reschedule: ['reschedule', 'rescheduling', 'change appointment'],
+      booking: ['book', 'booking', 'appointment', 'schedule', 'checkup', 'slot'],
+      general: [],
+    };
+    const counts = new Map<string, number>();
+    for (const intent of intents) counts.set(intent, 0);
+    for (const c of calls) {
+      const t = (c.transcript ?? '').toLowerCase();
+      let matched = false;
+      for (const intent of ['complaint', 'billing', 'reschedule', 'booking'] as const) {
+        if (keywords[intent].some((k) => t.includes(k))) {
+          counts.set(intent, (counts.get(intent) ?? 0) + 1);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) counts.set('general', (counts.get('general') ?? 0) + 1);
+    }
+    const labels: Record<string, string> = {
+      complaint: 'Complaint',
+      billing: 'Billing',
+      reschedule: 'Reschedule',
+      booking: 'Booking',
+      general: 'General',
+    };
+    const buckets = intents.map((intent) => ({
+      label: labels[intent],
+      count: counts.get(intent) ?? 0,
+      percentage: total > 0 ? Math.round(((counts.get(intent) ?? 0) / total) * 100) : 0,
+    }));
+    const withData = buckets.filter((b) => b.count > 0);
+    return withData.length > 0 ? withData : [{ label: 'General', count: 0, percentage: 0 }];
   },
 
   /** Outcomes by day for trend chart. */

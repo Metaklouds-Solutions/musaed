@@ -116,6 +116,18 @@ export const agentsAdapter = {
     };
   },
 
+  /** Get all agents assigned to a tenant (voice agents). */
+  getAgentsForTenant(tenantId: string | undefined): { id: string; name: string; voice: string }[] {
+    if (!tenantId) return [];
+    const fromVoice = seedVoiceAgents
+      .filter((va) => va.tenantId === tenantId)
+      .map((va) => ({ id: va.id, name: va.voice, voice: va.voice }));
+    const fromAssigned = assignedAgents
+      .filter((a) => a.tenantId === tenantId)
+      .map((a) => ({ id: a.id, name: a.voice, voice: a.voice }));
+    return [...fromVoice, ...fromAssigned];
+  },
+
   /** Get full agent detail for tenant (status, skills, sync). */
   getAgentForTenant(tenantId: string | undefined): TenantAgentDetail | null {
     if (!tenantId) return null;

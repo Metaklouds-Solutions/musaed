@@ -41,12 +41,22 @@ export interface AppointmentRemindersConfig {
   channel: 'email' | 'sms';
 }
 
+export interface AgentPromptConfig {
+  greetingMessage?: string;
+  agentName?: string;
+  systemPrompt?: string;
+}
+
 export interface TenantSettings {
   timezone: string;
   locale: string;
   businessHours: string;
   greetingMessage?: string;
   agentName?: string;
+  /** Custom system instructions for the voice agent. */
+  systemPrompt?: string;
+  /** Per-agent prompts. Key = agentId. Fallback to top-level when missing. */
+  agentPrompts?: Record<string, AgentPromptConfig>;
   notifications: {
     emailDigest: boolean;
     ticketAlerts: boolean;
@@ -54,6 +64,8 @@ export interface TenantSettings {
   };
   /** Appointment reminder config (when bookingReminders is on). */
   appointmentReminders?: AppointmentRemindersConfig;
+  /** PMS integration config. Stored separately in pms.adapter; UI reads via pmsAdapter. */
+  pmsEnabled?: boolean;
 }
 
 const defaultAdminSettings: AdminSettings = {
@@ -77,6 +89,7 @@ const defaultTenantSettings: TenantSettings = {
   businessHours: 'Mon–Fri 9am–5pm',
   greetingMessage: "Hello, thank you for calling. I'm your AI assistant. How can I help you today?",
   agentName: 'Alex (Professional & Empathetic)',
+  systemPrompt: 'You are a helpful clinic receptionist. Be professional and empathetic. Help with appointments, answer questions, and escalate when needed.',
   notifications: {
     emailDigest: true,
     ticketAlerts: true,
@@ -125,6 +138,8 @@ export const settingsAdapter = {
         ...stored,
         notifications: { ...defaultTenantSettings.notifications, ...stored.notifications },
         appointmentReminders: stored.appointmentReminders ?? defaultTenantSettings.appointmentReminders,
+        systemPrompt: stored.systemPrompt ?? defaultTenantSettings.systemPrompt,
+        agentPrompts: stored.agentPrompts ?? {},
       };
     }
     const seed = tenantId ? seedTenantSettings.find((s) => s.tenantId === tenantId) : null;
@@ -141,5 +156,17 @@ export const settingsAdapter = {
   /** Save tenant settings. */
   saveTenantSettings(settings: TenantSettings, tenantId?: string): void {
     save(TENANT_SETTINGS_KEY, settings, tenantId);
+  },
+
+  /** Get prompts for a specific agent. Merges with top-level defaults. */
+  getAgentPrompts(tenantId: string | undefined, agentId: string): AgentPromptConfig {
+    const settings = this.getTenantSettings(tenantId);
+    const defaults: AgentPromptConfig = {
+      greetingMessage: settings.greetingMessage ?? defaultTenantSettings.greetingMessage,
+      agentName: settings.agentName ?? defaultTenantSettings.agentName,
+      systemPrompt: settings.systemPrompt ?? defaultTenantSettings.systemPrompt,
+    };
+    const perAgent = settings.agentPrompts?.[agentId];
+    return perAgent ? { ...defaults, ...perAgent } : defaults;
   },
 };

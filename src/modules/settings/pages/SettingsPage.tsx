@@ -13,6 +13,7 @@ import {
   NotificationsSection,
   FeatureFlagsSection,
   ProviderAvailabilitySection,
+  CustomPromptsSection,
   PMSSection,
 } from '../components';
 import { settingsAdapter, featureFlagsAdapter } from '../../../adapters';
@@ -27,10 +28,11 @@ import {
   Bell,
   Sparkles,
   Plug,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type SettingsTab = 'profile' | 'hours' | 'availability' | 'notifications' | 'integrations' | 'features';
+type SettingsTab = 'profile' | 'hours' | 'availability' | 'notifications' | 'integrations' | 'agent' | 'features';
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: 'profile', label: 'Profile', icon: Building2 },
@@ -38,6 +40,7 @@ const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: 'availability', label: 'Availability', icon: CalendarRange },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'integrations', label: 'Integrations', icon: Plug },
+  { id: 'agent', label: 'Agent', icon: Bot },
   { id: 'features', label: 'Features', icon: Sparkles },
 ];
 
@@ -67,7 +70,7 @@ export function SettingsPage() {
   }, [settings, tenantId]);
 
   const showSaveButton =
-    activeTab === 'profile' || activeTab === 'hours' || activeTab === 'notifications';
+    activeTab === 'profile' || activeTab === 'hours' || activeTab === 'notifications' || activeTab === 'agent';
 
   return (
     <div className="space-y-6">
@@ -187,6 +190,18 @@ export function SettingsPage() {
             className="space-y-8 max-w-3xl"
           >
             <PMSSection tenantId={tenantId} />
+          </motion.div>
+        )}
+        {activeTab === 'agent' && (
+          <motion.div
+            key="agent"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <CustomPromptsSection tenantId={tenantId} settings={settings} onChange={setSettings} />
           </motion.div>
         )}
         {activeTab === 'features' && (

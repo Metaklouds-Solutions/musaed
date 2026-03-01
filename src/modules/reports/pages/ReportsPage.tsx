@@ -13,6 +13,7 @@ import { PeriodComparison } from '../components/PeriodComparison/PeriodCompariso
 import { SentimentChart } from '../components/SentimentChart/SentimentChart';
 import { PeakHoursChart } from '../components/PeakHoursChart/PeakHoursChart';
 import { OutcomesOverTimeChart } from '../components/OutcomesOverTimeChart/OutcomesOverTimeChart';
+import { IntentAnalyticsChart } from '../components/IntentAnalyticsChart';
 import { useReports } from '../hooks/useReports';
 import { useSession } from '../../../app/session/SessionContext';
 
@@ -36,6 +37,7 @@ export function ReportsPage() {
     sentimentDistribution,
     peakHours,
     outcomesByDay,
+    intentDistribution,
   } = useReports(tenantId, dateRangeFilter);
 
   if (!tenantId) {
@@ -71,10 +73,13 @@ export function ReportsPage() {
         <PerformanceMetrics metrics={performance} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SentimentChart buckets={sentimentDistribution} />
         <PeakHoursChart points={peakHours} />
-        <OutcomesOverTimeChart data={outcomesByDay} />
+        <IntentAnalyticsChart buckets={intentDistribution} />
+        <div className="lg:col-span-2">
+          <OutcomesOverTimeChart data={outcomesByDay} />
+        </div>
       </div>
 
       {periodComparison && (

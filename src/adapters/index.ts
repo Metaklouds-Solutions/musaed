@@ -73,6 +73,7 @@ export { SOFT_DELETE_CHANGED } from './local/softDelete.adapter';
 export type { DashboardMetrics, FunnelStage, TrendPoint } from '../shared/types';
 export type { AdminOverviewMetrics, PaymentFailure, UsageAnomaly, ChurnRisk } from '../shared/types';
 export type { SearchResult, SearchResultType } from './local/search.adapter';
+export type { AgentPromptConfig } from './local/settings.adapter';
 export type { ScheduledReportConfig } from './local/reports.adapter';
 export type { CalendarAppointment, CalendarAvailability } from './local/bookings.adapter';
 export type { FeatureFlags, FeatureFlagKey } from './local/featureFlags.adapter';

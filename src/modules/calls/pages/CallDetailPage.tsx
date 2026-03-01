@@ -3,7 +3,7 @@
  * Run events (debug console) visible to auditors only.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { EmptyState, Button } from '../../../shared/ui';
 import { useCallDetail } from '../hooks';
@@ -11,10 +11,12 @@ import { usePermissions } from '../../../shared/hooks/usePermissions';
 import { runsAdapter } from '../../../adapters';
 import { CallMetaPanel } from '../components/CallMetaPanel';
 import { TranscriptViewer } from '../components/TranscriptViewer';
+import { CallReplayViewer } from '../components/CallReplayViewer';
 import { SentimentBadge } from '../components/SentimentBadge';
 import { AudioMockPlayer } from '../components/AudioMockPlayer';
 import { RunEventsViewer } from '../../admin/components/RunEventsViewer';
 import { Phone } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function CallDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +33,7 @@ export function CallDetailPage() {
     () => (runEvents ? runsAdapter.getRunEvents(runEvents.id) : []),
     [runEvents]
   );
+  const [transcriptMode, setTranscriptMode] = useState<'replay' | 'full'>('replay');
 
   if (!user) {
     return (
@@ -111,7 +114,39 @@ export function CallDetailPage() {
           )}
         </div>
 
-        <TranscriptViewer transcript={call.transcript} />
+        <div>
+          <div className="flex gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => setTranscriptMode('replay')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                transcriptMode === 'replay'
+                  ? 'bg-[var(--ds-primary)]/20 text-[var(--ds-primary)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              )}
+            >
+              Replay
+            </button>
+            <button
+              type="button"
+              onClick={() => setTranscriptMode('full')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                transcriptMode === 'full'
+                  ? 'bg-[var(--ds-primary)]/20 text-[var(--ds-primary)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              )}
+            >
+              Full transcript
+            </button>
+          </div>
+          {transcriptMode === 'replay' ? (
+            <CallReplayViewer transcript={call.transcript} />
+          ) : (
+            <TranscriptViewer transcript={call.transcript} />
+          )}
+        </div>
 
         {canAccessRunEvents && (
           <div>

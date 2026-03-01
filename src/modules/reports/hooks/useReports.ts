@@ -48,6 +48,11 @@ export function useReports(tenantId: string | undefined, dateRange?: DateRangeFi
     [tenantId, dateRange]
   );
 
+  const intentDistribution = useMemo(
+    () => reportsAdapter.getIntentDistribution(tenantId, dateRange),
+    [tenantId, dateRange]
+  );
+
   return {
     outcomes,
     performance,
@@ -56,5 +61,6 @@ export function useReports(tenantId: string | undefined, dateRange?: DateRangeFi
     sentimentDistribution,
     peakHours,
     outcomesByDay,
+    intentDistribution,
   };
 }

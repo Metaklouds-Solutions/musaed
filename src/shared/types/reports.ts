@@ -63,6 +63,13 @@ export interface OutcomesByDay {
   total: number;
 }
 
+/** Intent distribution bucket (derived from transcript keywords). */
+export interface IntentBucket {
+  label: string;
+  count: number;
+  percentage: number;
+}
+
 /** A/B test comparison: outcomes by agent version. */
 export interface ABTestOutcomeRow {
   version: string;

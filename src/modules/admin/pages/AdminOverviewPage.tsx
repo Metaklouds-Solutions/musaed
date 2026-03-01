@@ -13,6 +13,7 @@ import { AdminRecentCalls } from '../components/AdminRecentCalls';
 import { AdminSystemHealth } from '../components/AdminSystemHealth';
 import { AdminRevenueSection } from '../components/AdminRevenueSection';
 import { AdminPlatformSection } from '../components/AdminPlatformSection';
+import { TenantComparisonView } from '../components/TenantComparisonView';
 import { AdminAnomaliesSection } from '../components/AdminAnomaliesSection';
 import { useAdminOverview } from '../hooks';
 
@@ -63,6 +64,7 @@ export function AdminOverviewPage() {
       </div>
 
       <AdminPlatformSection metrics={metrics} />
+      <TenantComparisonView />
       <AdminAnomaliesSection
         usageAnomalies={metrics.usageAnomalies}
         churnRiskList={metrics.churnRiskList}
