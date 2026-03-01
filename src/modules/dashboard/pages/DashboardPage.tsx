@@ -5,7 +5,8 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { PageHeader, EmptyState, LottiePlayer, LOTTIE_ASSETS } from '../../../shared/ui';
+import { PageHeader, EmptyState, LottiePlayer, LOTTIE_ASSETS, SkeletonCard } from '../../../shared/ui';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { TenantKpiCards } from '../components/TenantKpiCards';
 import { AgentStatusCard } from '../components/AgentStatusCard';
@@ -36,6 +37,7 @@ const DEFAULT_RANGE = (() => {
 })();
 
 export function DashboardPage() {
+  const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const {
@@ -59,6 +61,23 @@ export function DashboardPage() {
         description="Select a role on the login page to see metrics."
         lottieSrc={LOTTIE_ASSETS.empty}
       />
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Dashboard" description="Clinic command center." />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} lines={2} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+        </div>
+      </div>
     );
   }
 

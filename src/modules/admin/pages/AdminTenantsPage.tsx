@@ -1,16 +1,16 @@
 /**
- * Admin Tenants: Tenant list and Compare Tenants views.
- * Tab switcher: Tenants | Compare Tenants.
+ * Admin Tenants: Tenant list and Compare Tenants views. [PHASE-7-BULK-ACTIONS]
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserPlus, Users, GitCompare, Archive } from 'lucide-react';
+import { UserPlus, Users, GitCompare, Archive, Download } from 'lucide-react';
 import {
   PageHeader,
   DataTable,
+  TableSkeleton,
   Table,
   TableHeader,
   TableBody,
@@ -21,10 +21,13 @@ import {
   ViewButton,
   PillTag,
   TableFilters,
+  BulkActionsBar,
 } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useAdminTenants } from '../hooks';
-import { softDeleteAdapter } from '../../../adapters';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
+import { useTableSelection } from '../../../shared/hooks/useTableSelection';
+import { softDeleteAdapter, exportAdapter } from '../../../adapters';
 import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
 import type { AdminTenantRow } from '../../../shared/types';
 import { AddTenantModal } from '../components/AddTenantModal';
@@ -40,6 +43,7 @@ const DEFAULT_RANGE = (() => {
 })();
 
 export function AdminTenantsPage() {
+  const ready = useDelayedReady();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [refreshKey, setRefreshKey] = useState(0);
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
@@ -57,6 +61,7 @@ export function AdminTenantsPage() {
     items: filteredTenants,
     getKey: (t) => t.id,
   });
+  const selection = useTableSelection((t: AdminTenantRow) => t.id);
 
   const plans = useMemo(() => {
     const set = new Set(tenants.map((t) => t.plan));
@@ -86,6 +91,45 @@ export function AdminTenantsPage() {
     },
     [removeOptimistic, rollbackRemove, commit]
   );
+
+  const selectedTenants = displayTenants.filter((t) => selection.selectedSet.has(t.id));
+  const handleBulkArchive = useCallback(() => {
+    if (selectedTenants.length === 0) return;
+    if (!window.confirm(`Archive ${selectedTenants.length} tenant(s)? They will be hidden from the list.`)) return;
+    let failed = 0;
+    for (const t of selectedTenants) {
+      removeOptimistic(t.id);
+      try {
+        softDeleteAdapter.softDeleteTenant(t.id);
+      } catch {
+        rollbackRemove(t.id);
+        failed++;
+      }
+    }
+    selection.clear();
+    setRefreshKey((k) => k + 1);
+    commit();
+    if (failed > 0) toast.error(`Failed to archive ${failed} tenant(s)`);
+    else toast.success(`Archived ${selectedTenants.length} tenant(s)`);
+  }, [selectedTenants, removeOptimistic, rollbackRemove, commit, selection]);
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedTenants.length === 0) return;
+    const rows = selectedTenants.map((t) => ({ ID: t.id, Name: t.name, Plan: t.plan }));
+    exportAdapter.exportCsv(rows, `tenants-selected-${new Date().toISOString().slice(0, 10)}.csv`);
+    selection.clear();
+    toast.success(`Exported ${selectedTenants.length} tenant(s)`);
+  }, [selectedTenants, selection]);
+
+  const checkboxClass =
+    'w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--ds-primary)] focus:ring-2 focus:ring-[var(--ds-primary)] cursor-pointer';
+  const allTenantsSelected = displayTenants.length > 0 && displayTenants.every((t) => selection.selectedSet.has(t.id));
+  const someTenantsSelected = displayTenants.some((t) => selection.selectedSet.has(t.id));
+  const headerCheckRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const el = headerCheckRef.current;
+    if (el) el.indeterminate = Boolean(someTenantsSelected && !allTenantsSelected);
+  }, [someTenantsSelected, allTenantsSelected]);
 
   return (
     <div className="space-y-6">
@@ -149,7 +193,17 @@ export function AdminTenantsPage() {
       </div>
 
       <AnimatePresence mode="wait">
-        {viewMode === 'list' ? (
+        {!ready ? (
+          <motion.div
+            key="skeleton"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+          >
+            <TableSkeleton rows={6} cols={4} />
+          </motion.div>
+        ) : viewMode === 'list' ? (
           <motion.div
             key="list"
             initial={{ opacity: 0, y: 8 }}
@@ -167,11 +221,31 @@ export function AdminTenantsPage() {
                   selectedPlan={planFilter}
                   onPlanChange={setPlanFilter}
                 />
+                <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
+                  <Button variant="secondary" size="sm" onClick={handleBulkExport} className="shrink-0">
+                    <Download className="w-4 h-4" aria-hidden />
+                    Export
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={handleBulkArchive} className="shrink-0">
+                    <Archive className="w-4 h-4" aria-hidden />
+                    Archive
+                  </Button>
+                </BulkActionsBar>
                 <div className="rounded-xl overflow-hidden border border-[var(--border-subtle)] shadow-sm">
                   <DataTable minWidth="min-w-[640px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-12">
+                            <input
+                              ref={headerCheckRef}
+                              type="checkbox"
+                              checked={allTenantsSelected}
+                              onChange={() => selection.toggleAll(displayTenants)}
+                              className={checkboxClass}
+                              aria-label="Select all"
+                            />
+                          </TableHead>
                           <TableHead>ID</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Plan</TableHead>
@@ -184,6 +258,15 @@ export function AdminTenantsPage() {
                             key={t.id}
                             className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
                           >
+                            <TableCell className="w-12 py-4">
+                              <input
+                                type="checkbox"
+                                checked={selection.selectedSet.has(t.id)}
+                                onChange={() => selection.toggle(t.id)}
+                                className={checkboxClass}
+                                aria-label={`Select ${t.name}`}
+                              />
+                            </TableCell>
                             <TableCell className="font-mono text-sm text-[var(--text-secondary)] py-4">
                               {t.id}
                             </TableCell>

@@ -6,7 +6,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown } from '../../../shared/ui';
+import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown, TableSkeleton } from '../../../shared/ui';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
 import { exportAdapter, auditAdapter } from '../../../adapters';
 import { Download } from 'lucide-react';
@@ -29,6 +30,7 @@ const PRIORITY_OPTIONS: { value: SupportTicket['priority']; label: string }[] = 
 ];
 
 export function AdminSupportPage() {
+  const ready = useDelayedReady();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const {
@@ -140,6 +142,17 @@ export function AdminSupportPage() {
             />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <PageHeader title="Support Inbox" description="Unified tickets from all tenants" />
+        </div>
+        <TableSkeleton rows={8} cols={5} />
       </div>
     );
   }

@@ -5,12 +5,14 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { UserPlus, Upload, Download } from 'lucide-react';
-import { PageHeader, Button } from '../../../shared/ui';
+import { PageHeader, Button, TableSkeleton } from '../../../shared/ui';
 import { StaffTable, AddStaffModal } from '../../shared/staff';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { staffAdapter, exportAdapter } from '../../../adapters';
 import { useStaff } from '../hooks';
 
 export function StaffPage() {
+  const ready = useDelayedReady();
   const { staff, tenantId, refetch } = useStaff();
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -44,6 +46,17 @@ export function StaffPage() {
       <div className="space-y-6">
         <PageHeader title="Staff" description="Staff list" />
         <p className="text-sm text-[var(--text-muted)]">Sign in as a tenant to view staff.</p>
+      </div>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <PageHeader title="Staff" description="Clinic staff list" />
+        </div>
+        <TableSkeleton rows={6} cols={4} />
       </div>
     );
   }

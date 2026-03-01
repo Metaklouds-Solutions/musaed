@@ -1,16 +1,20 @@
 /**
- * Admin staff page. Cross-tenant table, Add staff modal. [PHASE-7-OPTIMISTIC-UPDATES]
+ * Admin staff page. Cross-tenant table, Add staff modal. [PHASE-7-BULK-ACTIONS]
  */
 
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { UserPlus, Upload, Download } from 'lucide-react';
-import { PageHeader, Button } from '../../../shared/ui';
+import { UserPlus, Upload, Download, Archive } from 'lucide-react';
+import { PageHeader, Button, TableSkeleton, BulkActionsBar } from '../../../shared/ui';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
+import { useTableSelection } from '../../../shared/hooks/useTableSelection';
 import { StaffTable, AddStaffModal, StaffFilters } from '../../shared/staff';
 import { staffAdapter, exportAdapter, softDeleteAdapter } from '../../../adapters';
 import { useAdminStaff } from '../hooks';
 import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
 import type { StaffRow } from '../../../shared/types';
+
+const getStaffKey = (s: StaffRow) => `${s.userId}::${s.tenantId}`;
 
 export function AdminStaffPage() {
   const {
@@ -23,10 +27,12 @@ export function AdminStaffPage() {
     refetch,
   } = useAdminStaff();
 
+  const ready = useDelayedReady();
   const { items: displayStaff, removeOptimistic, rollbackRemove, commit } = useOptimisticList<StaffRow>({
     items: staff,
-    getKey: (s) => `${s.userId}::${s.tenantId}`,
+    getKey: getStaffKey,
   });
+  const selection = useTableSelection(getStaffKey);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -62,6 +68,7 @@ export function AdminStaffPage() {
     [refetch, removeOptimistic, rollbackRemove, commit]
   );
 
+  const selectedStaff = displayStaff.filter((s) => selection.selectedSet.has(getStaffKey(s)));
   const handleExport = useCallback(() => {
     const rows = staff.map((s) => ({
       Name: s.name,
@@ -73,6 +80,52 @@ export function AdminStaffPage() {
     exportAdapter.exportCsv(rows, `staff-admin-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success('Staff exported');
   }, [staff]);
+
+  const handleBulkArchive = useCallback(() => {
+    if (selectedStaff.length === 0) return;
+    if (!window.confirm(`Archive ${selectedStaff.length} staff member(s)? They will be hidden from the list.`)) return;
+    let failed = 0;
+    for (const s of selectedStaff) {
+      const key = getStaffKey(s);
+      removeOptimistic(key);
+      try {
+        softDeleteAdapter.softDeleteStaff(s.userId, s.tenantId);
+      } catch {
+        rollbackRemove(key);
+        failed++;
+      }
+    }
+    selection.clear();
+    refetch();
+    commit();
+    if (failed > 0) toast.error(`Failed to archive ${failed} staff member(s)`);
+    else toast.success(`Archived ${selectedStaff.length} staff member(s)`);
+  }, [selectedStaff, removeOptimistic, rollbackRemove, commit, refetch, selection]);
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedStaff.length === 0) return;
+    const rows = selectedStaff.map((s) => ({
+      Name: s.name,
+      Email: s.email,
+      Role: s.roleLabel,
+      Tenant: s.tenantName ?? s.tenantId,
+      Status: s.status,
+    }));
+    exportAdapter.exportCsv(rows, `staff-selected-${new Date().toISOString().slice(0, 10)}.csv`);
+    selection.clear();
+    toast.success(`Exported ${selectedStaff.length} staff member(s)`);
+  }, [selectedStaff, selection]);
+
+  if (!ready) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <PageHeader title="Staff" description="Cross-tenant staff list" />
+        </div>
+        <TableSkeleton rows={8} cols={5} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -113,6 +166,17 @@ export function AdminStaffPage() {
         showTenantFilter
       />
 
+      <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
+        <Button variant="secondary" size="sm" onClick={handleBulkExport} className="shrink-0">
+          <Download className="w-4 h-4" aria-hidden />
+          Export
+        </Button>
+        <Button variant="secondary" size="sm" onClick={handleBulkArchive} className="shrink-0">
+          <Archive className="w-4 h-4" aria-hidden />
+          Archive
+        </Button>
+      </BulkActionsBar>
+
       <AddStaffModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -122,7 +186,16 @@ export function AdminStaffPage() {
         onSubmit={handleAddStaff}
       />
 
-      <StaffTable staff={displayStaff} showTenant showArchiveAction onArchive={handleArchive} />
+      <StaffTable
+        staff={displayStaff}
+        showTenant
+        showArchiveAction
+        onArchive={handleArchive}
+        selectable
+        selectedKeys={selection.selectedSet}
+        onToggle={selection.toggle}
+        onToggleAll={() => selection.toggleAll(displayStaff)}
+      />
     </div>
   );
 }

@@ -20,6 +20,8 @@ export { LottiePlayer, LOTTIE_ASSETS } from './LottiePlayer';
 export { SuccessFeedback } from './SuccessFeedback';
 export { EmptyState } from './EmptyState';
 export { Skeleton } from './Skeleton';
+export { TableSkeleton } from './TableSkeleton/TableSkeleton';
+export { BulkActionsBar } from './BulkActionsBar/BulkActionsBar';
 export { SavedFiltersDropdown } from './SavedFiltersDropdown';
 export { Drawer, DrawerHeader } from './Drawer';
 export { Modal, ModalHeader } from './Modal';

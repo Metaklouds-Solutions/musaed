@@ -4,8 +4,9 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown } from '../../../shared/ui';
+import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown, TableSkeleton } from '../../../shared/ui';
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
@@ -27,6 +28,7 @@ const DEFAULT_RANGE = (() => {
 })();
 
 export function CallsPage() {
+  const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
@@ -81,6 +83,17 @@ export function CallsPage() {
         title="Sign in to view calls"
         description="Select a role on the login page to see call logs."
       />
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <PageHeader title="Calls" description="AI call logs and conversion." />
+        </div>
+        <TableSkeleton rows={8} cols={6} />
+      </div>
     );
   }
 

@@ -4,8 +4,9 @@
  */
 
 import { useMemo, useState } from 'react';
-import { PageHeader, EmptyState, TableFilters } from '../../../shared/ui';
+import { PageHeader, EmptyState, TableFilters, TableSkeleton } from '../../../shared/ui';
 import { useBookingsList } from '../hooks';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { BookingsTable } from '../components/BookingsTable';
 import { ConversionSummary } from '../components/ConversionSummary';
 import { Calendar } from 'lucide-react';
@@ -26,6 +27,15 @@ export function BookingsPage() {
         title="Sign in to view bookings"
         description="Select a role on the login page to see bookings."
       />
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Bookings" description="Booking list and conversion from AI calls." />
+        <TableSkeleton rows={6} cols={5} />
+      </div>
     );
   }
 

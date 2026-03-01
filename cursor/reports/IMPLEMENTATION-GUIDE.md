@@ -1177,7 +1177,7 @@ These are tagged for backlog; implement when Phase 7A–7C are done or as needed
 
 | Tag | Enhancement | Section |
 |-----|-------------|---------|
-| [PHASE-7-BULK-ACTIONS] | Bulk actions (multi-select, bulk assign/archive/export) | 7.1 |
+| [PHASE-7-BULK-ACTIONS] | Bulk actions (multi-select, bulk assign/archive/export) | 7.1 ✅ DONE |
 | [PHASE-7-SAVED-FILTERS] | Saved filters / views | 7.1 ✅ DONE |
 | [PHASE-7-KEYBOARD-SHORTCUTS] | Keyboard shortcuts (N, G+D, etc.) | 7.1 ✅ DONE |
 | [PHASE-7-SCHEDULED-REPORTS] | Scheduled reports (email digests) | 7.2 ✅ DONE |
@@ -1199,7 +1199,7 @@ These are tagged for backlog; implement when Phase 7A–7C are done or as needed
 | [PHASE-7-INTENT-ANALYTICS] | Intent analytics | 7.6 ✅ DONE |
 | [PHASE-7-VIRTUALIZED-LISTS] | Virtualized lists (large tables) | 7.8 ✅ DONE |
 | [PHASE-7-OPTIMISTIC-UPDATES] | Optimistic updates | 7.8 ✅ DONE |
-| [PHASE-7-SKELETON-LOADING] | Skeleton loading (all data pages) | 7.8 |
+| [PHASE-7-SKELETON-LOADING] | Skeleton loading (all data pages) | 7.8 ✅ DONE |
 
 ---
 

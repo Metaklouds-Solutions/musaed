@@ -3,12 +3,14 @@
  */
 
 import { useMemo, useState } from 'react';
-import { PageHeader, EmptyState, TableFilters } from '../../../shared/ui';
+import { PageHeader, EmptyState, TableFilters, TableSkeleton } from '../../../shared/ui';
 import { useCustomersList } from '../hooks';
+import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { CustomersTable } from '../components/CustomersTable';
 import { Users } from 'lucide-react';
 
 export function CustomersPage() {
+  const ready = useDelayedReady();
   const { user, customers } = useCustomersList();
   const [search, setSearch] = useState('');
 
@@ -29,6 +31,15 @@ export function CustomersPage() {
         title="Sign in to view customers"
         description="Select a role on the login page to see customers."
       />
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="space-y-4">
+        <PageHeader title="Customers" description="Customer list and interaction history." />
+        <TableSkeleton rows={6} cols={3} />
+      </div>
     );
   }
 
