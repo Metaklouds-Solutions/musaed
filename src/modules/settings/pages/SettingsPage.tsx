@@ -1,5 +1,5 @@
 /**
- * Tenant settings page. Tab switcher: Profile | Hours | Availability | Notifications | Features.
+ * Tenant settings page. Tab switcher: Profile | Availability | Notifications | Features.
  * Relevant sections grouped into tabs (like Admin Settings).
  */
 
@@ -9,7 +9,6 @@ import { PageHeader, Button } from '../../../shared/ui';
 import {
   AppointmentRemindersSection,
   ClinicProfileSection,
-  BusinessHoursSection,
   NotificationsSection,
   FeatureFlagsSection,
   ProviderAvailabilitySection,
@@ -23,7 +22,6 @@ import {
   CheckCircle2,
   Save,
   Building2,
-  Clock,
   CalendarRange,
   Bell,
   Sparkles,
@@ -32,11 +30,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type SettingsTab = 'profile' | 'hours' | 'availability' | 'notifications' | 'integrations' | 'agent' | 'features';
+type SettingsTab = 'profile' | 'availability' | 'notifications' | 'integrations' | 'agent' | 'features';
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: 'profile', label: 'Profile', icon: Building2 },
-  { id: 'hours', label: 'Hours', icon: Clock },
   { id: 'availability', label: 'Availability', icon: CalendarRange },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'integrations', label: 'Integrations', icon: Plug },
@@ -70,7 +67,7 @@ export function SettingsPage() {
   }, [settings, tenantId]);
 
   const showSaveButton =
-    activeTab === 'profile' || activeTab === 'hours' || activeTab === 'notifications' || activeTab === 'agent';
+    activeTab === 'profile' || activeTab === 'notifications' || activeTab === 'agent';
 
   return (
     <div className="space-y-6">
@@ -79,7 +76,7 @@ export function SettingsPage() {
           <div className="min-w-0">
             <PageHeader
               title="Clinic Settings"
-              description="Configure your clinic profile, hours, availability, and preferences. Switch tabs to manage each area."
+              description="Configure your clinic profile, availability, and preferences. Switch tabs to manage each area."
             />
           </div>
           {showSaveButton && (
@@ -131,21 +128,6 @@ export function SettingsPage() {
             className="space-y-8 max-w-3xl"
           >
             <ClinicProfileSection settings={settings} onChange={setSettings} />
-          </motion.div>
-        )}
-        {activeTab === 'hours' && (
-          <motion.div
-            key="hours"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-8 max-w-3xl"
-          >
-            <BusinessHoursSection
-              businessHours={settings.businessHours}
-              onChange={(businessHours) => setSettings((s) => ({ ...s, businessHours }))}
-            />
           </motion.div>
         )}
         {activeTab === 'availability' && (

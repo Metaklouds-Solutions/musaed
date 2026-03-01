@@ -15,6 +15,7 @@ export type {
   AgentRun,
   RunEvent,
   Skill,
+  Location,
 } from './entities';
 export type {
   DashboardMetrics,

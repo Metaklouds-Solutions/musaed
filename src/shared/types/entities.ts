@@ -147,3 +147,14 @@ export interface Skill {
   description: string;
   deprecated: boolean;
 }
+
+/** Clinic location (branch). [PHASE-7-MULTI-LOCATION] */
+export interface Location {
+  id: string;
+  tenantId: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  /** Override business hours for this location. */
+  hours?: string;
+}

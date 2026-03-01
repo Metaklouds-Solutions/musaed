@@ -6,6 +6,7 @@ export { MetricCard } from './MetricCard';
 export { Badge } from './Badge';
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';
 export { DataTable } from './DataTable';
+export { VirtualizedDataTable } from './VirtualizedDataTable/VirtualizedDataTable';
 export { TableFilters, type TableFilterOption } from './TableFilters';
 export { PillTag, type PillTagVariant } from './PillTag';
 export { StatusDot, type StatusDotVariant } from './StatusDot';

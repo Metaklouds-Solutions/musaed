@@ -1,14 +1,10 @@
 /**
  * Calls table. Data from props only; no adapter access.
- * Responsive with DataTable, PillTag for booking outcome.
+ * Virtualized when 50+ rows. [PHASE-7-VIRTUALIZED-LISTS]
  */
 
 import {
-  DataTable,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
+  VirtualizedDataTable,
   TableHead,
   TableCell,
   ViewButton,
@@ -49,49 +45,48 @@ export function CallsTable({
   if (calls.length === 0) return null;
   const showTenant = Boolean(getTenantName);
   return (
-    <DataTable minWidth="min-w-[640px]">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {showTenant && <TableHead>Tenant</TableHead>}
-            <TableHead>Date</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Sentiment</TableHead>
-            <TableHead>Booking</TableHead>
-            <TableHead aria-hidden />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {calls.map((call) => (
-            <TableRow key={call.id}>
-              {showTenant && (
-                <TableCell className="text-[var(--text-secondary)] text-sm">
-                  {getTenantName!(call.tenantId)}
-                </TableCell>
-              )}
-              <TableCell className="text-[var(--text-secondary)] text-sm">
-                {formatDate(call.createdAt)}
-              </TableCell>
-              <TableCell>{getCustomerName(call.customerId)}</TableCell>
-              <TableCell>{formatDuration(call.duration)}</TableCell>
-              <TableCell>
-                <SentimentBadge score={call.sentimentScore} />
-              </TableCell>
-              <TableCell>
-                {call.bookingCreated ? (
-                  <PillTag variant="status">Booked</PillTag>
-                ) : (
-                  <span className="text-[var(--text-muted)]">—</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <ViewButton to={`${viewBasePath}/${call.id}`} aria-label="View call" />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </DataTable>
+    <VirtualizedDataTable
+      items={calls}
+      getItemKey={(c) => c.id}
+      minWidth="min-w-[640px]"
+      header={
+        <>
+          {showTenant && <TableHead>Tenant</TableHead>}
+          <TableHead>Date</TableHead>
+          <TableHead>Customer</TableHead>
+          <TableHead>Duration</TableHead>
+          <TableHead>Sentiment</TableHead>
+          <TableHead>Booking</TableHead>
+          <TableHead aria-hidden />
+        </>
+      }
+      renderRow={(call) => (
+        <>
+          {showTenant && (
+            <TableCell className="text-[var(--text-secondary)] text-sm">
+              {getTenantName!(call.tenantId)}
+            </TableCell>
+          )}
+          <TableCell className="text-[var(--text-secondary)] text-sm">
+            {formatDate(call.createdAt)}
+          </TableCell>
+          <TableCell>{getCustomerName(call.customerId)}</TableCell>
+          <TableCell>{formatDuration(call.duration)}</TableCell>
+          <TableCell>
+            <SentimentBadge score={call.sentimentScore} />
+          </TableCell>
+          <TableCell>
+            {call.bookingCreated ? (
+              <PillTag variant="status">Booked</PillTag>
+            ) : (
+              <span className="text-[var(--text-muted)]">—</span>
+            )}
+          </TableCell>
+          <TableCell>
+            <ViewButton to={`${viewBasePath}/${call.id}`} aria-label="View call" />
+          </TableCell>
+        </>
+      )}
+    />
   );
 }

@@ -1,4 +1,5 @@
 export { AppointmentRemindersSection } from './AppointmentRemindersSection';
+export { LocationsSection } from './LocationsSection/LocationsSection';
 export { PMSSection } from './PMSSection';
 export { ClinicProfileSection } from './ClinicProfileSection';
 export { CustomPromptsSection } from './CustomPromptsSection';

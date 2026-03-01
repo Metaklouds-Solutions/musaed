@@ -13,9 +13,10 @@ interface StaffTableRowProps {
   onArchive?: (staff: StaffRow) => void;
 }
 
-export function StaffTableRow({ staff, showTenant = false, showArchiveAction, onArchive }: StaffTableRowProps) {
+/** Cells only (for use with VirtualizedDataTable). */
+export function StaffTableRowCells({ staff, showTenant = false, showArchiveAction, onArchive }: StaffTableRowProps) {
   return (
-    <TableRow>
+    <>
       <TableCell>
         <div className="flex items-center gap-3 min-w-0">
           <Avatar name={staff.name} size="md" />
@@ -52,6 +53,14 @@ export function StaffTableRow({ staff, showTenant = false, showArchiveAction, on
           </Button>
         </TableCell>
       )}
+    </>
+  );
+}
+
+export function StaffTableRow(props: StaffTableRowProps) {
+  return (
+    <TableRow>
+      <StaffTableRowCells {...props} />
     </TableRow>
   );
 }

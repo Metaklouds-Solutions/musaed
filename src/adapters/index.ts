@@ -30,6 +30,7 @@ import * as localMaintenance from './local/maintenance.adapter';
 import * as localSoftDelete from './local/softDelete.adapter';
 import * as localStaffProfile from './local/staffProfile.adapter';
 import * as localPms from './local/pms.adapter';
+import * as localLocations from './local/locations.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
 import * as apiCalls from './api/calls.adapter';
@@ -67,6 +68,7 @@ export const maintenanceAdapter = localMaintenance.maintenanceAdapter;
 export const softDeleteAdapter = localSoftDelete.softDeleteAdapter;
 export const staffProfileAdapter = localStaffProfile.staffProfileAdapter;
 export const pmsAdapter = localPms.pmsAdapter;
+export const locationsAdapter = localLocations.locationsAdapter;
 export { MAINTENANCE_CHANGED } from './local/maintenance.adapter';
 export { SOFT_DELETE_CHANGED } from './local/softDelete.adapter';
 

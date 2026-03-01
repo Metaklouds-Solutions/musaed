@@ -19,6 +19,7 @@
     "@google/genai": "^1.29.0",
     "@radix-ui/react-popover": "^1.1.15",
     "@tailwindcss/vite": "^4.1.14",
+    "@tanstack/react-virtual": "^3.13.19",
     "@vitejs/plugin-react": "^5.0.4",
     "better-sqlite3": "^12.4.1",
     "class-variance-authority": "^0.7.1",

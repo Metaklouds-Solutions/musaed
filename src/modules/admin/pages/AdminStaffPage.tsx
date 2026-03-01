@@ -1,5 +1,5 @@
 /**
- * Admin staff page. Cross-tenant table, Add staff modal, CSV import.
+ * Admin staff page. Cross-tenant table, Add staff modal. [PHASE-7-OPTIMISTIC-UPDATES]
  */
 
 import { useState, useCallback } from 'react';
@@ -9,6 +9,8 @@ import { PageHeader, Button } from '../../../shared/ui';
 import { StaffTable, AddStaffModal, StaffFilters } from '../../shared/staff';
 import { staffAdapter, exportAdapter, softDeleteAdapter } from '../../../adapters';
 import { useAdminStaff } from '../hooks';
+import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
+import type { StaffRow } from '../../../shared/types';
 
 export function AdminStaffPage() {
   const {
@@ -20,6 +22,11 @@ export function AdminStaffPage() {
     setRoleFilter,
     refetch,
   } = useAdminStaff();
+
+  const { items: displayStaff, removeOptimistic, rollbackRemove, commit } = useOptimisticList<StaffRow>({
+    items: staff,
+    getKey: (s) => `${s.userId}::${s.tenantId}`,
+  });
 
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -40,11 +47,19 @@ export function AdminStaffPage() {
   const handleArchive = useCallback(
     (s: { userId: string; tenantId: string }) => {
       if (!window.confirm('Archive this staff member? They will be hidden from the list.')) return;
-      softDeleteAdapter.softDeleteStaff(s.userId, s.tenantId);
-      refetch();
-      toast.success('Staff archived');
+      const key = `${s.userId}::${s.tenantId}`;
+      removeOptimistic(key);
+      try {
+        softDeleteAdapter.softDeleteStaff(s.userId, s.tenantId);
+        refetch();
+        commit();
+        toast.success('Staff archived');
+      } catch {
+        rollbackRemove(key);
+        toast.error('Failed to archive');
+      }
     },
-    [refetch]
+    [refetch, removeOptimistic, rollbackRemove, commit]
   );
 
   const handleExport = useCallback(() => {
@@ -107,7 +122,7 @@ export function AdminStaffPage() {
         onSubmit={handleAddStaff}
       />
 
-      <StaffTable staff={staff} showTenant showArchiveAction onArchive={handleArchive} />
+      <StaffTable staff={displayStaff} showTenant showArchiveAction onArchive={handleArchive} />
     </div>
   );
 }

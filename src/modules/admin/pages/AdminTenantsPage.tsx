@@ -25,6 +25,8 @@ import {
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useAdminTenants } from '../hooks';
 import { softDeleteAdapter } from '../../../adapters';
+import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
+import type { AdminTenantRow } from '../../../shared/types';
 import { AddTenantModal } from '../components/AddTenantModal';
 import { TenantComparisonView } from '../components/TenantComparisonView';
 
@@ -51,6 +53,11 @@ export function AdminTenantsPage() {
     return tenants.filter((t) => t.plan.toLowerCase() === planFilter.toLowerCase());
   }, [tenants, planFilter]);
 
+  const { items: displayTenants, removeOptimistic, rollbackRemove, commit } = useOptimisticList<AdminTenantRow>({
+    items: filteredTenants,
+    getKey: (t) => t.id,
+  });
+
   const plans = useMemo(() => {
     const set = new Set(tenants.map((t) => t.plan));
     return Array.from(set).map((p) => ({ value: p.toLowerCase(), label: p }));
@@ -66,11 +73,18 @@ export function AdminTenantsPage() {
   const handleArchive = useCallback(
     (id: string) => () => {
       if (!window.confirm('Archive this tenant? They will be hidden from the list.')) return;
-      softDeleteAdapter.softDeleteTenant(id);
-      setRefreshKey((k) => k + 1);
-      toast.success('Tenant archived');
+      removeOptimistic(id);
+      try {
+        softDeleteAdapter.softDeleteTenant(id);
+        setRefreshKey((k) => k + 1);
+        commit();
+        toast.success('Tenant archived');
+      } catch {
+        rollbackRemove(id);
+        toast.error('Failed to archive');
+      }
     },
-    []
+    [removeOptimistic, rollbackRemove, commit]
   );
 
   return (
@@ -165,7 +179,7 @@ export function AdminTenantsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredTenants.map((t) => (
+                        {displayTenants.map((t) => (
                           <TableRow
                             key={t.id}
                             className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
