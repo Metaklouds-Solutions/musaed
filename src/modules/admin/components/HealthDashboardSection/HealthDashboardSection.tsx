@@ -8,6 +8,10 @@ import type { SystemHealth } from '../../../../shared/types';
 
 type Status = 'ok' | 'degraded' | 'error';
 
+function isStatus(s: unknown): s is Status {
+  return s === 'ok' || s === 'degraded' || s === 'error';
+}
+
 const STATUS_CONFIG: Record<Status, { Icon: typeof CheckCircle; label: string; className: string }> = {
   ok: { Icon: CheckCircle, label: 'OK', className: 'text-[var(--success)]' },
   degraded: { Icon: AlertTriangle, label: 'Degraded', className: 'text-[var(--warning)]' },
@@ -29,7 +33,7 @@ function getServiceStatus(
   name: string
 ): Status {
   const found = integrations.find((i) => i.name === name);
-  return (found?.status as Status) ?? 'ok';
+  return isStatus(found?.status) ? found.status : 'ok';
 }
 
 export function HealthDashboardSection({ systemHealth }: HealthDashboardSectionProps) {

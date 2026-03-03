@@ -83,7 +83,8 @@ export function Drawer({
 
   useEffect(() => {
     if (!open) return;
-    previousActiveRef.current = document.activeElement as HTMLElement | null;
+    const activeEl = document.activeElement;
+    previousActiveRef.current = activeEl instanceof HTMLElement ? activeEl : null;
     const panel = panelRef.current;
     if (panel) {
       const focusable = getFocusableElements(panel);

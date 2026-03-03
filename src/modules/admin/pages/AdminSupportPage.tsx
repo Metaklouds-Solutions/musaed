@@ -29,6 +29,24 @@ const PRIORITY_OPTIONS: { value: SupportTicket['priority']; label: string }[] = 
   { value: 'low', label: 'Low' },
 ];
 
+function isSupportTicketStatus(s: unknown): s is SupportTicket['status'] {
+  return s === 'open' || s === 'in_progress' || s === 'resolved';
+}
+
+function isSupportTicketPriority(s: unknown): s is SupportTicket['priority'] {
+  return s === 'low' || s === 'medium' || s === 'high' || s === 'critical';
+}
+
+function toStatusFilter(s: unknown): SupportTicket['status'] | '' {
+  if (s === '') return '';
+  return isSupportTicketStatus(s) ? s : '';
+}
+
+function toPriorityFilter(s: unknown): SupportTicket['priority'] | '' {
+  if (s === '') return '';
+  return isSupportTicketPriority(s) ? s : '';
+}
+
 export function AdminSupportPage() {
   const ready = useDelayedReady();
   const navigate = useNavigate();
@@ -77,9 +95,9 @@ export function AdminSupportPage() {
 
   const handleApplySupportFilters = useCallback(
     (f: Record<string, unknown>) => {
-      setTenantFilter((f.tenantFilter as string) ?? '');
-      setStatusFilter((f.statusFilter as SupportTicket['status']) ?? '');
-      setPriorityFilter((f.priorityFilter as SupportTicket['priority']) ?? '');
+      setTenantFilter(typeof f.tenantFilter === 'string' ? f.tenantFilter : '');
+      setStatusFilter(toStatusFilter(f.statusFilter));
+      setPriorityFilter(toPriorityFilter(f.priorityFilter));
     },
     [setTenantFilter, setStatusFilter, setPriorityFilter]
   );
@@ -120,7 +138,7 @@ export function AdminSupportPage() {
             </Badge>
             <PopoverSelect
               value={ticket.status}
-              onChange={(v) => updateStatus(ticket.id, v as SupportTicket['status'])}
+              onChange={(v) => { if (isSupportTicketStatus(v)) updateStatus(ticket.id, v); }}
               options={STATUS_OPTIONS}
               title="Status"
               aria-label="Update ticket status"
@@ -182,7 +200,7 @@ export function AdminSupportPage() {
         />
         <PopoverSelect
           value={filters.statusFilter}
-          onChange={(v) => setStatusFilter(v as SupportTicket['status'] | '')}
+          onChange={(v) => setStatusFilter(toStatusFilter(v))}
           options={[
             { value: '', label: 'All statuses' },
             ...STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
@@ -192,7 +210,7 @@ export function AdminSupportPage() {
         />
         <PopoverSelect
           value={filters.priorityFilter}
-          onChange={(v) => setPriorityFilter(v as SupportTicket['priority'] | '')}
+          onChange={(v) => setPriorityFilter(toPriorityFilter(v))}
           options={[
             { value: '', label: 'All priorities' },
             ...PRIORITY_OPTIONS.map((o) => ({ value: o.value, label: o.label })),

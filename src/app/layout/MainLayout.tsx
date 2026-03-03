@@ -18,9 +18,13 @@ import { useSession } from '../session/SessionContext';
 
 const THEME_KEY = 'clinic-crm-theme';
 
+function isTheme(s: string | null): s is Theme {
+  return s === 'light' || s === 'dark';
+}
+
 function getInitialTheme(): Theme {
-  const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-  if (stored === 'light' || stored === 'dark') return stored;
+  const stored = localStorage.getItem(THEME_KEY);
+  if (isTheme(stored)) return stored;
   return window.matchMedia('prefers-color-scheme: dark').matches
     ? 'dark'
     : 'light';

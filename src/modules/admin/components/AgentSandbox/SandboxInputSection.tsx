@@ -14,6 +14,15 @@ const SCENARIO_OPTIONS = [
 
 export type ScenarioValue = (typeof SCENARIO_OPTIONS)[number]['value'];
 
+function isScenarioValue(s: unknown): s is ScenarioValue {
+  return (
+    s === 'booking' ||
+    s === 'billing' ||
+    s === 'general' ||
+    s === 'prescription'
+  );
+}
+
 interface SandboxInputSectionProps {
   agentOptions: { value: string; label: string }[];
   selectedAgentId: string;
@@ -86,9 +95,9 @@ export function SandboxInputSection(props: SandboxInputSectionProps) {
           onChange={(v) => {
             if (v === '__custom__') {
               onUseCustomChange(true);
-            } else {
+            } else if (isScenarioValue(v)) {
               onUseCustomChange(false);
-              onScenarioChange(v as ScenarioValue);
+              onScenarioChange(v);
             }
           }}
           options={[

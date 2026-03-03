@@ -89,7 +89,8 @@ export const agentsAdapter = {
     const assigned = assignedAgents.find((a) => a.id === id);
     const pa = seedPlatformAgents.find((p) => p.id === id);
     if (!va && !assigned && !pa) return null;
-    const source = va ?? assigned ?? pa!;
+    const source = va ?? assigned ?? pa;
+    if (!source) return null;
     const skills = seedAgentSkills
       .filter((as) => as.agentId === id)
       .sort((a, b) => a.priority - b.priority)

@@ -68,10 +68,14 @@ function filterByFeatureFlags<T extends { featureFlag?: string; children?: T[] }
     }));
 }
 
+function isSidebarVariant(s: string | null): s is SidebarVariant {
+  return s === 'glass-expanded' || s === 'minimal-compact';
+}
+
 function getStoredVariant(): SidebarVariant {
   if (typeof window === 'undefined') return 'glass-expanded';
-  const stored = localStorage.getItem(SIDEBAR_VARIANT_KEY) as SidebarVariant | null;
-  return stored === 'minimal-compact' ? 'minimal-compact' : 'glass-expanded';
+  const stored = localStorage.getItem(SIDEBAR_VARIANT_KEY);
+  return isSidebarVariant(stored) ? stored : 'glass-expanded';
 }
 
 export function Sidebar() {
