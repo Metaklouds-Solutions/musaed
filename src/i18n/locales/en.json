@@ -31,7 +31,8 @@
     "language": "Language",
     "english": "English",
     "arabic": "العربية",
-    "agentSandbox": "Agent Sandbox"
+    "agentSandbox": "Agent Sandbox",
+    "myTenant": "My Tenant"
   },
   "calendar": {
     "title": "Calendar",

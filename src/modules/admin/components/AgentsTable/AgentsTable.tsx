@@ -51,9 +51,13 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
           {agents.map((a) => (
             <TableRow key={a.id}>
               <TableCell className="font-medium text-[var(--text-primary)]">
-                <Link to={`/admin/agents/${a.id}`} className="hover:underline">
-                  {a.name}
-                </Link>
+                {a.tenantId ? (
+                  <Link to={`/admin/tenants/${a.tenantId}/agents/${a.id}`} className="hover:underline">
+                    {a.name}
+                  </Link>
+                ) : (
+                  <span>{a.name}</span>
+                )}
               </TableCell>
               <TableCell className="font-mono text-sm text-[var(--text-muted)]">
                 {a.externalAgentId}
@@ -85,7 +89,7 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
               </TableCell>
               <TableCell>
                 {a.tenantId ? (
-                  <ViewButton to={`/admin/agents/${a.id}`} aria-label="View agent" />
+                  <ViewButton to={`/admin/tenants/${a.tenantId}/agents/${a.id}`} aria-label="View agent" />
                 ) : onAssignClick ? (
                   <button
                     type="button"

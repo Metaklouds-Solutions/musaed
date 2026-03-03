@@ -2,7 +2,7 @@
  * Tenant detail Agents tab: list of agents with links to agent detail.
  */
 
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Bot, Phone, MessageSquare, Mail } from 'lucide-react';
 import { Card, CardHeader, CardBody, DataTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton, PillTag } from '../../../../shared/ui';
@@ -16,6 +16,9 @@ const channelIcons: Record<string, typeof Phone> = { voice: Phone, chat: Message
 
 export function TenantAgentsTab({ agents }: TenantAgentsTabProps) {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const isAdmin = location.pathname.includes('/admin/');
+  const agentLinkBase = isAdmin ? `/admin/tenants/${id}` : `/tenants/${id}`;
 
   if (agents.length === 0) {
     return (
@@ -74,7 +77,7 @@ export function TenantAgentsTab({ agents }: TenantAgentsTabProps) {
                       <TableCell className="text-[var(--text-muted)] text-sm">{a.lastSynced}</TableCell>
                       <TableCell>
                         {id && (
-                          <Link to={`/tenants/${id}/agents/${a.id}`}>
+                          <Link to={`${agentLinkBase}/agents/${a.id}`}>
                             <ViewButton aria-label={`View ${a.name}`} />
                           </Link>
                         )}

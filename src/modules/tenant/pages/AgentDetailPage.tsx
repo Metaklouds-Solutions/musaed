@@ -45,7 +45,7 @@ export function AgentDetailPage() {
   const [activeTab, setActiveTab] = useState<AgentTab>('overview');
   const location = useLocation();
   const isAdmin = location.pathname.includes('/admin/');
-  const backTo = isAdmin ? '/admin/tenants' : tenantId ? `/tenants/${tenantId}` : '/tenants/me';
+  const backTo = isAdmin && tenantId ? `/admin/tenants/${tenantId}` : isAdmin ? '/admin/tenants' : tenantId ? `/tenants/${tenantId}` : '/tenants/me';
 
   if (isLoading || !agent) {
     return (
