@@ -104,7 +104,7 @@ export function CallReplayViewer({ transcript }: CallReplayViewerProps) {
               className="p-2 rounded-lg hover:bg-[var(--bg-hover)] disabled:opacity-40"
               aria-label="Play"
             >
-              <Play size={18} />
+              <Play size={18} aria-hidden />
             </button>
           )}
         </div>

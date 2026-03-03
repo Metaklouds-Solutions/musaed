@@ -123,6 +123,7 @@ export function Modal({
           )}
           style={{
             maxWidth: `min(95vw, ${maxWidthRem}rem)`,
+            minWidth: 'min(320px, 95vw)',
             opacity: open ? 1 : 0,
             transform: open ? 'scale(1)' : 'scale(0.96)',
           }}

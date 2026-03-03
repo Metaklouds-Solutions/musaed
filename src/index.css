@@ -316,6 +316,25 @@
    Component utilities — Design.json glass card, accent button
    --------------------------------------------------------------------------- */
 @layer components {
+  /* [PHASE-7-SCREEN-READER] Skip link for keyboard/screen reader users */
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: var(--ds-primary);
+    color: white;
+    border-radius: var(--radius-button);
+    font-weight: 500;
+    transition: top 0.2s ease;
+  }
+  .skip-link:focus {
+    top: 1rem;
+    outline: 2px solid var(--ds-primary);
+    outline-offset: 2px;
+  }
+
   .card-glass {
     background: var(--surface-card);
     border: 1px solid var(--surface-border-card, var(--border-subtle));

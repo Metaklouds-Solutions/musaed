@@ -60,11 +60,14 @@ export function MainLayout() {
 
   return (
     <AccountModalProvider>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <div className="flex h-screen overflow-hidden bg-[var(--bg-base)] p-3 gap-3 box-border">
         <div className="shrink-0 self-stretch rounded-2xl overflow-hidden min-w-0 md:min-w-0 m-3">
           <Sidebar />
         </div>
-        <main className="flex-1 flex flex-col overflow-hidden relative min-w-0 gap-3 pl-14 md:pl-0">
+        <main id="main-content" className="flex-1 flex flex-col overflow-hidden relative min-w-0 gap-3 pl-14 md:pl-0">
           <MaintenanceBanner />
           <Header
           theme={theme}
