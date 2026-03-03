@@ -7,7 +7,7 @@ import {
   Navigate,
   RouterProvider,
 } from 'react-router-dom';
-import { RequireAuth, TenantGuard, AdminGuard, DefaultRedirect, FeatureFlagGuard } from './guards';
+import { RequireAuth, TenantGuard, AdminGuard, DefaultRedirect, FeatureFlagGuard, TenantOrAdminGuard, TenantMeRedirect, TenantScopeGuard } from './guards';
 import { MainLayout } from './layout/MainLayout';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from '../modules/dashboard';
@@ -25,7 +25,6 @@ import {
   AdminOverviewPage,
   AdminCallsPage,
   AdminTenantsPage,
-  AdminTenantDetailPage,
   AdminStaffPage,
   AdminAgentsPage,
   AdminAgentDetailPage,
@@ -38,6 +37,7 @@ import {
   AdminSettingsPage,
   AdminSystemPage,
 } from '../modules/admin';
+import { TenantDetailPage, AgentDetailPage } from '../modules/tenant';
 
 const router = createBrowserRouter([
   {
@@ -72,13 +72,28 @@ const router = createBrowserRouter([
             ],
           },
           {
+            path: 'tenants',
+            element: <TenantOrAdminGuard />,
+            children: [
+              { path: 'me', element: <TenantMeRedirect /> },
+              {
+                path: ':id',
+                element: <TenantScopeGuard />,
+                children: [
+                  { index: true, element: <TenantDetailPage /> },
+                  { path: 'agents/:agentId', element: <AgentDetailPage /> },
+                ],
+              },
+            ],
+          },
+          {
             path: 'admin',
             element: <AdminGuard />,
             children: [
               { index: true, element: <Navigate to="/admin/overview" replace /> },
               { path: 'overview', element: <AdminOverviewPage /> },
               { path: 'tenants', element: <AdminTenantsPage /> },
-              { path: 'tenants/:id', element: <AdminTenantDetailPage /> },
+              { path: 'tenants/:id', element: <TenantDetailPage /> },
               { path: 'agents', element: <AdminAgentsPage /> },
               { path: 'agents/:id', element: <AdminAgentDetailPage /> },
               { path: 'sandbox', element: <AdminAgentSandboxPage /> },

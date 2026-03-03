@@ -19,6 +19,7 @@ import type {
   StaffProfile,
   Skill,
 } from '../shared/types/entities';
+import type { TenantListRow, TenantDetailFull, AgentDetailFull } from '../shared/types/admin';
 
 export const seedTenants: Tenant[] = [
   { id: 't_001', name: 'Sunrise Clinic', status: 'ACTIVE', onboardingStep: 4, onboardingComplete: true },
@@ -323,3 +324,168 @@ export const seedAuditLog: { id: string; action: string; userId: string; tenantI
   { id: 'audit_003', action: 'tenant.created', userId: 'admin', tenantId: 't_002', meta: { name: 'Metro Dental Group', plan: 'ENTERPRISE' }, timestamp: '2026-02-10T14:30:00Z' },
   { id: 'audit_004', action: 'ticket.assigned', userId: 'admin', meta: { ticketId: 'st_002', tenantId: 't_001' }, timestamp: '2026-02-24T15:00:00Z' },
 ];
+
+/** Tenant list rows for AdminTenantsPage (7 tenants per MUSAED spec). */
+export const seedTenantListRows: TenantListRow[] = [
+  { id: 't_001', name: 'Sunrise Medical Clinic', plan: 'Pro', status: 'ACTIVE', agentCount: 2, mrr: 299, callsThisMonth: 847, onboardingStatus: 'Complete', createdAt: '2025-01-12T08:00:00Z' },
+  { id: 't_002', name: 'Al Noor Dental Center', plan: 'Starter', status: 'ACTIVE', agentCount: 1, mrr: 99, callsThisMonth: 234, onboardingStatus: 'Complete', createdAt: '2025-02-03T14:30:00Z' },
+  { id: 't_003', name: 'HealthFirst Physiotherapy', plan: 'Pro', status: 'TRIAL', agentCount: 1, mrr: 0, callsThisMonth: 56, onboardingStatus: 'Step 2/4', createdAt: '2025-03-01T09:00:00Z' },
+  { id: 't_004', name: 'City Eye Specialists', plan: 'Enterprise', status: 'ACTIVE', agentCount: 3, mrr: 599, callsThisMonth: 1203, onboardingStatus: 'Complete', createdAt: '2024-11-20T10:00:00Z' },
+  { id: 't_005', name: 'Greenway Family Practice', plan: 'Starter', status: 'SUSPENDED', agentCount: 1, mrr: 0, callsThisMonth: 0, onboardingStatus: 'Complete', createdAt: '2024-10-05T08:00:00Z' },
+  { id: 't_006', name: 'Prime Cardiology Center', plan: 'Pro', status: 'ACTIVE', agentCount: 2, mrr: 299, callsThisMonth: 612, onboardingStatus: 'Complete', createdAt: '2024-12-14T11:00:00Z' },
+  { id: 't_007', name: 'Al Shifa Pediatric Clinic', plan: 'Starter', status: 'TRIAL', agentCount: 1, mrr: 0, callsThisMonth: 89, onboardingStatus: 'Step 1/4', createdAt: '2025-03-10T09:00:00Z' },
+];
+
+/** Full tenant detail for t_001 (Sunrise Medical Clinic) per MUSAED spec. */
+export const seedTenantDetail: TenantDetailFull = {
+  id: 't_001',
+  profile: {
+    clinicName: 'Sunrise Medical Clinic',
+    owner: 'Dr. Sarah Al-Rashidi',
+    email: 'sarah@sunrisemedical.com',
+    phone: '+966 50 123 4567',
+    address: 'King Fahd Road, Riyadh, SA',
+    timezone: 'Asia/Riyadh (UTC+3)',
+    locale: 'en-SA',
+    plan: 'Pro',
+    status: 'ACTIVE',
+    mrr: 299,
+    createdAt: 'January 12, 2025',
+    lastActive: 'March 2, 2025',
+  },
+  onboarding: [
+    { step: 1, title: 'Clinic Info Submitted', done: true },
+    { step: 2, title: 'Agent Deployed', done: true },
+    { step: 3, title: 'First Call Received', done: true },
+    { step: 4, title: 'Billing Activated', done: true },
+  ],
+  quickStats: {
+    totalCalls: 847,
+    bookingsCreated: 612,
+    escalations: 43,
+    conversionRate: 72.3,
+    avgCallDuration: '2m 14s',
+    creditsUsed: 1694,
+    creditsRemaining: 306,
+  },
+  members: [
+    { name: 'Dr. Sarah Al-Rashidi', role: 'Tenant Owner', status: 'active', joined: 'Jan 12, 2025' },
+    { name: 'Mohammed Al-Harbi', role: 'Receptionist', status: 'active', joined: 'Jan 15, 2025' },
+    { name: 'Dr. Layla Hassan', role: 'Doctor', status: 'active', joined: 'Jan 15, 2025' },
+    { name: 'Dr. Omar Khalid', role: 'Doctor', status: 'invited', joined: 'Feb 20, 2025' },
+    { name: 'Fatima Noor', role: 'Auditor', status: 'active', joined: 'Feb 1, 2025' },
+  ],
+  agents: [
+    { id: 'va_001', name: 'Sunrise Voice Agent', channel: 'voice', status: 'Active', voice: 'Aria (Female)', language: 'English', lastSynced: '2 min ago' },
+    { id: 'va_chat_001', name: 'Sunrise Chat Agent', channel: 'chat', status: 'Active', voice: '—', language: 'English + Arabic', lastSynced: '5 min ago' },
+  ],
+  tickets: [
+    { id: '#1042', title: 'Agent not booking correctly', priority: 'High', status: 'Open', createdAt: 'Mar 1, 2025' },
+    { id: '#1038', title: 'Arabic responses broken', priority: 'Medium', status: 'In Progress', createdAt: 'Feb 26, 2025' },
+    { id: '#1031', title: 'Billing invoice missing', priority: 'Low', status: 'Resolved', createdAt: 'Feb 20, 2025' },
+  ],
+  billing: {
+    currentPlan: 'Pro — $299/month',
+    nextBillingDate: 'April 1, 2025',
+    lastPayment: '$299 — March 1, 2025',
+    paymentMethod: 'Visa ending 4242',
+    creditsBalance: 306,
+    overageRate: '$0.08/min',
+  },
+  settings: {
+    businessHours: 'Sun–Thu, 8:00 AM – 6:00 PM',
+    afterHoursBehavior: 'Voicemail + Callback',
+    notifications: 'Email + SMS',
+    featureFlags: { enableReports: true, enableCalendar: true, enableABTesting: true },
+    pmsIntegration: 'Nabbra (Connected)',
+  },
+};
+
+/** Full agent detail for va_001 (Sunrise Voice Agent) per MUSAED spec. */
+export const seedAgentDetail: AgentDetailFull = {
+  id: 'va_001',
+  name: 'Sunrise Voice Agent',
+  retellAgentId: 'agent_4f8a2b1c9d3e7f0a',
+  tenantId: 't_001',
+  tenantName: 'Sunrise Medical Clinic',
+  channel: 'voice',
+  createdAt: 'January 14, 2025',
+  lastSynced: 'March 3, 2025 — 10:42 AM',
+  syncStatus: 'In Sync',
+  voiceConfig: {
+    voiceId: 'retell_voice_aria_en_female',
+    voiceName: 'Aria',
+    gender: 'Female',
+    accent: 'Neutral English',
+    speakingRate: 1,
+    stability: 0.75,
+    similarityBoost: 0.85,
+    fillerWords: true,
+    interruptionSensitivity: 'Medium',
+    ambientSound: false,
+  },
+  chatConfig: {
+    status: 'Active',
+    channel: 'Web Chat Widget',
+    widgetEmbed: '<script src="musaed.ai/widget/abc123">',
+    languages: ['English', 'Arabic'],
+    fallbackBehavior: 'Escalate to receptionist',
+    typingIndicator: true,
+    responseDelay: 800,
+  },
+  emailConfig: {
+    status: 'Not Configured',
+    inboundEmail: '—',
+    autoReply: '—',
+    note: 'Available on Enterprise plan',
+  },
+  llmConfig: {
+    model: 'GPT-4o (via Retell)',
+    systemPrompt: 'You are a helpful medical receptionist for Sunrise Medical Clinic...',
+    temperature: 0.7,
+    maxTokens: 1024,
+    customPromptEnabled: true,
+    languageDetection: 'Auto',
+    fallbackLanguage: 'English',
+  },
+  skills: [
+    { id: 'sk_001', name: 'Appointment Booking', enabled: true, priority: 1 },
+    { id: 'sk_002', name: 'Appointment Rescheduling', enabled: true, priority: 2 },
+    { id: 'sk_003', name: 'Appointment Cancellation', enabled: true, priority: 3 },
+    { id: 'sk_004', name: 'FAQ Answering', enabled: true, priority: 4 },
+    { id: 'sk_005', name: 'Insurance Verification', enabled: false, priority: 0 },
+    { id: 'sk_006', name: 'Prescription Refill', enabled: false, priority: 0 },
+    { id: 'sk_007', name: 'Emergency Escalation', enabled: true, priority: 5 },
+    { id: 'sk_008', name: 'Callback Scheduling', enabled: true, priority: 6 },
+  ],
+  performance: {
+    totalCalls: 847,
+    avgHandleTime: '2m 14s',
+    successfulBookings: 612,
+    escalations: 43,
+    avgSentimentScore: 0.81,
+    firstCallResolution: 89,
+    interruptionRate: 4.2,
+    silenceRate: 1.8,
+  },
+  abTest: {
+    status: 'Active Test',
+    versionA: 'Aria voice, Temp 0.7 (50% traffic)',
+    versionB: 'Nova voice, Temp 0.5 (50% traffic)',
+    splitPercent: 50,
+    started: 'Feb 15, 2025',
+    winnerSoFar: 'Version A (+8% conversion)',
+  },
+  recentRuns: [
+    { runId: 'run_9a3f', callId: 'call_7c2d', started: 'Mar 3, 10:41 AM', duration: '2m 18s', tokensUsed: 834, status: 'Success' },
+    { runId: 'run_8b1e', callId: 'call_6b1c', started: 'Mar 3, 10:38 AM', duration: '1m 52s', tokensUsed: 712, status: 'Success' },
+    { runId: 'run_7d4a', callId: 'call_5a0b', started: 'Mar 3, 10:31 AM', duration: '3m 05s', tokensUsed: 1102, status: 'Escalated' },
+    { runId: 'run_6c9f', callId: 'call_4f9a', started: 'Mar 3, 10:22 AM', duration: '0m 44s', tokensUsed: 298, status: 'Dropped' },
+  ],
+  syncInfo: {
+    webhookUrl: 'https://api.musaed.ai/webhooks/retell',
+    lastWebhookEvent: 'call.ended — Mar 3, 10:41 AM',
+    webhookStatus: 'Healthy',
+    autoSync: 'Every 5 minutes',
+  },
+};

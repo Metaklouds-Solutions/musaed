@@ -1,8 +1,9 @@
 /**
  * Admin Tenants: Tenant list and Compare Tenants views. [PHASE-7-BULK-ACTIONS]
+ * Uses TenantListRow with status, plan, search filters.
  */
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -24,12 +25,13 @@ import {
   BulkActionsBar,
 } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useAdminTenants } from '../hooks';
+import { useAdminTenantList } from '../hooks';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useTableSelection } from '../../../shared/hooks/useTableSelection';
 import { softDeleteAdapter, exportAdapter } from '../../../adapters';
 import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
-import type { AdminTenantRow } from '../../../shared/types';
+import type { TenantListRow } from '../../../shared/types';
+import type { PillTagVariant } from '../../../shared/ui';
 import { AddTenantModal } from '../components/AddTenantModal';
 import { TenantComparisonView } from '../components/TenantComparisonView';
 
@@ -42,38 +44,35 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
+function statusVariant(status: string): PillTagVariant {
+  if (status === 'ACTIVE') return 'status';
+  if (status === 'TRIAL') return 'role';
+  return 'outcomeFailed';
+}
+
 export function AdminTenantsPage() {
   const ready = useDelayedReady();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [refreshKey, setRefreshKey] = useState(0);
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
-  const { tenants } = useAdminTenants(refreshKey);
+  const [planFilter, setPlanFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { tenants, plans, statuses } = useAdminTenantList(refreshKey, {
+    plan: planFilter,
+    status: statusFilter,
+    search: searchQuery,
+  });
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [planFilter, setPlanFilter] = useState<string | null>(null);
 
-  const filteredTenants = useMemo(() => {
-    if (!planFilter) return tenants;
-    return tenants.filter((t) => t.plan.toLowerCase() === planFilter.toLowerCase());
-  }, [tenants, planFilter]);
-
-  const { items: displayTenants, removeOptimistic, rollbackRemove, commit } = useOptimisticList<AdminTenantRow>({
-    items: filteredTenants,
+  const { items: displayTenants, removeOptimistic, rollbackRemove, commit } = useOptimisticList<TenantListRow>({
+    items: tenants,
     getKey: (t) => t.id,
   });
-  const selection = useTableSelection((t: AdminTenantRow) => t.id);
-
-  const plans = useMemo(() => {
-    const set = new Set(tenants.map((t) => t.plan));
-    return Array.from(set).map((p) => ({ value: p.toLowerCase(), label: p }));
-  }, [tenants]);
+  const selection = useTableSelection((t: TenantListRow) => t.id);
 
   const handleAddSuccess = useCallback(() => setRefreshKey((k) => k + 1), []);
-
-  const handleView = useCallback(
-    (id: string) => () => navigate(`/admin/tenants/${id}`),
-    [navigate]
-  );
 
   const handleArchive = useCallback(
     (id: string) => () => {
@@ -93,6 +92,11 @@ export function AdminTenantsPage() {
   );
 
   const selectedTenants = displayTenants.filter((t) => selection.selectedSet.has(t.id));
+  const handleView = useCallback(
+    (id: string) => () => navigate(`/admin/tenants/${id}`),
+    [navigate]
+  );
+
   const handleBulkArchive = useCallback(() => {
     if (selectedTenants.length === 0) return;
     if (!window.confirm(`Archive ${selectedTenants.length} tenant(s)? They will be hidden from the list.`)) return;
@@ -115,7 +119,16 @@ export function AdminTenantsPage() {
 
   const handleBulkExport = useCallback(() => {
     if (selectedTenants.length === 0) return;
-    const rows = selectedTenants.map((t) => ({ ID: t.id, Name: t.name, Plan: t.plan }));
+    const rows = selectedTenants.map((t) => ({
+      ID: t.id,
+      Name: t.name,
+      Plan: t.plan,
+      Status: t.status,
+      Agents: t.agentCount,
+      MRR: t.mrr,
+      Calls: t.callsThisMonth,
+      Onboarding: t.onboardingStatus,
+    }));
     exportAdapter.exportCsv(rows, `tenants-selected-${new Date().toISOString().slice(0, 10)}.csv`);
     selection.clear();
     toast.success(`Exported ${selectedTenants.length} tenant(s)`);
@@ -212,7 +225,7 @@ export function AdminTenantsPage() {
             transition={{ duration: 0.2 }}
             className="space-y-4"
           >
-            {tenants.length === 0 ? (
+            {displayTenants.length === 0 ? (
               <p className="text-sm text-[var(--text-muted)] py-8">No tenants.</p>
             ) : (
               <>
@@ -220,6 +233,12 @@ export function AdminTenantsPage() {
                   plans={plans}
                   selectedPlan={planFilter}
                   onPlanChange={setPlanFilter}
+                  statuses={statuses}
+                  selectedStatus={statusFilter}
+                  onStatusChange={setStatusFilter}
+                  search={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchPlaceholder="Search tenants…"
                 />
                 <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
                   <Button variant="secondary" size="sm" onClick={handleBulkExport} className="shrink-0">
@@ -232,7 +251,7 @@ export function AdminTenantsPage() {
                   </Button>
                 </BulkActionsBar>
                 <div className="rounded-xl overflow-x-auto overflow-y-visible border border-[var(--border-subtle)] shadow-sm">
-                  <DataTable minWidth="min-w-[640px]">
+                  <DataTable minWidth="min-w-[900px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -246,9 +265,13 @@ export function AdminTenantsPage() {
                               aria-label="Select all"
                             />
                           </TableHead>
-                          <TableHead>ID</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Plan</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Agents</TableHead>
+                          <TableHead className="text-right">MRR</TableHead>
+                          <TableHead className="text-right">Calls</TableHead>
+                          <TableHead>Onboarding</TableHead>
                           <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -267,14 +290,26 @@ export function AdminTenantsPage() {
                                 aria-label={`Select ${t.name}`}
                               />
                             </TableCell>
-                            <TableCell className="font-mono text-sm text-[var(--text-secondary)] py-4">
-                              {t.id}
-                            </TableCell>
                             <TableCell className="font-medium text-[var(--text-primary)] py-4">
                               {t.name}
                             </TableCell>
                             <TableCell className="py-4">
                               <PillTag variant="plan">{t.plan}</PillTag>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <PillTag variant={statusVariant(t.status)}>{t.status}</PillTag>
+                            </TableCell>
+                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
+                              {t.agentCount}
+                            </TableCell>
+                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
+                              ${t.mrr}
+                            </TableCell>
+                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
+                              {t.callsThisMonth}
+                            </TableCell>
+                            <TableCell className="py-4 text-sm text-[var(--text-secondary)]">
+                              {t.onboardingStatus}
                             </TableCell>
                             <TableCell className="py-4">
                               <div className="flex items-center gap-2">

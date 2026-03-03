@@ -71,6 +71,227 @@ export interface AdminTenantRow {
   plan: string;
 }
 
+/** Tenant list row for AdminTenantsPage with extended metrics. */
+export interface TenantListRow {
+  id: string;
+  name: string;
+  plan: string;
+  status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED';
+  agentCount: number;
+  mrr: number;
+  callsThisMonth: number;
+  onboardingStatus: string;
+  createdAt: string;
+}
+
+/** Tenant profile for detail page. */
+export interface TenantProfile {
+  clinicName: string;
+  owner: string;
+  email: string;
+  phone: string;
+  address: string;
+  timezone: string;
+  locale: string;
+  plan: string;
+  status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED';
+  mrr: number;
+  createdAt: string;
+  lastActive: string;
+}
+
+/** Onboarding step. */
+export interface OnboardingStep {
+  step: number;
+  title: string;
+  done: boolean;
+}
+
+/** Quick stats for tenant detail. */
+export interface TenantQuickStats {
+  totalCalls: number;
+  bookingsCreated: number;
+  escalations: number;
+  conversionRate: number;
+  avgCallDuration: string;
+  creditsUsed: number;
+  creditsRemaining: number;
+}
+
+/** Tenant member row. */
+export interface TenantMemberRow {
+  name: string;
+  role: string;
+  status: 'active' | 'invited';
+  joined: string;
+}
+
+/** Assigned agent row for tenant Agents tab. */
+export interface TenantAgentRow {
+  id: string;
+  name: string;
+  channel: 'voice' | 'chat' | 'email';
+  status: string;
+  voice: string;
+  language: string;
+  lastSynced: string;
+}
+
+/** Tenant support ticket row. */
+export interface TenantTicketRow {
+  id: string;
+  title: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+}
+
+/** Tenant billing summary. */
+export interface TenantBillingSummary {
+  currentPlan: string;
+  nextBillingDate: string;
+  lastPayment: string;
+  paymentMethod: string;
+  creditsBalance: number;
+  overageRate: string;
+}
+
+/** Tenant settings for detail page. */
+export interface TenantSettingsSummary {
+  businessHours: string;
+  afterHoursBehavior: string;
+  notifications: string;
+  featureFlags: Record<string, boolean>;
+  pmsIntegration: string;
+}
+
+/** Full tenant detail for TenantDetailPage. */
+export interface TenantDetailFull {
+  id: string;
+  profile: TenantProfile;
+  onboarding: OnboardingStep[];
+  quickStats: TenantQuickStats;
+  members: TenantMemberRow[];
+  agents: TenantAgentRow[];
+  tickets: TenantTicketRow[];
+  billing: TenantBillingSummary;
+  settings: TenantSettingsSummary;
+}
+
+/** Agent voice config (Retell). */
+export interface AgentVoiceConfig {
+  voiceId: string;
+  voiceName: string;
+  gender: string;
+  accent: string;
+  speakingRate: number;
+  stability: number;
+  similarityBoost: number;
+  fillerWords: boolean;
+  interruptionSensitivity: string;
+  ambientSound: boolean;
+}
+
+/** Agent chat config. */
+export interface AgentChatConfig {
+  status: string;
+  channel: string;
+  widgetEmbed: string;
+  languages: string[];
+  fallbackBehavior: string;
+  typingIndicator: boolean;
+  responseDelay: number;
+}
+
+/** Agent email config. */
+export interface AgentEmailConfig {
+  status: string;
+  inboundEmail: string;
+  autoReply: string;
+  note: string;
+}
+
+/** Agent LLM config. */
+export interface AgentLlmConfig {
+  model: string;
+  systemPrompt: string;
+  temperature: number;
+  maxTokens: number;
+  customPromptEnabled: boolean;
+  languageDetection: string;
+  fallbackLanguage: string;
+}
+
+/** Agent skill with enabled/priority. */
+export interface AgentSkillRow {
+  id: string;
+  name: string;
+  enabled: boolean;
+  priority: number;
+}
+
+/** Agent performance metrics. */
+export interface AgentPerformanceMetrics {
+  totalCalls: number;
+  avgHandleTime: string;
+  successfulBookings: number;
+  escalations: number;
+  avgSentimentScore: number;
+  firstCallResolution: number;
+  interruptionRate: number;
+  silenceRate: number;
+}
+
+/** Agent A/B test config. */
+export interface AgentAbTest {
+  status: string;
+  versionA: string;
+  versionB: string;
+  splitPercent: number;
+  started: string;
+  winnerSoFar: string;
+}
+
+/** Agent run row for Recent Runs. */
+export interface AgentRunRow {
+  runId: string;
+  callId: string;
+  started: string;
+  duration: string;
+  tokensUsed: number;
+  status: string;
+}
+
+/** Agent sync info. */
+export interface AgentSyncInfo {
+  webhookUrl: string;
+  lastWebhookEvent: string;
+  webhookStatus: string;
+  autoSync: string;
+}
+
+/** Full agent detail for AgentDetailPage. */
+export interface AgentDetailFull {
+  id: string;
+  name: string;
+  retellAgentId: string;
+  tenantId: string;
+  tenantName: string;
+  channel: 'voice' | 'chat' | 'email';
+  createdAt: string;
+  lastSynced: string;
+  syncStatus: string;
+  voiceConfig: AgentVoiceConfig;
+  chatConfig: AgentChatConfig;
+  emailConfig: AgentEmailConfig;
+  llmConfig: AgentLlmConfig;
+  skills: AgentSkillRow[];
+  performance: AgentPerformanceMetrics;
+  abTest: AgentAbTest;
+  recentRuns: AgentRunRow[];
+  syncInfo: AgentSyncInfo;
+}
+
 /** System health for admin system page. */
 export interface SystemHealth {
   status: 'ok' | 'degraded' | 'error';

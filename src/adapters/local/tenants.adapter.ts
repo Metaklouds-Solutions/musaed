@@ -10,13 +10,171 @@ import {
   seedTenantPlans,
   seedTenantSettings,
   seedPlatformAgents,
+  seedTenantListRows,
+  seedTenantDetail,
+  seedCredits,
+  seedCalls,
+  seedBookings,
 } from '../../mock/seedData';
-import type { TenantDetail, AdminTenantRow } from '../../shared/types';
+import { staffAdapter } from './staff.adapter';
+import { supportAdapter } from './support.adapter';
+import { agentsAdapter } from './agents.adapter';
+import type { TenantDetail, AdminTenantRow, TenantListRow, TenantDetailFull, TenantMemberRow } from '../../shared/types';
 
 /** In-memory tenants added via Add Tenant modal. */
 const addedTenants: AdminTenantRow[] = [];
 
+const ROLE_LABELS: Record<string, string> = {
+  tenant_owner: 'Tenant Owner',
+  doctor: 'Doctor',
+  receptionist: 'Receptionist',
+  auditor: 'Auditor',
+};
+
 export const tenantsAdapter = {
+  /** Get tenant list rows for AdminTenantsPage. Excludes soft-deleted. Includes added tenants. */
+  getTenantListRows(filters?: { status?: string; plan?: string; search?: string }): TenantListRow[] {
+    const deleted = softDeleteAdapter.getDeletedTenantIds();
+    const fromAdded: TenantListRow[] = addedTenants
+      .filter((t) => !deleted.has(t.id))
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        plan: t.plan,
+        status: 'TRIAL' as const,
+        agentCount: 0,
+        mrr: 0,
+        callsThisMonth: 0,
+        onboardingStatus: 'Step 1/4',
+        createdAt: new Date().toISOString(),
+      }));
+    const fromSeed = seedTenantListRows.filter((t) => !deleted.has(t.id));
+    const existingIds = new Set(fromSeed.map((r) => r.id));
+    const addedOnly = fromAdded.filter((a) => !existingIds.has(a.id));
+    let rows = [...fromSeed, ...addedOnly];
+    if (filters?.status) {
+      rows = rows.filter((t) => t.status === filters.status);
+    }
+    if (filters?.plan) {
+      rows = rows.filter((t) => t.plan.toLowerCase() === (filters.plan ?? '').toLowerCase());
+    }
+    if (filters?.search?.trim()) {
+      const q = filters.search.trim().toLowerCase();
+      rows = rows.filter((t) => t.name.toLowerCase().includes(q));
+    }
+    return rows;
+  },
+
+  /** Get full tenant detail for TenantDetailPage. Returns null for soft-deleted or unknown. */
+  getTenantDetailFull(id: string): TenantDetailFull | null {
+    if (softDeleteAdapter.isTenantDeleted(id)) return null;
+    if (id === seedTenantDetail.id) return { ...seedTenantDetail };
+    const tenant = seedTenants.find((t) => t.id === id);
+    if (!tenant) return null;
+    const planRow = seedTenantPlans.find((p) => p.tenantId === id);
+    const ext = seedTenantExtended.find((e) => e.tenantId === id);
+    const settings = seedTenantSettings.find((s) => s.tenantId === id);
+    const credits = seedCredits.find((c) => c.tenantId === id);
+    const tenantCalls = seedCalls.filter((c) => c.tenantId === id);
+    const tenantBookings = seedBookings.filter((b) => b.tenantId === id);
+    const agents = agentsAdapter.getAgentsForTenant(id);
+    const tickets = supportAdapter.listTickets({ tenantId: id });
+    const staff = staffAdapter.list(id);
+    const conversionRate =
+      tenantCalls.length > 0
+        ? Math.round((tenantBookings.length / tenantCalls.length) * 1000) / 10
+        : 0;
+    const avgDuration =
+      tenantCalls.length > 0
+        ? Math.round(
+            tenantCalls.reduce((s, c) => s + c.duration, 0) / tenantCalls.length
+          )
+        : 0;
+    const avgDurationStr =
+      avgDuration >= 60
+        ? `${Math.floor(avgDuration / 60)}m ${avgDuration % 60}s`
+        : `${avgDuration}s`;
+
+    return {
+      id,
+      profile: {
+        clinicName: tenant.name,
+        owner: '',
+        email: '',
+        phone: '',
+        address: '',
+        timezone: settings?.timezone ?? 'UTC',
+        locale: settings?.locale ?? 'en-US',
+        plan: planRow?.plan ?? '—',
+        status: ext?.status ?? 'ACTIVE',
+        mrr: planRow?.mrr ?? 0,
+        createdAt: ext?.createdAt ?? new Date().toISOString(),
+        lastActive:
+          tenantCalls.length > 0
+            ? tenantCalls.sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))[0]?.createdAt ?? ''
+            : '',
+      },
+      onboarding: [
+        { step: 1, title: 'Clinic Info Submitted', done: true },
+        { step: 2, title: 'Agent Deployed', done: agents.length > 0 },
+        { step: 3, title: 'First Call Received', done: tenantCalls.length > 0 },
+        { step: 4, title: 'Billing Activated', done: (ext?.onboardingStep ?? 0) >= 4 },
+      ],
+      quickStats: {
+        totalCalls: tenantCalls.length,
+        bookingsCreated: tenantBookings.length,
+        escalations: tenantCalls.filter((c) => c.escalationFlag).length,
+        conversionRate,
+        avgCallDuration: avgDurationStr,
+        creditsUsed: credits?.minutesUsed ?? 0,
+        creditsRemaining: credits?.balance ?? 0,
+      },
+      members: staff.map(
+        (s): TenantMemberRow => ({
+          name: s.name,
+          role: ROLE_LABELS[s.roleSlug] ?? s.roleSlug,
+          status: s.status === 'active' ? 'active' : 'invited',
+          joined: '',
+        })
+      ),
+      agents,
+      tickets: tickets.slice(0, 5).map((t) => ({
+        id: `#${t.id.slice(-4)}`,
+        title: t.title,
+        priority: t.priority,
+        status: t.status,
+        createdAt: new Date(t.createdAt).toLocaleDateString(),
+      })),
+      billing: {
+        currentPlan: `${planRow?.plan ?? '—'} — $${planRow?.mrr ?? 0}/month`,
+        nextBillingDate: '',
+        lastPayment: '',
+        paymentMethod: '',
+        creditsBalance: credits?.balance ?? 0,
+        overageRate: '$0.08/min',
+      },
+      settings: {
+        businessHours: settings?.businessHours ?? '—',
+        afterHoursBehavior: 'Voicemail + Callback',
+        notifications: 'Email + SMS',
+        featureFlags: {},
+        pmsIntegration: '—',
+      },
+    };
+  },
+
+  /** Get members for a tenant (for TenantDetailPage Members tab). */
+  getMembers(tenantId: string | undefined): TenantMemberRow[] {
+    if (!tenantId) return [];
+    const staff = staffAdapter.list(tenantId);
+    return staff.map((s) => ({
+      name: s.name,
+      role: ROLE_LABELS[s.roleSlug] ?? s.roleSlug,
+      status: s.status === 'active' ? 'active' : 'invited',
+      joined: '',
+    }));
+  },
+
   /** Get all tenants for admin list (seed + added). Excludes soft-deleted. */
   getAllTenants(): AdminTenantRow[] {
     const deleted = softDeleteAdapter.getDeletedTenantIds();
