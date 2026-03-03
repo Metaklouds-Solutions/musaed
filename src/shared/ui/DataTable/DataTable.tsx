@@ -18,7 +18,7 @@ export function DataTable({ children, minWidth = 'min-w-[480px] sm:min-w-[640px]
       className={cn(
         'w-full min-w-0',
         'overflow-x-auto overscroll-contain scroll-smooth',
-        'rounded-(--radius-card) card-glass',
+        'rounded-[var(--radius-card)] card-glass',
         className
       )}
       style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}

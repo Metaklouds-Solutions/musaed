@@ -13,8 +13,12 @@ export type Locale = (typeof LOCALES)[number];
 
 export const RTL_LOCALES: Locale[] = ['ar'];
 
+function isLocale(s: string): s is Locale {
+  return s === 'en' || s === 'ar';
+}
+
 export function isRtl(locale: string): boolean {
-  return RTL_LOCALES.includes(locale as Locale);
+  return isLocale(locale) && RTL_LOCALES.includes(locale);
 }
 
 i18n

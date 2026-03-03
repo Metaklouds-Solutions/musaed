@@ -189,7 +189,7 @@ export const dashboardAdapter = {
     return filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange)
       .map((c) => ({
         id: c.id,
-        outcome: (c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed') as TenantRecentCall['outcome'],
+        outcome: c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed',
         duration: c.duration,
         createdAt: c.createdAt,
       }))

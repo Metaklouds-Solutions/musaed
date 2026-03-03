@@ -11,13 +11,29 @@ interface User2FAState {
   secret: string;
 }
 
-function load(): Record<string, User2FAState> {
+function isUser2FAState(x: unknown): x is User2FAState {
+  if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return typeof o.enabled === 'boolean' && typeof o.secret === 'string';
+}
+
+function parseTwoFactorData(raw: string): Record<string, User2FAState> {
   try {
-    const stored = localStorage.getItem(TWO_FACTOR_KEY);
-    return stored ? (JSON.parse(stored) as Record<string, User2FAState>) : {};
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {};
+    const result: Record<string, User2FAState> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (isUser2FAState(v)) result[k] = v;
+    }
+    return result;
   } catch {
     return {};
   }
+}
+
+function load(): Record<string, User2FAState> {
+  const stored = localStorage.getItem(TWO_FACTOR_KEY);
+  return stored ? parseTwoFactorData(stored) : {};
 }
 
 function save(data: Record<string, User2FAState>): void {

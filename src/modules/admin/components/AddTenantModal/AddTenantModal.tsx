@@ -91,7 +91,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
   const handleDeploy = useCallback(() => handleComplete(selectedAgentId ?? undefined), [handleComplete, selectedAgentId]);
 
   return (
-    <Modal open={open} onClose={handleClose} title="Add Tenant" maxWidthRem={28}>
+    <Modal open={open} onClose={handleClose} title="Add Tenant" maxWidthRem={40}>
       <ModalHeader title="Add Tenant" onClose={handleClose} />
       <div className="p-5 space-y-6 bg-[var(--bg-subtle)]/30">
         <TenantWizardProgress currentStep={step} />

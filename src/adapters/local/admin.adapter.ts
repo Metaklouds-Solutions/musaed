@@ -133,12 +133,12 @@ export const adminAdapter = {
     const escalated = seedCalls.filter((c) => c.escalationFlag).length;
     const totalMinutes = seedCredits.reduce((s, c) => s + c.minutesUsed, 0);
     const totalCostUsd = totalMinutes * 0.02;
-    const statusCounts = seedTenantExtended.reduce(
+    const statusCounts = seedTenantExtended.reduce<Record<string, number>>(
       (acc, t) => {
         acc[t.status] = (acc[t.status] ?? 0) + 1;
         return acc;
       },
-      {} as Record<string, number>
+      {}
     );
     return {
       totalTenants: seedTenants.length,

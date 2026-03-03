@@ -47,7 +47,7 @@ export function AdminStaffPage() {
   );
 
   const handleImportCsv = useCallback(() => {
-    alert('CSV import coming soon. Use Add Staff for now.');
+    toast.info('CSV import coming soon. Use Add Staff for now.');
   }, []);
 
   const handleArchive = useCallback(

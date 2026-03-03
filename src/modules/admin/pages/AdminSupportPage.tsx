@@ -6,11 +6,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown, TableSkeleton } from '../../../shared/ui';
+import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown, TableSkeleton, EmptyState } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
 import { exportAdapter, auditAdapter } from '../../../adapters';
-import { Download } from 'lucide-react';
+import { Download, MessageCircle } from 'lucide-react';
 import { TicketList, TicketChatThread } from '../../shared/support';
 import { useAdminSupport } from '../hooks/useAdminSupport';
 import { tenantsAdapter } from '../../../adapters';
@@ -120,6 +120,22 @@ export function AdminSupportPage() {
     exportAdapter.exportCsv(rows, `tickets-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success('Tickets exported');
   }, [tickets, getTenantName]);
+
+  if (id && !ticket) {
+    return (
+      <div className="space-y-6">
+        <EmptyState
+          icon={MessageCircle}
+          title="Ticket not found"
+          description={id ? `No ticket found for ID "${id}".` : 'Missing ticket ID.'}
+        >
+          <Button variant="secondary" onClick={() => navigate('/admin/support')}>
+            Back to inbox
+          </Button>
+        </EmptyState>
+      </div>
+    );
+  }
 
   if (id && ticket) {
     return (

@@ -23,6 +23,10 @@ const PRIORITIES: { value: SupportTicket['priority']; label: string }[] = [
   { value: 'critical', label: 'Critical' },
 ];
 
+function isSupportTicketPriority(s: unknown): s is SupportTicket['priority'] {
+  return s === 'low' || s === 'medium' || s === 'high' || s === 'critical';
+}
+
 interface CreateTicketFormProps {
   tenantId: string;
   authorId: string;
@@ -83,7 +87,7 @@ export function CreateTicketForm({
           <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Priority</label>
           <PopoverSelect
             value={priority}
-            onChange={(v) => setPriority(v as SupportTicket['priority'])}
+            onChange={(v) => { if (isSupportTicketPriority(v)) setPriority(v); }}
             options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
           />
         </div>

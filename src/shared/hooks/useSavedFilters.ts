@@ -5,6 +5,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { savedFiltersAdapter, type SavedFilter } from '../../adapters/local/savedFilters.adapter';
 
+function isPlainObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null && !Array.isArray(x);
+}
+
 export interface UseSavedFiltersOptions<T extends Record<string, unknown>> {
   pageKey: string;
   currentFilters: T;
@@ -33,7 +37,7 @@ export function useSavedFilters<T extends Record<string, unknown>>({
 
   const saveCurrent = useCallback(
     (name: string) => {
-      savedFiltersAdapter.save(pageKey, name, currentFilters as Record<string, unknown>);
+      savedFiltersAdapter.save(pageKey, name, currentFilters);
       setSaved(savedFiltersAdapter.list(pageKey));
     },
     [pageKey, currentFilters]
@@ -42,7 +46,7 @@ export function useSavedFilters<T extends Record<string, unknown>>({
   const apply = useCallback(
     (id: string) => {
       const item = savedFiltersAdapter.get(id);
-      if (item) {
+      if (item && isPlainObject(item.filters)) {
         onApply(item.filters as T);
       }
     },

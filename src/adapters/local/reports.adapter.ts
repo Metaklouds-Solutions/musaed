@@ -101,14 +101,27 @@ export const reportsAdapter = {
 
   /** Get scheduled report config (admin digest). */
   getScheduledReportConfig(): ScheduledReportConfig {
+    const stored = localStorage.getItem(SCHEDULED_REPORTS_KEY);
+    if (!stored) return { ...defaultScheduledConfig };
     try {
-      const stored = localStorage.getItem(SCHEDULED_REPORTS_KEY);
-      if (!stored) return { ...defaultScheduledConfig };
-      const parsed = JSON.parse(stored) as Partial<ScheduledReportConfig>;
+      const parsed: unknown = JSON.parse(stored);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return { ...defaultScheduledConfig };
+      }
+      const o = parsed as Record<string, unknown>;
+      const recipients = Array.isArray(o.recipients)
+        ? (o.recipients as unknown[]).filter((r): r is string => typeof r === 'string')
+        : [];
       return {
         ...defaultScheduledConfig,
-        ...parsed,
-        recipients: Array.isArray(parsed.recipients) ? parsed.recipients : [],
+        enabled: typeof o.enabled === 'boolean' ? o.enabled : defaultScheduledConfig.enabled,
+        frequency:
+          o.frequency === 'weekly' || o.frequency === 'monthly'
+            ? o.frequency
+            : defaultScheduledConfig.frequency,
+        recipients,
+        dayOfWeek: typeof o.dayOfWeek === 'number' ? o.dayOfWeek : defaultScheduledConfig.dayOfWeek,
+        dayOfMonth: typeof o.dayOfMonth === 'number' ? o.dayOfMonth : defaultScheduledConfig.dayOfMonth,
       };
     } catch {
       return { ...defaultScheduledConfig };
@@ -130,8 +143,12 @@ export const reportsAdapter = {
     const byVersion = new Map<string, typeof calls>();
     for (const c of calls) {
       const v = c.agentVersion ?? 'default';
-      if (!byVersion.has(v)) byVersion.set(v, []);
-      byVersion.get(v)!.push(c);
+      let arr = byVersion.get(v);
+      if (!arr) {
+        arr = [];
+        byVersion.set(v, arr);
+      }
+      arr.push(c);
     }
     const rows: ABTestOutcomeRow[] = [];
     for (const [version, versionCalls] of byVersion) {

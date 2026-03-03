@@ -115,12 +115,13 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
         />
       </FormField>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>div]:min-w-0">
         <FormField label="Plan" id="plan">
           <PopoverSelect
             value={data.plan}
             onChange={(v) => set('plan')(v)}
             options={PLAN_OPTIONS.map((p) => ({ value: p, label: p }))}
+            triggerClassName="w-full min-w-0"
           />
         </FormField>
         <FormField label="Timezone" id="timezone">
@@ -128,6 +129,7 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
             value={data.timezone}
             onChange={(v) => set('timezone')(v)}
             options={TIMEZONE_OPTIONS.map((tz) => ({ value: tz, label: tz }))}
+            triggerClassName="w-full min-w-0"
           />
         </FormField>
         <FormField label="Locale" id="locale">
@@ -135,6 +137,7 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
             value={data.locale}
             onChange={(v) => set('locale')(v)}
             options={LOCALE_OPTIONS.map((loc) => ({ value: loc, label: loc }))}
+            triggerClassName="w-full min-w-0"
           />
         </FormField>
       </div>

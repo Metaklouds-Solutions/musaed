@@ -12,6 +12,17 @@ import { tenantsAdapter, reportsAdapter } from '../../../../adapters';
 import type { TenantComparisonRow } from '../../../../shared/types/reports';
 import { cn } from '@/lib/utils';
 
+type MetricKey = keyof Pick<TenantComparisonRow, 'totalCalls' | 'totalBookings' | 'conversionRate' | 'escalationRate' | 'avgDurationSec' | 'sentimentAvg'>;
+
+const METRIC_ROWS: { key: MetricKey; label: string; format: (v: number) => string; color: string }[] = [
+  { key: 'totalCalls', label: 'Calls', format: (v: number) => v.toString(), color: '' },
+  { key: 'totalBookings', label: 'Bookings', format: (v: number) => v.toString(), color: 'text-[var(--success)]' },
+  { key: 'conversionRate', label: 'Conversion %', format: (v: number) => `${v}%`, color: '' },
+  { key: 'escalationRate', label: 'Escalation %', format: (v: number) => `${v}%`, color: 'text-[var(--warning)]' },
+  { key: 'avgDurationSec', label: 'Avg duration', format: formatDuration, color: 'text-[var(--text-secondary)]' },
+  { key: 'sentimentAvg', label: 'Sentiment', format: (v: number) => v.toFixed(2), color: '' },
+];
+
 const DEFAULT_RANGE = (() => {
   const end = new Date();
   const start = new Date();
@@ -129,7 +140,7 @@ export function TenantComparisonView({
 
           {/* Comparison table or empty state */}
           {hasComparison ? (
-            <div className="rounded-xl overflow-hidden border border-[var(--border-subtle)] shadow-inner">
+            <div className="rounded-xl overflow-x-auto border border-[var(--border-subtle)] shadow-inner">
               <div className="overflow-x-auto -mx-1 px-1">
                 <table className="w-full min-w-[400px] text-sm">
                   <thead>
@@ -148,14 +159,7 @@ export function TenantComparisonView({
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { key: 'totalCalls', label: 'Calls', format: (v: number) => v.toString(), color: '' },
-                      { key: 'totalBookings', label: 'Bookings', format: (v: number) => v.toString(), color: 'text-[var(--success)]' },
-                      { key: 'conversionRate', label: 'Conversion %', format: (v: number) => `${v}%`, color: '' },
-                      { key: 'escalationRate', label: 'Escalation %', format: (v: number) => `${v}%`, color: 'text-[var(--warning)]' },
-                      { key: 'avgDurationSec', label: 'Avg duration', format: formatDuration, color: 'text-[var(--text-secondary)]' },
-                      { key: 'sentimentAvg', label: 'Sentiment', format: (v: number) => v.toFixed(2), color: '' },
-                    ].map(({ key, label, format, color }, rowIndex) => (
+                    {METRIC_ROWS.map(({ key, label, format, color }, rowIndex) => (
                       <tr
                         key={key}
                         className={cn(
@@ -174,7 +178,7 @@ export function TenantComparisonView({
                               color
                             )}
                           >
-                            {format((r as Record<string, number>)[key])}
+                            {format(r[key])}
                           </td>
                         ))}
                       </tr>

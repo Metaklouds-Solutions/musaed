@@ -15,6 +15,14 @@ const PROVIDER_OPTIONS = [
   { value: 'custom', label: 'Custom' },
 ];
 
+function isPmsProvider(s: unknown): s is PmsProvider {
+  return s === 'athena' || s === 'epic' || s === 'cerner' || s === 'custom';
+}
+
+function toPmsProvider(s: unknown): PmsProvider {
+  return isPmsProvider(s) ? s : 'athena';
+}
+
 interface PMSSectionProps {
   tenantId: string | undefined;
 }
@@ -27,7 +35,7 @@ export function PMSSection({ tenantId }: PMSSectionProps) {
 
   const handleConnect = useCallback(() => {
     if (!tenantId) return;
-    const provider = (config?.provider ?? 'athena') as PmsProvider;
+    const provider = toPmsProvider(config?.provider ?? 'athena');
     setConfig(pmsAdapter.connect(provider, tenantId));
   }, [tenantId, config?.provider]);
 
@@ -52,7 +60,7 @@ export function PMSSection({ tenantId }: PMSSectionProps) {
   if (!tenantId) return null;
 
   const isConnected = config?.status === 'connected';
-  const provider = (config?.provider ?? 'athena') as PmsProvider;
+  const provider = toPmsProvider(config?.provider ?? 'athena');
 
   return (
     <div className="rounded-[var(--radius-card)] card-glass p-6 space-y-4">
@@ -68,7 +76,10 @@ export function PMSSection({ tenantId }: PMSSectionProps) {
           <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Provider</label>
           <PopoverSelect
             value={provider}
-            onChange={(v) => setConfig((c) => (c ? { ...c, provider: v as PmsProvider } : { provider: v as PmsProvider, status: 'disconnected' }))}
+            onChange={(v) => {
+              const p = toPmsProvider(v);
+              setConfig((c) => (c ? { ...c, provider: p } : { provider: p, status: 'disconnected' }));
+            }}
             options={PROVIDER_OPTIONS}
             placeholder="Select provider"
             title="PMS Provider"

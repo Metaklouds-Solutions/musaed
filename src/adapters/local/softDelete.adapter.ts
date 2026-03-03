@@ -8,24 +8,24 @@ const DELETED_STAFF_KEY = 'clinic-crm-soft-delete-staff';
 
 export const SOFT_DELETE_CHANGED = 'clinic-crm-soft-delete-changed';
 
-function getDeletedTenantIds(): Set<string> {
+function parseStringArray(raw: string): string[] {
   try {
-    const stored = localStorage.getItem(DELETED_TENANTS_KEY);
-    if (!stored) return new Set();
-    return new Set(JSON.parse(stored) as string[]);
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x): x is string => typeof x === 'string');
   } catch {
-    return new Set();
+    return [];
   }
 }
 
+function getDeletedTenantIds(): Set<string> {
+  const stored = localStorage.getItem(DELETED_TENANTS_KEY);
+  return new Set(stored ? parseStringArray(stored) : []);
+}
+
 function getDeletedStaffKeys(): Set<string> {
-  try {
-    const stored = localStorage.getItem(DELETED_STAFF_KEY);
-    if (!stored) return new Set();
-    return new Set(JSON.parse(stored) as string[]);
-  } catch {
-    return new Set();
-  }
+  const stored = localStorage.getItem(DELETED_STAFF_KEY);
+  return new Set(stored ? parseStringArray(stored) : []);
 }
 
 /** Key for staff: userId::tenantId (same user can be in multiple tenants). */

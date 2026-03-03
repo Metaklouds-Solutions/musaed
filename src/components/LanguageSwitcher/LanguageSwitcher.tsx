@@ -8,6 +8,14 @@ import { Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LOCALES, type Locale } from '../../i18n';
 
+function isLocale(s: string): s is Locale {
+  return s === 'en' || s === 'ar';
+}
+
+function toLocale(s: string): Locale {
+  return isLocale(s) ? s : 'en';
+}
+
 const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   ar: 'العربية',
@@ -20,7 +28,7 @@ export function LanguageSwitcher() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) {
         setOpen(false);
       }
     };
@@ -28,7 +36,7 @@ export function LanguageSwitcher() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const currentLocale = (i18n.language?.split('-')[0] || 'en') as Locale;
+  const currentLocale = toLocale(i18n.language?.split('-')[0] || 'en');
   const effectiveLocale = LOCALES.includes(currentLocale) ? currentLocale : 'en';
 
   const handleSelect = (locale: Locale) => {

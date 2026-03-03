@@ -6,13 +6,29 @@ import type { Location } from '../../shared/types/entities';
 
 const LOCATIONS_KEY = 'clinic-crm-locations';
 
-function loadAll(): Location[] {
+function isLocation(x: unknown): x is Location {
+  if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.id === 'string' &&
+    typeof o.tenantId === 'string' &&
+    typeof o.name === 'string'
+  );
+}
+
+function parseLocations(raw: string): Location[] {
   try {
-    const stored = localStorage.getItem(LOCATIONS_KEY);
-    return stored ? (JSON.parse(stored) as Location[]) : [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isLocation);
   } catch {
     return [];
   }
+}
+
+function loadAll(): Location[] {
+  const stored = localStorage.getItem(LOCATIONS_KEY);
+  return stored ? parseLocations(stored) : [];
 }
 
 function saveAll(locations: Location[]): void {

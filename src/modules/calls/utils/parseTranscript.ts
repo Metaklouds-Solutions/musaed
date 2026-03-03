@@ -9,12 +9,17 @@ export interface TranscriptSegment {
 
 const SEGMENT_RE = /(Patient|Agent):\s*([\s\S]*?)(?=(?:Patient|Agent):\s*|$)/gi;
 
+function isSpeaker(s: string): s is TranscriptSegment['speaker'] {
+  return s === 'patient' || s === 'agent';
+}
+
 export function parseTranscriptSegments(transcript: string): TranscriptSegment[] {
   if (!transcript?.trim()) return [];
   const segments: TranscriptSegment[] = [];
   let m: RegExpExecArray | null;
   while ((m = SEGMENT_RE.exec(transcript)) !== null) {
-    const speaker = m[1].toLowerCase() as 'patient' | 'agent';
+    const raw = m[1].toLowerCase();
+    const speaker = isSpeaker(raw) ? raw : 'agent';
     const text = m[2].trim();
     if (text) segments.push({ speaker, text });
   }

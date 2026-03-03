@@ -39,7 +39,7 @@ export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.05 }}
-      className="rounded-[var(--radius-card)] card-glass overflow-hidden"
+      className="rounded-[var(--radius-card)] card-glass overflow-x-auto"
     >
       <div className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Tenants</h2>

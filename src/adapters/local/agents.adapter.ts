@@ -39,8 +39,8 @@ export const agentsAdapter = {
         externalAgentId: pa.id,
         voice: pa.voice,
         language: pa.language,
-        tenantId: null as string | null,
-        tenantName: null as string | null,
+        tenantId: null,
+        tenantName: null,
         status: 'available',
         lastSyncedAt: '—',
       }));

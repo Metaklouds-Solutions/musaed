@@ -10,14 +10,35 @@ const OVERRIDE_KEY_PREFIX = 'clinic-crm-staff-profile-override-';
 
 type AvailabilitySlot = { day: string; start: string; end: string };
 
-function loadOverrides(tenantId: string): Record<string, { availability?: AvailabilitySlot[] }> {
+function isAvailabilitySlot(x: unknown): x is AvailabilitySlot {
+  if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return typeof o.day === 'string' && typeof o.start === 'string' && typeof o.end === 'string';
+}
+
+function parseOverrides(raw: string): Record<string, { availability?: AvailabilitySlot[] }> {
   try {
-    const stored = localStorage.getItem(`${OVERRIDE_KEY_PREFIX}${tenantId}`);
-    if (!stored) return {};
-    return JSON.parse(stored) as Record<string, { availability?: AvailabilitySlot[] }>;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {};
+    const result: Record<string, { availability?: AvailabilitySlot[] }> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+        const o = v as Record<string, unknown>;
+        const availability = Array.isArray(o.availability)
+          ? o.availability.filter(isAvailabilitySlot)
+          : undefined;
+        result[k] = availability ? { availability } : {};
+      }
+    }
+    return result;
   } catch {
     return {};
   }
+}
+
+function loadOverrides(tenantId: string): Record<string, { availability?: AvailabilitySlot[] }> {
+  const stored = localStorage.getItem(`${OVERRIDE_KEY_PREFIX}${tenantId}`);
+  return stored ? parseOverrides(stored) : {};
 }
 
 function saveOverrides(tenantId: string, overrides: Record<string, { availability?: AvailabilitySlot[] }>): void {

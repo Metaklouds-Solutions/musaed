@@ -22,13 +22,29 @@ const DEFAULT_CONFIG: ABTestConfig = {
   versionBLabel: 'Version B',
 };
 
-function load(tenantId: string): ABTestConfig | null {
+function isABTestConfig(x: unknown): x is ABTestConfig {
+  if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.enabled === 'boolean' &&
+    typeof o.splitPercentA === 'number' &&
+    typeof o.versionALabel === 'string' &&
+    typeof o.versionBLabel === 'string'
+  );
+}
+
+function parseABTestConfig(raw: string): ABTestConfig | null {
   try {
-    const stored = localStorage.getItem(`${AB_TEST_CONFIG_KEY}-${tenantId}`);
-    return stored ? (JSON.parse(stored) as ABTestConfig) : null;
+    const parsed: unknown = JSON.parse(raw);
+    return isABTestConfig(parsed) ? parsed : null;
   } catch {
     return null;
   }
+}
+
+function load(tenantId: string): ABTestConfig | null {
+  const stored = localStorage.getItem(`${AB_TEST_CONFIG_KEY}-${tenantId}`);
+  return stored ? parseABTestConfig(stored) : null;
 }
 
 function save(tenantId: string, config: ABTestConfig): void {

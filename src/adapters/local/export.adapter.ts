@@ -23,8 +23,8 @@ export function toCsv<T extends Record<string, unknown>>(
   columns?: { key: keyof T; header: string }[]
 ): string {
   if (data.length === 0) return '';
-  const keys = columns
-    ? columns.map((c) => c.key as string)
+  const keys: (keyof T)[] = columns
+    ? columns.map((c) => c.key)
     : (Object.keys(data[0]) as (keyof T)[]);
   const headers = columns
     ? columns.map((c) => c.header)

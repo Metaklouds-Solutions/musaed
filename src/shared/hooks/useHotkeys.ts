@@ -31,11 +31,12 @@ export function useHotkeys(configs: HotkeyConfig[]) {
     const isMeta = e.metaKey || e.ctrlKey;
 
     // Ignore when typing in inputs
-    const target = e.target as HTMLElement;
+    const target = e.target;
     if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.isContentEditable
+      target instanceof HTMLElement &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable)
     ) {
       return;
     }

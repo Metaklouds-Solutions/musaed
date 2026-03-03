@@ -18,14 +18,33 @@ export interface PmsSyncResult {
 
 const PMS_CONFIG_KEY = 'clinic-crm-pms-config';
 
-function loadConfig(tenantId?: string): PmsConnectionConfig | null {
+function isPmsProvider(s: unknown): s is PmsProvider {
+  return s === 'athena' || s === 'epic' || s === 'cerner' || s === 'custom';
+}
+
+function isPmsConnectionConfig(x: unknown): x is PmsConnectionConfig {
+  if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return (
+    isPmsProvider(o.provider) &&
+    (o.status === 'connected' || o.status === 'disconnected') &&
+    (o.lastSyncAt === undefined || typeof o.lastSyncAt === 'string')
+  );
+}
+
+function parsePmsConfig(raw: string): PmsConnectionConfig | null {
   try {
-    const key = tenantId ? `${PMS_CONFIG_KEY}-${tenantId}` : PMS_CONFIG_KEY;
-    const stored = localStorage.getItem(key);
-    return stored ? (JSON.parse(stored) as PmsConnectionConfig) : null;
+    const parsed: unknown = JSON.parse(raw);
+    return isPmsConnectionConfig(parsed) ? parsed : null;
   } catch {
     return null;
   }
+}
+
+function loadConfig(tenantId?: string): PmsConnectionConfig | null {
+  const key = tenantId ? `${PMS_CONFIG_KEY}-${tenantId}` : PMS_CONFIG_KEY;
+  const stored = localStorage.getItem(key);
+  return stored ? parsePmsConfig(stored) : null;
 }
 
 function saveConfig(config: PmsConnectionConfig, tenantId?: string): void {

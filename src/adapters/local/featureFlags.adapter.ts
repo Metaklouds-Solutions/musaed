@@ -18,13 +18,27 @@ const DEFAULT_FLAGS: FeatureFlags = {
   enableCalendar: true,
 };
 
-function load(tenantId: string): FeatureFlags | null {
+function isFeatureFlags(x: unknown): x is FeatureFlags {
+  if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.enableReports === 'boolean' &&
+    typeof o.enableCalendar === 'boolean'
+  );
+}
+
+function parseFeatureFlags(raw: string): FeatureFlags | null {
   try {
-    const stored = localStorage.getItem(`${FEATURE_FLAGS_KEY}-${tenantId}`);
-    return stored ? (JSON.parse(stored) as FeatureFlags) : null;
+    const parsed: unknown = JSON.parse(raw);
+    return isFeatureFlags(parsed) ? parsed : null;
   } catch {
     return null;
   }
+}
+
+function load(tenantId: string): FeatureFlags | null {
+  const stored = localStorage.getItem(`${FEATURE_FLAGS_KEY}-${tenantId}`);
+  return stored ? parseFeatureFlags(stored) : null;
 }
 
 export const FEATURE_FLAGS_CHANGED = 'clinic-crm-feature-flags-changed';

@@ -10,7 +10,6 @@ import {
 import { RequireAuth, TenantGuard, AdminGuard, DefaultRedirect, FeatureFlagGuard } from './guards';
 import { MainLayout } from './layout/MainLayout';
 import { LoginPage } from './pages/LoginPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
 import { DashboardPage } from '../modules/dashboard';
 import { StaffPage } from '../modules/staff';
 import { AgentPage } from '../modules/agent';
@@ -39,10 +38,6 @@ import {
   AdminSettingsPage,
   AdminSystemPage,
 } from '../modules/admin';
-
-const Placeholder = (props: { title: string; description?: string }) => (
-  <PlaceholderPage {...props} />
-);
 
 const router = createBrowserRouter([
   {
@@ -91,7 +86,7 @@ const router = createBrowserRouter([
               { path: 'support', element: <AdminSupportPage /> },
               { path: 'support/:id', element: <AdminSupportPage /> },
               { path: 'calls', element: <AdminCallsPage /> },
-              { path: 'calls/:id', element: <Placeholder title="Call Detail" description="Transcript, outcome, recording." /> },
+              { path: 'calls/:id', element: <CallDetailPage /> },
               { path: 'runs', element: <AdminRunsPage /> },
               { path: 'runs/:id', element: <AdminRunDetailPage /> },
               { path: 'skills', element: <AdminSkillsPage /> },

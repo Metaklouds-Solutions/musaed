@@ -28,7 +28,12 @@ function getState(): AppState {
       stateCache = INITIAL_DATA;
       return INITIAL_DATA;
     }
-    const state = JSON.parse(saved) as AppState;
+    const parsed: unknown = JSON.parse(saved);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      stateCache = INITIAL_DATA;
+      return INITIAL_DATA;
+    }
+    const state = parsed as AppState;
     state.tenants = state.tenants ?? INITIAL_DATA.tenants ?? [];
     state.sessions = state.sessions ?? INITIAL_DATA.sessions ?? [];
     state.auditLogs = state.auditLogs ?? INITIAL_DATA.auditLogs ?? [];

@@ -12,13 +12,33 @@ export interface SavedFilter {
   createdAt: string;
 }
 
-function loadAll(): SavedFilter[] {
+function isSavedFilter(x: unknown): x is SavedFilter {
+  if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.id === 'string' &&
+    typeof o.pageKey === 'string' &&
+    typeof o.name === 'string' &&
+    typeof o.filters === 'object' &&
+    o.filters !== null &&
+    !Array.isArray(o.filters) &&
+    typeof o.createdAt === 'string'
+  );
+}
+
+function parseSavedFilters(raw: string): SavedFilter[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as SavedFilter[]) : [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isSavedFilter);
   } catch {
     return [];
   }
+}
+
+function loadAll(): SavedFilter[] {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  return raw ? parseSavedFilters(raw) : [];
 }
 
 function saveAll(data: SavedFilter[]): void {

@@ -10,6 +10,10 @@ import { ADMIN_NAV, TENANT_NAV } from '../../app/layout/Sidebar/navConfig';
 import { tenantsAdapter, agentsAdapter, supportAdapter } from '../../adapters';
 import { cn } from '@/lib/utils';
 
+function isIconComponent(x: unknown): x is React.ComponentType<{ className?: string }> {
+  return typeof x === 'function';
+}
+
 export interface CommandItem {
   id: string;
   label: string;
@@ -112,8 +116,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   React.useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    const child = el.children[selected] as HTMLElement;
-    child?.scrollIntoView({ block: 'nearest' });
+    const child = el.children[selected];
+    if (child instanceof Element) child.scrollIntoView({ block: 'nearest' });
   }, [selected]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -198,9 +202,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                 )}
               >
-                {item.icon && (
+                {item.icon && isIconComponent(item.icon) && (
                   <span className="text-[var(--text-muted)] shrink-0">
-                    {React.createElement(item.icon as React.ComponentType<{ className?: string }>, { className: 'w-4 h-4' })}
+                    {React.createElement(item.icon, { className: 'w-4 h-4' })}
                   </span>
                 )}
                 <span className="flex-1 truncate">{item.label}</span>

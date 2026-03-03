@@ -4,7 +4,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { EmptyState, Button } from '../../../shared/ui';
 import { useCallDetail } from '../hooks';
 import { usePermissions } from '../../../shared/hooks/usePermissions';
@@ -20,12 +20,15 @@ import { cn } from '@/lib/utils';
 
 export function CallDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { pathname } = useLocation();
   const { user, call, linkedBooking } = useCallDetail(id);
+  const isAdminContext = pathname.startsWith('/admin');
+  const callsPath = isAdminContext ? '/admin/calls' : '/calls';
   const { canAccessRunEvents } = usePermissions();
   const runEvents = useMemo(
     () =>
-      call && user?.tenantId && canAccessRunEvents
-        ? runsAdapter.getRunByCallId(call.id, user.tenantId)
+      call && canAccessRunEvents
+        ? runsAdapter.getRunByCallId(call.id, user?.tenantId)
         : null,
     [call, user?.tenantId, canAccessRunEvents]
   );
@@ -42,7 +45,7 @@ export function CallDetailPage() {
         title="Sign in to view call"
         description="Select a role on the login page."
       >
-        <Link to="/calls" className="mt-6 inline-block">
+        <Link to={callsPath} className="mt-6 inline-block">
           <Button variant="secondary">Back to calls</Button>
         </Link>
       </EmptyState>
@@ -56,7 +59,7 @@ export function CallDetailPage() {
         title="Call not found"
         description={id ? `No call found for ID "${id}".` : 'Missing call ID.'}
       >
-        <Link to="/calls" className="mt-6 inline-block">
+        <Link to={callsPath} className="mt-6 inline-block">
           <Button variant="secondary">Back to calls</Button>
         </Link>
       </EmptyState>
@@ -74,7 +77,7 @@ export function CallDetailPage() {
             {new Date(call.createdAt).toLocaleString()}
           </p>
         </div>
-        <Link to="/calls">
+        <Link to={callsPath}>
           <Button variant="secondary">Back to calls</Button>
         </Link>
       </div>

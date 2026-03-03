@@ -11,15 +11,19 @@ import type { User } from '../../shared/types';
 
 const DELETED_CUSTOMERS_KEY = 'clinic-crm-gdpr-deleted-customers';
 
-function getDeletedCustomerIds(): Set<string> {
+function parseStringArray(raw: string): string[] {
   try {
-    const stored = localStorage.getItem(DELETED_CUSTOMERS_KEY);
-    if (!stored) return new Set();
-    const arr = JSON.parse(stored) as string[];
-    return new Set(arr);
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x): x is string => typeof x === 'string');
   } catch {
-    return new Set();
+    return [];
   }
+}
+
+function getDeletedCustomerIds(): Set<string> {
+  const stored = localStorage.getItem(DELETED_CUSTOMERS_KEY);
+  return new Set(stored ? parseStringArray(stored) : []);
 }
 
 function setDeletedCustomerIds(ids: Set<string>): void {

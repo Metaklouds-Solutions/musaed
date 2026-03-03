@@ -59,7 +59,7 @@ export function WebhookEventLogSection() {
   }
 
   return (
-    <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
+    <div className="rounded-[var(--radius-card)] card-glass overflow-x-auto">
       <div className="p-4 border-b border-[var(--border-subtle)]">
         <h3 className="font-semibold text-[var(--text-primary)]">Webhook Event Log</h3>
         <p className="text-sm text-[var(--text-muted)] mt-1">

@@ -46,11 +46,12 @@ export function CallsPage() {
   );
 
   const handleApplyFilters = useCallback((f: Record<string, unknown>) => {
-    setOutcomeFilter((f.outcome as string) || null);
-    if (f.dateRangeStart && f.dateRangeEnd) {
+    const outcome = typeof f.outcome === 'string' ? f.outcome : null;
+    setOutcomeFilter(outcome || null);
+    if (typeof f.dateRangeStart === 'string' && typeof f.dateRangeEnd === 'string') {
       setDateRange({
-        start: new Date(f.dateRangeStart as string),
-        end: new Date(f.dateRangeEnd as string),
+        start: new Date(f.dateRangeStart),
+        end: new Date(f.dateRangeEnd),
       });
     }
   }, []);

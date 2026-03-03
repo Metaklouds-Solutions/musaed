@@ -79,7 +79,7 @@ export function MainLayout() {
           onOpenCommandPalette={() => setCommandOpen(true)}
           onOpenShortcutsHelp={() => setShortcutsOpen(true)}
         />
-          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scroll-smooth py-8 min-h-0 min-w-0">
+          <div className="flex-1 overflow-y-auto overflow-x-auto overscroll-contain scroll-smooth py-8 min-h-0 min-w-0">
             <PageContent>
               <Outlet />
             </PageContent>

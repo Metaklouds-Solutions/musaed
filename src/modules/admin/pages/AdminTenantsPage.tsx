@@ -231,7 +231,7 @@ export function AdminTenantsPage() {
                     Archive
                   </Button>
                 </BulkActionsBar>
-                <div className="rounded-xl overflow-hidden border border-[var(--border-subtle)] shadow-sm">
+                <div className="rounded-xl overflow-x-auto overflow-y-visible border border-[var(--border-subtle)] shadow-sm">
                   <DataTable minWidth="min-w-[640px]">
                     <Table>
                       <TableHeader>
