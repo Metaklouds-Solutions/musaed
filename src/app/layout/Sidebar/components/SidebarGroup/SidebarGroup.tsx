@@ -1,45 +1,43 @@
 /**
  * Expandable nav group. Renders parent + children when expanded.
  * Uses motion for smooth expand/collapse.
+ * Caller must pass NavGroupItem (item with non-empty children).
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
-import type { NavItem } from '../../types';
+import type { NavGroupItem } from '../../types';
 import { SidebarItem } from '../SidebarItem';
 import type { SidebarVariant } from '../SidebarItem';
 
+const EXPAND_TRANSITION = { duration: 0.2 };
+
 interface SidebarGroupProps {
-  item: NavItem;
+  item: NavGroupItem;
   variant: SidebarVariant;
   onChildClick?: () => void;
 }
 
 export function SidebarGroup({ item, variant, onChildClick }: SidebarGroupProps) {
   const [expanded, setExpanded] = useState(true);
-  const hasChildren = item.children && item.children.length > 0;
+  const toggle = useCallback(() => setExpanded((e) => !e), []);
   const isCompact = variant === 'minimal-compact';
   const Icon = item.icon;
-
-  if (!hasChildren) {
-    return (
-      <SidebarItem
-        to={item.to}
-        label={item.label}
-        icon={item.icon}
-        variant={variant}
-        onClick={onChildClick}
-      />
-    );
-  }
+  const groupId = `sidebar-group-${item.to.replace(/\//g, '-')}`;
 
   return (
     <div className="space-y-0.5">
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
+        onClick={toggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggle();
+          }
+        }}
         className={cn(
           'w-full flex items-center gap-3 rounded-[var(--radius-nav)] py-2.5 transition-colors touch-manipulation',
           isCompact ? 'justify-center px-0 min-w-[44px]' : 'px-3.5',
@@ -48,6 +46,7 @@ export function SidebarGroup({ item, variant, onChildClick }: SidebarGroupProps)
         )}
         title={isCompact ? item.label : undefined}
         aria-expanded={expanded}
+        aria-controls={groupId}
       >
         <Icon size={20} aria-hidden className="shrink-0" strokeWidth={1.5} />
         {!isCompact && (
@@ -62,16 +61,17 @@ export function SidebarGroup({ item, variant, onChildClick }: SidebarGroupProps)
         )}
       </button>
       <AnimatePresence initial={false}>
-        {expanded && hasChildren && (
+        {expanded && (
           <motion.div
+            id={groupId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={EXPAND_TRANSITION}
             className="overflow-hidden"
           >
             <div className={cn('space-y-0.5', !isCompact && 'pl-4 ml-2 border-l border-(var(--border-subtle))')}>
-              {item.children!.map((child) => (
+              {item.children.map((child) => (
                 <SidebarItem
                   key={child.to}
                   to={child.to}

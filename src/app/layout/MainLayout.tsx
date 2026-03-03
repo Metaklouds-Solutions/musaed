@@ -64,10 +64,10 @@ export function MainLayout() {
         Skip to main content
       </a>
       <div className="flex h-screen overflow-hidden bg-[var(--bg-base)] p-3 gap-3 box-border">
-        <div className="shrink-0 self-stretch rounded-2xl overflow-hidden min-w-0 md:min-w-0 m-3">
+        <div className="w-0 min-w-0 overflow-visible md:w-auto md:min-w-0 shrink-0 self-stretch rounded-2xl overflow-hidden m-0 md:mb-3 md:ml-3 md:mr-3 md:mt-0">
           <Sidebar />
         </div>
-        <main id="main-content" className="flex-1 flex flex-col overflow-hidden relative min-w-0 gap-3 pl-14 md:pl-0">
+        <main id="main-content" className="flex-1 flex flex-col overflow-hidden relative min-w-0 gap-3 pr-[82px] md:pr-0">
           <MaintenanceBanner />
           <Header
           theme={theme}

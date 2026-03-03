@@ -3,12 +3,15 @@
  */
 
 import { Link } from 'react-router-dom';
+
+const PAGE_ANIMATION = { duration: 0.3 };
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { PageHeader } from '../../../shared/ui';
 import { TenantProfileSection, TenantSettingsSection, TenantOnboardingSection } from '../components/TenantDetail';
 import { useAdminTenantDetail } from '../hooks';
 
+/** Admin tenant detail: profile, settings, onboarding sections. */
 export function AdminTenantDetailPage() {
   const { tenant, isLoading } = useAdminTenantDetail();
 
@@ -30,7 +33,7 @@ export function AdminTenantDetailPage() {
       <motion.header
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={PAGE_ANIMATION}
       >
         <Link
           to="/admin/tenants"
@@ -48,7 +51,7 @@ export function AdminTenantDetailPage() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
+        transition={{ ...PAGE_ANIMATION, delay: 0.05 }}
         className="space-y-6"
       >
         <TenantProfileSection tenant={tenant} />

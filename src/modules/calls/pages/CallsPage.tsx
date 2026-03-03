@@ -1,15 +1,16 @@
 /**
  * Calls list page. Layout only; data from useCallsList hook.
- * Saved filters: save/apply view presets.
+ * Saved filters: save/apply view presets. Uses adapters for export only.
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown, TableSkeleton } from '../../../shared/ui';
+import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown, TableSkeleton, StatCard, LOTTIE_ASSETS } from '../../../shared/ui';
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
+import { OutcomeBreakdown } from '../../reports/components/OutcomeBreakdown';
 import { exportAdapter } from '../../../adapters';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
@@ -27,6 +28,7 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
+/** Tenant calls list: filters, stats, export. Data from useCallsList hook. */
 export function CallsPage() {
   const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
@@ -64,6 +66,22 @@ export function CallsPage() {
     return calls.filter((c) => getOutcome(c) === outcomeFilter);
   }, [calls, outcomeFilter]);
 
+  const callSummary = useMemo(() => {
+    const total = calls.length;
+    const booked = calls.filter((c) => c.bookingCreated).length;
+    const escalated = calls.filter((c) => c.escalationFlag && !c.bookingCreated).length;
+    const failed = total - booked - escalated;
+    const totalDuration = calls.reduce((s, c) => s + c.duration, 0);
+    const avgDurationSec = total > 0 ? Math.round(totalDuration / total) : 0;
+    const conversionRate = total > 0 ? Math.round((booked / total) * 100) : 0;
+    const outcomes = [
+      { outcome: 'booked' as const, count: booked, percentage: total > 0 ? Math.round((booked / total) * 100) : 0 },
+      { outcome: 'escalated' as const, count: escalated, percentage: total > 0 ? Math.round((escalated / total) * 100) : 0 },
+      { outcome: 'failed' as const, count: failed, percentage: total > 0 ? Math.round((failed / total) * 100) : 0 },
+    ];
+    return { total, conversionRate, avgDurationSec, outcomes };
+  }, [calls]);
+
   const handleExport = useCallback(() => {
     const rows = filteredCalls.map((c) => ({
       Date: new Date(c.createdAt).toLocaleDateString(),
@@ -97,16 +115,6 @@ export function CallsPage() {
     );
   }
 
-  if (calls.length === 0) {
-    return (
-      <EmptyState
-        icon={Phone}
-        title="No calls yet"
-        description="Call logs will appear when data is available from the adapter."
-      />
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -122,30 +130,54 @@ export function CallsPage() {
           </Button>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <TableFilters
-          outcomes={[
-            { value: 'booked', label: 'Booked' },
-            { value: 'escalated', label: 'Escalated' },
-            { value: 'failed', label: 'Failed' },
-          ]}
-          selectedOutcome={outcomeFilter}
-          onOutcomeChange={setOutcomeFilter}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total calls" value={callSummary.total} />
+        <StatCard label="Conversion rate" value={`${callSummary.conversionRate}%`} />
+        <StatCard
+          label="Avg duration"
+          value={`${Math.floor(callSummary.avgDurationSec / 60)}:${(callSummary.avgDurationSec % 60).toString().padStart(2, '0')}`}
         />
-        <SavedFiltersDropdown
-          saved={savedFilters.saved}
-          onSave={(name) => {
-            savedFilters.saveCurrent(name);
-            toast.success(`View "${name}" saved`);
-          }}
-          onApply={savedFilters.apply}
-          onDelete={savedFilters.deleteFilter}
-        />
+        <div className="sm:col-span-2 lg:col-span-1">
+          <OutcomeBreakdown outcomes={callSummary.outcomes} />
+        </div>
       </div>
-      <CallsTable
-        calls={filteredCalls}
-        getCustomerName={(id) => customerMap.get(id) ?? id}
-      />
+      {calls.length === 0 ? (
+        <div className="rounded-[var(--radius-card)] card-glass p-8">
+          <EmptyState
+            icon={Phone}
+            title="No calls in this date range"
+            description="Try selecting a different date range above. Call logs will appear when data is available for your selection."
+            lottieSrc={LOTTIE_ASSETS.empty}
+          />
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <TableFilters
+              outcomes={[
+                { value: 'booked', label: 'Booked' },
+                { value: 'escalated', label: 'Escalated' },
+                { value: 'failed', label: 'Failed' },
+              ]}
+              selectedOutcome={outcomeFilter}
+              onOutcomeChange={setOutcomeFilter}
+            />
+            <SavedFiltersDropdown
+              saved={savedFilters.saved}
+              onSave={(name) => {
+                savedFilters.saveCurrent(name);
+                toast.success(`View "${name}" saved`);
+              }}
+              onApply={savedFilters.apply}
+              onDelete={savedFilters.deleteFilter}
+            />
+          </div>
+          <CallsTable
+            calls={filteredCalls}
+            getCustomerName={(id) => customerMap.get(id) ?? id}
+          />
+        </>
+      )}
     </div>
   );
 }

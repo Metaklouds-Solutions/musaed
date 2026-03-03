@@ -13,6 +13,7 @@ import { featureFlagsAdapter } from '../../../adapters';
 import { FEATURE_FLAGS_CHANGED } from '../../../adapters/local/featureFlags.adapter';
 import type { Role } from '../../../shared/types';
 import { SidebarItem, SidebarGroup } from './components';
+import { isNavGroupItem } from './types';
 import { ADMIN_NAV, TENANT_NAV } from './navConfig';
 import { cn } from '@/lib/utils';
 import { FiSidebar } from 'react-icons/fi';
@@ -126,7 +127,7 @@ export function Sidebar() {
           )}
         >
           <div
-            className="w-8 h-8 rounded-(var(--radius-button)) flex items-center justify-center bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white shrink-0"
+            className="w-8 h-8 rounded-md flex items-center justify-center bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white shrink-0"
             aria-hidden
           >
             <Zap className="w-5 h-5" />
@@ -151,7 +152,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={toggleVariant}
-              className="absolute right-3 top-3 p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) cursor-pointer"
+              className="absolute right-3 top-3 p-1.5 rounded-md bg-white/15 hover:bg-white/25 border border-white/20 text-(var(--text-muted)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) cursor-pointer"
               aria-label={t('common.collapseSidebar')}
               title={t('common.collapseSidebar')}
             >
@@ -161,7 +162,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={toggleVariant}
-              className="opacity-0 group-hover/logo:opacity-100 pointer-events-none group-hover/logo:pointer-events-auto p-1.5 rounded-xl bg-(var(--bg-elevated)) border border-(var(--border-subtle)) text-(var(--text-muted)) hover:bg-(var(--sidebar-item-hover)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) focus-visible:opacity-100 shrink-0 cursor-pointer"
+              className="opacity-0 group-hover/logo:opacity-100 pointer-events-none group-hover/logo:pointer-events-auto p-1.5 rounded-md bg-white/15 hover:bg-white/25 border border-white/20 text-(var(--text-muted)) hover:text-(var(--text-primary)) transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-sidebar) focus-visible:opacity-100 shrink-0 cursor-pointer"
               aria-label={t('common.expandSidebar')}
               title={t('common.expandSidebar')}
             >
@@ -176,7 +177,7 @@ export function Sidebar() {
         aria-label="Main navigation"
       >
         {items.map((item) =>
-          item.children?.length ? (
+          isNavGroupItem(item) ? (
             <SidebarGroup
               key={item.to}
               item={item}
@@ -204,11 +205,16 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen((o) => !o)}
-        className="md:hidden fixed top-4 left-4 z-20 p-2 rounded-(var(--radius-nav)) bg-(var(--bg-card)) border border-(var(--border-subtle)) text-(var(--text-primary)) transition-colors focus-visible:ring-2 focus-visible:ring-(--ds-primary) focus-visible:ring-offset-2"
+        className={cn(
+          'md:hidden fixed top-4 right-4 z-50 flex items-center justify-center',
+          'h-14 w-14 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2',
+          'dark:bg-[#0B0F19] dark:border-(var(--border-subtle))',
+          'bg-white border border-(var(--border-subtle)) shadow-md'
+        )}
         aria-label={mobileOpen ? t('common.closeMenu') : t('common.openMenu')}
         {...(mobileOpen ? { 'aria-expanded': 'true' as const } : { 'aria-expanded': 'false' as const })}
       >
-        {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        {mobileOpen ? <X size={24} className="text-(var(--text-primary))" /> : <Menu size={24} className="text-(var(--text-primary))" />}
       </button>
 
       <div
@@ -224,9 +230,11 @@ export function Sidebar() {
         className={cn(
           'flex flex-col shrink-0 fixed md:static z-40',
           'top-3 left-3 bottom-3 md:top-auto md:left-auto md:bottom-auto md:inset-auto',
-          'h-[calc(100vh-24px)] md:h-full',
-          'bg-(var(--bg-sidebar)) md:backdrop-blur-md border-r border-(var(--separator))',
-          'overflow-hidden rounded-2xl'
+          'md:h-[calc(100vh-24px)]',
+          'border border-(var(--separator)) overflow-hidden rounded-2xl',
+          'md:bg-(var(--bg-sidebar)) md:backdrop-blur-md',
+          'bg-white shadow-lg dark:bg-[#0B0F19]',
+          'md:shadow-none'
         )}
         initial={false}
         animate={{
@@ -235,7 +243,7 @@ export function Sidebar() {
               ? WIDTH_EXPANDED
               : WIDTH_COMPACT
             : WIDTH_EXPANDED,
-          x: isDesktop ? 0 : mobileOpen ? 0 : '-100%',
+          x: isDesktop ? 0 : mobileOpen ? 0 : 'calc(-100% - 1rem)',
         }}
         transition={{
           width: { type: 'spring', stiffness: 300, damping: 30 },

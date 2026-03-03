@@ -43,7 +43,7 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
 
   return (
     <div
-      className="h-[var(--topbar-height)] w-full flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 md:px-8 backdrop-blur-md sticky top-0 z-10 shrink-0 rounded-xl border border-(var(--separator)) bg-(var(--bg-base))"
+      className="h-[var(--topbar-height)] w-full flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 md:px-8 md:backdrop-blur-md sticky top-0 z-10 shrink-0 rounded-xl border border-(var(--separator)) bg-(var(--bg-base))"
     >
       <GlobalSearch
         placeholder={t('common.searchPlaceholder')}
@@ -55,18 +55,22 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
           <button
             type="button"
             onClick={onOpenShortcutsHelp}
-            className="p-2 rounded-(var(--radius-nav)) hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-(var(--text-muted))"
+            className="hidden sm:flex p-2 rounded-(var(--radius-nav)) hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-(var(--text-muted))"
             aria-label={t('shortcuts.showHelp', 'Show keyboard shortcuts')}
             title={t('shortcuts.showHelp', 'Show keyboard shortcuts')}
           >
             <HelpCircle size={20} aria-hidden />
           </button>
         )}
-        <LanguageSwitcher />
-        <AnimatedThemeToggler
-          storageKey={THEME_STORAGE_KEY}
-          onThemeToggle={handleThemeChange}
-        />
+        <div className="hidden md:block">
+          <LanguageSwitcher />
+        </div>
+        <div className="hidden md:block">
+          <AnimatedThemeToggler
+            storageKey={THEME_STORAGE_KEY}
+            onThemeToggle={handleThemeChange}
+          />
+        </div>
         <button
           type="button"
           onClick={openNotifications}
@@ -84,7 +88,10 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
           onClose={closeNotifications}
           items={notifications}
         />
-        <UserMenu />
+        <UserMenu
+          themeStorageKey={THEME_STORAGE_KEY}
+          onThemeToggle={handleThemeChange}
+        />
       </div>
     </div>
   );

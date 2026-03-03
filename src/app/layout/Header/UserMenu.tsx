@@ -1,5 +1,6 @@
 /**
  * User menu dropdown. Avatar, name, role (Tenant/Admin). Manage account, Logout.
+ * On mobile: also shows theme toggle and language switcher (hidden in header).
  */
 
 import { useState } from 'react';
@@ -10,6 +11,8 @@ import { useAccountModal } from '../../account/AccountModalContext';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useSession } from '../../session/SessionContext';
 import { cn } from '@/lib/utils';
+import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
 
 function getRoleLabel(role: string): string {
   if (role === 'ADMIN') return 'Admin';
@@ -17,7 +20,12 @@ function getRoleLabel(role: string): string {
   return 'Tenant';
 }
 
-export function UserMenu() {
+interface UserMenuProps {
+  themeStorageKey?: string;
+  onThemeToggle?: (newTheme?: 'light' | 'dark') => void;
+}
+
+export function UserMenu({ themeStorageKey, onThemeToggle }: UserMenuProps) {
   const { t } = useTranslation();
   const { user, logout } = useSession();
   const navigate = useNavigate();
@@ -77,6 +85,17 @@ export function UserMenu() {
             <p className="text-sm font-medium text-(var(--text-primary)) truncate">{user.name}</p>
             <p className="text-xs text-(var(--text-muted)) truncate">{user.email}</p>
           </div>
+          {(themeStorageKey || onThemeToggle) && (
+            <div className="md:hidden flex items-center gap-2 px-3 py-2 border-b border-(var(--border-subtle)) mb-2">
+              <LanguageSwitcher />
+              {themeStorageKey && onThemeToggle && (
+                <AnimatedThemeToggler
+                  storageKey={themeStorageKey}
+                  onThemeToggle={onThemeToggle}
+                />
+              )}
+            </div>
+          )}
           <div className="space-y-0.5">
             <button
               type="button"

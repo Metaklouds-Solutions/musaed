@@ -4,6 +4,8 @@
  */
 
 import { useState, useMemo } from 'react';
+
+const HEADER_ANIMATION = { duration: 0.3 };
 import { motion } from 'motion/react';
 import { PageHeader, EmptyState, LottiePlayer, LOTTIE_ASSETS, SkeletonCard } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
@@ -36,6 +38,7 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
+/** Tenant dashboard: KPIs, agent status, recent calls, staff, support, ROI. */
 export function DashboardPage() {
   const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
@@ -88,7 +91,7 @@ export function DashboardPage() {
       <motion.header
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={HEADER_ANIMATION}
         className="mb-6 relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-32 h-32 opacity-20 pointer-events-none -translate-y-8 translate-x-8">

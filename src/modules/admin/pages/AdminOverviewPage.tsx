@@ -4,6 +4,8 @@
  */
 
 import { motion } from 'motion/react';
+
+const HEADER_ANIMATION = { duration: 0.3 };
 import { PageHeader, LottiePlayer, LOTTIE_ASSETS } from '../../../shared/ui';
 import { AdminQuickActions } from '../components/AdminQuickActions';
 import { AdminKpiCards } from '../components/AdminKpiCards';
@@ -16,6 +18,7 @@ import { AdminPlatformSection } from '../components/AdminPlatformSection';
 import { AdminAnomaliesSection } from '../components/AdminAnomaliesSection';
 import { useAdminOverview } from '../hooks';
 
+/** Admin dashboard page. Platform KPIs, tenants, support, calls, system health. */
 export function AdminOverviewPage() {
   const {
     metrics,
@@ -31,7 +34,7 @@ export function AdminOverviewPage() {
       <motion.header
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={HEADER_ANIMATION}
         className="relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-28 h-28 opacity-15 pointer-events-none -translate-y-6 translate-x-6">

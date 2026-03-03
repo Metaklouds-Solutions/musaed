@@ -1,5 +1,6 @@
 /**
  * Add Tenant wizard modal. Step 1: Clinic info. Step 2: Deploy agent.
+ * Uses adapters only (tenantsAdapter, auditAdapter).
  */
 
 import { useState, useCallback } from 'react';
@@ -30,6 +31,7 @@ interface AddTenantModalProps {
   onSuccess?: () => void;
 }
 
+/** Two-step wizard: clinic info → deploy agent. Creates tenant via adapter. */
 export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps) {
   const [step, setStep] = useState(1);
   const [clinicData, setClinicData] = useState<ClinicInfoData>(INITIAL_CLINIC);

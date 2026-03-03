@@ -62,9 +62,9 @@ export function CallsTable({
       }
       renderRow={(call) => (
         <>
-          {showTenant && (
+          {showTenant && getTenantName && (
             <TableCell className="text-[var(--text-secondary)] text-sm">
-              {getTenantName!(call.tenantId)}
+              {getTenantName(call.tenantId)}
             </TableCell>
           )}
           <TableCell className="text-[var(--text-secondary)] text-sm">

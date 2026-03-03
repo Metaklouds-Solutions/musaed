@@ -1,5 +1,6 @@
 /**
  * Tenant staff page. Table + Add staff modal + CSV import.
+ * Uses staffAdapter, exportAdapter only.
  */
 
 import { useState, useCallback } from 'react';
@@ -11,6 +12,7 @@ import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { staffAdapter, exportAdapter } from '../../../adapters';
 import { useStaff } from '../hooks';
 
+/** Tenant staff list: Add modal, import/export. Data from useStaff hook. */
 export function StaffPage() {
   const ready = useDelayedReady();
   const { staff, tenantId, refetch } = useStaff();

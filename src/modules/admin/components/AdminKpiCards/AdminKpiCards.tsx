@@ -6,6 +6,8 @@ import { motion } from 'motion/react';
 import { AdminKpiCard } from './AdminKpiCard';
 import type { AdminKpis } from '../../../../shared/types';
 
+const CARD_ANIMATION = { duration: 0.3 };
+
 interface AdminKpiCardsProps {
   kpis: AdminKpis;
 }
@@ -14,12 +16,13 @@ function formatUsd(n: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 }
 
+/** Renders top KPIs as a grid of cards. */
 export function AdminKpiCards({ kpis }: AdminKpiCardsProps) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={CARD_ANIMATION}
       className="space-y-4"
     >
       <h2 className="text-lg font-semibold text-[var(--text-primary)]">Top KPIs</h2>
