@@ -7,6 +7,7 @@ interface AgentSkillsTabProps {
   skills: AgentSkillRow[];
 }
 
+/** Renders enabled/disabled skills with priority order. */
 export function AgentSkillsTab({ skills }: AgentSkillsTabProps) {
   const enabled = skills.filter((s) => s.enabled).sort((a, b) => a.priority - b.priority);
   const disabled = skills.filter((s) => !s.enabled);

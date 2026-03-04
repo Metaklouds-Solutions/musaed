@@ -2,28 +2,15 @@
  * Tenant detail Calls tab: recent calls table.
  */
 
-import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Phone } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '../../../../shared/ui';
 import { CallsTable } from '../../../calls/components/CallsTable';
-import { callsAdapter, customersAdapter } from '../../../../adapters';
+import { useTenantCallsTabData } from '../../hooks/useTenantCallsTabData';
 
-const DEFAULT_RANGE = (() => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 30);
-  return { start, end };
-})();
-
+/** Renders tenant calls list for the last 30 days. */
 export function TenantCallsTab() {
-  const { id } = useParams<{ id: string }>();
-  const calls = useMemo(() => callsAdapter.getCalls(id ?? undefined, DEFAULT_RANGE), [id]);
-  const getCustomerName = useMemo(
-    () => (customerId: string) => customersAdapter.getCustomerById(customerId, id ?? undefined)?.name ?? customerId,
-    [id]
-  );
+  const { calls, getCustomerName } = useTenantCallsTabData();
 
   if (calls.length === 0) {
     return (

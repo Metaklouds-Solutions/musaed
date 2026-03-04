@@ -23,6 +23,12 @@ interface AgentsTableProps {
   onAssignClick?: (agent: AdminAgentRow) => void;
 }
 
+function formatDate(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleDateString();
+}
+
 export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
   if (agents.length === 0) {
     return (
@@ -85,7 +91,7 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
                 />
               </TableCell>
               <TableCell className="text-sm text-[var(--text-muted)]">
-                {a.lastSyncedAt === '—' ? '—' : new Date(a.lastSyncedAt).toLocaleDateString()}
+                {a.lastSyncedAt === '—' ? '—' : formatDate(a.lastSyncedAt)}
               </TableCell>
               <TableCell>
                 {a.tenantId ? (

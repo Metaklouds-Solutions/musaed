@@ -11,7 +11,9 @@ interface AgentStatusCardProps {
 }
 
 function formatRelativeTime(iso: string): string {
-  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  const sec = Math.floor((Date.now() - parsed.getTime()) / 1000);
   if (sec < 60) return 'just now';
   if (sec < 3600) return `${Math.floor(sec / 60)} mins ago`;
   if (sec < 86400) return `${Math.floor(sec / 3600)} hours ago`;

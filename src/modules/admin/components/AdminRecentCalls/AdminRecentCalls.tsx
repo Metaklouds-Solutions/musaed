@@ -17,7 +17,11 @@ function formatDuration(sec: number): string {
 }
 
 function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return '—';
+  }
+  return parsed.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -37,6 +41,7 @@ function OutcomePill({ outcome }: { outcome: AdminRecentCall['outcome'] }) {
   return <PillTag variant={variant}>{outcome}</PillTag>;
 }
 
+/** Renders cross-tenant recent calls with outcome and duration. */
 export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
   if (calls.length === 0) {
     return (

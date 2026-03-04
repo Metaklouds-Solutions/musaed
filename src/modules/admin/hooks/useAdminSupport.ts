@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { supportAdapter } from '../../../adapters';
+import { supportAdapter, exportAdapter, auditAdapter, tenantsAdapter } from '../../../adapters';
 import type { SupportTicket } from '../../../shared/types/entities';
 
 export function useAdminSupport() {
@@ -19,6 +19,7 @@ export function useAdminSupport() {
     if (priorityFilter) filters.priority = priorityFilter;
     return supportAdapter.listTickets(filters);
   }, [refreshKey, tenantFilter, statusFilter, priorityFilter]);
+  const tenants = useMemo(() => tenantsAdapter.getAllTenants(), []);
 
   const getTicket = useCallback((id: string) => supportAdapter.getTicket(id), []);
 
@@ -37,12 +38,23 @@ export function useAdminSupport() {
     setRefreshKey((k) => k + 1);
   }, []);
 
+  const logTicketAssigned = useCallback((ticketId: string, tenantId?: string) => {
+    auditAdapter.log('ticket.assigned', { ticketId, tenantId });
+  }, []);
+
+  const exportTicketsCsv = useCallback((rows: Record<string, string>[], fileName: string) => {
+    exportAdapter.exportCsv(rows, fileName);
+  }, []);
+
   return {
     tickets,
+    tenants,
     getTicket,
     updateStatus,
     assignTicket,
     addMessage,
+    logTicketAssigned,
+    exportTicketsCsv,
     getTenantName: supportAdapter.getTenantName,
     filters: { tenantFilter, statusFilter, priorityFilter },
     setTenantFilter,

@@ -3,14 +3,13 @@
  * Responsive, polished UI with glass card and smooth animations.
  */
 
-import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { GitCompare } from 'lucide-react';
 import { PopoverSelect, Card, CardHeader, CardBody } from '../../../../shared/ui';
 import { DateRangePicker } from '../../../../components/DateRangePicker';
-import { tenantsAdapter, reportsAdapter } from '../../../../adapters';
 import type { TenantComparisonRow } from '../../../../shared/types/reports';
 import { cn } from '@/lib/utils';
+import { useTenantComparison } from '../../hooks';
 
 type MetricKey = keyof Pick<TenantComparisonRow, 'totalCalls' | 'totalBookings' | 'conversionRate' | 'escalationRate' | 'avgDurationSec' | 'sentimentAvg'>;
 
@@ -22,13 +21,6 @@ const METRIC_ROWS: { key: MetricKey; label: string; format: (v: number) => strin
   { key: 'avgDurationSec', label: 'Avg duration', format: formatDuration, color: 'text-[var(--text-secondary)]' },
   { key: 'sentimentAvg', label: 'Sentiment', format: (v: number) => v.toFixed(2), color: '' },
 ];
-
-const DEFAULT_RANGE = (() => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 6);
-  return { start, end };
-})();
 
 interface TenantComparisonViewProps {
   /** Optional: use parent's date range (e.g. when embedded in Admin Tenants) */
@@ -46,29 +38,16 @@ export function TenantComparisonView({
   dateRange: controlledDateRange,
   onDateRangeChange,
 }: TenantComparisonViewProps = {}) {
-  const [internalDateRange, setInternalDateRange] = useState(DEFAULT_RANGE);
-  const dateRange = controlledDateRange ?? internalDateRange;
-  const setDateRange = onDateRangeChange ?? setInternalDateRange;
-  const [tenantA, setTenantA] = useState<string>('');
-  const [tenantB, setTenantB] = useState<string>('');
-
-  const tenants = useMemo(() => tenantsAdapter.getAllTenants(), []);
-  const tenantOptions = useMemo(
-    () => tenants.map((t) => ({ value: t.id, label: t.name })),
-    [tenants]
-  );
-
-  const dateRangeFilter = useMemo(
-    () => ({ start: dateRange.start, end: dateRange.end }),
-    [dateRange]
-  );
-
-  const rows: TenantComparisonRow[] = useMemo(() => {
-    const ids: string[] = [];
-    if (tenantA) ids.push(tenantA);
-    if (tenantB && tenantB !== tenantA) ids.push(tenantB);
-    return reportsAdapter.getTenantComparison(ids, dateRangeFilter);
-  }, [tenantA, tenantB, dateRangeFilter]);
+  const {
+    tenantA,
+    setTenantA,
+    tenantB,
+    setTenantB,
+    dateRange,
+    setDateRange,
+    tenantOptions,
+    rows,
+  } = useTenantComparison(controlledDateRange, onDateRangeChange);
 
   const hasComparison = rows.length >= 2;
 

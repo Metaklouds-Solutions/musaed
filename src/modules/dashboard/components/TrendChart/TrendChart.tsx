@@ -14,6 +14,7 @@ interface TrendChartProps {
 
 function formatShortDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -52,9 +53,14 @@ export function TrendChart({ points }: TrendChartProps) {
               className="flex-1 min-w-[32px] flex flex-col items-center gap-1 relative group"
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
+              onFocus={() => setHoveredIndex(i)}
+              onBlur={() => setHoveredIndex(null)}
+              tabIndex={0}
+              aria-describedby={isHovered ? `bookings-tooltip-${i}` : undefined}
             >
               {isHovered && (
                 <div
+                  id={`bookings-tooltip-${i}`}
                   className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-lg text-xs font-medium text-[var(--text-primary)] whitespace-nowrap"
                   role="tooltip"
                 >

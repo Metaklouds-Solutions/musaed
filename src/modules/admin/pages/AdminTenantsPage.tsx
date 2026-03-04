@@ -3,7 +3,7 @@
  * Uses TenantListRow with status, plan, search filters.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -43,6 +43,14 @@ const DEFAULT_RANGE = (() => {
   start.setDate(start.getDate() - 6);
   return { start, end };
 })();
+
+function getViewTabId(mode: ViewMode): string {
+  return `admin-tenants-tab-${mode}`;
+}
+
+function getViewPanelId(mode: ViewMode): string {
+  return `admin-tenants-panel-${mode}`;
+}
 
 function statusVariant(status: string): PillTagVariant {
   if (status === 'ACTIVE') return 'status';
@@ -144,6 +152,18 @@ export function AdminTenantsPage() {
     if (el) el.indeterminate = Boolean(someTenantsSelected && !allTenantsSelected);
   }, [someTenantsSelected, allTenantsSelected]);
 
+  const handleViewTabsKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      if (event.key === 'Home') return setViewMode('list');
+      if (event.key === 'End') return setViewMode('compare');
+      if (event.key === 'ArrowRight') return setViewMode(viewMode === 'list' ? 'compare' : 'list');
+      if (event.key === 'ArrowLeft') return setViewMode(viewMode === 'compare' ? 'list' : 'compare');
+    },
+    [viewMode]
+  );
+
   return (
     <div className="space-y-6">
       {/* Header with tabs */}
@@ -174,11 +194,15 @@ export function AdminTenantsPage() {
         <div
           role="tablist"
           aria-label="View mode"
+          onKeyDown={handleViewTabsKeyDown}
           className="inline-flex flex-wrap w-full sm:w-auto gap-1.5 p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm ring-1 ring-black/5"
         >
           <button
+            id={getViewTabId('list')}
             role="tab"
             aria-selected={viewMode === 'list'}
+            aria-controls={getViewPanelId('list')}
+            tabIndex={viewMode === 'list' ? 0 : -1}
             onClick={() => setViewMode('list')}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
               viewMode === 'list'
@@ -190,8 +214,11 @@ export function AdminTenantsPage() {
             Tenants
           </button>
           <button
+            id={getViewTabId('compare')}
             role="tab"
             aria-selected={viewMode === 'compare'}
+            aria-controls={getViewPanelId('compare')}
+            tabIndex={viewMode === 'compare' ? 0 : -1}
             onClick={() => setViewMode('compare')}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
               viewMode === 'compare'
@@ -219,6 +246,9 @@ export function AdminTenantsPage() {
         ) : viewMode === 'list' ? (
           <motion.div
             key="list"
+            id={getViewPanelId('list')}
+            role="tabpanel"
+            aria-labelledby={getViewTabId('list')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -337,6 +367,9 @@ export function AdminTenantsPage() {
         ) : (
           <motion.div
             key="compare"
+            id={getViewPanelId('compare')}
+            role="tabpanel"
+            aria-labelledby={getViewTabId('compare')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}

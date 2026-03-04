@@ -16,9 +16,14 @@ function formatCurrency(n: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return '—';
+  }
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/** Renders revenue KPIs, plan mix, and recent payment-failure feed. */
 export function AdminRevenueSection({ metrics }: AdminRevenueSectionProps) {
   const sparklineFromPlans = metrics.planDistribution.length > 0
     ? metrics.planDistribution.map((p) => p.count)

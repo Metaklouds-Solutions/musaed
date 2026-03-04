@@ -7,6 +7,7 @@ interface AgentAbTestTabProps {
   abTest: AgentAbTest;
 }
 
+/** Renders current A/B test setup and winner signal for the agent. */
 export function AgentAbTestTab({ abTest }: AgentAbTestTabProps) {
   const isActive = abTest.status !== 'Inactive' && abTest.status !== 'Not Configured';
 

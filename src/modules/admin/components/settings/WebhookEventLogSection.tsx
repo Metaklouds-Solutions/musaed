@@ -14,12 +14,14 @@ import {
   Badge,
   DataTable,
 } from '../../../../shared/ui';
-import { webhooksAdapter } from '../../../../adapters';
 import type { WebhookEvent, WebhookEventStatus } from '../../../../adapters/local/webhooks.adapter';
 import { RotateCw } from 'lucide-react';
+import { useAdminWebhookEvents } from '../../hooks';
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -33,21 +35,11 @@ function StatusBadge({ status }: { status: WebhookEventStatus }) {
 }
 
 export function WebhookEventLogSection() {
-  const [events, setEvents] = useState<WebhookEvent[]>(() =>
-    webhooksAdapter.listWebhookEvents()
-  );
-  const [retryingId, setRetryingId] = useState<string | null>(null);
-
-  const refresh = useCallback(() => {
-    setEvents(webhooksAdapter.listWebhookEvents());
-  }, []);
+  const { events, retryingId, retryWebhook } = useAdminWebhookEvents();
 
   const handleRetry = useCallback((id: string) => {
-    setRetryingId(id);
-    const ok = webhooksAdapter.retryWebhook(id);
-    if (ok) refresh();
-    setRetryingId(null);
-  }, [refresh]);
+    retryWebhook(id);
+  }, [retryWebhook]);
 
   if (events.length === 0) {
     return (

@@ -21,12 +21,14 @@ interface RunsTableProps {
 }
 
 function formatDate(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(iso));
+  }).format(parsed);
 }
 
 function formatCost(cost: number): string {

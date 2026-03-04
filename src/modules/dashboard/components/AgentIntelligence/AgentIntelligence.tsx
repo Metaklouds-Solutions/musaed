@@ -62,6 +62,7 @@ function ConfidenceGauge({ value }: { value: number }) {
 export function AgentIntelligence({ metrics }: AgentIntelligenceProps) {
   const m = metrics ?? EMPTY_AI_METRICS;
   const [escalationHovered, setEscalationHovered] = useState(false);
+  const tooltipId = 'agent-intelligence-escalation-tooltip';
 
   return (
     <Card className="p-5 min-h-[140px]">
@@ -91,9 +92,15 @@ export function AgentIntelligence({ metrics }: AgentIntelligenceProps) {
           onMouseEnter={() => setEscalationHovered(true)}
           onMouseLeave={() => setEscalationHovered(false)}
         >
-          <div className="w-10 h-10 rounded-[var(--radius-button)] flex items-center justify-center bg-[var(--warning)]/10 text-[var(--warning)]">
+          <button
+            type="button"
+            className="w-10 h-10 rounded-[var(--radius-button)] flex items-center justify-center bg-[var(--warning)]/10 text-[var(--warning)]"
+            aria-describedby={escalationHovered ? tooltipId : undefined}
+            onFocus={() => setEscalationHovered(true)}
+            onBlur={() => setEscalationHovered(false)}
+          >
             <AlertTriangle className="w-5 h-5" />
-          </div>
+          </button>
           <div>
             <p className="text-xs font-medium text-[var(--text-muted)]">Escalation rate</p>
             <p className="text-[length:var(--typography-heading)] font-semibold text-[var(--text-primary)]">
@@ -102,6 +109,7 @@ export function AgentIntelligence({ metrics }: AgentIntelligenceProps) {
           </div>
           {escalationHovered && (
             <motion.div
+              id={tooltipId}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="absolute left-0 top-full mt-2 z-10 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-lg text-xs text-[var(--text-secondary)] max-w-[200px]"

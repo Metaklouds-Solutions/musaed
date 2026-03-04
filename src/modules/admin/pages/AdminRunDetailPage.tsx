@@ -5,18 +5,12 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageHeader, Button } from '../../../shared/ui';
 import { RunEventsViewer } from '../components/RunEventsViewer';
-import { runsAdapter } from '../../../adapters';
-import { tenantsAdapter } from '../../../adapters';
+import { useAdminRunDetail } from '../hooks';
 
 export function AdminRunDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  const run = id ? runsAdapter.getRun(id) : null;
-  const events = id ? runsAdapter.getRunEvents(id) : [];
-  const tenantName = run
-    ? tenantsAdapter.getAllTenants().find((t) => t.id === run.tenantId)?.name ?? run.tenantId
-    : '';
+  const { run, events, tenantName } = useAdminRunDetail(id);
 
   if (!id || !run) {
     return (

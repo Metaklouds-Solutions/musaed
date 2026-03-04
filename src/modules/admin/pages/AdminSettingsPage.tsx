@@ -3,7 +3,7 @@
  * Single Settings item in sidebar; switch sections via tabs (like Tenants page).
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageHeader, Button } from '../../../shared/ui';
 import {
@@ -30,6 +30,14 @@ const TABS: { id: SettingsTab; label: string; icon: typeof Users }[] = [
   { id: 'reports', label: 'Reports', icon: BarChart3 },
   { id: 'audit', label: 'Audit', icon: ClipboardList },
 ];
+
+function getTabId(tab: SettingsTab): string {
+  return `admin-settings-tab-${tab}`;
+}
+
+function getPanelId(tab: SettingsTab): string {
+  return `admin-settings-panel-${tab}`;
+}
 
 export function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('admin-users');
@@ -67,6 +75,21 @@ export function AdminSettingsPage() {
   }, []);
 
   const showSaveButton = activeTab === 'admin-users' || activeTab === 'integrations' || activeTab === 'retention' || activeTab === 'reports';
+  const activeIndex = TABS.findIndex((tab) => tab.id === activeTab);
+
+  const handleTabsKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      let nextIndex = activeIndex;
+      if (event.key === 'ArrowRight') nextIndex = (activeIndex + 1) % TABS.length;
+      if (event.key === 'ArrowLeft') nextIndex = (activeIndex - 1 + TABS.length) % TABS.length;
+      if (event.key === 'Home') nextIndex = 0;
+      if (event.key === 'End') nextIndex = TABS.length - 1;
+      setActiveTab(TABS[nextIndex].id);
+    },
+    [activeIndex]
+  );
 
   return (
     <div className="space-y-6">
@@ -94,13 +117,17 @@ export function AdminSettingsPage() {
         <div
           role="tablist"
           aria-label="Settings section"
+          onKeyDown={handleTabsKeyDown}
           className="inline-flex flex-wrap w-full sm:w-auto gap-1.5 p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm ring-1 ring-black/5"
         >
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              id={getTabId(tab.id)}
               role="tab"
               aria-selected={activeTab === tab.id}
+              aria-controls={getPanelId(tab.id)}
+              tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200',
@@ -120,6 +147,9 @@ export function AdminSettingsPage() {
         {activeTab === 'admin-users' && (
           <motion.div
             key="admin-users"
+            id={getPanelId('admin-users')}
+            role="tabpanel"
+            aria-labelledby={getTabId('admin-users')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -132,6 +162,9 @@ export function AdminSettingsPage() {
         {activeTab === 'integrations' && (
           <motion.div
             key="integrations"
+            id={getPanelId('integrations')}
+            role="tabpanel"
+            aria-labelledby={getTabId('integrations')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -144,6 +177,9 @@ export function AdminSettingsPage() {
         {activeTab === 'retention' && (
           <motion.div
             key="retention"
+            id={getPanelId('retention')}
+            role="tabpanel"
+            aria-labelledby={getTabId('retention')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -160,6 +196,9 @@ export function AdminSettingsPage() {
         {activeTab === 'webhooks' && (
           <motion.div
             key="webhooks"
+            id={getPanelId('webhooks')}
+            role="tabpanel"
+            aria-labelledby={getTabId('webhooks')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -172,6 +211,9 @@ export function AdminSettingsPage() {
         {activeTab === 'reports' && (
           <motion.div
             key="reports"
+            id={getPanelId('reports')}
+            role="tabpanel"
+            aria-labelledby={getTabId('reports')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -184,6 +226,9 @@ export function AdminSettingsPage() {
         {activeTab === 'audit' && (
           <motion.div
             key="audit"
+            id={getPanelId('audit')}
+            role="tabpanel"
+            aria-labelledby={getTabId('audit')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}

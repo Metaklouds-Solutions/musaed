@@ -3,8 +3,8 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { staffAdapter } from '../../../adapters/local/staff.adapter';
-import { adminAdapter } from '../../../adapters';
+import { staffAdapter, adminAdapter, exportAdapter, softDeleteAdapter } from '../../../adapters';
+import type { StaffRow } from '../../../shared/types';
 
 export function useAdminStaff() {
   const [tenantFilter, setTenantFilter] = useState<string | null>(null);
@@ -23,6 +23,39 @@ export function useAdminStaff() {
 
   const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
 
+  const addStaff = useCallback(
+    (data: { name: string; email: string; roleSlug: string; tenantId: string }) => {
+      const added = staffAdapter.add(data);
+      refetch();
+      return added;
+    },
+    [refetch]
+  );
+
+  const archiveStaff = useCallback(
+    (userId: string, tenantId: string) => {
+      softDeleteAdapter.softDeleteStaff(userId, tenantId);
+      refetch();
+    },
+    [refetch]
+  );
+
+  const exportStaffCsv = useCallback((rows: Record<string, string>[], fileName: string) => {
+    exportAdapter.exportCsv(rows, fileName);
+  }, []);
+
+  const toExportRows = useCallback(
+    (rows: StaffRow[]) =>
+      rows.map((s) => ({
+        Name: s.name,
+        Email: s.email,
+        Role: s.roleLabel,
+        Tenant: s.tenantName ?? s.tenantId,
+        Status: s.status,
+      })),
+    []
+  );
+
   return {
     staff,
     tenants,
@@ -31,5 +64,9 @@ export function useAdminStaff() {
     roleFilter,
     setRoleFilter,
     refetch,
+    addStaff,
+    archiveStaff,
+    exportStaffCsv,
+    toExportRows,
   };
 }

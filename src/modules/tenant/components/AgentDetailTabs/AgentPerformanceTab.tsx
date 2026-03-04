@@ -7,6 +7,7 @@ interface AgentPerformanceTabProps {
   performance: AgentPerformanceMetrics;
 }
 
+/** Renders agent operational performance KPI cards. */
 export function AgentPerformanceTab({ performance }: AgentPerformanceTabProps) {
   const p = performance;
   const sentimentVal = typeof p.avgSentimentScore === 'number' ? p.avgSentimentScore.toFixed(2) : p.avgSentimentScore;

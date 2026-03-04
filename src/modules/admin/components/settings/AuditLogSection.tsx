@@ -11,9 +11,7 @@ import {
   TableHead,
   TableCell,
 } from '../../../../shared/ui';
-import { auditAdapter } from '../../../../adapters';
-import { tenantsAdapter } from '../../../../adapters';
-import { useMemo } from 'react';
+import { useAdminAuditLog } from '../../hooks';
 
 function formatAction(action: string): string {
   const map: Record<string, string> = {
@@ -25,7 +23,9 @@ function formatAction(action: string): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -35,12 +35,7 @@ function formatDate(iso: string): string {
 }
 
 export function AuditLogSection() {
-  const entries = useMemo(() => auditAdapter.getRecent(50), []);
-  const tenantNames = useMemo(() => {
-    const m = new Map<string, string>();
-    tenantsAdapter.getAllTenants().forEach((t) => m.set(t.id, t.name));
-    return m;
-  }, []);
+  const { entries, tenantNames } = useAdminAuditLog();
 
   if (entries.length === 0) {
     return (

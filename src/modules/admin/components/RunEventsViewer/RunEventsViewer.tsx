@@ -9,12 +9,14 @@ interface RunEventsViewerProps {
 }
 
 function formatTimestamp(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
   return new Intl.DateTimeFormat(undefined, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     fractionalSecondDigits: 3,
-  }).format(new Date(iso));
+  }).format(parsed);
 }
 
 export function RunEventsViewer({ events }: RunEventsViewerProps) {

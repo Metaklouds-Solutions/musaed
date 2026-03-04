@@ -7,9 +7,10 @@ import { PageHeader, EmptyState, TableFilters, Button } from '../../../shared/ui
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList } from '../../calls/hooks';
 import { CallsTable } from '../../calls/components/CallsTable';
-import { tenantsAdapter, exportAdapter } from '../../../adapters';
+import { exportAdapter } from '../../../adapters';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
+import { useAdminCalls } from '../hooks';
 
 function getOutcome(call: { bookingCreated: boolean; escalationFlag: boolean }): 'booked' | 'escalated' | 'failed' {
   if (call.bookingCreated) return 'booked';
@@ -24,18 +25,19 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
+function formatDate(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleDateString();
+}
+
 export function AdminCallsPage() {
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
 
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
-
-  const tenantMap = useMemo(() => {
-    const m = new Map<string, string>();
-    tenantsAdapter.getAllTenants().forEach((t) => m.set(t.id, t.name));
-    return m;
-  }, []);
+  const { tenantMap } = useAdminCalls();
 
   const filteredCalls = useMemo(() => {
     if (!outcomeFilter) return calls;
@@ -45,7 +47,7 @@ export function AdminCallsPage() {
   const handleExport = useCallback(() => {
     const rows = filteredCalls.map((c) => ({
       Tenant: tenantMap.get(c.tenantId) ?? c.tenantId,
-      Date: new Date(c.createdAt).toLocaleDateString(),
+      Date: formatDate(c.createdAt),
       Customer: customerMap.get(c.customerId) ?? c.customerId,
       Duration: `${Math.floor(c.duration / 60)}:${(c.duration % 60).toString().padStart(2, '0')}`,
       Sentiment: c.sentimentScore.toFixed(2),

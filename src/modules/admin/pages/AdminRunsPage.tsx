@@ -3,39 +3,23 @@
  * Modern pagination: 10 runs per page, clean UI.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { PageHeader, PopoverSelect, Pagination } from '../../../shared/ui';
 import { RunsTable } from '../components/RunsTable';
-import { runsAdapter } from '../../../adapters';
-import { tenantsAdapter } from '../../../adapters';
-
-const PAGE_SIZE = 10;
+import { useAdminRuns } from '../hooks';
 
 export function AdminRunsPage() {
-  const [tenantFilter, setTenantFilter] = useState<string>('');
-  const [page, setPage] = useState(1);
-
-  const tenants = tenantsAdapter.getAllTenants();
-  const runs = useMemo(
-    () => runsAdapter.listRuns(tenantFilter || undefined),
-    [tenantFilter]
-  );
-
-  const totalCost = useMemo(
-    () => runs.reduce((sum, r) => sum + r.cost, 0),
-    [runs]
-  );
-
-  const totalPages = Math.max(1, Math.ceil(runs.length / PAGE_SIZE));
-  const paginatedRuns = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return runs.slice(start, start + PAGE_SIZE);
-  }, [runs, page]);
-
-  const handleTenantChange = useCallback((value: string) => {
-    setTenantFilter(value);
-    setPage(1);
-  }, []);
+  const {
+    tenants,
+    runs,
+    paginatedRuns,
+    totalCost,
+    totalPages,
+    page,
+    setPage,
+    tenantFilter,
+    handleTenantChange,
+  } = useAdminRuns();
 
   const tenantOptions = [
     { value: '', label: 'All tenants' },

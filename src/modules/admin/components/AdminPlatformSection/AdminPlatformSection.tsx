@@ -10,6 +10,7 @@ interface AdminPlatformSectionProps {
   metrics: AdminOverviewMetrics;
 }
 
+/** Renders platform usage KPIs for active footprint and funnel throughput. */
 export function AdminPlatformSection({ metrics }: AdminPlatformSectionProps) {
   return (
     <section className="space-y-6">

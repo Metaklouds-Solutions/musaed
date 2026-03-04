@@ -9,7 +9,6 @@ import { PageHeader, Button, TableSkeleton, BulkActionsBar } from '../../../shar
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useTableSelection } from '../../../shared/hooks/useTableSelection';
 import { StaffTable, AddStaffModal, StaffFilters } from '../../shared/staff';
-import { staffAdapter, exportAdapter, softDeleteAdapter } from '../../../adapters';
 import { useAdminStaff } from '../hooks';
 import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
 import type { StaffRow } from '../../../shared/types';
@@ -25,6 +24,10 @@ export function AdminStaffPage() {
     roleFilter,
     setRoleFilter,
     refetch,
+    addStaff,
+    archiveStaff,
+    exportStaffCsv,
+    toExportRows,
   } = useAdminStaff();
 
   const ready = useDelayedReady();
@@ -38,12 +41,11 @@ export function AdminStaffPage() {
 
   const handleAddStaff = useCallback(
     (data: { name: string; email: string; roleSlug: string; tenantId: string }) => {
-      const added = staffAdapter.add({ ...data, tenantId: data.tenantId });
-      refetch();
+      const added = addStaff(data);
       if (added) toast.success('Staff added');
       else toast.error('Failed to add staff');
     },
-    [refetch]
+    [addStaff]
   );
 
   const handleImportCsv = useCallback(() => {
@@ -56,8 +58,7 @@ export function AdminStaffPage() {
       const key = `${s.userId}::${s.tenantId}`;
       removeOptimistic(key);
       try {
-        softDeleteAdapter.softDeleteStaff(s.userId, s.tenantId);
-        refetch();
+        archiveStaff(s.userId, s.tenantId);
         commit();
         toast.success('Staff archived');
       } catch {
@@ -65,21 +66,15 @@ export function AdminStaffPage() {
         toast.error('Failed to archive');
       }
     },
-    [refetch, removeOptimistic, rollbackRemove, commit]
+    [archiveStaff, removeOptimistic, rollbackRemove, commit]
   );
 
   const selectedStaff = displayStaff.filter((s) => selection.selectedSet.has(getStaffKey(s)));
   const handleExport = useCallback(() => {
-    const rows = staff.map((s) => ({
-      Name: s.name,
-      Email: s.email,
-      Role: s.roleLabel,
-      Tenant: s.tenantName ?? s.tenantId,
-      Status: s.status,
-    }));
-    exportAdapter.exportCsv(rows, `staff-admin-${new Date().toISOString().slice(0, 10)}.csv`);
+    const rows = toExportRows(staff);
+    exportStaffCsv(rows, `staff-admin-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success('Staff exported');
-  }, [staff]);
+  }, [staff, toExportRows, exportStaffCsv]);
 
   const handleBulkArchive = useCallback(() => {
     if (selectedStaff.length === 0) return;
@@ -89,32 +84,25 @@ export function AdminStaffPage() {
       const key = getStaffKey(s);
       removeOptimistic(key);
       try {
-        softDeleteAdapter.softDeleteStaff(s.userId, s.tenantId);
+        archiveStaff(s.userId, s.tenantId);
       } catch {
         rollbackRemove(key);
         failed++;
       }
     }
     selection.clear();
-    refetch();
     commit();
     if (failed > 0) toast.error(`Failed to archive ${failed} staff member(s)`);
     else toast.success(`Archived ${selectedStaff.length} staff member(s)`);
-  }, [selectedStaff, removeOptimistic, rollbackRemove, commit, refetch, selection]);
+  }, [selectedStaff, removeOptimistic, rollbackRemove, commit, archiveStaff, selection]);
 
   const handleBulkExport = useCallback(() => {
     if (selectedStaff.length === 0) return;
-    const rows = selectedStaff.map((s) => ({
-      Name: s.name,
-      Email: s.email,
-      Role: s.roleLabel,
-      Tenant: s.tenantName ?? s.tenantId,
-      Status: s.status,
-    }));
-    exportAdapter.exportCsv(rows, `staff-selected-${new Date().toISOString().slice(0, 10)}.csv`);
+    const rows = toExportRows(selectedStaff);
+    exportStaffCsv(rows, `staff-selected-${new Date().toISOString().slice(0, 10)}.csv`);
     selection.clear();
     toast.success(`Exported ${selectedStaff.length} staff member(s)`);
-  }, [selectedStaff, selection]);
+  }, [selectedStaff, selection, toExportRows, exportStaffCsv]);
 
   if (!ready) {
     return (

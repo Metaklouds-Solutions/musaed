@@ -47,8 +47,8 @@ export function TenantMembersTab({ members }: TenantMembersTabProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {members.map((m, i) => (
-                  <TableRow key={i} className="border-t border-[var(--border-subtle)]/50 first:border-t-0">
+                {members.map((m) => (
+                  <TableRow key={`${m.name}-${m.role}-${m.joined}`} className="border-t border-[var(--border-subtle)]/50 first:border-t-0">
                     <TableCell className="font-medium text-[var(--text-primary)]">{m.name}</TableCell>
                     <TableCell className="text-[var(--text-secondary)]">{m.role}</TableCell>
                     <TableCell>

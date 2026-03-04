@@ -33,6 +33,7 @@ function StatusBadge({ status }: { status: Status }) {
   );
 }
 
+/** Renders overall, integration, and platform service health states. */
 export function AdminSystemHealth({ health }: AdminSystemHealthProps) {
   return (
     <motion.section

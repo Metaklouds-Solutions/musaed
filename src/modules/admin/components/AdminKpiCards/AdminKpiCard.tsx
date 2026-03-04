@@ -10,6 +10,7 @@ interface AdminKpiCardProps {
   trend?: 'up' | 'down' | 'neutral';
 }
 
+/** Renders a single admin KPI metric tile. */
 export function AdminKpiCard({ label, value, trend }: AdminKpiCardProps) {
   return (
     <StatCardEnhanced

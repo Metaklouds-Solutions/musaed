@@ -9,11 +9,9 @@ import { toast } from 'sonner';
 import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown, TableSkeleton, EmptyState } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
-import { exportAdapter, auditAdapter } from '../../../adapters';
 import { Download, MessageCircle } from 'lucide-react';
 import { TicketList, TicketChatThread } from '../../shared/support';
 import { useAdminSupport } from '../hooks/useAdminSupport';
-import { tenantsAdapter } from '../../../adapters';
 import type { SupportTicket } from '../../../shared/types/entities';
 
 const STATUS_OPTIONS: { value: SupportTicket['status']; label: string }[] = [
@@ -47,6 +45,12 @@ function toPriorityFilter(s: unknown): SupportTicket['priority'] | '' {
   return isSupportTicketPriority(s) ? s : '';
 }
 
+function formatDate(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleDateString();
+}
+
 export function AdminSupportPage() {
   const ready = useDelayedReady();
   const navigate = useNavigate();
@@ -58,23 +62,24 @@ export function AdminSupportPage() {
     assignTicket,
     addMessage,
     getTenantName,
+    tenants,
+    logTicketAssigned,
+    exportTicketsCsv,
     filters,
     setTenantFilter,
     setStatusFilter,
     setPriorityFilter,
   } = useAdminSupport();
-
-  const tenants = tenantsAdapter.getAllTenants();
   const ticket = id ? getTicket(id) : null;
 
   const handleAssign = useCallback(
     (ticketId: string) => {
       const ticket = getTicket(ticketId);
       assignTicket(ticketId, 'admin');
-      auditAdapter.log('ticket.assigned', { ticketId, tenantId: ticket?.tenantId });
+      logTicketAssigned(ticketId, ticket?.tenantId);
       toast.success('Ticket assigned');
     },
-    [assignTicket, getTicket]
+    [assignTicket, getTicket, logTicketAssigned]
   );
 
   const handleReply = useCallback(
@@ -115,11 +120,11 @@ export function AdminSupportPage() {
       Category: t.category,
       Status: t.status,
       Priority: t.priority,
-      Created: new Date(t.createdAt).toLocaleDateString(),
+      Created: formatDate(t.createdAt),
     }));
-    exportAdapter.exportCsv(rows, `tickets-${new Date().toISOString().slice(0, 10)}.csv`);
+    exportTicketsCsv(rows, `tickets-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success('Tickets exported');
-  }, [tickets, getTenantName]);
+  }, [tickets, getTenantName, exportTicketsCsv]);
 
   if (id && !ticket) {
     return (

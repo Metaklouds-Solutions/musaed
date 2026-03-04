@@ -11,6 +11,7 @@ interface AdminSupportSnapshotProps {
   snapshot: AdminSupportSnapshot;
 }
 
+/** Renders support queue counts and highlights critical waiting tickets. */
 export function AdminSupportSnapshot({ snapshot }: AdminSupportSnapshotProps) {
   return (
     <motion.section

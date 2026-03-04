@@ -12,7 +12,11 @@ interface AdminRecentTenantsProps {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return '—';
+  }
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function StatusPill({ status }: { status: AdminRecentTenant['status'] }) {
@@ -20,6 +24,7 @@ function StatusPill({ status }: { status: AdminRecentTenant['status'] }) {
   return <PillTag variant={variant}>{status}</PillTag>;
 }
 
+/** Renders recent tenant records with status and onboarding progress. */
 export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
   if (tenants.length === 0) {
     return (
