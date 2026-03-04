@@ -25,7 +25,10 @@ export function AdminKpiCards({ kpis }: AdminKpiCardsProps) {
       transition={CARD_ANIMATION}
       className="space-y-4"
     >
-      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Top KPIs</h2>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Top KPIs</h2>
+        <p className="text-xs text-[var(--text-muted)]">Live platform pulse across growth, quality, and spend</p>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <AdminKpiCard label="Total Tenants" value={kpis.totalTenants} />
         <AdminKpiCard label="Active" value={kpis.activeTenants} />

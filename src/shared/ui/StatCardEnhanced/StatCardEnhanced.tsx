@@ -5,7 +5,7 @@
 import { type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface StatCardEnhancedProps {
   label: string;
@@ -57,6 +57,13 @@ export function StatCardEnhanced({
   sparklineData,
   className,
 }: StatCardEnhancedProps) {
+  const trendTone =
+    trend === 'up'
+      ? 'text-[var(--success)] bg-[var(--success)]/10'
+      : trend === 'down'
+        ? 'text-[var(--error)] bg-[var(--error)]/10'
+        : 'text-[var(--text-muted)] bg-[var(--bg-hover)]';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -64,21 +71,37 @@ export function StatCardEnhanced({
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       whileHover={{ scale: 1.02, boxShadow: '0 12px 40px rgba(0,0,0,0.12)' }}
       className={cn(
-        'rounded-[var(--radius-card)] overflow-hidden p-5 card-glass',
+        'relative rounded-[var(--radius-card)] overflow-hidden p-5 card-glass',
         'transition-colors duration-200',
         className
       )}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden
+      >
+        <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-[var(--ds-primary)]/10 blur-2xl" />
+        <div className="absolute bottom-0 left-0 h-1.5 w-full bg-[linear-gradient(90deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] opacity-70" />
+      </div>
+
+      <div className="relative flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-muted)]">
             {label}
           </p>
-          <p className="mt-2 text-[20px] font-semibold leading-tight text-[var(--text-primary)] tabular-nums">
+          <p className="mt-2 text-2xl font-semibold leading-tight text-[var(--text-primary)] tabular-nums">
             {value}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <span
+            className={cn(
+              'inline-flex h-8 w-8 items-center justify-center rounded-full',
+              trendTone
+            )}
+          >
+            <Activity size={14} aria-hidden />
+          </span>
           {trend === 'up' && (
             <TrendingUp
               size={16}

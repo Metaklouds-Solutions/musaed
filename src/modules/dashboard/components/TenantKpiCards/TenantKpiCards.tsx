@@ -24,7 +24,10 @@ export function TenantKpiCards({ kpis }: TenantKpiCardsProps) {
       transition={{ duration: 0.3 }}
       className="space-y-4"
     >
-      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Key Metrics</h2>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Key Metrics</h2>
+        <p className="text-xs text-[var(--text-muted)]">Fast snapshot of call flow, bookings, and operational load</p>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <TenantKpiCard label="Calls Today" value={kpis.callsToday} />
         <TenantKpiCard label="Calls 7d" value={kpis.calls7d} />

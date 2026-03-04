@@ -50,12 +50,13 @@ export function OpenTicketsWidget({ tickets }: OpenTicketsWidgetProps) {
   }
 
   return (
-    <motion.section
+      <motion.section
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.15 }}
-      className="rounded-[var(--radius-card)] card-glass p-5"
+        className="relative overflow-hidden rounded-[var(--radius-card)] card-glass p-5"
     >
+      <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-[var(--warning)]/10 blur-2xl pointer-events-none" />
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Support Tickets</h2>
         <ViewButton to="/help">View all</ViewButton>
@@ -65,7 +66,7 @@ export function OpenTicketsWidget({ tickets }: OpenTicketsWidgetProps) {
           <Link
             key={t.id}
             to={`/help/tickets/${t.id}`}
-            className="block p-3 rounded-lg bg-[var(--bg-elevated)] hover:bg-[var(--sidebar-item-hover)] transition-colors"
+            className="block p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/70 hover:border-[var(--border-default)] hover:bg-[var(--sidebar-item-hover)] hover:shadow-[var(--shadow-elevated)] transition-all"
           >
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-[var(--text-primary)] truncate">{t.title}</p>

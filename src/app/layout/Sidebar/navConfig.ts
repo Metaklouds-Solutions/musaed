@@ -37,8 +37,8 @@ export const ADMIN_NAV: NavItem[] = [
 ];
 
 export const TENANT_NAV: NavItem[] = [
-  { to: '/tenants/me', label: 'common.myTenant', icon: Users },
   { to: '/dashboard', label: 'common.dashboard', icon: LayoutDashboard },
+  { to: '/tenants/me', label: 'common.myTenant', icon: Users },
   { to: '/calls', label: 'common.calls', icon: Phone },
   { to: '/agent', label: 'common.agent', icon: Bot },
   { to: '/staff', label: 'common.staff', icon: UserPlus },

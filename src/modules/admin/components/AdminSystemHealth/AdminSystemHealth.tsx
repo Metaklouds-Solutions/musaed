@@ -39,19 +39,22 @@ export function AdminSystemHealth({ health }: AdminSystemHealthProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
-      className="rounded-[var(--radius-card)] card-glass p-5"
+      className="relative overflow-hidden rounded-[var(--radius-card)] card-glass p-5"
     >
+      <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-[var(--info)]/10 blur-2xl pointer-events-none" />
       <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">System Health</h2>
       <div className="space-y-6">
         <div>
           <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">Overall</h3>
-          <StatusBadge status={health.status} />
+          <div className="inline-flex rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5">
+            <StatusBadge status={health.status} />
+          </div>
         </div>
         <div>
           <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">Integrations</h3>
           <ul className="space-y-2">
             {health.integrations.map((i) => (
-              <li key={i.name} className="flex items-center justify-between py-1">
+              <li key={i.name} className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/60 px-3 py-2">
                 <span className="text-sm text-[var(--text-secondary)]">{i.name}</span>
                 <StatusBadge status={i.status} />
               </li>

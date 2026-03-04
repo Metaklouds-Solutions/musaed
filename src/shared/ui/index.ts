@@ -26,3 +26,4 @@ export { SavedFiltersDropdown } from './SavedFiltersDropdown';
 export { Drawer, DrawerHeader } from './Drawer';
 export { Modal, ModalHeader } from './Modal';
 export { PasswordInput } from './PasswordInput';
+export { Pagination, type PaginationProps } from './Pagination';
