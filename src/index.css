@@ -1,37 +1,545 @@
+/**
+ * Design tokens from .cursor/Design.json — Dark Glass Analytics Dashboard System.
+ * Light theme retained; .dark implements full Design.json spec.
+ */
+
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-primary: #09E6FB;
-  --color-bg-dark: #0A0A0A;
-  --color-card-dark: #141414;
-  --color-border-dark: #262626;
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens — Design.json (dark glass) + light fallback
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Accent: Design.json gradient #7C5CFF → #B47CFF */
+  --ds-accent-start: #7C5CFF;
+  --ds-accent-end: #B47CFF;
+  --ds-accent-glow: rgba(124, 92, 255, 0.4);
+  --ds-primary: #7C5CFF;
+  --primary-hover: #9370FF;
+  --primary-glow: rgba(124, 92, 255, 0.25);
+
+  /* Light theme backgrounds */
+  --bg-base: #FFFFFF;
+  --bg-card: #F9FAFB;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #F3F4F6;
+  --bg-subtle: #F9FAFB;
+  --bg-sidebar: #F5F5F5;
+
+  --surface-card: rgba(0, 0, 0, 0.03);
+  --surface-glass: rgba(0, 0, 0, 0.04);
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --surface-border-card: var(--border-subtle);
+
+  --border-subtle: #E4E4E7;
+  --border-default: #D4D4D8;
+  --border-hover: #A1A1AA;
+  --separator: #E4E4E7;
+  --separator-strong: #D4D4D8;
+
+  --text-primary: #18181B;
+  --text-secondary: #52525B;
+  --text-muted: #71717A;
+  --text-disabled: #A1A1AA;
+
+  --success: #22C55E;
+  --success-muted: #16A34A;
+  --warning: #F59E0B;
+  --warning-muted: #CA8A04;
+  --error: #EF4444;
+  --error-muted: #DC2626;
+  --info: #3B82F6;
+  --info-muted: #2563EB;
+
+  /* Design.json: card 16px, button 12px */
+  --radius-card: 16px;
+  --radius-modal: 16px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+  --radius-nav: 10px;
+
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.18);
+  --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.35);
+  --shadow-card-glass: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(124, 92, 255, 0.06);
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  --overlay-bg: rgba(0, 0, 0, 0.45);
+  --glass-panel-bg: rgba(249, 250, 251, 0.88);
+  --glass-panel-border: var(--border-subtle);
+  --drawer-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  --sidebar-item-hover: var(--bg-hover);
+  /* Sidebar active item: light purple tint (#966BFF light) */
+  --sidebar-item-active: rgba(150, 107, 255, 0.12);
+
+  --layout-max-width: 1440px;
+  --layout-gutter: 24px;
+  --layout-margin: 32px;
+  --topbar-height: 64px;
+  --sidebar-width: 240px;
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-compact: 72px;
+
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--ds-primary);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--bg-elevated);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-hover);
+  --accent-foreground: var(--text-primary);
+  --destructive: #EF4444;
+  --destructive-foreground: #FAFAFA;
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--ds-primary);
+  --font-sans: "Inter", "SF Pro", ui-sans-serif, system-ui, sans-serif;
+  --radius: 12px;
+  --typography-display: 32px;
+  --typography-heading: 20px;
+  --typography-subheading: 16px;
+  --typography-body: 14px;
+  --typography-caption: 12px;
+
+  /* Header search bar – neomorphic light */
+  --header-search-bg: #F5F4F8;
+  --header-search-icon-bg: rgba(255, 255, 255, 0.9);
+  --header-search-shadow: 4px 4px 12px rgba(0, 0, 0, 0.06), -2px -2px 8px rgba(255, 255, 255, 0.9);
+  --header-search-shadow-focus: 4px 4px 12px rgba(0, 0, 0, 0.08), -2px -2px 8px rgba(255, 255, 255, 1);
 }
 
+.dark {
+  /* Design.json: Dark Glass color system */
+  --ds-accent-start: #7C5CFF;
+  --ds-accent-end: #B47CFF;
+  --ds-accent-glow: rgba(124, 92, 255, 0.4);
+  --ds-primary: #7C5CFF;
+  --primary-hover: #9370FF;
+  --primary-glow: rgba(124, 92, 255, 0.25);
+
+  --bg-base: #0B0F19;
+  --bg-card: #111827;
+  --bg-elevated: #151B2C;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-subtle: #0D1322;
+  --bg-sidebar: #0D1322;
+
+  --surface-card: rgba(255, 255, 255, 0.03);
+  --surface-glass: rgba(255, 255, 255, 0.05);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-border-card: rgba(255, 255, 255, 0.06);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --separator: rgba(255, 255, 255, 0.08);
+  --separator-strong: rgba(255, 255, 255, 0.1);
+
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --text-disabled: rgba(255, 255, 255, 0.4);
+
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.4);
+  --shadow-card-glass: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  --overlay-bg: rgba(0, 0, 0, 0.6);
+  --glass-panel-bg: rgba(13, 19, 34, 0.9);
+  --glass-panel-border: var(--border-subtle);
+  --drawer-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --sidebar-item-hover: rgba(255, 255, 255, 0.05);
+  /* Sidebar active item: light purple tint (#966BFF light) for dark mode */
+  --sidebar-item-active: rgba(150, 107, 255, 0.18);
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-compact: 72px;
+
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card: var(--surface-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--ds-primary);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--bg-elevated);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-hover);
+  --accent-foreground: var(--text-primary);
+  --destructive: #EF4444;
+  --destructive-foreground: #FAFAFA;
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--ds-primary);
+
+  /* Header search bar – neomorphic dark */
+  --header-search-bg: rgba(255, 255, 255, 0.06);
+  --header-search-icon-bg: rgba(255, 255, 255, 0.08);
+  --header-search-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3), -2px -2px 8px rgba(255, 255, 255, 0.03);
+  --header-search-shadow-focus: 4px 4px 12px rgba(0, 0, 0, 0.35), -2px -2px 8px rgba(255, 255, 255, 0.05);
+}
+
+/* Enhanced card: glass background, subtle accent, used for modals and key sections */
+.card-glass {
+  background: var(--glass-panel-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card-glass);
+  border: 1px solid var(--surface-border-card);
+}
+:root:not(.dark) .card-glass {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(124, 92, 255, 0.08);
+}
+.dark .card-glass {
+  background: rgba(17, 24, 39, 0.85);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-sans);
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+}
+
+/* ---------------------------------------------------------------------------
+   Hide scrollbars site-wide — sidebar and content scroll but scrollbar hidden
+   --------------------------------------------------------------------------- */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Base: html, body, #root — Design.json typography (14px body, Inter)
+   --------------------------------------------------------------------------- */
 @layer base {
+  html {
+    color-scheme: light dark;
+  }
+
   body {
-    @apply bg-bg-dark text-white font-sans antialiased;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+    background: var(--bg-base);
+    color: var(--text-primary);
+  }
+
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    cursor: pointer;
+  }
+
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ds-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  * {
+    border-color: var(--border);
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Component utilities — Design.json glass card, accent button
+   --------------------------------------------------------------------------- */
 @layer components {
-  .btn-primary {
-    @apply bg-primary text-black font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-all active:scale-95 disabled:opacity-50;
+  /* [PHASE-7-SCREEN-READER] Skip link for keyboard/screen reader users */
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: var(--ds-primary);
+    color: white;
+    border-radius: var(--radius-button);
+    font-weight: 500;
+    transition: top 0.2s ease;
   }
-  
+  .skip-link:focus {
+    top: 1rem;
+    outline: 2px solid var(--ds-primary);
+    outline-offset: 2px;
+  }
+
+  .card-glass {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border-card, var(--border-subtle));
+    border-radius: var(--radius-card);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-glass:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--surface-border, var(--border-subtle));
+  }
+
   .card {
-    @apply bg-card-dark border border-border-dark rounded-xl p-6;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.2s, background 0.2s, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .input-field {
-    @apply bg-black border border-border-dark rounded-lg px-4 py-2 focus:outline-none focus:border-primary transition-colors;
+  .card:hover {
+    border-color: var(--border-default);
+    background: var(--bg-elevated);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
   }
 
-  .tab-active {
-    @apply border-b-2 border-primary text-primary;
+  .btn-primary {
+    background: linear-gradient(135deg, var(--ds-accent-start) 0%, var(--ds-accent-end) 100%);
+    color: #FFFFFF;
+    padding: 10px 16px;
+    border-radius: var(--radius-button);
+    font-weight: 500;
+    box-shadow: var(--shadow-button-primary);
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .tab-inactive {
-    @apply text-zinc-500 hover:text-zinc-300;
+  .btn-primary:hover {
+    box-shadow: 0 6px 28px var(--ds-accent-glow);
+    filter: brightness(1.05);
   }
+
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--ds-primary);
+    outline-offset: 2px;
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+
+  .min-w-0 {
+    min-width: 0;
+  }
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Trend chart bar: height from CSS variables (set by component) */
+.trend-chart-bar-inner {
+  height: var(--bar-height, 0);
+  min-height: var(--bar-min-height, 0);
+}
+
+/* Magic UI Animated Theme Toggler — View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* ---------------------------------------------------------------------------
+   Toast Pop — White/light background, colored icons, pill shape
+   --------------------------------------------------------------------------- */
+[data-sonner-toaster] [data-sonner-toast] {
+  --toast-success: var(--success);
+  --toast-warning: var(--warning);
+  --toast-error: var(--error);
+  --toast-info: var(--info);
+}
+
+.toast-pop {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 14px 18px !important;
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  color: var(--text-primary) !important;
+  min-width: 280px !important;
+  max-width: 400px !important;
+}
+
+/* Colored icons for each toast type */
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: var(--success) !important;
+}
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: var(--warning) !important;
+}
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: var(--error) !important;
+}
+[data-sonner-toast][data-type="info"] [data-icon] {
+  color: var(--info) !important;
+}
+
+.toast-pop-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.toast-pop-title {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: var(--text-primary) !important;
+}
+
+.toast-pop-desc {
+  font-size: 12px !important;
+  color: var(--text-muted) !important;
+  margin-top: 2px !important;
+}
+
+.toast-pop-close {
+  color: var(--text-muted) !important;
+  opacity: 0.7 !important;
+  padding: 4px !important;
+  border-radius: 6px !important;
+}
+.toast-pop-close:hover {
+  opacity: 1 !important;
+  background: var(--bg-hover) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   FullCalendar — Theme overrides (Design.json tokens)
+   FullCalendar 6 auto-injects CSS; we override via custom properties.
+   --------------------------------------------------------------------------- */
+:root {
+  --fc-page-bg-color: var(--bg-base);
+  --fc-neutral-bg-color: var(--bg-hover);
+  --fc-neutral-text-color: var(--text-muted);
+  --fc-border-color: var(--border-subtle);
+
+  --fc-button-text-color: #fff;
+  --fc-button-bg-color: var(--ds-primary);
+  --fc-button-border-color: var(--ds-primary);
+  --fc-button-hover-bg-color: var(--primary-hover);
+  --fc-button-hover-border-color: var(--primary-hover);
+  --fc-button-active-bg-color: var(--primary-hover);
+  --fc-button-active-border-color: var(--primary-hover);
+
+  --fc-event-bg-color: var(--ds-primary);
+  --fc-event-border-color: var(--ds-primary);
+  --fc-event-text-color: #fff;
+  --fc-event-selected-overlay-color: rgba(0, 0, 0, 0.25);
+
+  --fc-more-link-bg-color: var(--bg-hover);
+  --fc-more-link-text-color: var(--text-primary);
+
+  --fc-non-business-color: var(--bg-subtle);
+  --fc-bg-event-color: var(--bg-hover);
+  --fc-bg-event-opacity: 0.5;
+  --fc-highlight-color: rgba(124, 92, 255, 0.15);
+  --fc-today-bg-color: rgba(124, 92, 255, 0.08);
+  --fc-now-indicator-color: var(--ds-primary);
+}
+
+.dark {
+  --fc-page-bg-color: var(--bg-base);
+  --fc-neutral-bg-color: var(--bg-hover);
+  --fc-neutral-text-color: var(--text-muted);
+  --fc-border-color: var(--border-subtle);
+  --fc-more-link-bg-color: var(--bg-hover);
+  --fc-more-link-text-color: var(--text-primary);
 }

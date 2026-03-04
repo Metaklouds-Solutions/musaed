@@ -1,0 +1,67 @@
+{
+  "common": {
+    "search": "Search",
+    "searchPlaceholder": "Search tenants, staff, tickets, calls…",
+    "noResults": "No results for \"{{query}}\"",
+    "notifications": "Notifications",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "logout": "Logout",
+    "settings": "Settings",
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "calls": "Calls",
+    "agent": "Agent",
+    "staff": "Staff",
+    "reports": "Reports",
+    "helpCenter": "Help Center",
+    "billing": "Billing",
+    "tenants": "Tenants",
+    "supportInbox": "Support Inbox",
+    "runsLogs": "Runs & Logs",
+    "skillsCatalog": "Skills Catalog",
+    "systemHealth": "System Health",
+    "adminUsers": "Admin Users",
+    "integrations": "Integrations",
+    "retentionPolicies": "Retention Policies",
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية",
+    "agentSandbox": "Agent Sandbox",
+    "myTenant": "My Tenant"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "description": "Appointments and staff availability",
+    "signInToView": "Sign in as a tenant to view the calendar."
+  },
+  "userMenu": {
+    "manageAccount": "Manage account",
+    "logout": "Logout",
+    "userMenu": "User menu"
+  },
+  "login": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in"
+  },
+  "offline": {
+    "banner": "You're offline. Some features may be unavailable."
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "commandPalette": "Command palette",
+    "goDashboard": "Go to Dashboard",
+    "goCalls": "Go to Calls",
+    "goSupport": "Go to Support inbox",
+    "goHelp": "Go to Help Center",
+    "goTenants": "Go to Tenants",
+    "goOverview": "Go to Admin overview",
+    "showHelp": "Show this help"
+  }
+}

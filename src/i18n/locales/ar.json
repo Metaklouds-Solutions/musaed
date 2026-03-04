@@ -1,0 +1,67 @@
+{
+  "common": {
+    "search": "بحث",
+    "searchPlaceholder": "ابحث عن المستأجرين والموظفين والتذاكر والمكالمات…",
+    "noResults": "لا توجد نتائج لـ \"{{query}}\"",
+    "notifications": "الإشعارات",
+    "lightMode": "الوضع الفاتح",
+    "darkMode": "الوضع الداكن",
+    "collapseSidebar": "طي الشريط الجانبي",
+    "expandSidebar": "توسيع الشريط الجانبي",
+    "openMenu": "فتح القائمة",
+    "closeMenu": "إغلاق القائمة",
+    "logout": "تسجيل الخروج",
+    "settings": "الإعدادات",
+    "dashboard": "لوحة التحكم",
+    "calendar": "التقويم",
+    "calls": "المكالمات",
+    "agent": "الوكيل",
+    "staff": "الموظفون",
+    "reports": "التقارير",
+    "helpCenter": "مركز المساعدة",
+    "billing": "الفواتير",
+    "tenants": "المستأجرون",
+    "supportInbox": "صندوق الدعم",
+    "runsLogs": "التشغيلات والسجلات",
+    "skillsCatalog": "كتالوج المهارات",
+    "systemHealth": "صحة النظام",
+    "adminUsers": "مستخدمو الإدارة",
+    "integrations": "التكاملات",
+    "retentionPolicies": "سياسات الاحتفاظ",
+    "language": "اللغة",
+    "english": "English",
+    "arabic": "العربية",
+    "agentSandbox": "ساحة الاختبار للوكيل",
+    "myTenant": "المستأجر الخاص بي"
+  },
+  "calendar": {
+    "title": "التقويم",
+    "description": "المواعيد وتوفر الموظفين",
+    "signInToView": "سجّل الدخول كمستأجر لعرض التقويم."
+  },
+  "userMenu": {
+    "manageAccount": "إدارة الحساب",
+    "logout": "تسجيل الخروج",
+    "userMenu": "قائمة المستخدم"
+  },
+  "login": {
+    "title": "تسجيل الدخول",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "submit": "تسجيل الدخول"
+  },
+  "offline": {
+    "banner": "أنت غير متصل. قد تكون بعض الميزات غير متاحة."
+  },
+  "shortcuts": {
+    "title": "اختصارات لوحة المفاتيح",
+    "commandPalette": "لوحة الأوامر",
+    "goDashboard": "الذهاب إلى لوحة التحكم",
+    "goCalls": "الذهاب إلى المكالمات",
+    "goSupport": "الذهاب إلى صندوق الدعم",
+    "goHelp": "الذهاب إلى مركز المساعدة",
+    "goTenants": "الذهاب إلى المستأجرين",
+    "goOverview": "الذهاب إلى نظرة عامة الإدارة",
+    "showHelp": "عرض هذه المساعدة"
+  }
+}

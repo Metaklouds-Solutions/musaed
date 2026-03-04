@@ -1,0 +1,1 @@
+export { RoiDashboardWidget } from './RoiDashboardWidget';
