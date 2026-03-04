@@ -609,8 +609,9 @@ h3,
 .gradient-bg-cta {
   background:
     radial-gradient(ellipse 80% 60% at 30% 20%, rgba(43, 163, 184, 0.5) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-    linear-gradient(145deg, #0e4a54 0%, var(--primary) 45%, #2ba3b8 100%);
+    radial-gradient(ellipse 60% 50% at 80% 70%, rgba(228, 185, 128, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 60% 30%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+    linear-gradient(145deg, #0e4a54 0%, var(--primary) 35%, #2ba3b8 65%, rgba(228,185,128,0.6) 100%);
 }
 
 /* ── Fluid Blob Decorations (vivid for Liquid Glass refraction) ── */
@@ -1364,4 +1365,55 @@ h3,
     background: rgba(255, 255, 255, 0.80);
     backdrop-filter: none;
   }
+}
+
+/* ── Floating chat bar ── */
+.chat-bar-glow {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px) saturate(1.8);
+  border: 1.5px solid rgba(31, 122, 140, 0.20);
+  box-shadow:
+    0 0 20px rgba(31, 122, 140, 0.12),
+    0 0 60px rgba(31, 122, 140, 0.06),
+    0 4px 20px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  animation: chat-border-glow 3s ease-in-out infinite;
+}
+
+.chat-bar-glow:focus-within {
+  border-color: rgba(31, 122, 140, 0.45);
+  box-shadow:
+    0 0 30px rgba(31, 122, 140, 0.20),
+    0 0 80px rgba(31, 122, 140, 0.10),
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+@keyframes chat-border-glow {
+  0%, 100% {
+    border-color: rgba(31, 122, 140, 0.20);
+    box-shadow:
+      0 0 20px rgba(31, 122, 140, 0.10),
+      0 0 60px rgba(31, 122, 140, 0.04),
+      0 4px 20px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  50% {
+    border-color: rgba(31, 122, 140, 0.40);
+    box-shadow:
+      0 0 30px rgba(31, 122, 140, 0.18),
+      0 0 80px rgba(31, 122, 140, 0.08),
+      0 4px 24px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+}
+
+.chat-bar-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(1.8);
+  border: 1.5px solid rgba(31, 122, 140, 0.15);
+  border-bottom: none;
+  box-shadow:
+    0 -8px 40px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }

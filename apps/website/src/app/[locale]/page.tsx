@@ -7,10 +7,11 @@ import HowItWorks from "@/components/HowItWorks";
 import Features from "@/components/Features";
 import ROINumbers from "@/components/ROINumbers";
 import SocialProof from "@/components/SocialProof";
-import FAQ from "@/components/FAQ";
+import PaymentIntegration from "@/components/PaymentIntegration";
+
 import FinalCTA from "@/components/FinalCTA";
 import Footer from "@/components/Footer";
-import WhatsAppFAB from "@/components/WhatsAppFAB";
+import ChatBubble from "@/components/ChatBubble";
 import ParallaxBackground from "@/components/ParallaxBackground";
 
 export default async function LandingPage({
@@ -41,11 +42,11 @@ export default async function LandingPage({
           <div className="section-glow-divider" />
           <SocialProof dict={dict} />
           <div className="section-glow-divider" />
-          <FAQ dict={dict} />
+          <PaymentIntegration />
           <FinalCTA dict={dict} locale={locale} />
         </main>
         <Footer dict={dict} />
-        <WhatsAppFAB locale={locale} dict={dict} />
+        <ChatBubble locale={locale} dict={dict} />
       </div>
     </>
   );

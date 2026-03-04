@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dictionary } from "@/lib/dictionaries";
-import { Plug, Rocket, SlidersHorizontal, CheckCircle2, ArrowRight, Zap } from "lucide-react";
+import { Plug, Rocket, SlidersHorizontal, CheckCircle2, ArrowRight, Zap, MessageCircle } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 
 export default function HowItWorks({ dict }: { dict: Dictionary }) {
@@ -198,7 +198,7 @@ export default function HowItWorks({ dict }: { dict: Dictionary }) {
               </div>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex flex-wrap justify-center gap-4">
               <a
                 href="#final-cta"
                 className="btn-liquid inline-flex items-center gap-2 px-10 py-4 text-white font-semibold"
@@ -206,6 +206,14 @@ export default function HowItWorks({ dict }: { dict: Dictionary }) {
                 {dict.hero.cta}
                 <ArrowRight size={18} strokeWidth={2} />
               </a>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
+                className="btn-liquid-ghost inline-flex items-center gap-2 px-8 py-4 font-semibold text-sm"
+              >
+                <MessageCircle size={18} strokeWidth={2} />
+                Chat with us
+              </button>
             </div>
           </div>
         </div>

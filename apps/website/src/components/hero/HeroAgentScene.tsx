@@ -116,7 +116,8 @@ function CallerIcon({ x, y, state }: { x: number; y: number; state: CallState })
         className={isCalling ? "agent-caller-ring" : ""}
         style={{ transformOrigin: "0px 0px" }}
       />
-      <circle cx="0" cy="0" r="24" fill="rgba(255,255,255,0.8)" stroke="rgba(31,122,140,0.28)" strokeWidth="1.2" />
+      <circle cx="0" cy="0" r="24" fill="url(#glossyNodeFill)" stroke="rgba(31,122,140,0.28)" strokeWidth="1.2" filter="url(#nodeGlow)" />
+      <ellipse cx="0" cy="-8" rx="16" ry="10" fill="rgba(255,255,255,0.25)" style={{ pointerEvents: "none" }} />
       <g transform="translate(-10, -10) scale(0.85)">
         <path
           d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"
@@ -368,10 +369,15 @@ function AgenticCore({ isActive, activePhase }: { isActive: boolean; activePhase
         </>
       )}
 
-      <g className={isActive ? "hero-agent-core-breathe" : ""}>
+      <g className={isActive ? "hero-agent-core-breathe" : ""} filter="url(#iconGlow)">
         <rect
           x="-18" y="-18" width="36" height="36" rx="10"
-          fill="rgba(31,122,140,0.95)" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5"
+          fill="url(#glossyIconFill)" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5"
+        />
+        <rect
+          x="-18" y="-18" width="36" height="18" rx="10"
+          fill="url(#glossyHighlight)"
+          style={{ pointerEvents: "none" }}
         />
         <DynamicAgentIcon phase={activePhase} />
       </g>
@@ -385,10 +391,16 @@ function AgenticCore({ isActive, activePhase }: { isActive: boolean; activePhase
             style={{ animationDelay: node.delay }}
           />
           <circle
-            cx="0" cy="0" r="5"
-            fill="rgba(255,255,255,0.95)" stroke="rgba(31,122,140,0.6)" strokeWidth="1.5"
+            cx="0" cy="0" r="6"
+            fill="url(#glossyNodeFill)" stroke="rgba(31,122,140,0.5)" strokeWidth="1.2"
             className={isActive ? "hero-agent-node-pulse" : ""}
             style={{ animationDelay: node.delay }}
+            filter="url(#nodeGlow)"
+          />
+          <circle
+            cx="0" cy="-1.5" r="3"
+            fill="rgba(255,255,255,0.4)"
+            style={{ pointerEvents: "none" }}
           />
         </g>
       ))}
@@ -435,6 +447,26 @@ export default function HeroAgentScene() {
             <stop offset="55%" stopColor="#4ea8b8" />
             <stop offset="100%" stopColor="#1F7A8C" />
           </radialGradient>
+          <linearGradient id="glossyIconFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f0c878" />
+            <stop offset="40%" stopColor="#e4b980" />
+            <stop offset="100%" stopColor="#c99a56" />
+          </linearGradient>
+          <linearGradient id="glossyHighlight" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
+            <stop offset="50%" stopColor="rgba(255,255,255,0.08)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+          </linearGradient>
+          <linearGradient id="glossyNodeFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(255,255,255,1)" />
+            <stop offset="100%" stopColor="rgba(230,245,242,1)" />
+          </linearGradient>
+          <filter id="iconGlow">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="rgba(31,122,140,0.35)" />
+          </filter>
+          <filter id="nodeGlow">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(31,122,140,0.25)" />
+          </filter>
         </defs>
 
         {/* Top-Center Agent */}
