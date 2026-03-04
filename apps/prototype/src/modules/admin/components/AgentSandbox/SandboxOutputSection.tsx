@@ -10,6 +10,7 @@ interface SandboxOutputSectionProps {
   result: SimulatedOutcome | null;
 }
 
+/** Renders sandbox simulation outcome, confidence, and extracted entities. */
 export function SandboxOutputSection({ loading, result }: SandboxOutputSectionProps) {
   return (
     <div className="rounded-[var(--radius-card)] card-glass p-6 space-y-4">
@@ -46,7 +47,7 @@ export function SandboxOutputSection({ loading, result }: SandboxOutputSectionPr
             <div className="flex flex-wrap gap-2">
               {result.entities.map((e, i) => (
                 <span
-                  key={i}
+                  key={`${e.type}-${e.value}-${i}`}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-hover)] text-sm"
                 >
                   <span className="text-[var(--text-muted)]">{e.type}:</span>

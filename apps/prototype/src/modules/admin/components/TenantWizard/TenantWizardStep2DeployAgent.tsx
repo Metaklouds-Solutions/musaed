@@ -21,6 +21,7 @@ interface TenantWizardStep2DeployAgentProps {
   isDeploying?: boolean;
 }
 
+/** Renders platform-agent chooser and deploy/skip actions for wizard step two. */
 export function TenantWizardStep2DeployAgent({
   agents,
   selectedId,

@@ -15,6 +15,7 @@ import type { StaffRow } from '../../../shared/types';
 
 const getStaffKey = (s: StaffRow) => `${s.userId}::${s.tenantId}`;
 
+/** Renders admin staff management with filters, bulk archive, and CSV actions. */
 export function AdminStaffPage() {
   const {
     staff,

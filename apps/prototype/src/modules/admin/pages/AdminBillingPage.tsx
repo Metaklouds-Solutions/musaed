@@ -2,10 +2,9 @@
  * Admin billing page. Cross-tenant plans, usage, and cost view.
  */
 
-import { useMemo, useState } from 'react';
 import { PageHeader, TableFilters, Button } from '../../../shared/ui';
 import { BillingTenantPlans } from '../components/BillingTenantPlans';
-import { adminAdapter } from '../../../adapters';
+import { useAdminBilling } from '../hooks';
 
 function formatCurrency(n: number): string {
   return new Intl.NumberFormat(undefined, {
@@ -15,20 +14,9 @@ function formatCurrency(n: number): string {
   }).format(n);
 }
 
+/** Renders cross-tenant billing overview with totals and tenant-level plan rows. */
 export function AdminBillingPage() {
-  const allRows = useMemo(() => adminAdapter.getBillingOverview(), []);
-  const [tenantFilter, setTenantFilter] = useState<string | null>(null);
-
-  const rows = useMemo(() => {
-    if (!tenantFilter) return allRows;
-    return allRows.filter((r) => r.tenantId === tenantFilter);
-  }, [allRows, tenantFilter]);
-
-  const totals = useMemo(() => {
-    const totalMrr = rows.reduce((s, r) => s + r.mrr, 0);
-    const totalUsageCost = rows.reduce((s, r) => s + r.usageCostUsd, 0);
-    return { totalMrr, totalUsageCost };
-  }, [rows]);
+  const { allRows, rows, totals, tenantFilter, setTenantFilter } = useAdminBilling();
 
   return (
     <div className="space-y-6">

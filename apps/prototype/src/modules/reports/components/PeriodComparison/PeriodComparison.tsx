@@ -37,6 +37,7 @@ const metricConfig: Array<{
   { key: 'avgDurationSec', label: 'Avg duration', format: formatDuration, higherIsBetter: false },
 ];
 
+/** Renders current-vs-previous period KPI deltas with directional indicators. */
 export function PeriodComparison({ current, previous, label }: PeriodComparisonProps) {
   return (
     <motion.div

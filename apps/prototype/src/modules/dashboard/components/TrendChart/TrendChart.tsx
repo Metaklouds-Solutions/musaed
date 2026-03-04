@@ -18,6 +18,7 @@ function formatShortDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** Renders a 7-point bookings trend bar chart with keyboard-accessible tooltips. */
 export function TrendChart({ points }: TrendChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 

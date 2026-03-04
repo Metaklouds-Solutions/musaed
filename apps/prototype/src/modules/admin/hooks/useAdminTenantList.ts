@@ -12,6 +12,7 @@ export interface TenantListFilters {
   search?: string;
 }
 
+/** Returns admin tenant list rows and filter option metadata for tenants table. */
 export function useAdminTenantList(
   refreshKey: number,
   filters: TenantListFilters

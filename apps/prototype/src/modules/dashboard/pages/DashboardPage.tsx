@@ -37,6 +37,7 @@ const DEFAULT_RANGE = (() => {
   start.setDate(start.getDate() - 6);
   return { start, end };
 })();
+const SKELETON_CARD_KEYS = ['metrics-1', 'metrics-2', 'metrics-3', 'metrics-4'] as const;
 
 /** Tenant dashboard: KPIs, agent status, recent calls, staff, support, ROI. */
 export function DashboardPage() {
@@ -72,8 +73,8 @@ export function DashboardPage() {
       <div className="space-y-6">
         <PageHeader title="Dashboard" description="Clinic command center." />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <SkeletonCard key={i} lines={2} />
+          {SKELETON_CARD_KEYS.map((key) => (
+            <SkeletonCard key={key} lines={2} />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

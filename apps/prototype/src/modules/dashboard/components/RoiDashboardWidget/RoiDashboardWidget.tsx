@@ -21,6 +21,7 @@ const chartConfig = {
   costSaved: { label: 'Cost Saved', color: 'var(--ds-primary)' },
 } satisfies Record<string, { label: string; color: string }>;
 
+/** Renders ROI summary cards and a pie breakdown for selected date range data. */
 export function RoiDashboardWidget({ roi }: RoiDashboardWidgetProps) {
   if (!roi || (roi.revenue === 0 && roi.aiCost === 0 && roi.costSaved === 0)) {
     return (
@@ -88,7 +89,7 @@ export function RoiDashboardWidget({ roi }: RoiDashboardWidgetProps) {
                 outerRadius={80}
                 paddingAngle={2}
               >
-                {pieData.map((entry, i) => (
+                {pieData.map((entry) => (
                   <Cell key={entry.name} fill={entry.fill} />
                 ))}
               </Pie>

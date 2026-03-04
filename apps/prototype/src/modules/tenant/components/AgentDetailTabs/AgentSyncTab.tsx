@@ -11,6 +11,7 @@ interface AgentSyncTabProps {
   syncInfo: AgentSyncInfo;
 }
 
+/** Renders webhook endpoint health and synchronization metadata for the agent. */
 export function AgentSyncTab({ syncInfo }: AgentSyncTabProps) {
   return (
     <motion.div

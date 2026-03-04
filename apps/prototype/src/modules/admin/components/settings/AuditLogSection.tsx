@@ -34,6 +34,7 @@ function formatDate(iso: string): string {
   });
 }
 
+/** Renders recent admin audit entries with time, action, and metadata fields. */
 export function AuditLogSection() {
   const { entries, tenantNames } = useAdminAuditLog();
 

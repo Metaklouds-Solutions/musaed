@@ -8,10 +8,9 @@ import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown, Tab
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useCallsList } from '../hooks';
+import { useCallsList, useCallsExport } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
 import { OutcomeBreakdown } from '../../reports/components/OutcomeBreakdown';
-import { exportAdapter } from '../../../adapters';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
 
@@ -34,6 +33,7 @@ export function CallsPage() {
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
+  const { exportCallsCsv } = useCallsExport();
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
 
   const currentFilters = useMemo(
@@ -49,9 +49,12 @@ export function CallsPage() {
     const outcome = typeof f.outcome === 'string' ? f.outcome : null;
     setOutcomeFilter(outcome || null);
     if (typeof f.dateRangeStart === 'string' && typeof f.dateRangeEnd === 'string') {
+      const nextStart = new Date(f.dateRangeStart);
+      const nextEnd = new Date(f.dateRangeEnd);
+      if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) return;
       setDateRange({
-        start: new Date(f.dateRangeStart),
-        end: new Date(f.dateRangeEnd),
+        start: nextStart,
+        end: nextEnd,
       });
     }
   }, []);
@@ -84,16 +87,13 @@ export function CallsPage() {
   }, [calls]);
 
   const handleExport = useCallback(() => {
-    const rows = filteredCalls.map((c) => ({
-      Date: new Date(c.createdAt).toLocaleDateString(),
-      Customer: customerMap.get(c.customerId) ?? c.customerId,
-      Duration: `${Math.floor(c.duration / 60)}:${(c.duration % 60).toString().padStart(2, '0')}`,
-      Sentiment: c.sentimentScore.toFixed(2),
-      Outcome: getOutcome(c),
-    }));
-    exportAdapter.exportCsv(rows, `calls-${new Date().toISOString().slice(0, 10)}.csv`);
+    exportCallsCsv(
+      filteredCalls,
+      (id) => customerMap.get(id) ?? id,
+      `calls-${new Date().toISOString().slice(0, 10)}.csv`
+    );
     toast.success('Calls exported');
-  }, [filteredCalls, customerMap]);
+  }, [filteredCalls, customerMap, exportCallsCsv]);
 
   if (!user) {
     return (

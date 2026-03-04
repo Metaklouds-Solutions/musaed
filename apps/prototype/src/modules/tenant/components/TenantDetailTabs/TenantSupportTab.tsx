@@ -11,6 +11,7 @@ interface TenantSupportTabProps {
   tickets: TenantTicketRow[];
 }
 
+/** Renders tenant support tickets with priority and lifecycle status. */
 export function TenantSupportTab({ tickets }: TenantSupportTabProps) {
   if (tickets.length === 0) {
     return (

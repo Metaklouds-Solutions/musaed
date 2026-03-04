@@ -7,6 +7,7 @@ import { PageHeader, Button } from '../../../shared/ui';
 import { RunEventsViewer } from '../components/RunEventsViewer';
 import { useAdminRunDetail } from '../hooks';
 
+/** Renders run-level debug detail with event stream and quick navigation actions. */
 export function AdminRunDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

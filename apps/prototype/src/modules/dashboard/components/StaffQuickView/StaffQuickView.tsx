@@ -11,6 +11,7 @@ interface StaffQuickViewProps {
   counts: TenantStaffCounts;
 }
 
+/** Renders a compact staff-count snapshot grouped by key clinic roles. */
 export function StaffQuickView({ counts }: StaffQuickViewProps) {
   return (
     <motion.section

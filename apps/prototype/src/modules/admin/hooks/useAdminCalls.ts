@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { tenantsAdapter } from '../../../adapters';
+import { useMemo, useCallback } from 'react';
+import { tenantsAdapter, exportAdapter } from '../../../adapters';
 
 /** Admin calls helpers hook for tenant-name lookup and filter option generation. */
 export function useAdminCalls() {
@@ -9,5 +9,9 @@ export function useAdminCalls() {
     return m;
   }, []);
 
-  return { tenantMap };
+  const exportCallsCsv = useCallback((rows: Record<string, string>[], fileName: string) => {
+    exportAdapter.exportCsv(rows, fileName);
+  }, []);
+
+  return { tenantMap, exportCallsCsv };
 }

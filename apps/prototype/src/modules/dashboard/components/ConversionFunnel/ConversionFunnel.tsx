@@ -11,6 +11,7 @@ interface ConversionFunnelProps {
   stages: FunnelStage[];
 }
 
+/** Renders funnel stage counts with proportional bars and drop-off context. */
 export function ConversionFunnel({ stages }: ConversionFunnelProps) {
   if (stages.length === 0) {
     return (

@@ -59,6 +59,7 @@ function ConfidenceGauge({ value }: { value: number }) {
   );
 }
 
+/** Renders AI confidence and escalation signals with an accessible tooltip. */
 export function AgentIntelligence({ metrics }: AgentIntelligenceProps) {
   const m = metrics ?? EMPTY_AI_METRICS;
   const [escalationHovered, setEscalationHovered] = useState(false);

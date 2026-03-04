@@ -7,7 +7,6 @@ import { PageHeader, EmptyState, TableFilters, Button } from '../../../shared/ui
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList } from '../../calls/hooks';
 import { CallsTable } from '../../calls/components/CallsTable';
-import { exportAdapter } from '../../../adapters';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
 import { useAdminCalls } from '../hooks';
@@ -31,13 +30,14 @@ function formatDate(iso: string): string {
   return parsed.toLocaleDateString();
 }
 
+/** Renders cross-tenant admin calls list with export and outcome filters. */
 export function AdminCallsPage() {
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
 
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
-  const { tenantMap } = useAdminCalls();
+  const { tenantMap, exportCallsCsv } = useAdminCalls();
 
   const filteredCalls = useMemo(() => {
     if (!outcomeFilter) return calls;
@@ -53,9 +53,9 @@ export function AdminCallsPage() {
       Sentiment: c.sentimentScore.toFixed(2),
       Outcome: getOutcome(c),
     }));
-    exportAdapter.exportCsv(rows, `admin-calls-${new Date().toISOString().slice(0, 10)}.csv`);
+    exportCallsCsv(rows, `admin-calls-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success('Calls exported');
-  }, [filteredCalls, customerMap, tenantMap]);
+  }, [filteredCalls, customerMap, tenantMap, exportCallsCsv]);
 
   if (!user || user.role !== 'ADMIN') {
     return (

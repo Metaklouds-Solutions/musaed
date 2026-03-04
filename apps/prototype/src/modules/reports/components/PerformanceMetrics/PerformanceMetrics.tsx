@@ -28,6 +28,7 @@ const metricConfig: Array<{
   { key: 'sentimentAvg', label: 'Sentiment avg', format: (v) => v.toFixed(2) },
 ];
 
+/** Renders top-level performance KPIs for calls, conversion, and sentiment. */
 export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
   return (
     <div className="rounded-[var(--radius-card)] card-glass p-5">

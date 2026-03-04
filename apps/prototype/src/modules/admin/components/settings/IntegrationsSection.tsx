@@ -8,6 +8,7 @@ interface IntegrationsSectionProps {
   integrations: AdminIntegration[];
 }
 
+/** Renders integration status cards for Retell, webhooks, and provider links. */
 export function IntegrationsSection({ integrations }: IntegrationsSectionProps) {
   return (
     <div className="rounded-[var(--radius-card)] card-glass p-6 space-y-4">

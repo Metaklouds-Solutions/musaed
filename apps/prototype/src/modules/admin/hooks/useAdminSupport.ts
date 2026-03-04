@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { supportAdapter, exportAdapter, auditAdapter, tenantsAdapter } from '../../../adapters';
 import type { SupportTicket } from '../../../shared/types/entities';
 
+/** Returns admin support inbox data, filters, and ticket workflow actions. */
 export function useAdminSupport() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [tenantFilter, setTenantFilter] = useState<string | ''>('');

@@ -20,6 +20,7 @@ function formatRelativeTime(iso: string): string {
   return `${Math.floor(sec / 86400)} days ago`;
 }
 
+/** Renders assigned agent status, voice profile, and last sync age. */
 export function AgentStatusCard({ agent }: AgentStatusCardProps) {
   if (!agent) {
     return (

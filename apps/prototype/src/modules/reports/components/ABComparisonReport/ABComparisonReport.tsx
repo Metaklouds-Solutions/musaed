@@ -16,6 +16,7 @@ function formatDuration(sec: number): string {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
+/** Renders per-version A/B outcomes comparison rows for agent experiments. */
 export function ABComparisonReport({ rows }: ABComparisonReportProps) {
   if (rows.length === 0) return null;
 

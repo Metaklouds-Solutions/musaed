@@ -9,6 +9,7 @@ interface AudioMockPlayerProps {
   durationSeconds: number;
 }
 
+/** Renders a mock call-audio control with play state and progress indicator. */
 export function AudioMockPlayer({ durationSeconds }: AudioMockPlayerProps) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);

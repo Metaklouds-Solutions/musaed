@@ -10,6 +10,7 @@ interface TenantKpiCardProps {
   trend?: 'up' | 'down' | 'neutral';
 }
 
+/** Renders a single tenant KPI tile using the shared enhanced stat-card shell. */
 export function TenantKpiCard({ label, value, trend }: TenantKpiCardProps) {
   return <StatCardEnhanced label={label} value={value} trend={trend} />;
 }

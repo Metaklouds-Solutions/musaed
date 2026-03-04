@@ -6,9 +6,8 @@
 import { useMemo, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { EmptyState, Button } from '../../../shared/ui';
-import { useCallDetail } from '../hooks';
+import { useCallDetail, useCallRunEvents } from '../hooks';
 import { usePermissions } from '../../../shared/hooks/usePermissions';
-import { runsAdapter } from '../../../adapters';
 import { CallMetaPanel } from '../components/CallMetaPanel';
 import { TranscriptViewer } from '../components/TranscriptViewer';
 import { CallReplayViewer } from '../components/CallReplayViewer';
@@ -18,6 +17,7 @@ import { RunEventsViewer } from '../../admin/components/RunEventsViewer';
 import { Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/** Renders detailed call audit view with transcript modes and optional run events. */
 export function CallDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { pathname } = useLocation();
@@ -25,17 +25,7 @@ export function CallDetailPage() {
   const isAdminContext = pathname.startsWith('/admin');
   const callsPath = isAdminContext ? '/admin/calls' : '/calls';
   const { canAccessRunEvents } = usePermissions();
-  const runEvents = useMemo(
-    () =>
-      call && canAccessRunEvents
-        ? runsAdapter.getRunByCallId(call.id, user?.tenantId)
-        : null,
-    [call, user?.tenantId, canAccessRunEvents]
-  );
-  const events = useMemo(
-    () => (runEvents ? runsAdapter.getRunEvents(runEvents.id) : []),
-    [runEvents]
-  );
+  const { events } = useCallRunEvents(call?.id, user?.tenantId, canAccessRunEvents);
   const [transcriptMode, setTranscriptMode] = useState<'replay' | 'full'>('replay');
 
   if (!user) {
@@ -74,7 +64,11 @@ export function CallDetailPage() {
             Call detail
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            {new Date(call.createdAt).toLocaleString()}
+            {(() => {
+              const parsed = new Date(call.createdAt);
+              if (Number.isNaN(parsed.getTime())) return '—';
+              return parsed.toLocaleString();
+            })()}
           </p>
         </div>
         <Link to={callsPath}>

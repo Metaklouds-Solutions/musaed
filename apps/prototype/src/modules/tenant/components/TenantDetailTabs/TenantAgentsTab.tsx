@@ -14,6 +14,7 @@ interface TenantAgentsTabProps {
 
 const channelIcons: Record<string, typeof Phone> = { voice: Phone, chat: MessageSquare, email: Mail };
 
+/** Renders tenant-assigned agents with channel/status and deep-link actions. */
 export function TenantAgentsTab({ agents }: TenantAgentsTabProps) {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();

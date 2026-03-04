@@ -10,6 +10,7 @@ interface RetentionSectionProps {
   onDaysChange?: (id: string, days: number) => void;
 }
 
+/** Renders retention policy toggles and editable day windows per data domain. */
 export function RetentionSection({
   policies,
   onToggle,

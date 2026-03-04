@@ -14,6 +14,7 @@ interface AgentOverviewTabProps {
   agent: AgentDetailFull;
 }
 
+/** Renders core agent identity, sync state, and channel configuration details. */
 export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
   const Icon = channelIcons[agent.channel] ?? Bot;
 

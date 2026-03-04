@@ -9,6 +9,7 @@ interface SentimentBadgeProps {
   className?: string;
 }
 
+/** Renders a sentiment badge from a normalized score between 0 and 1. */
 export function SentimentBadge({ score, className }: SentimentBadgeProps) {
   const pct = Math.round(score * 100);
   const tier =

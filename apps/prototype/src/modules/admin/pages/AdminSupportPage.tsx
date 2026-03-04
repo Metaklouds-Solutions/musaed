@@ -51,6 +51,7 @@ function formatDate(iso: string): string {
   return parsed.toLocaleDateString();
 }
 
+/** Renders admin support inbox with filters, assignment, and ticket thread view. */
 export function AdminSupportPage() {
   const ready = useDelayedReady();
   const navigate = useNavigate();

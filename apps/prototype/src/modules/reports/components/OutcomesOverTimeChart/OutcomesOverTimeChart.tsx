@@ -13,9 +13,11 @@ interface OutcomesOverTimeChartProps {
 
 function formatShortDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** Renders daily booked/escalated/failed stacked bars for recent trend window. */
 export function OutcomesOverTimeChart({ data }: OutcomesOverTimeChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const maxTotal = Math.max(...data.map((d) => d.total), 1);

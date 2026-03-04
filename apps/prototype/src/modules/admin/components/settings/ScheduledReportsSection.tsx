@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { ScheduledReportConfig } from '../../../../adapters';
+import type { ScheduledReportConfig } from '../../../../adapters/local/reports.adapter';
 import { Mail, Plus, Trash2 } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
@@ -21,6 +21,7 @@ interface ScheduledReportsSectionProps {
   onChange: (config: ScheduledReportConfig) => void;
 }
 
+/** Renders scheduled-report preferences for cadence, recipients, and delivery day. */
 export function ScheduledReportsSection({ config, onChange }: ScheduledReportsSectionProps) {
   const [newEmail, setNewEmail] = useState('');
 
