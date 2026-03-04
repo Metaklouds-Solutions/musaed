@@ -1,0 +1,165 @@
+{
+  "nav": {
+    "cta": "Book a Free Demo"
+  },
+  "hero": {
+    "headline": "Your Clinic Never Misses a Call Again.",
+    "subheadline": "Mosaed is an AI receptionist that answers patient calls 24/7 — booking appointments, answering questions, and reducing no-shows. Even when your front desk is closed.",
+    "cta": "Book a Free Demo",
+    "anchor": "See How It Works",
+    "trustBadge": "Trusted by clinics in Riyadh, Jeddah, and Dammam",
+    "liveCard": {
+      "title": "Live Dashboard Preview",
+      "status": "Call in progress... Booking appointment for Dr. Ahmed, 3:00 PM Thursday",
+      "message": "Mosaed confirms availability, updates the schedule, and sends instant reminders.",
+      "metric1": "new appointments this month",
+      "metric2": "calls answered after hours",
+      "metric3": "missed calls"
+    },
+    "ticker": {
+      "item1": "47 appointments booked this week via Mosaed",
+      "item2": "100% of after-hours calls answered",
+      "item3": "35% reduction in no-shows",
+      "item4": "Clinics recover 2,000+ SAR in patient value"
+    }
+  },
+  "problem": {
+    "heading": "Every Missed Call Is a Lost Patient.",
+    "card1": {
+      "title": "After Hours, Nobody Answers",
+      "body": "40% of patient calls come outside working hours. Your clinic is closed. Your competitors are not."
+    },
+    "card2": {
+      "title": "Your Receptionist Is Overwhelmed",
+      "body": "During peak hours, your front desk juggles walk-ins, paperwork, and a ringing phone. Calls go to voicemail. Patients hang up."
+    },
+    "card3": {
+      "title": "No-Shows Cost You Revenue",
+      "body": "Without automated reminders and confirmations, 15-25% of booked appointments never show up. That is lost chair time and lost revenue."
+    }
+  },
+  "solution": {
+    "heading": "Meet Mosaed. Your Always-On Receptionist.",
+    "body": "Mosaed is an AI-powered voice agent built specifically for clinics in Saudi Arabia. It speaks Arabic naturally, understands medical context, and handles patient calls with the professionalism your clinic demands — 24 hours a day, 7 days a week."
+  },
+  "howItWorks": {
+    "heading": "Up and Running in 3 Steps.",
+    "step1": {
+      "title": "Connect",
+      "body": "We integrate Mosaed with your clinic's phone line and scheduling system. No hardware. No IT team needed."
+    },
+    "step2": {
+      "title": "Customize",
+      "body": "Set your clinic's working hours, services, doctors, and booking rules. Mosaed learns your clinic's specific workflow."
+    },
+    "step3": {
+      "title": "Go Live",
+      "body": "Mosaed starts answering calls immediately. You monitor everything from a simple dashboard."
+    }
+  },
+  "features": {
+    "heading": "Built for Clinics. Not Generic AI.",
+    "feature1": {
+      "title": "24/7 Call Answering",
+      "body": "Patients call at 11 PM? During Friday prayer? On Eid? Mosaed answers every single call."
+    },
+    "feature2": {
+      "title": "Appointment Booking & Rescheduling",
+      "body": "Mosaed checks real-time availability and books directly into your scheduling system. No double bookings. No back-and-forth."
+    },
+    "feature3": {
+      "title": "Automated Reminders",
+      "body": "SMS and WhatsApp reminders reduce no-shows by up to 35%. Patients confirm, cancel, or reschedule — all handled automatically."
+    },
+    "feature4": {
+      "title": "Natural Arabic Conversation",
+      "body": "Mosaed speaks Saudi Arabic fluently. Patients feel like they are talking to a real receptionist, not a machine."
+    },
+    "feature5": {
+      "title": "Caller Insights Dashboard",
+      "body": "See every call, every booking, every missed opportunity. Know exactly what is happening at your front desk."
+    },
+    "feature6": {
+      "title": "Healthcare Data Compliance",
+      "body": "Patient data stays in the Kingdom. Built with healthcare data privacy standards from day one."
+    }
+  },
+  "roi": {
+    "heading": "The Numbers Speak.",
+    "stat1": { "value": "100%", "label": "Calls answered after hours" },
+    "stat2": { "value": "Up to 35%", "label": "Reduction in no-shows" },
+    "stat3": { "value": "Less than 48 hours", "label": "Average setup time" },
+    "stat4": { "value": "94%", "label": "Patient satisfaction rate" },
+    "closing": "One missed call could cost your clinic 2,000+ SAR in lifetime patient value. How many are you missing today?"
+  },
+  "socialProof": {
+    "heading": "Trusted by Clinics Across the Kingdom.",
+    "testimonial1": {
+      "quote": "We were losing 30+ calls a week after hours. In the first month with Mosaed, we booked 47 new appointments from those calls alone.",
+      "author": "Dr. Fahad Al-Otaibi",
+      "role": "Dental Care Clinic, Riyadh"
+    },
+    "testimonial2": {
+      "quote": "Our receptionist used to be overwhelmed. Now Mosaed handles the routine calls and she focuses on patients in the clinic. It changed our workflow completely.",
+      "author": "Operations Manager",
+      "role": "Family Medical Center, Jeddah"
+    },
+    "testimonial3": {
+      "quote": "Setup took one afternoon. I was skeptical about AI, but our patients genuinely think they are speaking to a person.",
+      "author": "Dr. Sara Al-Harbi",
+      "role": "Pediatric Dental Clinic, Dammam"
+    },
+    "trustBadge": "Proudly built for Saudi clinics"
+  },
+  "faq": {
+    "heading": "Frequently Asked Questions",
+    "q1": {
+      "question": "Will patients know they are speaking to an AI?",
+      "answer": "Mosaed uses natural Arabic conversation. Most patients will not notice. However, we always recommend transparency — a brief introduction like \"You are speaking with Mosaed, the clinic's automated assistant\" builds trust."
+    },
+    "q2": {
+      "question": "Does it work with my existing phone number?",
+      "answer": "Yes. Mosaed connects to your current clinic number through call forwarding. No number change needed."
+    },
+    "q3": {
+      "question": "What scheduling systems do you support?",
+      "answer": "We integrate with most major clinic management systems used in Saudi Arabia. During setup, our team ensures compatibility with your existing software."
+    },
+    "q4": {
+      "question": "How long does setup take?",
+      "answer": "Most clinics go live within 48 hours. No technical expertise required from your side."
+    },
+    "q5": {
+      "question": "What happens if Mosaed cannot handle a call?",
+      "answer": "If a call requires human attention — such as an emergency or a complex medical question — Mosaed transfers the call to your staff or takes a message for immediate callback."
+    },
+    "q6": {
+      "question": "How much does it cost?",
+      "answer": "We offer plans based on clinic size and call volume. Book a free demo and we will provide a custom quote based on your needs."
+    }
+  },
+  "finalCta": {
+    "headline": "Stop Losing Patients to Missed Calls.",
+    "subheadline": "Book a free demo today. See exactly how Mosaed works for your clinic in under 15 minutes.",
+    "cta": "Book a Free Demo",
+    "whatsapp": "Or message us on WhatsApp",
+    "form": {
+      "name": "Your Name",
+      "clinic": "Clinic Name",
+      "phone": "Phone Number",
+      "city": "City",
+      "submit": "Request Demo"
+    }
+  },
+  "footer": {
+    "tagline": "Your clinic's AI receptionist.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "© 2026 Mosaed. All rights reserved.",
+    "cr": "Saudi Commercial Registration"
+  },
+  "languageToggle": {
+    "ar": "عربي",
+    "en": "English"
+  }
+}
