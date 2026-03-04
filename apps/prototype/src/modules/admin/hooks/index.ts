@@ -10,3 +10,5 @@ export { useAdminAuditLog } from './useAdminAuditLog';
 export { useAdminWebhookEvents } from './useAdminWebhookEvents';
 export { useTenantComparison } from './useTenantComparison';
 export { useAdminRunDetail } from './useAdminRunDetail';
+export { useAdminSkills } from './useAdminSkills';
+export { useAdminTools } from './useAdminTools';

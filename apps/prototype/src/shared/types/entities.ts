@@ -140,6 +140,74 @@ export interface RunEvent {
   timestamp: string;
 }
 
+/** Tool category (matches ERD). */
+export type ToolCategory =
+  | 'booking'
+  | 'patient'
+  | 'communication'
+  | 'clinic_info'
+  | 'escalation'
+  | 'custom';
+
+/** Skill category (matches ERD). */
+export type SkillCategory = 'core' | 'specialty' | 'custom';
+
+/** Retell sync status for skill definitions. */
+export type RetellSyncStatus = 'draft' | 'synced' | 'out_of_sync';
+
+/** Tool definition (definition-driven, admin-editable). */
+export interface ToolDefinition {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  category: ToolCategory;
+  executionType: 'internal' | 'external';
+  handlerKey?: string;
+  endpointUrl?: string;
+  httpMethod?: string;
+  parametersSchema: Record<string, unknown>;
+  responseMapping?: Record<string, unknown>;
+  timeoutMs: number;
+  retryOnFail: boolean;
+  scope: 'platform' | 'tenant';
+  tenantId?: string;
+  isActive: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Skill definition (definition-driven, admin-editable). */
+export interface SkillDefinition {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  category: SkillCategory;
+  flowDefinition: Record<string, unknown>;
+  entryConditions?: string;
+  retellComponentId?: string;
+  retellSyncStatus: RetellSyncStatus;
+  lastSyncedAt?: string;
+  scope: 'platform' | 'tenant';
+  tenantId?: string;
+  isActive: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Link between skill and tool (N:M). */
+export interface SkillToolLink {
+  id: string;
+  skillId: string;
+  toolId: string;
+  nodeReference?: string;
+  isRequired: boolean;
+  createdAt: string;
+}
+
 /** Global skill (can be enabled per agent). */
 export interface Skill {
   id: string;

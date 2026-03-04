@@ -1,0 +1,137 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+      - uat
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GCP_REGION: us-central1
+  GCP_ARTIFACT_REGISTRY: us-central1-docker.pkg.dev
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      prototype: ${{ steps.changes.outputs.prototype }}
+      website: ${{ steps.changes.outputs.website }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            prototype:
+              - 'apps/prototype/**'
+              - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+            website:
+              - 'apps/website/**'
+              - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+
+  deploy-prototype:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.prototype == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY }} --quiet
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "env=prod" >> $GITHUB_OUTPUT
+          else
+            echo "env=uat" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push image
+        working-directory: .
+        run: |
+          IMAGE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/musaed/prototype:${{ steps.env.outputs.env }}-${{ github.sha }}"
+          docker build -f apps/prototype/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy musaed-prototype-${{ steps.env.outputs.env }} \
+            --image ${{ env.IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated
+
+  deploy-website:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.website == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY }} --quiet
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "env=prod" >> $GITHUB_OUTPUT
+          else
+            echo "env=uat" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push image
+        working-directory: .
+        run: |
+          IMAGE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/musaed/website:${{ steps.env.outputs.env }}-${{ github.sha }}"
+          docker build -f apps/website/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy musaed-website-${{ steps.env.outputs.env }} \
+            --image ${{ env.IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated

@@ -31,6 +31,8 @@ import * as localStaffProfile from './local/staffProfile.adapter';
 import * as localSoftDelete from './local/softDelete.adapter';
 import * as localMaintenance from './local/maintenance.adapter';
 import * as localGdpr from './local/gdpr.adapter';
+import * as localTools from './local/tools.adapter';
+import * as localSkills from './local/skills.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
 import * as apiCalls from './api/calls.adapter';
@@ -70,6 +72,8 @@ export const softDeleteAdapter = localSoftDelete.softDeleteAdapter;
 export const maintenanceAdapter = localMaintenance.maintenanceAdapter;
 export { MAINTENANCE_CHANGED } from './local/maintenance.adapter';
 export const gdprAdapter = localGdpr.gdprAdapter;
+export const toolsAdapter = localTools.toolsAdapter;
+export const skillsAdapter = localSkills.skillsAdapter;
 
 export type { DashboardMetrics, FunnelStage, TrendPoint } from '../shared/types';
 export type { AdminOverviewMetrics, PaymentFailure, UsageAnomaly, ChurnRisk } from '../shared/types';

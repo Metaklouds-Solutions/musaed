@@ -16,6 +16,12 @@ export type {
   RunEvent,
   Skill,
   Location,
+  ToolDefinition,
+  SkillDefinition,
+  SkillToolLink,
+  ToolCategory,
+  SkillCategory,
+  RetellSyncStatus,
 } from './entities';
 export type {
   DashboardMetrics,

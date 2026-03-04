@@ -18,6 +18,9 @@ import type {
   RunEvent,
   StaffProfile,
   Skill,
+  ToolDefinition,
+  SkillDefinition,
+  SkillToolLink,
 } from '../shared/types/entities';
 import type { TenantListRow, TenantDetailFull, AgentDetailFull } from '../shared/types/admin';
 
@@ -213,6 +216,48 @@ export const seedAgentSkills: { agentId: string; skillId: string; priority: numb
   { agentId: 'va_001', skillId: 'sk_004', priority: 3 },
   { agentId: 'va_002', skillId: 'sk_001', priority: 1 },
   { agentId: 'va_002', skillId: 'sk_004', priority: 2 },
+];
+
+const now = () => new Date().toISOString();
+
+/** Tool definitions (definition-driven, platform tools). */
+export const seedToolDefinitions: ToolDefinition[] = [
+  { id: 'td_001', name: 'check_availability', displayName: 'Check Appointment Availability', description: 'Query open slots by date, doctor, location', category: 'booking', executionType: 'internal', handlerKey: 'query_bookings', parametersSchema: { type: 'object', properties: { date: { type: 'string' }, doctorId: { type: 'string' }, locationId: { type: 'string' } } }, timeoutMs: 5000, retryOnFail: false, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_002', name: 'book_appointment', displayName: 'Book Appointment', description: 'Create a booking record for a patient', category: 'booking', executionType: 'internal', handlerKey: 'create_booking', parametersSchema: { type: 'object', properties: { patientId: { type: 'string' }, slot: { type: 'string' }, doctorId: { type: 'string' } } }, timeoutMs: 5000, retryOnFail: true, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_003', name: 'cancel_appointment', displayName: 'Cancel Appointment', description: 'Cancel an existing booking', category: 'booking', executionType: 'internal', handlerKey: 'cancel_booking', parametersSchema: { type: 'object', properties: { bookingId: { type: 'string' } } }, timeoutMs: 3000, retryOnFail: false, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_004', name: 'reschedule_appointment', displayName: 'Reschedule Appointment', description: 'Cancel old booking and create new one', category: 'booking', executionType: 'internal', handlerKey: 'reschedule_booking', parametersSchema: { type: 'object', properties: { bookingId: { type: 'string' }, newSlot: { type: 'string' } } }, timeoutMs: 5000, retryOnFail: true, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_005', name: 'get_patient_info', displayName: 'Get Patient Info', description: 'Look up patient by phone or name', category: 'patient', executionType: 'internal', handlerKey: 'lookup_patient', parametersSchema: { type: 'object', properties: { phone: { type: 'string' }, name: { type: 'string' } } }, timeoutMs: 3000, retryOnFail: false, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_006', name: 'register_patient', displayName: 'Register New Patient', description: 'Create new patient record', category: 'patient', executionType: 'internal', handlerKey: 'create_patient', parametersSchema: { type: 'object', properties: { name: { type: 'string' }, phone: { type: 'string' }, email: { type: 'string' } } }, timeoutMs: 3000, retryOnFail: false, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_007', name: 'get_business_hours', displayName: 'Get Business Hours', description: 'Return clinic operating hours', category: 'clinic_info', executionType: 'internal', handlerKey: 'get_business_hours', parametersSchema: { type: 'object' }, timeoutMs: 1000, retryOnFail: false, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_008', name: 'get_clinic_services', displayName: 'Get Clinic Services', description: 'Return services offered by the clinic', category: 'clinic_info', executionType: 'internal', handlerKey: 'get_services', parametersSchema: { type: 'object' }, timeoutMs: 1000, retryOnFail: false, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_009', name: 'transfer_to_human', displayName: 'Transfer to Human', description: 'Initiate call transfer to on-duty staff', category: 'escalation', executionType: 'internal', handlerKey: 'transfer_call', parametersSchema: { type: 'object', properties: { reason: { type: 'string' } } }, timeoutMs: 5000, retryOnFail: true, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_010', name: 'send_confirmation_sms', displayName: 'Send Confirmation SMS', description: 'Send booking confirmation via SMS', category: 'communication', executionType: 'internal', handlerKey: 'send_sms', parametersSchema: { type: 'object', properties: { phone: { type: 'string' }, message: { type: 'string' } } }, timeoutMs: 5000, retryOnFail: true, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'td_011', name: 'submit_support_request', displayName: 'Submit Support Request', description: 'Log complaint or issue as support ticket', category: 'custom', executionType: 'internal', handlerKey: 'create_ticket', parametersSchema: { type: 'object', properties: { subject: { type: 'string' }, message: { type: 'string' } } }, timeoutMs: 3000, retryOnFail: false, scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+];
+
+/** Skill definitions (definition-driven, platform skills). */
+export const seedSkillDefinitions: SkillDefinition[] = [
+  { id: 'sdef_001', name: 'appointment_booking', displayName: 'Appointment Booking', description: 'Full flow: ask date, check availability, patient picks slot, book, confirm', category: 'core', flowDefinition: { nodes: [], entry_prompt: 'Help the user book an appointment' }, entryConditions: 'patient mentions booking, appointment, schedule', retellSyncStatus: 'draft', scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'sdef_002', name: 'appointment_management', displayName: 'Appointment Management', description: 'Cancel, reschedule, or check status of existing appointment', category: 'core', flowDefinition: { nodes: [], entry_prompt: 'Help with cancelling or rescheduling' }, entryConditions: 'patient mentions cancel, reschedule, change appointment', retellSyncStatus: 'draft', scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'sdef_003', name: 'patient_identification', displayName: 'Patient Identification', description: 'Verify returning patient and pull up their record', category: 'core', flowDefinition: { nodes: [], entry_prompt: 'Verify patient identity' }, entryConditions: 'patient provides name or phone', retellSyncStatus: 'draft', scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'sdef_004', name: 'faq_clinic_info', displayName: 'FAQ / Clinic Info', description: 'Answer questions about hours, services, location, parking', category: 'core', flowDefinition: { nodes: [], entry_prompt: 'Provide clinic information' }, entryConditions: 'patient asks about hours, services, address', retellSyncStatus: 'draft', scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'sdef_005', name: 'human_escalation', displayName: 'Human Escalation', description: 'Detect frustration or complex question, transfer to human', category: 'core', flowDefinition: { nodes: [], entry_prompt: 'Transfer to staff when needed' }, entryConditions: 'patient requests human, says emergency, or expresses frustration', retellSyncStatus: 'draft', scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+  { id: 'sdef_006', name: 'complaint_support', displayName: 'Complaint / Support', description: 'Patient has an issue, log it as support ticket', category: 'specialty', flowDefinition: { nodes: [], entry_prompt: 'Record and escalate the complaint' }, entryConditions: 'patient mentions complaint, issue, problem', retellSyncStatus: 'draft', scope: 'platform', isActive: true, version: 1, createdAt: now(), updatedAt: now() },
+];
+
+/** Skill-to-tool links (N:M). */
+export const seedSkillToolLinks: SkillToolLink[] = [
+  { id: 'stl_001', skillId: 'sdef_001', toolId: 'td_001', nodeReference: 'check_slot', isRequired: true, createdAt: now() },
+  { id: 'stl_002', skillId: 'sdef_001', toolId: 'td_002', nodeReference: 'book_slot', isRequired: true, createdAt: now() },
+  { id: 'stl_003', skillId: 'sdef_001', toolId: 'td_010', nodeReference: 'confirm', isRequired: false, createdAt: now() },
+  { id: 'stl_004', skillId: 'sdef_002', toolId: 'td_003', nodeReference: 'cancel', isRequired: false, createdAt: now() },
+  { id: 'stl_005', skillId: 'sdef_002', toolId: 'td_004', nodeReference: 'reschedule', isRequired: false, createdAt: now() },
+  { id: 'stl_006', skillId: 'sdef_002', toolId: 'td_001', nodeReference: 'check_slot', isRequired: false, createdAt: now() },
+  { id: 'stl_007', skillId: 'sdef_003', toolId: 'td_005', nodeReference: 'lookup', isRequired: true, createdAt: now() },
+  { id: 'stl_008', skillId: 'sdef_004', toolId: 'td_007', nodeReference: 'hours', isRequired: false, createdAt: now() },
+  { id: 'stl_009', skillId: 'sdef_004', toolId: 'td_008', nodeReference: 'services', isRequired: false, createdAt: now() },
+  { id: 'stl_010', skillId: 'sdef_005', toolId: 'td_009', nodeReference: 'transfer', isRequired: true, createdAt: now() },
+  { id: 'stl_011', skillId: 'sdef_006', toolId: 'td_011', nodeReference: 'create_ticket', isRequired: true, createdAt: now() },
 ];
 
 /** Voice agents (Retell) per tenant for agent status card. */
