@@ -1352,6 +1352,12 @@ h3,
     transform: none !important;
     filter: none !important;
   }
+
+  .chat-bar-glow,
+  .chat-bar-panel {
+    animation: none !important;
+    border-image: linear-gradient(135deg, #1f7a8c, #a855f7, #ec4899, #3b82f6) 1;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -1368,52 +1374,60 @@ h3,
 }
 
 /* ── Floating chat bar ── */
+@property --chat-border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
 .chat-bar-glow {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(24px) saturate(1.8);
-  border: 1.5px solid rgba(31, 122, 140, 0.20);
+  --chat-border-angle: 0deg;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)) padding-box,
+    conic-gradient(
+      from var(--chat-border-angle),
+      #1f7a8c, #a855f7, #ec4899, #f59e0b, #10b981, #3b82f6, #1f7a8c
+    ) border-box;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   box-shadow:
-    0 0 20px rgba(31, 122, 140, 0.12),
-    0 0 60px rgba(31, 122, 140, 0.06),
-    0 4px 20px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  animation: chat-border-glow 3s ease-in-out infinite;
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  animation: chat-spin-border 4s linear infinite;
 }
 
 .chat-bar-glow:focus-within {
-  border-color: rgba(31, 122, 140, 0.45);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)) padding-box,
+    conic-gradient(
+      from var(--chat-border-angle),
+      #1f7a8c, #a855f7, #ec4899, #f59e0b, #10b981, #3b82f6, #1f7a8c
+    ) border-box;
   box-shadow:
-    0 0 30px rgba(31, 122, 140, 0.20),
-    0 0 80px rgba(31, 122, 140, 0.10),
-    0 4px 24px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    0 4px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
-@keyframes chat-border-glow {
-  0%, 100% {
-    border-color: rgba(31, 122, 140, 0.20);
-    box-shadow:
-      0 0 20px rgba(31, 122, 140, 0.10),
-      0 0 60px rgba(31, 122, 140, 0.04),
-      0 4px 20px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
-  50% {
-    border-color: rgba(31, 122, 140, 0.40);
-    box-shadow:
-      0 0 30px rgba(31, 122, 140, 0.18),
-      0 0 80px rgba(31, 122, 140, 0.08),
-      0 4px 24px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+@keyframes chat-spin-border {
+  to {
+    --chat-border-angle: 360deg;
   }
 }
 
 .chat-bar-panel {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(28px) saturate(1.8);
-  border: 1.5px solid rgba(31, 122, 140, 0.15);
+  border: 2px solid transparent;
   border-bottom: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)) padding-box,
+    conic-gradient(
+      from var(--chat-border-angle),
+      #1f7a8c80, #a855f780, #ec489980, #f59e0b80, #10b98180, #3b82f680, #1f7a8c80
+    ) border-box;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   box-shadow:
-    0 -8px 40px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 -8px 40px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: chat-spin-border 4s linear infinite;
 }
