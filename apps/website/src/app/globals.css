@@ -423,6 +423,48 @@ h3,
   backdrop-filter: blur(34px) saturate(2.2) brightness(1.1) !important;
 }
 
+/* ── How-it-works outcome card — green-tinted liquid glass ── */
+.how-it-works-outcome {
+  background: rgba(255, 255, 255, 0.18) !important;
+  backdrop-filter: blur(28px) saturate(1.8) brightness(1.06) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.30);
+  box-shadow:
+    0 8px 40px rgba(16, 185, 129, 0.08),
+    0 2px 12px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.60),
+    inset 0 -0.5px 0 rgba(16, 185, 129, 0.08);
+}
+
+.how-it-works-outcome::after {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(52, 211, 153, 0.30) 25%,
+    rgba(16, 185, 129, 0.15) 50%,
+    rgba(52, 211, 153, 0.10) 75%,
+    transparent 90%
+  ) !important;
+}
+
+.how-it-works-outcome::before {
+  background: linear-gradient(
+    170deg,
+    rgba(255, 255, 255, 0.65) 0%,
+    rgba(16, 185, 129, 0.06) 30%,
+    rgba(255, 255, 255, 0) 50%
+  ) !important;
+}
+
+.how-it-works-outcome:hover {
+  background: rgba(255, 255, 255, 0.24) !important;
+  border-color: rgba(52, 211, 153, 0.45);
+  box-shadow:
+    0 16px 56px rgba(16, 185, 129, 0.14),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -0.5px 0 rgba(16, 185, 129, 0.10);
+}
+
 /* Nested surface inside glass (solid-ish to avoid glass-on-glass) */
 .lg-surface {
   background: rgba(255, 255, 255, 0.70);
@@ -689,17 +731,18 @@ h3,
 .btn-liquid {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(145deg, rgba(31, 122, 140, 0.72) 0%, rgba(43, 163, 184, 0.7) 50%, rgba(139, 92, 246, 0.38) 100%);
-  background-size: 200% 100%;
+  background: linear-gradient(145deg, #1a8a9e 0%, #22b8d0 40%, #1F7A8C 70%, #17697a 100%);
+  background-size: 250% 100%;
   background-position: 0% 50%;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.30);
   backdrop-filter: blur(18px) saturate(1.6);
   border-radius: var(--lg-radius);
+  color: #fff;
   box-shadow:
-    0 6px 28px rgba(31, 122, 140, 0.30),
-    0 2px 6px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+    0 6px 24px rgba(31, 122, 140, 0.40),
+    0 2px 8px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10);
   transition:
     transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
     background-position 360ms ease,
@@ -716,8 +759,8 @@ h3,
   inset: 0;
   background: linear-gradient(
     175deg,
-    rgba(255, 255, 255, 0.40) 0%,
-    rgba(255, 255, 255, 0.10) 30%,
+    rgba(255, 255, 255, 0.50) 0%,
+    rgba(255, 255, 255, 0.12) 30%,
     rgba(255, 255, 255, 0) 50%
   );
   pointer-events: none;
@@ -734,7 +777,7 @@ h3,
   left: -100%;
   width: 60%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
   transform: skewX(-20deg);
   pointer-events: none;
   transition: left 0.6s ease;
@@ -744,12 +787,12 @@ h3,
 .btn-liquid:hover {
   background-position: 100% 50%;
   box-shadow:
-    0 12px 40px rgba(31, 122, 140, 0.38),
-    0 4px 14px rgba(0, 0, 0, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px) scale(1.03);
-  filter: saturate(1.08) brightness(1.03);
+    0 14px 44px rgba(31, 122, 140, 0.50),
+    0 6px 18px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px) scale(1.04);
+  filter: saturate(1.15) brightness(1.06);
   backdrop-filter: blur(22px) saturate(1.8);
 }
 
@@ -1197,6 +1240,93 @@ h3,
 .problem-line-shimmer {
   background-size: 200% 100%;
   animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Mesh wave undulation */
+@keyframes problem-wave-drift {
+  0% { d: path("M0,450 C240,350 480,550 720,450 C960,350 1200,550 1440,450"); }
+  50% { d: path("M0,450 C240,520 480,380 720,450 C960,520 1200,380 1440,450"); }
+  100% { d: path("M0,450 C240,350 480,550 720,450 C960,350 1200,550 1440,450"); }
+}
+
+@keyframes problem-wave-drift-2 {
+  0% { d: path("M0,500 C240,400 480,600 720,500 C960,400 1200,600 1440,500"); }
+  50% { d: path("M0,500 C240,570 480,430 720,500 C960,570 1200,430 1440,500"); }
+  100% { d: path("M0,500 C240,400 480,600 720,500 C960,400 1200,600 1440,500"); }
+}
+
+@keyframes problem-wave-drift-3 {
+  0% { d: path("M0,400 C240,300 480,500 720,400 C960,300 1200,500 1440,400"); }
+  50% { d: path("M0,400 C240,470 480,330 720,400 C960,470 1200,330 1440,400"); }
+  100% { d: path("M0,400 C240,300 480,500 720,400 C960,300 1200,500 1440,400"); }
+}
+
+.problem-wave-path { animation: problem-wave-drift 8s ease-in-out infinite; }
+.problem-wave-path-2 { animation: problem-wave-drift-2 10s ease-in-out infinite; }
+.problem-wave-path-3 { animation: problem-wave-drift-3 12s ease-in-out infinite; }
+
+/* Connector dash animation */
+@keyframes problem-connector-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -16; }
+}
+
+.problem-connector-dash {
+  animation: problem-connector-flow 1.5s linear infinite;
+}
+
+@keyframes problem-connector-flow-v {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -20; }
+}
+
+.problem-connector-dash-v {
+  animation: problem-connector-flow-v 2s linear infinite;
+}
+
+/* Missed call phone shake */
+@keyframes problem-phone-shake {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(-6deg); }
+  20% { transform: rotate(6deg); }
+  30% { transform: rotate(-4deg); }
+  40% { transform: rotate(4deg); }
+  50% { transform: rotate(0deg); }
+}
+
+.problem-phone-shake {
+  animation: problem-phone-shake 2.5s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Pulsing rings for missed call */
+@keyframes problem-ring-pulse-out {
+  0% { transform: scale(0.85); opacity: 0.5; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+.problem-ring-pulse {
+  animation: problem-ring-pulse-out 2.8s ease-out infinite;
+}
+
+/* Orbit float for overwhelmed tasks */
+@keyframes problem-orbit-float {
+  0%, 100% { transform: translateY(0); opacity: 0.85; }
+  50% { transform: translateY(-6px); opacity: 1; }
+}
+
+.problem-orbit-float {
+  animation: problem-orbit-float 3s ease-in-out infinite;
+}
+
+/* Revenue badge bounce */
+@keyframes problem-badge-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.05); }
+}
+
+.problem-badge-bounce {
+  animation: problem-badge-bounce 2s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -14,7 +14,7 @@ export default function Hero({ dict }: { dict: Dictionary }) {
   return (
     <>
       <section
-        className="relative min-h-[90vh] overflow-hidden gradient-bg-hero px-4 py-24 sm:px-6 sm:py-32 lg:px-8 lg:py-36"
+        className="relative min-h-[90vh] overflow-hidden gradient-bg-hero px-4 pt-32 pb-24 sm:px-6 sm:pt-40 sm:pb-32 lg:px-8 lg:pt-44 lg:pb-36 -mt-[72px]"
         aria-labelledby="hero-heading"
       >
         <HeroBackgroundLayer />

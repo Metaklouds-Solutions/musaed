@@ -13,7 +13,7 @@ export default function Navbar({
   locale: "ar" | "en";
 }) {
   return (
-    <div className="sticky top-0 z-50 w-full flex justify-center px-4 pt-3 pb-1">
+    <div className="sticky top-0 z-50 w-full flex justify-center px-4 pt-3 pb-1 bg-transparent">
       <nav
         className="glass-card w-full max-w-5xl flex h-14 items-center justify-between gap-4 px-5 sm:px-6"
         role="navigation"
