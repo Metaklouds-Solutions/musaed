@@ -14,6 +14,7 @@ interface CallReplayViewerProps {
 
 const AUTO_STEP_MS = 2000;
 
+/** Renders a step-through replay timeline for parsed call transcript segments. */
 export function CallReplayViewer({ transcript }: CallReplayViewerProps) {
   const { maskInText } = usePiiMask();
   const segments = useMemo(
@@ -112,7 +113,7 @@ export function CallReplayViewer({ transcript }: CallReplayViewerProps) {
       <div className="space-y-2 text-sm">
         {visible.map((seg, i) => (
           <div
-            key={i}
+            key={`${seg.speaker}-${seg.text.slice(0, 24)}-${i}`}
             className={cn(
               'px-3 py-2 rounded-lg',
               seg.speaker === 'patient'

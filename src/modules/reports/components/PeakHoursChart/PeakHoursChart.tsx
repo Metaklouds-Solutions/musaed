@@ -11,6 +11,7 @@ interface PeakHoursChartProps {
   points: PeakHourPoint[];
 }
 
+/** Renders hourly call-volume bars to highlight peak traffic windows. */
 export function PeakHoursChart({ points }: PeakHoursChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const maxCount = Math.max(...points.map((p) => p.count), 1);

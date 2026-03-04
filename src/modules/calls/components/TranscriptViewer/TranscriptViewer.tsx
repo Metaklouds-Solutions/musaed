@@ -27,6 +27,7 @@ function isBookingTrigger(sentence: string): boolean {
   return BOOKING_TRIGGER_WORDS.some((w) => lower.includes(w));
 }
 
+/** Renders transcript text with booking-trigger highlighting and PII masking controls. */
 export function TranscriptViewer({ transcript }: TranscriptViewerProps) {
   const { maskInText, canViewUnmaskedPII, showUnmasked, toggleUnmasked } = usePiiMask();
   const displayText = maskInText(transcript);
@@ -77,7 +78,7 @@ export function TranscriptViewer({ transcript }: TranscriptViewerProps) {
           const highlight = isBookingTrigger(originalSentences[i] ?? s);
           return (
             <p
-              key={i}
+              key={`${originalSentences[i] ?? s}-${i}`}
               className={highlight ? 'pl-3 border-l-2 border-[var(--primary)]' : ''}
             >
               {s}

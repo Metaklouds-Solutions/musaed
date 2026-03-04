@@ -37,6 +37,7 @@ function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
+/** Renders open support tickets with priority and link-through to detail. */
 export function OpenTicketsWidget({ tickets }: OpenTicketsWidgetProps) {
   if (tickets.length === 0) {
     return (

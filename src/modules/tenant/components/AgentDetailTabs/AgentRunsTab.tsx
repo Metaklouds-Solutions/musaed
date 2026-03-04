@@ -11,6 +11,7 @@ interface AgentRunsTabProps {
   recentRuns: AgentRunRow[];
 }
 
+/** Renders recent agent run records with timing, token usage, and status tags. */
 export function AgentRunsTab({ recentRuns }: AgentRunsTabProps) {
   if (recentRuns.length === 0) {
     return (

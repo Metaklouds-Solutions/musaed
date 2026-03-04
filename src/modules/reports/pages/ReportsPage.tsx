@@ -24,6 +24,7 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
+/** Renders tenant reports dashboard for outcomes, trends, sentiment, and comparison. */
 export function ReportsPage() {
   const { user } = useSession();
   const tenantId = user?.tenantId;

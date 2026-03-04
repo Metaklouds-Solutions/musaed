@@ -17,6 +17,7 @@ const bucketColors: Record<string, string> = {
   Negative: 'var(--error)',
 };
 
+/** Renders positive/neutral/negative sentiment distribution with hover details. */
 export function SentimentChart({ buckets }: SentimentChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const total = buckets.reduce((s, b) => s + b.count, 0);

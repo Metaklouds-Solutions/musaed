@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useAdminAgents } from '../hooks';
 import type { AdminAgentRow } from '../../../shared/types';
 
+/** Renders admin agents catalog with tenant assignment flow and table filters. */
 export function AdminAgentsPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AdminAgentRow | null>(null);

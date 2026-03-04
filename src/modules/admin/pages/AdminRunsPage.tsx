@@ -8,6 +8,7 @@ import { PageHeader, PopoverSelect, Pagination } from '../../../shared/ui';
 import { RunsTable } from '../components/RunsTable';
 import { useAdminRuns } from '../hooks';
 
+/** Renders admin runs and logs view with tenant filter, cost summary, and pagination. */
 export function AdminRunsPage() {
   const {
     tenants,

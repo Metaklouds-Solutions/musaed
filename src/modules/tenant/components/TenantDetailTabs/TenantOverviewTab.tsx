@@ -16,6 +16,7 @@ interface TenantOverviewTabProps {
   tenant: TenantDetailFull;
 }
 
+/** Renders tenant profile, onboarding progress, and quick operational stats. */
 export function TenantOverviewTab({ tenant }: TenantOverviewTabProps) {
   const { profile, onboarding, quickStats } = tenant;
   const badgeStatus = statusMap[profile.status] ?? 'inactive';

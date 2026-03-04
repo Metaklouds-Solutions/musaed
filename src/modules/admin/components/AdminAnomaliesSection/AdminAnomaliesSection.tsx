@@ -20,6 +20,7 @@ function formatDate(iso: string): string {
   return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
+/** Renders anomaly and churn-risk lists with severity highlighting and links. */
 export function AdminAnomaliesSection({ usageAnomalies, churnRiskList }: AdminAnomaliesSectionProps) {
   return (
     <section className="space-y-6">

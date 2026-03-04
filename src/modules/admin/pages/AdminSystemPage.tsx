@@ -3,11 +3,9 @@
  * Maintenance mode: admin can enable banner for all users.
  */
 
-import { useState, useEffect } from 'react';
 import { PageHeader, Button } from '../../../shared/ui';
-import { useAdminSystem } from '../hooks';
+import { useAdminSystem, useAdminSystemMaintenance } from '../hooks';
 import { HealthDashboardSection } from '../components/HealthDashboardSection';
-import { maintenanceAdapter, MAINTENANCE_CHANGED } from '../../../adapters';
 import { CheckCircle, AlertTriangle, XCircle, Wrench } from 'lucide-react';
 
 function StatusBadge({ status }: { status: 'ok' | 'degraded' | 'error' }) {
@@ -25,19 +23,10 @@ function StatusBadge({ status }: { status: 'ok' | 'degraded' | 'error' }) {
   );
 }
 
+/** Renders admin system health dashboard and maintenance-mode controls. */
 export function AdminSystemPage() {
   const { systemHealth } = useAdminSystem();
-  const [maintenance, setMaintenance] = useState(() => maintenanceAdapter.getStatus());
-
-  useEffect(() => {
-    const handler = () => setMaintenance(maintenanceAdapter.getStatus());
-    window.addEventListener(MAINTENANCE_CHANGED, handler);
-    return () => window.removeEventListener(MAINTENANCE_CHANGED, handler);
-  }, []);
-
-  const handleToggleMaintenance = () => {
-    maintenanceAdapter.setEnabled(!maintenance.enabled);
-  };
+  const { maintenance, toggleMaintenance } = useAdminSystemMaintenance();
 
   return (
     <div className="space-y-6">
@@ -54,7 +43,7 @@ export function AdminSystemPage() {
           <Button
             variant={maintenance.enabled ? 'danger' : 'secondary'}
             className="cursor-pointer flex items-center gap-2"
-            onClick={handleToggleMaintenance}
+            onClick={toggleMaintenance}
           >
             <Wrench size={16} />
             {maintenance.enabled ? 'Disable maintenance mode' : 'Enable maintenance mode'}

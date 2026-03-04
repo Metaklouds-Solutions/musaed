@@ -34,6 +34,7 @@ function formatDuration(sec: number): string {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
+/** Renders side-by-side tenant metric comparison for selected tenants and date range. */
 export function TenantComparisonView({
   dateRange: controlledDateRange,
   onDateRangeChange,

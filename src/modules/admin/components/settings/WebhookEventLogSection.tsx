@@ -34,6 +34,7 @@ function StatusBadge({ status }: { status: WebhookEventStatus }) {
   return <Badge status={badgeStatus}>{status}</Badge>;
 }
 
+/** Renders webhook delivery log with retry action for failed events. */
 export function WebhookEventLogSection() {
   const { events, retryingId, retryWebhook } = useAdminWebhookEvents();
 

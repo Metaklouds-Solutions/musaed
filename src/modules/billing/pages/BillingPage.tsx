@@ -134,6 +134,7 @@ function CreditsSection({ onBuy }: { onBuy: () => void }) {
 
 // Loading skeleton with modern animation
 function BillingSkeleton() {
+  const skeletonKeys = ['billing-skeleton-1', 'billing-skeleton-2', 'billing-skeleton-3', 'billing-skeleton-4', 'billing-skeleton-5'] as const;
   return (
     <div className="space-y-8 animate-pulse">
       <div className="space-y-2">
@@ -142,8 +143,8 @@ function BillingSkeleton() {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-24 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)]" />
+        {skeletonKeys.map((key) => (
+          <div key={key} className="h-24 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)]" />
         ))}
       </div>
       
@@ -152,6 +153,7 @@ function BillingSkeleton() {
   );
 }
 
+/** Renders tenant billing overview with usage, credits, and recent activity. */
 export function BillingPage() {
   const { overview, buyCredits } = useBilling();
 
@@ -255,13 +257,13 @@ export function BillingPage() {
           <ViewButton onClick={() => {}}>View all</ViewButton>
         </div>
         <div className="space-y-3">
-          {[ 
+          {[
             { action: 'Credits purchased', amount: '+$500', time: '2 hours ago', type: 'credit' },
             { action: 'Monthly usage deducted', amount: '-$120', time: '1 day ago', type: 'usage' },
             { action: 'Plan upgraded to Pro', amount: '$0', time: '3 days ago', type: 'plan' }
-          ].map((item, idx) => (
+          ].map((item) => (
             <div 
-              key={idx} 
+              key={`${item.action}-${item.time}`}
               className="flex items-center justify-between p-3 rounded-lg bg-[var(--border-subtle)]/20 hover:bg-[var(--border-subtle)]/40 transition-colors cursor-pointer group"
             >
               <div className="flex items-center gap-3">

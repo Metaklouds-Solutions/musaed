@@ -17,6 +17,7 @@ interface AssignAgentModalProps {
   onAssign: (tenantId: string) => void;
 }
 
+/** Renders modal flow to assign an unassigned platform agent to a tenant. */
 export function AssignAgentModal({ open, onClose, agent, tenants, onAssign }: AssignAgentModalProps) {
   const [tenantId, setTenantId] = useState('');
 

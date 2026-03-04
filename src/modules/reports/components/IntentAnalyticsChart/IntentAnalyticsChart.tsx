@@ -19,6 +19,7 @@ const INTENT_COLORS: Record<string, string> = {
   General: 'var(--text-muted)',
 };
 
+/** Renders transcript-derived intent distribution with interactive bar tooltips. */
 export function IntentAnalyticsChart({ buckets }: IntentAnalyticsChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const total = buckets.reduce((s, b) => s + b.count, 0);

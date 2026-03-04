@@ -19,6 +19,7 @@ function formatDate(iso: string): string {
   }).format(parsed);
 }
 
+/** Renders platform admin users with role labels and activity timestamps. */
 export function AdminUsersSection({ users }: AdminUsersSectionProps) {
   return (
     <div className="rounded-[var(--radius-card)] card-glass p-6 space-y-4">

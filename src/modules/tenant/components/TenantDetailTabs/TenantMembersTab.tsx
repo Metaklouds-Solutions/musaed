@@ -11,6 +11,7 @@ interface TenantMembersTabProps {
   members: TenantMemberRow[];
 }
 
+/** Renders tenant members with role, status, and joined-date columns. */
 export function TenantMembersTab({ members }: TenantMembersTabProps) {
   if (members.length === 0) {
     return (

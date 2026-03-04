@@ -38,6 +38,7 @@ function OutcomePill({ outcome }: { outcome: TenantRecentCall['outcome'] }) {
   return <PillTag variant={variant}>{outcome}</PillTag>;
 }
 
+/** Renders the latest tenant calls with outcome, duration, and timestamp. */
 export function RecentCallsTable({ calls }: RecentCallsTableProps) {
   if (calls.length === 0) {
     return (

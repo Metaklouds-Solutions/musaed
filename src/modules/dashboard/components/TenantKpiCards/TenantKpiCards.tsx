@@ -16,6 +16,7 @@ function formatDuration(sec: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/** Renders tenant dashboard KPI card grid with booking and usage highlights. */
 export function TenantKpiCards({ kpis }: TenantKpiCardsProps) {
   return (
     <motion.section

@@ -17,7 +17,9 @@ function formatDuration(seconds: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -26,6 +28,7 @@ function formatDate(iso: string): string {
   });
 }
 
+/** Renders call metadata summary including duration, timestamp, and booking linkage. */
 export function CallMetaPanel({ call, linkedBooking }: CallMetaPanelProps) {
   return (
     <div

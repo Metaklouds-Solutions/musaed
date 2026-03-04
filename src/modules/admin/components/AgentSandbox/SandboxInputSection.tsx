@@ -39,6 +39,7 @@ interface SandboxInputSectionProps {
   onRun: () => void;
 }
 
+/** Renders sandbox input controls for agent selection, scenario, and transcript. */
 export function SandboxInputSection(props: SandboxInputSectionProps) {
   const {
     agentOptions,

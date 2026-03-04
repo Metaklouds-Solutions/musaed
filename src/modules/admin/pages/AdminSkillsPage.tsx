@@ -5,6 +5,7 @@
 import { BookOpen } from 'lucide-react';
 import { PageHeader, Card, CardBody } from '../../../shared/ui';
 
+/** Renders placeholder state for upcoming admin skills management module. */
 export function AdminSkillsPage() {
   return (
     <div className="space-y-6">

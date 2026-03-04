@@ -35,6 +35,7 @@ function formatCost(cost: number): string {
   return `$${cost.toFixed(2)}`;
 }
 
+/** Renders admin runs table with tenant/call linkage and usage columns. */
 export function RunsTable({ runs }: RunsTableProps) {
   if (runs.length === 0) {
     return (

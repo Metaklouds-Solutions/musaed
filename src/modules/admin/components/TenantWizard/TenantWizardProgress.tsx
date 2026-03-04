@@ -8,6 +8,7 @@ interface TenantWizardProgressProps {
   currentStep: number;
 }
 
+/** Renders progress indicator for the two-step tenant creation wizard. */
 export function TenantWizardProgress({ currentStep }: TenantWizardProgressProps) {
   return (
     <div className="flex items-center gap-2">

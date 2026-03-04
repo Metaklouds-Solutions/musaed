@@ -29,6 +29,7 @@ function formatCurrency(n: number): string {
   }).format(n);
 }
 
+/** Renders tenant billing-plan matrix with spend and utilization columns. */
 export function BillingTenantPlans({ rows }: BillingTenantPlansProps) {
   if (rows.length === 0) {
     return (

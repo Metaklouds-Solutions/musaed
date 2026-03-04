@@ -11,6 +11,7 @@ interface TenantSettingsTabProps {
   settings: TenantSettingsSummary;
 }
 
+/** Renders tenant settings summary including behavior and enabled feature flags. */
 export function TenantSettingsTab({ settings }: TenantSettingsTabProps) {
   const flags = Object.entries(settings.featureFlags ?? {}).filter(([, v]) => v);
 

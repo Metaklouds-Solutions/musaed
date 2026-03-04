@@ -15,6 +15,7 @@ const outcomeConfig: Record<OutcomeBreakdownType['outcome'], { label: string; co
   failed: { label: 'Failed', color: 'var(--error)' },
 };
 
+/** Renders booked/escalated/failed outcome distribution bars and totals. */
 export function OutcomeBreakdown({ outcomes }: OutcomeBreakdownProps) {
   const total = outcomes.reduce((s, o) => s + o.count, 0);
   const maxCount = Math.max(...outcomes.map((o) => o.count), 1);

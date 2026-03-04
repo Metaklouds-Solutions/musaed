@@ -29,6 +29,7 @@ function formatDate(iso: string): string {
   return parsed.toLocaleDateString();
 }
 
+/** Renders admin agents table with assignment action for unassigned rows. */
 export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
   if (agents.length === 0) {
     return (

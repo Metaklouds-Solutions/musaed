@@ -14,9 +14,7 @@ import {
   AuditLogSection,
   ScheduledReportsSection,
 } from '../components/settings';
-import { settingsAdapter, reportsAdapter } from '../../../adapters';
-import type { AdminSettings } from '../../../adapters/local/settings.adapter';
-import type { ScheduledReportConfig } from '../../../adapters/local/reports.adapter';
+import { useAdminSettings } from '../hooks';
 import { CheckCircle2, Save, Users, Plug, FileText, Webhook, BarChart3, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,40 +37,18 @@ function getPanelId(tab: SettingsTab): string {
   return `admin-settings-panel-${tab}`;
 }
 
+/** Renders admin settings tabs for users, integrations, retention, and reports. */
 export function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('admin-users');
-  const [settings, setSettings] = useState<AdminSettings>(() =>
-    settingsAdapter.getAdminSettings()
-  );
-  const [scheduledConfig, setScheduledConfig] = useState<ScheduledReportConfig>(() =>
-    reportsAdapter.getScheduledReportConfig()
-  );
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = useCallback(() => {
-    settingsAdapter.saveAdminSettings(settings);
-    reportsAdapter.setScheduledReportConfig(scheduledConfig);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }, [settings, scheduledConfig]);
-
-  const handleRetentionToggle = useCallback((id: string, enabled: boolean) => {
-    setSettings((s) => ({
-      ...s,
-      retentionPolicies: s.retentionPolicies.map((p) =>
-        p.id === id ? { ...p, enabled } : p
-      ),
-    }));
-  }, []);
-
-  const handleRetentionDaysChange = useCallback((id: string, days: number) => {
-    setSettings((s) => ({
-      ...s,
-      retentionPolicies: s.retentionPolicies.map((p) =>
-        p.id === id ? { ...p, days: Math.max(1, Math.min(3650, days)) } : p
-      ),
-    }));
-  }, []);
+  const {
+    settings,
+    scheduledConfig,
+    setScheduledConfig,
+    saved,
+    save,
+    updateRetentionToggle,
+    updateRetentionDays,
+  } = useAdminSettings();
 
   const showSaveButton = activeTab === 'admin-users' || activeTab === 'integrations' || activeTab === 'retention' || activeTab === 'reports';
   const activeIndex = TABS.findIndex((tab) => tab.id === activeTab);
@@ -103,7 +79,7 @@ export function AdminSettingsPage() {
           </div>
           {showSaveButton && (
             <Button
-              onClick={handleSave}
+              onClick={save}
               className="shrink-0 flex items-center gap-2"
               aria-label={saved ? 'Saved' : 'Save changes'}
             >
@@ -188,8 +164,8 @@ export function AdminSettingsPage() {
           >
             <RetentionSection
               policies={settings.retentionPolicies}
-              onToggle={handleRetentionToggle}
-              onDaysChange={handleRetentionDaysChange}
+              onToggle={updateRetentionToggle}
+              onDaysChange={updateRetentionDays}
             />
           </motion.div>
         )}

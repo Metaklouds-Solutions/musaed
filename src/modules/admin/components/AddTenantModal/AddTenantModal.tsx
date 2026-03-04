@@ -6,7 +6,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Modal, ModalHeader, Button } from '../../../../shared/ui';
-import { tenantsAdapter, auditAdapter } from '../../../../adapters';
+import { useAdminTenantCreation } from '../../hooks';
 import {
   TenantWizardProgress,
   TenantWizardStep1ClinicInfo,
@@ -37,8 +37,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
   const [clinicData, setClinicData] = useState<ClinicInfoData>(INITIAL_CLINIC);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [isDeploying, setIsDeploying] = useState(false);
-
-  const platformAgents = tenantsAdapter.getPlatformAgents();
+  const { platformAgents, createTenant } = useAdminTenantCreation();
 
   const reset = useCallback(() => {
     setStep(1);
@@ -63,7 +62,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
     (agentId?: string) => {
       setIsDeploying(true);
       try {
-        const tenant = tenantsAdapter.createTenant({
+        createTenant({
           name: clinicData.name.trim(),
           plan: clinicData.plan,
           ownerEmail: clinicData.ownerEmail.trim(),
@@ -74,7 +73,6 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
           locale: clinicData.locale,
           agentId,
         });
-        auditAdapter.log('tenant.created', { tenantId: tenant.id, name: tenant.name, plan: tenant.plan });
         reset();
         onClose();
         onSuccess?.();

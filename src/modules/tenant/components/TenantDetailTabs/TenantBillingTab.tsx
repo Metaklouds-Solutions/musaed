@@ -11,6 +11,7 @@ interface TenantBillingTabProps {
   billing: TenantBillingSummary;
 }
 
+/** Renders tenant billing summary details for plan, payment, and credit state. */
 export function TenantBillingTab({ billing }: TenantBillingTabProps) {
   return (
     <motion.div

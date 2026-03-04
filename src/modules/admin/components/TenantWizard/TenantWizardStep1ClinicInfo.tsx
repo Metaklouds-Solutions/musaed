@@ -51,6 +51,7 @@ interface TenantWizardStep1ClinicInfoProps {
   onChange: (data: ClinicInfoData) => void;
 }
 
+/** Renders clinic profile inputs for step one of tenant onboarding wizard. */
 export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep1ClinicInfoProps) {
   const set = (key: keyof ClinicInfoData) => (value: string) =>
     onChange({ ...data, [key]: value });

@@ -12,6 +12,7 @@ const ACTIONS = [
   { to: '/alerts', label: 'View Alerts', icon: AlertCircle },
 ] as const;
 
+/** Renders primary dashboard shortcut actions for calls, bookings, and alerts. */
 export function QuickActions() {
   return (
     <div className="flex flex-col sm:flex-row gap-3">

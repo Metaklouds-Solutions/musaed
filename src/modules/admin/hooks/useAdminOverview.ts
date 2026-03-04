@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { adminAdapter } from '../../../adapters';
 
+/** Returns admin overview dashboard aggregates and role-gated session state. */
 export function useAdminOverview() {
   const { user } = useSession();
   const metrics = useMemo(() => adminAdapter.getOverview(), []);

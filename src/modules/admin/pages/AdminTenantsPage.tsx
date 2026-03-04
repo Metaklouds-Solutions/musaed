@@ -25,10 +25,9 @@ import {
   BulkActionsBar,
 } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useAdminTenantList } from '../hooks';
+import { useAdminTenantList, useAdminTenantsActions } from '../hooks';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useTableSelection } from '../../../shared/hooks/useTableSelection';
-import { softDeleteAdapter, exportAdapter } from '../../../adapters';
 import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
 import type { TenantListRow } from '../../../shared/types';
 import type { PillTagVariant } from '../../../shared/ui';
@@ -58,6 +57,7 @@ function statusVariant(status: string): PillTagVariant {
   return 'outcomeFailed';
 }
 
+/** Renders admin tenants list/compare views with bulk actions and date filtering. */
 export function AdminTenantsPage() {
   const ready = useDelayedReady();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -66,6 +66,7 @@ export function AdminTenantsPage() {
   const [planFilter, setPlanFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const { archiveTenant, toExportRows, exportTenantsCsv } = useAdminTenantsActions();
   const { tenants, plans, statuses } = useAdminTenantList(refreshKey, {
     plan: planFilter,
     status: statusFilter,
@@ -87,7 +88,7 @@ export function AdminTenantsPage() {
       if (!window.confirm('Archive this tenant? They will be hidden from the list.')) return;
       removeOptimistic(id);
       try {
-        softDeleteAdapter.softDeleteTenant(id);
+        archiveTenant(id);
         setRefreshKey((k) => k + 1);
         commit();
         toast.success('Tenant archived');
@@ -112,7 +113,7 @@ export function AdminTenantsPage() {
     for (const t of selectedTenants) {
       removeOptimistic(t.id);
       try {
-        softDeleteAdapter.softDeleteTenant(t.id);
+        archiveTenant(t.id);
       } catch {
         rollbackRemove(t.id);
         failed++;
@@ -127,20 +128,11 @@ export function AdminTenantsPage() {
 
   const handleBulkExport = useCallback(() => {
     if (selectedTenants.length === 0) return;
-    const rows = selectedTenants.map((t) => ({
-      ID: t.id,
-      Name: t.name,
-      Plan: t.plan,
-      Status: t.status,
-      Agents: t.agentCount,
-      MRR: t.mrr,
-      Calls: t.callsThisMonth,
-      Onboarding: t.onboardingStatus,
-    }));
-    exportAdapter.exportCsv(rows, `tenants-selected-${new Date().toISOString().slice(0, 10)}.csv`);
+    const rows = toExportRows(selectedTenants);
+    exportTenantsCsv(rows, `tenants-selected-${new Date().toISOString().slice(0, 10)}.csv`);
     selection.clear();
     toast.success(`Exported ${selectedTenants.length} tenant(s)`);
-  }, [selectedTenants, selection]);
+  }, [selectedTenants, selection, toExportRows, exportTenantsCsv]);
 
   const checkboxClass =
     'w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--ds-primary)] focus:ring-2 focus:ring-[var(--ds-primary)] cursor-pointer';

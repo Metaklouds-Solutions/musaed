@@ -36,6 +36,7 @@ function getServiceStatus(
   return isStatus(found?.status) ? found.status : 'ok';
 }
 
+/** Renders status cards for core platform services used by admin monitoring. */
 export function HealthDashboardSection({ systemHealth }: HealthDashboardSectionProps) {
   return (
     <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">

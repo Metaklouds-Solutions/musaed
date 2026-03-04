@@ -48,6 +48,7 @@ function getPanelId(tab: AgentTab): string {
   return `agent-detail-panel-${tab}`;
 }
 
+/** Renders tenant/admin agent detail tabs with keyboard-accessible navigation. */
 export function AgentDetailPage() {
   const { agent, tenantId, isLoading } = useAgentDetail();
   const [activeTab, setActiveTab] = useState<AgentTab>('overview');

@@ -12,6 +12,7 @@ const ACTIONS = [
   { to: '#', label: 'Export Report', icon: FileDown, isPlaceholder: true },
 ] as const;
 
+/** Renders admin quick-link actions for common operations and monitoring pages. */
 export function AdminQuickActions() {
   return (
     <div className="flex flex-col sm:flex-row gap-3">

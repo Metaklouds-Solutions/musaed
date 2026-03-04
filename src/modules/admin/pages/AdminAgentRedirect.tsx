@@ -5,24 +5,17 @@
 
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { agentsAdapter } from '../../../adapters';
+import { useAdminAgentRedirect } from '../hooks';
 
+/** Redirects legacy admin agent route to tenant-scoped detail when assigned. */
 export function AdminAgentRedirect() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const targetPath = useAdminAgentRedirect(id);
 
   useEffect(() => {
-    if (!id) {
-      navigate('/admin/agents', { replace: true });
-      return;
-    }
-    const agent = agentsAdapter.getDetails(id);
-    if (agent?.tenantId) {
-      navigate(`/admin/tenants/${agent.tenantId}/agents/${id}`, { replace: true });
-    } else {
-      navigate('/admin/agents', { replace: true });
-    }
-  }, [id, navigate]);
+    navigate(targetPath, { replace: true });
+  }, [navigate, targetPath]);
 
   return (
     <div className="flex items-center justify-center p-8 text-[var(--text-muted)] text-sm">

@@ -19,6 +19,7 @@ function formatTimestamp(iso: string): string {
   }).format(parsed);
 }
 
+/** Renders chronological run-event log rows for debugging and audit analysis. */
 export function RunEventsViewer({ events }: RunEventsViewerProps) {
   if (events.length === 0) {
     return (

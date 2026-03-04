@@ -6,6 +6,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { staffAdapter, adminAdapter, exportAdapter, softDeleteAdapter } from '../../../adapters';
 import type { StaffRow } from '../../../shared/types';
 
+/** Returns staff list state, filters, and admin staff mutation/export actions. */
 export function useAdminStaff() {
   const [tenantFilter, setTenantFilter] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
