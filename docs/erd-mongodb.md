@@ -65,7 +65,7 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
 
 ---
 
-### Collection: `tenant_memberships`
+### Collection: `tenant_staff`
 
 ```javascript
 {
@@ -83,90 +83,7 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
 
 ---
 
-## Domain 2: Tool & Skill Definitions
-
-### Collection: `tool_definitions`
-
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  displayName: String,
-  description: String,
-  category: String,        // 'booking' | 'patient' | 'communication' | 'clinic_info' | 'escalation' | 'custom'
-  executionType: String,  // 'internal' | 'external',
-  // internal
-  handlerKey: String,      // 'query_bookings', 'create_booking', etc.
-  // external
-  endpointUrl: String,
-  httpMethod: String,
-  authConfig: Object,
-  headers: Object,
-  // shared
-  parametersSchema: Object,  // JSON Schema
-  responseMapping: Object,
-  timeoutMs: Number,       // default: 5000
-  retryOnFail: Boolean,   // default: false
-  scope: String,          // 'platform' | 'tenant'
-  tenantId: ObjectId,     // null = platform-wide
-  createdBy: ObjectId,    // → users
-  isActive: Boolean,      // default: true
-  version: Number,        // default: 1
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-**Indexes:** `{ scope: 1, tenantId: 1 }`, `{ name: 1, tenantId: 1 }`
-
----
-
-### Collection: `skill_definitions`
-
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  displayName: String,
-  description: String,
-  category: String,       // 'core' | 'specialty' | 'custom'
-  flowDefinition: Object, // nodes, prompts, transitions, conditions
-  entryConditions: String,
-  retellComponentId: String,
-  retellSyncStatus: String, // 'draft' | 'synced' | 'out_of_sync'
-  lastSyncedAt: Date,
-  scope: String,
-  tenantId: ObjectId,
-  createdBy: ObjectId,
-  isActive: Boolean,
-  version: Number,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-**Indexes:** `{ scope: 1, tenantId: 1 }`, `{ name: 1, tenantId: 1 }`
-
----
-
-### Collection: `skill_tool_links`
-
-```javascript
-{
-  _id: ObjectId,
-  skillId: ObjectId,      // → skill_definitions
-  toolId: ObjectId,       // → tool_definitions
-  nodeReference: String,
-  isRequired: Boolean,    // default: true
-  createdAt: Date
-}
-```
-
-**Indexes:** `{ skillId: 1 }`, `{ toolId: 1 }`, `{ skillId: 1, toolId: 1 }` unique
-
----
-
-## Domain 3: Agent Templates & Deployments
+## Domain 2: Agent Templates & Instances
 
 ### Collection: `agent_templates`
 
@@ -189,11 +106,7 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
   version: Number,
   createdBy: ObjectId,
   createdAt: Date,
-  updatedAt: Date,
-  // embedded: skills (denormalized for fast reads)
-  skills: [
-    { skillId: ObjectId, sortOrder: Number, isEnabled: Boolean }
-  ]
+  updatedAt: Date
 }
 ```
 
@@ -201,7 +114,7 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
 
 ---
 
-### Collection: `agent_deployments`
+### Collection: `agent_instances`
 
 ```javascript
 {
@@ -212,52 +125,22 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
   retellAgentId: String,
   retellLlmId: String,
   retellAgentVersion: Number,
-  phoneNumberId: ObjectId, // → phone_numbers (voice only)
-  emailAddress: String,    // email only
+  emailAddress: String,    // email channel only
   status: String,         // 'deploying' | 'active' | 'paused' | 'failed' | 'deleted'
   configSnapshot: Object,
   customPrompts: Object,
   resolvedVariables: Object,
   lastSyncedAt: Date,
   deployedAt: Date,
-  createdAt: Date,
-  // embedded overrides (1:few, always read with deployment)
-  skillOverrides: [
-    { skillId: ObjectId, isEnabled: Boolean, promptOverride: String, customConfig: Object }
-  ],
-  toolOverrides: [
-    { toolId: ObjectId, isEnabled: Boolean, endpointOverride: String, authOverride: Object, paramsOverride: Object }
-  ]
-}
-```
-
-**Indexes:** `{ tenantId: 1 }`, `{ status: 1 }`, `{ retellAgentId: 1 }`, `{ phoneNumberId: 1 }`
-
----
-
-### Collection: `phone_numbers`
-
-```javascript
-{
-  _id: ObjectId,
-  tenantId: ObjectId,     // → tenants
-  retellNumberId: String,
-  number: String,         // E.164
-  country: String,
-  type: String,           // 'local' | 'toll_free'
-  inboundDeploymentId: ObjectId,
-  outboundDeploymentId: ObjectId,
-  monthlyCostCents: Number,
-  status: String,        // 'active' | 'released'
   createdAt: Date
 }
 ```
 
-**Indexes:** `{ tenantId: 1 }`, `{ number: 1 }` unique
+**Indexes:** `{ tenantId: 1 }`, `{ status: 1 }`, `{ retellAgentId: 1 }`
 
 ---
 
-## Domain 4: Billing & Credits
+## Domain 3: Billing
 
 ### Collection: `subscription_plans`
 
@@ -268,7 +151,6 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
   stripeProductId: String,
   stripePriceId: String,
   monthlyPriceCents: Number,
-  monthlyCredits: Number,
   maxVoiceAgents: Number,
   maxChatAgents: Number,
   maxEmailAgents: Number,
@@ -281,109 +163,7 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
 
 ---
 
-### Collection: `topup_packages`
-
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  stripeProductId: String,
-  stripePriceId: String,
-  priceCents: Number,
-  credits: Number,
-  isActive: Boolean
-}
-```
-
----
-
-### Collection: `credit_accounts`
-
-```javascript
-{
-  _id: ObjectId,
-  tenantId: ObjectId,     // → tenants (unique)
-  balance: Number,       // default: 0
-  lifetimePurchased: Number,
-  lifetimeConsumed: Number,
-  lowBalanceThreshold: Number, // default: 50
-  updatedAt: Date
-}
-```
-
-**Indexes:** `{ tenantId: 1 }` unique
-
----
-
-### Collection: `credit_transactions`
-
-```javascript
-{
-  _id: ObjectId,
-  tenantId: ObjectId,
-  type: String,          // 'subscription_grant' | 'topup_purchase' | 'usage_deduct' | 'refund' | 'adjustment' | 'expiry'
-  amount: Number,        // +N or -N
-  balanceAfter: Number,
-  referenceType: String,
-  referenceId: String,
-  description: String,
-  createdAt: Date
-}
-```
-
-**Indexes:** `{ tenantId: 1, createdAt: -1 }`
-
----
-
-## Domain 5: Calls, Customers & Bookings
-
-### Collection: `calls`
-
-```javascript
-{
-  _id: ObjectId,
-  tenantId: ObjectId,
-  deploymentId: ObjectId,  // → agent_deployments
-  retellCallId: String,    // unique
-  channel: String,        // 'voice' | 'chat' | 'email'
-  direction: String,      // 'inbound' | 'outbound'
-  fromNumber: String,
-  toNumber: String,
-  customerId: ObjectId,   // → customers (nullable)
-  status: String,         // 'in_progress' | 'completed' | 'failed' | 'transferred'
-  outcome: String,       // 'booked' | 'escalated' | 'info_provided' | 'failed' | 'cancelled'
-  durationSeconds: Number,
-  creditsConsumed: Number,
-  sentimentScore: Number,
-  transcript: Object,
-  analysis: Object,
-  recordingUrl: String,
-  metadata: Object,
-  startedAt: Date,
-  endedAt: Date,
-  analyzedAt: Date,
-  // embedded: tool execution logs (1:many, always read with call)
-  toolExecutions: [
-    {
-      toolId: ObjectId,
-      toolName: String,
-      requestParams: Object,
-      responseBody: Object,
-      executionType: String,
-      handlerKey: String,
-      endpointCalled: String,
-      status: String,
-      durationMs: Number,
-      errorMessage: String,
-      executedAt: Date
-    }
-  ]
-}
-```
-
-**Indexes:** `{ tenantId: 1, startedAt: -1 }`, `{ retellCallId: 1 }` unique, `{ deploymentId: 1 }`, `{ customerId: 1 }`
-
----
+## Domain 4: Customers & Bookings
 
 ### Collection: `customers`
 
@@ -398,7 +178,6 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
   source: String,        // 'call' | 'chat' | 'email' | 'manual'
   tags: [String],
   metadata: Object,
-  totalCalls: Number,    // default: 0, denormalized
   totalBookings: Number, // default: 0
   createdAt: Date,
   deletedAt: Date
@@ -416,8 +195,7 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
   _id: ObjectId,
   tenantId: ObjectId,
   customerId: ObjectId,   // → customers
-  callId: ObjectId,      // → calls (nullable)
-  providerId: ObjectId,  // → tenant_memberships (nullable)
+  providerId: ObjectId,  // → tenant_staff (nullable)
   locationId: String,
   serviceType: String,
   date: Date,
@@ -431,11 +209,11 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
 }
 ```
 
-**Indexes:** `{ tenantId: 1, date: 1 }`, `{ customerId: 1 }`, `{ callId: 1 }`
+**Indexes:** `{ tenantId: 1, date: 1 }`, `{ customerId: 1 }`
 
 ---
 
-## Domain 6: Support, Audit & Webhooks
+## Domain 5: Support
 
 ### Collection: `support_tickets`
 
@@ -462,72 +240,23 @@ MongoDB document-model conversion of the relational ERD. Uses **references** (Ob
 
 ---
 
-### Collection: `audit_logs`
-
-```javascript
-{
-  _id: ObjectId,
-  tenantId: ObjectId,
-  userId: ObjectId,
-  action: String,       // 'tenant.created', 'agent.deployed', 'booking.created', etc.
-  entityType: String,
-  entityId: ObjectId,
-  metadata: Object,
-  ipAddress: String,
-  createdAt: Date
-}
-```
-
-**Indexes:** `{ tenantId: 1, createdAt: -1 }`, `{ entityType: 1, entityId: 1 }`
-
----
-
-### Collection: `webhook_events`
-
-```javascript
-{
-  _id: ObjectId,
-  source: String,       // 'retell' | 'stripe' | 'sendgrid'
-  eventType: String,
-  payload: Object,
-  status: String,       // 'received' | 'processed' | 'failed' | 'retrying'
-  errorMessage: String,
-  attempts: Number,     // default: 1
-  processedAt: Date,
-  receivedAt: Date
-}
-```
-
-**Indexes:** `{ source: 1, receivedAt: -1 }`, `{ status: 1 }`
-
----
-
 ## Relationship Diagram (MongoDB)
 
 ```
-users ◀──ref── tenant_memberships ──ref──▶ tenants
+users ◀──ref── tenant_staff ──ref──▶ tenants
                                               │
-                                    ┌─────────┼──────────┐
-                                    │         │          │
-                                    ▼         ▼          ▼
-                          credit_accounts  agent_deployments  phone_numbers
-                                    │         │
-                                    │         ├── skillOverrides[] (embed)
-                                    │         └── toolOverrides[] (embed)
-                                    ▼         │
-                          credit_transactions  ▼
-                                            calls
-                                              │
-                                              ├── toolExecutions[] (embed)
-                                              ├── bookings (ref)
-                                              └── customers (ref)
+                                    ┌─────────┴──────────┐
+                                    │                   │
+                                    ▼                   ▼
+                          subscription_plans      agent_instances
+                                    │
+                                    │         customers ◀──ref── bookings
+                                    │                   (tenantId)
 
 
-tool_definitions ◀──ref── skill_tool_links ──ref──▶ skill_definitions
-                                                         │
-                                                         ▼
-                                              agent_templates
-                                                skills[] (embed)
+agent_templates
+       │
+       └── agent_instances (ref)
 
 
 support_tickets
@@ -540,12 +269,8 @@ support_tickets
 
 | Relationship | Strategy | Reason |
 |--------------|----------|--------|
-| tenant_memberships ↔ users/tenants | Reference | Many memberships, independent access |
-| skill_tool_links | Reference | N:M, both sides queried independently |
-| agent_templates.skills | Embed | 1:few, always read with template |
-| agent_deployments.skillOverrides | Embed | 1:few, always with deployment |
-| agent_deployments.toolOverrides | Embed | 1:few, always with deployment |
-| calls.toolExecutions | Embed | 1:many but bounded, always with call |
+| tenant_staff ↔ users/tenants | Reference | Many memberships, independent access |
+| agent_templates ↔ agent_instances | Reference | 1:N, instances per template |
 | support_tickets.messages | Embed | 1:few, always with ticket |
 | tenants.settings | Embed | 1:1, always with tenant |
 | All other 1:N | Reference | Large cardinality or independent access |
@@ -557,11 +282,8 @@ support_tickets
 | Domain | Collections |
 |--------|-------------|
 | Identity & Tenancy | 3 |
-| Tool & Skill Definitions | 3 |
-| Agent Config & Deployments | 3 (templates, deployments, phone_numbers) |
-| Billing | 4 |
-| Calls, Customers, Bookings | 3 |
-| Support, Audit, Webhooks | 3 |
-| **Total** | **19 collections** |
-
-Junction/override tables are embedded where appropriate, reducing collection count from 24 (relational) to 19.
+| Agent Templates & Instances | 2 (templates, instances) |
+| Billing | 1 |
+| Customers & Bookings | 2 (customers, bookings) |
+| Support | 1 |
+| **Total** | **9 collections** |
