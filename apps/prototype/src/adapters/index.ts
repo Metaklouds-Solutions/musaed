@@ -1,7 +1,7 @@
 /**
  * Adapter entry. VITE_DATA_MODE=local | api. No component may directly access mock data.
- * When api mode: dashboard, calls, bookings, customers, alerts, billing, admin use api adapters.
- * staff, support, reports, runs, tenants, agents: local only (api stubs not yet implemented).
+ * When api mode: all adapters with backend endpoints use api adapters.
+ * When local mode (default): all adapters use seed data.
  */
 
 import * as localDashboard from './local/dashboard.adapter';
@@ -40,6 +40,12 @@ import * as apiBookings from './api/bookings.adapter';
 import * as apiCustomers from './api/customers.adapter';
 import * as apiAlerts from './api/alerts.adapter';
 import * as apiBilling from './api/billing.adapter';
+import * as apiStaff from './api/staff.adapter';
+import * as apiSupport from './api/support.adapter';
+import * as apiReports from './api/reports.adapter';
+import * as apiTenants from './api/tenants.adapter';
+import * as apiAgents from './api/agents.adapter';
+import * as apiSettings from './api/settings.adapter';
 
 const dataMode = import.meta.env.VITE_DATA_MODE as string | undefined;
 const isLocal = dataMode !== 'api';
@@ -50,17 +56,19 @@ export const bookingsAdapter = isLocal ? localBookings.bookingsAdapter : apiBook
 export const customersAdapter = isLocal ? localCustomers.customersAdapter : apiCustomers.customersAdapter;
 export const alertsAdapter = isLocal ? localAlerts.alertsAdapter : apiAlerts.alertsAdapter;
 export const billingAdapter = isLocal ? localBilling.billingAdapter : apiBilling.billingAdapter;
-export const staffAdapter = localStaff.staffAdapter;
-export const supportAdapter = localSupport.supportAdapter;
-export const reportsAdapter = localReports.reportsAdapter;
+export const staffAdapter = isLocal ? localStaff.staffAdapter : apiStaff.staffAdapter;
+export const supportAdapter = isLocal ? localSupport.supportAdapter : apiSupport.supportAdapter;
+export const reportsAdapter = isLocal ? localReports.reportsAdapter : apiReports.reportsAdapter;
 export const adminAdapter = isLocal ? localAdmin.adminAdapter : apiAdmin.adminAdapter;
+export const tenantsAdapter = isLocal ? localTenants.tenantsAdapter : apiTenants.tenantsAdapter;
+export const agentsAdapter = isLocal ? localAgents.agentsAdapter : apiAgents.agentsAdapter;
+export const settingsAdapter = isLocal ? localSettings.settingsAdapter : apiSettings.settingsAdapter;
+
+// Adapters that remain local-only (no backend endpoints yet)
 export const runsAdapter = localRuns.runsAdapter;
-export const tenantsAdapter = localTenants.tenantsAdapter;
-export const agentsAdapter = localAgents.agentsAdapter;
 export const exportAdapter = localExport.exportAdapter;
 export const auditAdapter = localAudit.auditAdapter;
 export const searchAdapter = localSearch.searchAdapter;
-export const settingsAdapter = localSettings.settingsAdapter;
 export const featureFlagsAdapter = localFeatureFlags.featureFlagsAdapter;
 export const webhooksAdapter = localWebhooks.webhooksAdapter;
 export const abTestAdapter = localABTest.abTestAdapter;

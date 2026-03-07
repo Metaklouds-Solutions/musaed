@@ -4,8 +4,10 @@
   "version": "0.0.0",
   "scripts": {
     "build": "pnpm -r build",
+    "build:backend": "pnpm -F @musaed/backend build",
     "build:prototype": "pnpm -F @musaed/prototype build",
     "build:website": "pnpm -F @musaed/website build",
+    "dev:backend": "pnpm -F @musaed/backend start:dev",
     "dev:prototype": "pnpm -F @musaed/prototype dev",
     "dev:website": "pnpm -F @musaed/website dev",
     "lint": "pnpm -r lint",
