@@ -11,6 +11,10 @@ import {
   TenantStaff,
   TenantStaffSchema,
 } from '../tenants/schemas/tenant-staff.schema';
+import {
+  InviteToken,
+  InviteTokenSchema,
+} from './schemas/invite-token.schema';
 
 @Module({
   imports: [
@@ -26,6 +30,7 @@ import {
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: TenantStaff.name, schema: TenantStaffSchema },
+      { name: InviteToken.name, schema: InviteTokenSchema },
     ]),
   ],
   controllers: [AuthController],

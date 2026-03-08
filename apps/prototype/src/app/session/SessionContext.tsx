@@ -15,6 +15,7 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import type { Session, User } from '../../shared/types';
+import { setTokens, clearTokens } from '../../lib/apiClient';
 import { SESSION_IDLE_TIMEOUT_MS, SESSION_WARNING_BEFORE_MS } from './sessionConfig';
 /** Throttle activity updates to avoid excessive state updates. */
 const ACTIVITY_THROTTLE_MS = 10_000;
@@ -22,6 +23,7 @@ const ACTIVITY_THROTTLE_MS = 10_000;
 interface SessionContextValue {
   session: Session | null;
   login: (user: User) => void;
+  loginWithTokens: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
   user: User | null;
@@ -54,7 +56,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setLastActivityAt(now);
   }, []);
 
+  const loginWithTokens = useCallback((accessToken: string, refreshToken: string, user: User) => {
+    setTokens(accessToken, refreshToken);
+    login(user);
+  }, [login]);
+
   const logout = useCallback(() => {
+    clearTokens();
     setSession(null);
     setSessionStartedAt(null);
   }, []);
@@ -108,6 +116,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     () => ({
       session,
       login,
+      loginWithTokens,
       logout,
       isAuthenticated: session !== null,
       user: session?.user ?? null,
@@ -116,7 +125,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       lastActivityAt: session ? lastActivityAt : null,
       extendSession,
     }),
-    [session, login, logout, sessionStartedAt, lastActivityAt, extendSession]
+    [session, login, loginWithTokens, logout, sessionStartedAt, lastActivityAt, extendSession]
   );
 
   return (

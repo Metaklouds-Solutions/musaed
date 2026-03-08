@@ -5,9 +5,11 @@ import { TenantStaff, TenantStaffSchema } from './schemas/tenant-staff.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { TenantsController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     MongooseModule.forFeature([
       { name: Tenant.name, schema: TenantSchema },
       { name: TenantStaff.name, schema: TenantStaffSchema },

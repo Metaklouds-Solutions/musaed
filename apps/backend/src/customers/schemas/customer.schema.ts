@@ -11,13 +11,13 @@ export class Customer {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   email: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   phone: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   dateOfBirth: Date | null;
 
   @Prop({ default: 'manual', enum: ['call', 'chat', 'email', 'manual'] })
@@ -32,7 +32,7 @@ export class Customer {
   @Prop({ default: 0 })
   totalBookings: number;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   deletedAt: Date | null;
 }
 

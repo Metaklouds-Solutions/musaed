@@ -32,10 +32,10 @@ export class Tenant {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   ownerId: Types.ObjectId;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   stripeCustomerId: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   stripeSubscriptionId: string | null;
 
   @Prop({ type: Types.ObjectId, ref: 'SubscriptionPlan', default: null })
@@ -56,7 +56,7 @@ export class Tenant {
   @Prop({ type: TenantSettings, default: () => ({}) })
   settings: TenantSettings;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   deletedAt: Date | null;
 }
 

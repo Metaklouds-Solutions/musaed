@@ -14,16 +14,16 @@ export class AgentInstance {
   @Prop({ required: true, enum: ['voice', 'chat', 'email'] })
   channel: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   retellAgentId: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   retellLlmId: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Number, default: null })
   retellAgentVersion: number | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   emailAddress: string | null;
 
   @Prop({ required: true, enum: ['deploying', 'active', 'paused', 'failed', 'deleted'] })
@@ -38,10 +38,10 @@ export class AgentInstance {
   @Prop({ type: Object, default: {} })
   resolvedVariables: Record<string, unknown>;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   lastSyncedAt: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   deployedAt: Date | null;
 }
 

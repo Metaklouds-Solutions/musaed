@@ -51,4 +51,9 @@ export class TenantsController {
   suspend(@Param('id') id: string) {
     return this.tenantsService.suspend(id);
   }
+
+  @Post(':id/resend-invite')
+  resendInvite(@Param('id') id: string) {
+    return this.tenantsService.resendInvite(id);
+  }
 }

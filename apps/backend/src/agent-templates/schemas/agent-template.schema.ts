@@ -29,10 +29,10 @@ export class AgentTemplate {
   @Prop({ default: '' })
   basePrompt: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   webhookUrl: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   mcpServerUrl: string | null;
 
   @Prop({ type: Object, default: {} })

@@ -14,7 +14,7 @@ export class Booking {
   @Prop({ type: Types.ObjectId, ref: 'TenantStaff', default: null })
   providerId: Types.ObjectId | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   locationId: string | null;
 
   @Prop({ required: true })
@@ -32,13 +32,13 @@ export class Booking {
   @Prop({ required: true, enum: ['confirmed', 'cancelled', 'completed', 'no_show'] })
   status: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   notes: string | null;
 
   @Prop({ default: false })
   reminderSent: boolean;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   reminderAt: Date | null;
 }
 

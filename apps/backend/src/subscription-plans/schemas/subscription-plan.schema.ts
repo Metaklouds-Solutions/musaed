@@ -8,10 +8,10 @@ export class SubscriptionPlan {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   stripeProductId: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   stripePriceId: string | null;
 
   @Prop({ required: true })

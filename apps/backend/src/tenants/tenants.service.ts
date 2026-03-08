@@ -5,12 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import * as bcrypt from 'bcrypt';
 import { Tenant, TenantDocument } from './schemas/tenant.schema';
 import { TenantStaff, TenantStaffDocument } from './schemas/tenant-staff.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { AuthService } from '../auth/auth.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class TenantsService {
@@ -18,6 +19,8 @@ export class TenantsService {
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
     @InjectModel(TenantStaff.name) private staffModel: Model<TenantStaffDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private authService: AuthService,
+    private emailService: EmailService,
   ) {}
 
   async findAll(query: { status?: string; page?: number; limit?: number }) {
@@ -53,13 +56,15 @@ export class TenantsService {
     if (existing) throw new ConflictException('Slug already taken');
 
     let owner = await this.userModel.findOne({ email: dto.ownerEmail, deletedAt: null });
+    const isNewUser = !owner;
+
     if (!owner) {
-      const passwordHash = await bcrypt.hash('ChangeMe123!', 10);
       owner = await this.userModel.create({
         email: dto.ownerEmail,
-        passwordHash,
+        passwordHash: null,
         name: dto.ownerName,
         role: 'TENANT_OWNER',
+        status: 'pending',
       });
     }
 
@@ -72,15 +77,37 @@ export class TenantsService {
       timezone: dto.timezone ?? 'Asia/Riyadh',
     });
 
-    await this.staffModel.create({
+    const staff = await this.staffModel.create({
       userId: owner._id,
       tenantId: tenant._id,
       roleSlug: 'clinic_admin',
-      status: 'active',
-      joinedAt: new Date(),
+      status: isNewUser ? 'invited' : 'active',
+      ...(isNewUser ? { invitedAt: new Date() } : { joinedAt: new Date() }),
     });
 
-    return tenant;
+    if (isNewUser) {
+      const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
+      await this.emailService.sendInviteEmail(owner.email, owner.name, token);
+    }
+
+    return { tenant, owner, staff };
+  }
+
+  async resendInvite(tenantId: string) {
+    const tenant = await this.tenantModel.findOne({ _id: tenantId, deletedAt: null });
+    if (!tenant) throw new NotFoundException('Tenant not found');
+
+    const owner = await this.userModel.findById(tenant.ownerId);
+    if (!owner) throw new NotFoundException('Owner not found');
+
+    if (owner.status !== 'pending') {
+      return { message: 'Owner account is already activated.' };
+    }
+
+    const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
+    await this.emailService.sendInviteEmail(owner.email, owner.name, token);
+
+    return { message: 'Invitation email has been resent.' };
   }
 
   async update(id: string, dto: UpdateTenantDto) {

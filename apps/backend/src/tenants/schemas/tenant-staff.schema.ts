@@ -17,10 +17,10 @@ export class TenantStaff {
   @Prop({ required: true, enum: ['active', 'invited', 'disabled'] })
   status: string;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   invitedAt: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   joinedAt: Date | null;
 }
 

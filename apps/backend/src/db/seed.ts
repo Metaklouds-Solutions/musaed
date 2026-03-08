@@ -1,5 +1,9 @@
 import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const MONGODB_URI = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/musaed';
 
@@ -22,9 +26,10 @@ const subscriptionPlanSchema = new mongoose.Schema(
 const userSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true },
-    passwordHash: { type: String, required: true },
+    passwordHash: { type: String, default: null },
     name: { type: String, required: true },
     role: { type: String, required: true, enum: ['ADMIN', 'TENANT_OWNER', 'STAFF'] },
+    status: { type: String, default: 'active', enum: ['pending', 'active', 'disabled'] },
     avatarUrl: String,
     lastLoginAt: Date,
     deletedAt: Date,
@@ -96,6 +101,7 @@ async function seed() {
         passwordHash,
         name: 'Admin',
         role: 'ADMIN',
+        status: 'active',
       });
       console.log('Seeded admin user: admin@musaed.com / Admin123!');
     } else {

@@ -1,9 +1,14 @@
-import { IsString, IsOptional, IsObject, IsMongoId } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsMongoId, IsIn } from 'class-validator';
 
 export class UpdateTenantDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['ONBOARDING', 'ACTIVE', 'SUSPENDED', 'CANCELLED'])
+  status?: string;
 
   @IsString()
   @IsOptional()

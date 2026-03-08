@@ -17,8 +17,8 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true })
   email: string;
 
-  @Prop({ required: true })
-  passwordHash: string;
+  @Prop({ type: String, required: false, default: null })
+  passwordHash: string | null;
 
   @Prop({ required: true })
   name: string;
@@ -26,13 +26,16 @@ export class User {
   @Prop({ required: true, enum: ['ADMIN', 'TENANT_OWNER', 'STAFF'] })
   role: string;
 
-  @Prop({ default: null })
+  @Prop({ default: 'active', enum: ['pending', 'active', 'disabled'], index: true })
+  status: string;
+
+  @Prop({ type: String, default: null })
   avatarUrl: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   lastLoginAt: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   deletedAt: Date | null;
 }
 

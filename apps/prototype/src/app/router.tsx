@@ -10,6 +10,10 @@ import {
 import { RequireAuth, TenantGuard, AdminGuard, DefaultRedirect, FeatureFlagGuard, TenantOrAdminGuard, TenantMeRedirect, TenantScopeGuard } from './guards';
 import { MainLayout } from './layout/MainLayout';
 import { LoginPage } from './pages/LoginPage';
+import { SetupPasswordPage } from './pages/SetupPasswordPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { LinkExpiredPage } from './pages/LinkExpiredPage';
 import { DashboardPage } from '../modules/dashboard';
 import { StaffPage } from '../modules/staff';
 import { AgentPage } from '../modules/agent';
@@ -43,6 +47,22 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/auth/setup-password',
+    element: <SetupPasswordPage />,
+  },
+  {
+    path: '/auth/forgot-password',
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: '/auth/reset-password',
+    element: <ResetPasswordPage />,
+  },
+  {
+    path: '/auth/link-expired',
+    element: <LinkExpiredPage />,
   },
   {
     element: <RequireAuth />,

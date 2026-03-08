@@ -5,17 +5,20 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import * as bcrypt from 'bcrypt';
 import { TenantStaff, TenantStaffDocument } from '../tenants/schemas/tenant-staff.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
+import { AuthService } from '../auth/auth.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class StaffService {
   constructor(
     @InjectModel(TenantStaff.name) private staffModel: Model<TenantStaffDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private authService: AuthService,
+    private emailService: EmailService,
   ) {}
 
   async findAllForTenant(tenantId: string) {
@@ -26,14 +29,15 @@ export class StaffService {
 
   async invite(tenantId: string, dto: InviteStaffDto) {
     let user = await this.userModel.findOne({ email: dto.email, deletedAt: null });
+    const isNewUser = !user;
 
     if (!user) {
-      const passwordHash = await bcrypt.hash('ChangeMe123!', 10);
       user = await this.userModel.create({
         email: dto.email,
-        passwordHash,
+        passwordHash: null,
         name: dto.name,
         role: 'STAFF',
+        status: 'pending',
       });
     }
 
@@ -43,13 +47,20 @@ export class StaffService {
     });
     if (existing) throw new ConflictException('Staff member already exists for this tenant');
 
-    return this.staffModel.create({
+    const staff = await this.staffModel.create({
       userId: user._id,
       tenantId: new Types.ObjectId(tenantId),
       roleSlug: dto.roleSlug,
       status: 'invited',
       invitedAt: new Date(),
     });
+
+    if (isNewUser) {
+      const token = await this.authService.generateInviteToken(user._id.toString(), 'invite');
+      await this.emailService.sendInviteEmail(user.email, user.name, token);
+    }
+
+    return staff;
   }
 
   async update(id: string, tenantId: string, dto: UpdateStaffDto) {

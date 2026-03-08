@@ -38,7 +38,7 @@ export class SupportTicket {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   closedAt: Date | null;
 
   @Prop({ type: [TicketMessage], default: [] })
