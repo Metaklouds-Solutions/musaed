@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 're
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserPlus, Users, GitCompare, Trash2 } from 'lucide-react';
+import { UserPlus, Users, GitCompare, Power, PowerOff } from 'lucide-react';
 import {
   PageHeader,
   DataTable,
@@ -76,12 +76,17 @@ export function AdminTenantsPage() {
   });
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [actionTarget, setActionTarget] = useState<{
+    id: string;
+    name: string;
+    action: 'enable' | 'disable';
+    ids: string[];
+  } | null>(null);
+  const [processing, setProcessing] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const { items: displayTenants, addOptimistic } = useOptimisticList<TenantListRow>({
+  const { items: displayTenants, addOptimistic, patchOptimistic, rollbackPatch } = useOptimisticList<TenantListRow>({
     items: tenants,
     getKey: (t) => t.id,
   });
@@ -112,32 +117,46 @@ export function AdminTenantsPage() {
     [addOptimistic, refetchTenants]
   );
 
-  const handleDeleteClick = useCallback(
-    (id: string, name: string) => () => setDeleteTarget({ id, name }),
-    []
-  );
+  const handleEnableClick = useCallback((id: string, name: string) => () => {
+    setActionTarget({ id, name, action: 'enable', ids: [id] });
+  }, []);
 
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
+  const handleDisableClick = useCallback((id: string, name: string) => () => {
+    setActionTarget({ id, name, action: 'disable', ids: [id] });
+  }, []);
+
+  const handleActionConfirm = useCallback(async () => {
+    if (!actionTarget) return;
+    const { ids, action } = actionTarget;
+    for (const id of ids) {
+      patchOptimistic(id, { status: action === 'enable' ? 'ACTIVE' : 'SUSPENDED' });
+    }
+    setProcessing(true);
     try {
-      const ids = deleteTarget.id.split(',');
+      const fn = action === 'enable' ? tenantsAdapter.enableTenant : tenantsAdapter.disableTenant;
       for (const id of ids) {
-        await Promise.resolve(tenantsAdapter.deleteTenant(id));
+        await Promise.resolve(fn(id));
       }
-      toast.success(ids.length > 1 ? `${ids.length} tenants deleted` : `"${deleteTarget.name}" deleted`);
-      setDeleteTarget(null);
+      toast.success(
+        ids.length > 1
+          ? `${ids.length} tenants ${action === 'enable' ? 'enabled' : 'disabled'}`
+          : `"${actionTarget.name}" ${action === 'enable' ? 'enabled' : 'disabled'}`
+      );
+      setActionTarget(null);
       selection.clear();
       setRefreshKey((k) => k + 1);
       refetchTenants();
     } catch {
-      toast.error('Failed to delete tenant');
+      toast.error(`Failed to ${action} tenant`);
+      for (const id of ids) {
+        rollbackPatch(id);
+      }
     } finally {
-      setDeleting(false);
+      setProcessing(false);
     }
-  }, [deleteTarget, refetchTenants, selection]);
+  }, [actionTarget, refetchTenants, selection, patchOptimistic, rollbackPatch]);
 
-  const handleDeleteCancel = useCallback(() => setDeleteTarget(null), []);
+  const handleActionCancel = useCallback(() => setActionTarget(null), []);
 
   const selectedTenants = displayTenants.filter((t) => selection.selectedSet.has(t.id));
   const handleView = useCallback(
@@ -145,11 +164,27 @@ export function AdminTenantsPage() {
     [navigate]
   );
 
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDisable = useCallback(() => {
     if (selectedTenants.length === 0) return;
-    setDeleteTarget({
-      id: selectedTenants.map((t) => t.id).join(','),
-      name: `${selectedTenants.length} tenant(s)`,
+    const active = selectedTenants.filter((t) => t.status !== 'SUSPENDED');
+    if (active.length === 0) return;
+    setActionTarget({
+      id: active.map((t) => t.id).join(','),
+      name: `${active.length} tenant(s)`,
+      action: 'disable',
+      ids: active.map((t) => t.id),
+    });
+  }, [selectedTenants]);
+
+  const handleBulkEnable = useCallback(() => {
+    if (selectedTenants.length === 0) return;
+    const suspended = selectedTenants.filter((t) => t.status === 'SUSPENDED');
+    if (suspended.length === 0) return;
+    setActionTarget({
+      id: suspended.map((t) => t.id).join(','),
+      name: `${suspended.length} tenant(s)`,
+      action: 'enable',
+      ids: suspended.map((t) => t.id),
     });
   }, [selectedTenants]);
 
@@ -282,9 +317,25 @@ export function AdminTenantsPage() {
                   searchPlaceholder="Search tenants…"
                 />
                 <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
-                  <Button variant="secondary" size="sm" onClick={handleBulkDelete} className="shrink-0">
-                    <Trash2 className="w-4 h-4" aria-hidden />
-                    Delete
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleBulkDisable}
+                    className="shrink-0"
+                    disabled={!selectedTenants.some((t) => t.status !== 'SUSPENDED')}
+                  >
+                    <PowerOff className="w-4 h-4" aria-hidden />
+                    Disable
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleBulkEnable}
+                    className="shrink-0"
+                    disabled={!selectedTenants.some((t) => t.status === 'SUSPENDED')}
+                  >
+                    <Power className="w-4 h-4" aria-hidden />
+                    Enable
                   </Button>
                 </BulkActionsBar>
                 <div className="rounded-xl overflow-x-auto overflow-y-visible border border-[var(--border-subtle)] shadow-sm">
@@ -351,15 +402,27 @@ export function AdminTenantsPage() {
                             <TableCell className="py-4">
                               <div className="flex items-center gap-2">
                                 <ViewButton onClick={handleView(t.id)} aria-label="View tenant" />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={handleDeleteClick(t.id, t.name)}
-                                  aria-label="Delete tenant"
-                                  className="text-[var(--text-muted)] hover:text-[var(--destructive)]"
-                                >
-                                  <Trash2 size={16} aria-hidden />
-                                </Button>
+                                {t.status === 'SUSPENDED' ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleEnableClick(t.id, t.name)}
+                                    aria-label="Enable tenant"
+                                    className="text-[var(--text-muted)] hover:text-green-600"
+                                  >
+                                    <Power size={16} aria-hidden />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleDisableClick(t.id, t.name)}
+                                    aria-label="Disable tenant"
+                                    className="text-[var(--text-muted)] hover:text-[var(--destructive)]"
+                                  >
+                                    <PowerOff size={16} aria-hidden />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -403,11 +466,19 @@ export function AdminTenantsPage() {
       />
 
       <ConfirmDeleteBar
-        open={deleteTarget !== null}
-        itemName={deleteTarget?.name ?? ''}
-        onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
-        loading={deleting}
+        open={actionTarget !== null}
+        itemName={actionTarget?.name ?? ''}
+        title={actionTarget?.action === 'enable' ? 'Enable tenant' : 'Disable tenant'}
+        bodyMessage={
+          actionTarget?.action === 'enable'
+            ? `${actionTarget.name} will be able to log in again.`
+            : `${actionTarget?.name ?? 'This tenant'} will not be able to log in until you enable them again.`
+        }
+        confirmLabel={actionTarget?.action === 'enable' ? 'Enable' : 'Disable'}
+        variant={actionTarget?.action === 'enable' ? 'primary' : 'danger'}
+        onConfirm={handleActionConfirm}
+        onCancel={handleActionCancel}
+        loading={processing}
       />
     </div>
   );

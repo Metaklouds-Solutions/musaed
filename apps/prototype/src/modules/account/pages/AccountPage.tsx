@@ -2,10 +2,12 @@
  * Manage account page. Profile details, Security (password change).
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { PageHeader, Button } from '../../../shared/ui';
 import { useSession } from '../../../app/session/SessionContext';
+import { api } from '../../../lib/apiClient';
 import { User, Shield, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,22 +21,38 @@ export function AccountPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   const handleClose = () => {
     const isAdmin = user?.role === 'ADMIN';
     navigate(isAdmin ? '/admin/overview' : '/dashboard');
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword || !newPassword) return;
-    // In-memory prototype: just simulate save
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setPasswordSaved(true);
-    setTimeout(() => setPasswordSaved(false), 2000);
-  };
+  const handlePasswordSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!currentPassword || !newPassword || newPassword !== confirmPassword) return;
+      setPasswordLoading(true);
+      try {
+        await api.post('/auth/change-password', {
+          currentPassword,
+          newPassword,
+        });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordSaved(true);
+        toast.success('Password updated');
+        setTimeout(() => setPasswordSaved(false), 2000);
+      } catch (err: unknown) {
+        const message = err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : 'Failed to update password';
+        toast.error(message);
+      } finally {
+        setPasswordLoading(false);
+      }
+    },
+    [currentPassword, newPassword, confirmPassword]
+  );
 
   if (!user) return null;
 
@@ -178,9 +196,9 @@ export function AccountPage() {
                   </div>
                   <Button
                     type="submit"
-                    disabled={!newPassword || newPassword !== confirmPassword}
+                    disabled={!currentPassword || !newPassword || newPassword !== confirmPassword || passwordLoading}
                   >
-                    {passwordSaved ? 'Saved' : 'Update password'}
+                    {passwordLoading ? 'Updating…' : passwordSaved ? 'Saved' : 'Update password'}
                   </Button>
                 </div>
               </form>

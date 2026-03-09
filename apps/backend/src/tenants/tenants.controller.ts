@@ -8,12 +8,14 @@ import {
   Body,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('admin/tenants')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -34,8 +36,8 @@ export class TenantsController {
   }
 
   @Post()
-  create(@Body() dto: CreateTenantDto) {
-    return this.tenantsService.create(dto);
+  create(@Request() req: AuthenticatedRequest, @Body() dto: CreateTenantDto) {
+    return this.tenantsService.create(dto, req.user._id.toString());
   }
 
   @Get(':id')
@@ -49,8 +51,18 @@ export class TenantsController {
   }
 
   @Post(':id/suspend')
-  suspend(@Param('id') id: string) {
-    return this.tenantsService.suspend(id);
+  suspend(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.tenantsService.suspend(id, req.user._id.toString());
+  }
+
+  @Post(':id/disable')
+  disable(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.tenantsService.disable(id, req.user._id.toString());
+  }
+
+  @Post(':id/enable')
+  enable(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.tenantsService.enable(id, req.user._id.toString());
   }
 
   @Post(':id/resend-invite')
@@ -59,7 +71,7 @@ export class TenantsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tenantsService.remove(id);
+  remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.tenantsService.remove(id, req.user._id.toString());
   }
 }

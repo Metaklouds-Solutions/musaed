@@ -19,7 +19,7 @@ import { setTokens, clearTokens, getAccessToken, getRefreshToken, saveUser, getS
 import { SESSION_IDLE_TIMEOUT_MS, SESSION_WARNING_BEFORE_MS } from './sessionConfig';
 
 const ACTIVITY_THROTTLE_MS = 10_000;
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 interface SessionContextValue {
   session: Session | null;

@@ -3,7 +3,7 @@
  * Handles auth tokens, base URL, and common request/response patterns.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;

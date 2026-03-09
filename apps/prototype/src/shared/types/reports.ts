@@ -25,6 +25,7 @@ export interface TenantComparisonRow {
   tenantName: string;
   totalCalls: number;
   totalBookings: number;
+  totalCustomers?: number;
   conversionRate: number;
   escalationRate: number;
   avgDurationSec: number;

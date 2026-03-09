@@ -1,19 +1,22 @@
 /**
- * API alerts adapter. Alerts will come from backend events / websockets.
- * Currently returns cached data.
+ * API alerts adapter. Fetches alerts from backend.
  */
 
+import { api } from '../../lib/apiClient';
 import type { Alert } from '../../shared/types';
 
-let cachedAlerts: Alert[] = [];
-
 export const alertsAdapter = {
-  getAlerts(_tenantId: string | undefined): Alert[] {
-    return cachedAlerts;
+  async getAlerts(_tenantId: string | undefined): Promise<Alert[]> {
+    try {
+      const data = await api.get<Alert[]>('/tenant/alerts');
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
-  resolveAlert(alertId: string): void {
-    cachedAlerts = cachedAlerts.filter((a) => a.id !== alertId);
+  async resolveAlert(alertId: string): Promise<void> {
+    await api.patch(`/tenant/alerts/${alertId}/resolve`);
   },
 
   addSimulatedAlert(_tenantId: string | undefined): void {
@@ -21,7 +24,6 @@ export const alertsAdapter = {
   },
 
   async refresh(): Promise<void> {
-    // Alerts endpoint not yet implemented; placeholder
-    cachedAlerts = [];
+    // No-op; getAlerts fetches fresh each time
   },
 };

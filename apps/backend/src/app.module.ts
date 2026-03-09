@@ -1,4 +1,5 @@
 import { Module, Logger, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { Connection } from 'mongoose';
@@ -23,11 +24,20 @@ import { ReportsModule } from './reports/reports.module';
 import { AdminModule } from './admin/admin.module';
 import { SettingsModule } from './settings/settings.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AuditModule } from './audit/audit.module';
+import { ExportModule } from './export/export.module';
+import { SearchModule } from './search/search.module';
+import { AvailabilityModule } from './availability/availability.module';
+import { AdminSettingsModule } from './admin-settings/admin-settings.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
+import { AlertsModule } from './alerts/alerts.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
@@ -76,6 +86,14 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AdminModule,
     SettingsModule,
     WebhooksModule,
+    NotificationsModule,
+    AuditModule,
+    ExportModule,
+    SearchModule,
+    AvailabilityModule,
+    AdminSettingsModule,
+    MaintenanceModule,
+    AlertsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

@@ -29,10 +29,15 @@ export class SettingsService {
 
     if (dto.timezone !== undefined) update.timezone = dto.timezone;
     if (dto.locale !== undefined) update.locale = dto.locale;
-    if (dto.businessHours !== undefined) update['settings.businessHours'] = dto.businessHours;
+    if (dto.businessHours !== undefined) {
+      update['settings.businessHours'] = typeof dto.businessHours === 'string'
+        ? dto.businessHours
+        : dto.businessHours;
+    }
     if (dto.notifications !== undefined) update['settings.notifications'] = dto.notifications;
     if (dto.featureFlags !== undefined) update['settings.featureFlags'] = dto.featureFlags;
     if (dto.locations !== undefined) update['settings.locations'] = dto.locations;
+    if (dto.appointmentReminders !== undefined) update['settings.appointmentReminders'] = dto.appointmentReminders;
 
     const tenant = await this.tenantModel.findOneAndUpdate(
       { _id: tenantId, deletedAt: null },

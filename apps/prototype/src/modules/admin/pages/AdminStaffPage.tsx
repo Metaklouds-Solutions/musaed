@@ -232,6 +232,7 @@ export function AdminStaffPage() {
       <ConfirmDeleteBar
         open={deleteTarget !== null}
         itemName={deleteTarget?.name ?? ''}
+        title="Delete staff member"
         onConfirm={deleteTarget?.id === '__bulk__' ? handleBulkDeleteConfirm : handleDeleteConfirm}
         onCancel={handleDeleteCancel}
         loading={deleting}

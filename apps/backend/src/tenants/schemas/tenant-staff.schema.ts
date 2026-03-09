@@ -11,7 +11,7 @@ export class TenantStaff {
   @Prop({ type: Types.ObjectId, ref: 'Tenant', required: true })
   tenantId: Types.ObjectId;
 
-  @Prop({ required: true, enum: ['clinic_admin', 'receptionist', 'doctor', 'auditor', 'tenant_staff'] })
+  @Prop({ required: true, enum: ['tenant_owner', 'clinic_admin', 'receptionist', 'doctor', 'auditor', 'tenant_staff'] })
   roleSlug: string;
 
   @Prop({ required: true, enum: ['active', 'invited', 'disabled'] })

@@ -129,13 +129,18 @@ export const tenantsAdapter = {
     locale?: string;
     agentId?: string;
   }): Promise<AdminTenantRow & { inviteSetupUrl?: string }> {
-    const created = await api.post<any>('/admin/tenants', {
+    const body: Record<string, string | undefined> = {
       name: data.name,
       slug: data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
       ownerEmail: data.ownerEmail,
       ownerName: data.ownerName,
       timezone: data.timezone,
-    });
+    };
+    // Only include planId if it looks like a valid MongoId (24 hex chars)
+    if (data.plan && /^[a-f0-9]{24}$/i.test(data.plan)) {
+      body.planId = data.plan;
+    }
+    const created = await api.post<any>('/admin/tenants', body);
     const tenant = created.tenant ?? created;
     return {
       id: tenant._id,
@@ -147,6 +152,14 @@ export const tenantsAdapter = {
 
   async deleteTenant(id: string): Promise<void> {
     await api.delete(`/admin/tenants/${id}`);
+  },
+
+  async enableTenant(id: string): Promise<void> {
+    await api.post(`/admin/tenants/${id}/enable`);
+  },
+
+  async disableTenant(id: string): Promise<void> {
+    await api.post(`/admin/tenants/${id}/disable`);
   },
 
   async getTenantDetail(id: string): Promise<TenantDetail | null> {

@@ -1,9 +1,9 @@
-import { IsOptional, IsObject, IsString, IsArray } from 'class-validator';
+import { IsOptional, IsObject, IsString, IsArray, Allow } from 'class-validator';
 
 export class UpdateSettingsDto {
-  @IsObject()
   @IsOptional()
-  businessHours?: Record<string, unknown>;
+  @Allow()
+  businessHours?: Record<string, unknown> | string;
 
   @IsObject()
   @IsOptional()
@@ -16,6 +16,10 @@ export class UpdateSettingsDto {
   @IsArray()
   @IsOptional()
   locations?: Record<string, unknown>[];
+
+  @IsObject()
+  @IsOptional()
+  appointmentReminders?: { advanceMinutes?: number; channel?: string };
 
   @IsString()
   @IsOptional()

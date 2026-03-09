@@ -76,6 +76,30 @@ export class EmailService {
     await this.send(msg);
   }
 
+  async sendAppointmentReminder(
+    to: string,
+    customerName: string,
+    appointmentDate: Date,
+    timeSlot: string,
+  ): Promise<void> {
+    const dateStr = appointmentDate.toLocaleDateString();
+    const msg = {
+      to,
+      from: this.fromEmail,
+      subject: `Appointment reminder: ${dateStr} at ${timeSlot}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Appointment Reminder</h2>
+          <p>Hi ${customerName}, this is a reminder that you have an appointment on ${dateStr} at ${timeSlot}.</p>
+          <p style="color: #666; font-size: 14px;">Please arrive a few minutes early. If you need to reschedule, contact the clinic.</p>
+          <p style="color: #999; font-size: 12px;">— The MUSAED Team</p>
+        </div>
+      `,
+    };
+
+    await this.send(msg);
+  }
+
   private async send(msg: { to: string; from: string; subject: string; html: string }): Promise<void> {
     if (!this.transporter) {
       this.logger.log(`[DEV] Email to ${msg.to}: ${msg.subject}`);

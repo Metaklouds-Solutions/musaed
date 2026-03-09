@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Drawer, DrawerHeader } from '../../../shared/ui';
 import { Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,12 +15,16 @@ export interface NotificationItem {
   message: string;
   time: string;
   unread: boolean;
+  link?: string;
 }
 
 interface NotificationDrawerProps {
   open: boolean;
   onClose: () => void;
   items: NotificationItem[];
+  onMarkAsRead?: (id: string) => void;
+  onMarkAllAsRead?: () => void;
+  hasUnread?: boolean;
 }
 
 type Filter = 'all' | 'unread';
@@ -28,8 +33,12 @@ export function NotificationDrawer({
   open,
   onClose,
   items,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  hasUnread = items.some((n) => n.unread),
 }: NotificationDrawerProps) {
   const [filter, setFilter] = useState<Filter>('all');
+  const navigate = useNavigate();
   const filtered =
     filter === 'unread' ? items.filter((n) => n.unread) : items;
   const isEmpty = filtered.length === 0;
@@ -53,6 +62,15 @@ export function NotificationDrawer({
         >
           All
         </button>
+        {onMarkAllAsRead && hasUnread && (
+          <button
+            type="button"
+            onClick={onMarkAllAsRead}
+            className="text-sm text-[var(--primary)] hover:underline"
+          >
+            Mark all read
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setFilter('unread')}
@@ -100,7 +118,17 @@ export function NotificationDrawer({
           <ul className="divide-y divide-[var(--separator)]">
             {filtered.map((item) => (
               <li key={item.id} className="px-4 sm:px-5 py-4 sm:py-4">
-                <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (item.unread && onMarkAsRead) onMarkAsRead(item.id);
+                    if (item.link?.startsWith('/')) {
+                      onClose();
+                      navigate(item.link);
+                    }
+                  }}
+                  className="w-full text-left flex gap-3 hover:bg-[var(--bg-hover)]/50 rounded-lg -m-2 p-2 transition-colors"
+                >
                   {item.unread && (
                     <span
                       className="mt-2 w-2 h-2 rounded-full shrink-0"
@@ -131,7 +159,7 @@ export function NotificationDrawer({
                       {item.time}
                     </p>
                   </div>
-                </div>
+                </button>
               </li>
             ))}
           </ul>

@@ -83,12 +83,31 @@ export const dashboardAdapter = {
     return null;
   },
 
-  getTenantStaffCounts(_tenantId: string | undefined): TenantStaffCounts {
-    return defaultStaffCounts;
+  async getTenantStaffCounts(tenantId: string | undefined): Promise<TenantStaffCounts> {
+    if (!tenantId) return defaultStaffCounts;
+    try {
+      const data = await api.get<{ staffCounts?: TenantStaffCounts }>('/tenant/dashboard/metrics');
+      return data.staffCounts ?? defaultStaffCounts;
+    } catch {
+      return defaultStaffCounts;
+    }
   },
 
-  getTenantOpenTickets(_tenantId: string | undefined, _limit?: number): TenantOpenTicket[] {
-    return [];
+  async getTenantOpenTickets(tenantId: string | undefined, limit = 5): Promise<TenantOpenTicket[]> {
+    if (!tenantId) return [];
+    try {
+      const data = await api.get<{ openTicketsList?: Array<{ id?: string; title?: string; status?: string; priority?: string; createdAt?: string }> }>('/tenant/dashboard/metrics');
+      const list = data.openTicketsList ?? [];
+      return list.slice(0, limit).map((t) => ({
+        id: t.id ?? '',
+        title: t.title ?? '',
+        status: t.status ?? '',
+        priority: t.priority ?? 'medium',
+        createdAt: t.createdAt ?? new Date().toISOString(),
+      }));
+    } catch {
+      return [];
+    }
   },
 
   getTenantRecentCalls(_tenantId: string | undefined, _limit?: number, _dateRange?: DateRangeFilter): TenantRecentCall[] {

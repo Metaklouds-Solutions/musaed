@@ -10,6 +10,14 @@ interface ConfirmDeleteBarProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
+  /** Dialog title, e.g. "Delete tenant" or "Disable tenant". Default: "Delete tenant" */
+  title?: string;
+  /** Custom body message. Default: "Are you sure you want to delete X? This action cannot be undone." */
+  bodyMessage?: string;
+  /** Confirm button label. Default: "Delete" */
+  confirmLabel?: string;
+  /** Button variant: danger (red) or primary (green for enable). Default: "danger" */
+  variant?: 'danger' | 'primary';
 }
 
 export function ConfirmDeleteBar({
@@ -18,7 +26,13 @@ export function ConfirmDeleteBar({
   onConfirm,
   onCancel,
   loading = false,
+  title = 'Delete tenant',
+  bodyMessage,
+  confirmLabel = 'Delete',
+  variant = 'danger',
 }: ConfirmDeleteBarProps) {
+  const message =
+    bodyMessage ?? `Are you sure you want to delete ${itemName}? This action cannot be undone.`;
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -68,10 +82,10 @@ export function ConfirmDeleteBar({
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                    Delete tenant
+                    {title}
                   </h3>
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                    Are you sure you want to delete <strong className="text-[var(--text-primary)]">{itemName}</strong>? This action cannot be undone.
+                    {message}
                   </p>
                 </div>
               </div>
@@ -90,12 +104,16 @@ export function ConfirmDeleteBar({
                   type="button"
                   onClick={onConfirm}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 cursor-pointer"
+                  className={
+                    variant === 'primary'
+                      ? 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 cursor-pointer'
+                      : 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 cursor-pointer'
+                  }
                 >
                   {loading ? (
                     <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : null}
-                  {loading ? 'Deleting...' : 'Delete'}
+                  {loading ? 'Processing...' : confirmLabel}
                 </button>
               </div>
             </div>

@@ -1,10 +1,11 @@
-import { Controller, Post, Body, UseGuards, Get, Request, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Request, Query, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { SetupPasswordDto } from './dto/setup-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
@@ -56,5 +57,13 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.token, dto.password);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(@Request() req: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
+    const userId = req.user?._id;
+    if (!userId) throw new BadRequestException('User ID not found');
+    return this.authService.changePassword(userId, dto.currentPassword, dto.newPassword);
   }
 }

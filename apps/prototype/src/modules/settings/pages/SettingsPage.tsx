@@ -45,9 +45,17 @@ export function SettingsPage() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-  const [settings, setSettings] = useState<TenantSettings>(() =>
-    settingsAdapter.getTenantSettings(tenantId)
-  );
+  const defaultSettings: TenantSettings = {
+    timezone: 'Asia/Riyadh',
+    locale: 'ar',
+    businessHours: 'Mon–Fri 9am–5pm',
+    notifications: { emailDigest: true, ticketAlerts: true, bookingReminders: true },
+    appointmentReminders: { advanceMinutes: 60, channel: 'email' },
+  };
+  const [settings, setSettings] = useState<TenantSettings>(() => {
+    const result = settingsAdapter.getTenantSettings(tenantId);
+    return result instanceof Promise ? defaultSettings : result;
+  });
   const [featureFlags, setFeatureFlags] = useState<{ enableReports: boolean; enableCalendar: boolean }>({
     enableReports: true,
     enableCalendar: true,
@@ -60,8 +68,18 @@ export function SettingsPage() {
     }
   }, [tenantId]);
 
-  const handleSave = useCallback(() => {
-    settingsAdapter.saveTenantSettings(settings, tenantId);
+  useEffect(() => {
+    const load = settingsAdapter.getTenantSettings(tenantId);
+    if (load instanceof Promise) {
+      load.then((s) => setSettings(s)).catch(() => {});
+    } else if (tenantId) {
+      setSettings(load);
+    }
+  }, [tenantId]);
+
+  const handleSave = useCallback(async () => {
+    const result = settingsAdapter.saveTenantSettings(settings, tenantId);
+    if (result instanceof Promise) await result;
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [settings, tenantId]);

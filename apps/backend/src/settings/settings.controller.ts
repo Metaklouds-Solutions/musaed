@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { SettingsService } from './settings.service';
@@ -12,11 +12,15 @@ export class SettingsController {
 
   @Get()
   getSettings(@Request() req: AuthenticatedRequest) {
-    return this.settingsService.getSettings(req.tenantId!);
+    const tenantId = req.tenantId;
+    if (!tenantId) throw new ForbiddenException('Tenant context required');
+    return this.settingsService.getSettings(tenantId);
   }
 
   @Patch()
   updateSettings(@Request() req: AuthenticatedRequest, @Body() dto: UpdateSettingsDto) {
-    return this.settingsService.updateSettings(req.tenantId!, dto);
+    const tenantId = req.tenantId;
+    if (!tenantId) throw new ForbiddenException('Tenant context required');
+    return this.settingsService.updateSettings(tenantId, dto);
   }
 }

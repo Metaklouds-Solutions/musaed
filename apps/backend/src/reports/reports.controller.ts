@@ -17,4 +17,13 @@ export class ReportsController {
   ) {
     return this.reportsService.getPerformance(req.tenantId!, dateFrom, dateTo);
   }
+
+  @Get('outcomes-by-day')
+  getOutcomesByDay(
+    @Request() req: AuthenticatedRequest,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.reportsService.getOutcomesByDay(req.tenantId!, dateFrom, dateTo);
+  }
 }

@@ -62,4 +62,28 @@ export const exportAdapter = {
     if (!csv) return;
     downloadCsv(csv, filename);
   },
+
+  /** Uses provided rows for client-side CSV. */
+  exportStaffCsv(rows: Record<string, unknown>[]): Promise<void> {
+    if (rows.length === 0) return Promise.resolve();
+    const csv = toCsv(rows);
+    downloadCsv(csv, `staff-${new Date().toISOString().slice(0, 10)}.csv`);
+    return Promise.resolve();
+  },
+
+  /** Uses provided rows for client-side CSV. */
+  exportTicketsCsv(rows: Record<string, unknown>[]): Promise<void> {
+    if (rows.length === 0) return Promise.resolve();
+    const csv = toCsv(rows);
+    downloadCsv(csv, `tickets-${new Date().toISOString().slice(0, 10)}.csv`);
+    return Promise.resolve();
+  },
+
+  /** Uses provided rows for client-side CSV. */
+  exportTenantsCsv(rows: Record<string, unknown>[]): Promise<void> {
+    if (rows.length === 0) return Promise.resolve();
+    const csv = toCsv(rows);
+    downloadCsv(csv, `tenants-${new Date().toISOString().slice(0, 10)}.csv`);
+    return Promise.resolve();
+  },
 };

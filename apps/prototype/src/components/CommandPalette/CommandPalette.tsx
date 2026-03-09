@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../app/session/SessionContext';
 import { ADMIN_NAV, TENANT_NAV } from '../../app/layout/Sidebar/navConfig';
-import { tenantsAdapter, agentsAdapter, supportAdapter } from '../../adapters';
+import { tenantsAdapter, agentsAdapter, supportAdapter, searchAdapter } from '../../adapters';
 import { useAsyncData } from '../../shared/hooks/useAsyncData';
 import { cn } from '@/lib/utils';
 
@@ -68,9 +68,31 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     [isAdmin, t]
   );
 
-  const { data: tenants } = useAsyncData(() => tenantsAdapter.getAllTenants(), [], []);
-  const { data: agents } = useAsyncData(() => agentsAdapter.list(), [], []);
-  const { data: tickets } = useAsyncData(() => supportAdapter.listTickets(), [], []);
+  const tenantId = user?.tenantId;
+  const { data: tenants } = useAsyncData(
+    () => (open ? tenantsAdapter.getAllTenants() : []),
+    [open],
+    []
+  );
+  const { data: agents } = useAsyncData(
+    () => (open ? agentsAdapter.list() : []),
+    [open],
+    []
+  );
+  const { data: tickets } = useAsyncData(
+    () => (open ? supportAdapter.listTickets() : []),
+    [open],
+    []
+  );
+
+  const { data: searchResults, loading: searchLoading } = useAsyncData(
+    () =>
+      open && query.trim()
+        ? searchAdapter.search(query, tenantId, isAdmin, ['tenants', 'staff', 'tickets'])
+        : Promise.resolve([]),
+    [open, query, tenantId, isAdmin],
+    [] as { id: string; label: string; meta?: string; path: string }[]
+  );
 
   const tenantsItems: CommandItem[] = React.useMemo(
     () => tenants.slice(0, 5).map((t) => ({ id: `tenant-${t.id}`, label: t.name, meta: 'Tenant', path: `/admin/tenants/${t.id}` })),
@@ -97,10 +119,24 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     return items;
   }, [navItems, isAdmin, tenantsItems, agentsItems, ticketsItems]);
 
+  const searchItems: CommandItem[] = React.useMemo(
+    () =>
+      searchResults.map((r) => ({
+        id: r.id,
+        label: r.label,
+        meta: r.meta,
+        path: r.path,
+      })),
+    [searchResults]
+  );
+
   const filtered = React.useMemo(() => {
     if (!query.trim()) return allItems.slice(0, 12);
-    return allItems.filter((item) => fuzzyMatch(query, item.label) || fuzzyMatch(query, item.meta ?? '')).slice(0, 12);
-  }, [allItems, query]);
+    if (searchLoading) {
+      return allItems.filter((item) => fuzzyMatch(query, item.label) || fuzzyMatch(query, item.meta ?? '')).slice(0, 12);
+    }
+    return searchItems.slice(0, 12);
+  }, [allItems, query, searchItems, searchLoading]);
 
   React.useEffect(() => {
     setSelected(0);

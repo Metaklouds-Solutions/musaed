@@ -11,12 +11,14 @@ import { Customer, CustomerDocument } from '../customers/schemas/customer.schema
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { DEFAULT_PAGE, DEFAULT_LIMIT } from '../common/constants';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class BookingsService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(Customer.name) private customerModel: Model<CustomerDocument>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async findAllForTenant(
@@ -90,6 +92,16 @@ export class BookingsService {
       { _id: booking.customerId },
       { $inc: { totalBookings: 1 } },
     );
+
+    const customerName = customer.name ?? 'Customer';
+    await this.notificationsService.createForTenantStaff(tenantId, {
+      type: 'booking_new',
+      title: 'New booking',
+      message: `${customerName} - ${dto.date} ${dto.timeSlot ?? ''}`,
+      link: `/bookings`,
+      meta: { bookingId: booking._id.toString(), customerId: customer._id.toString() },
+      priority: 'normal',
+    });
 
     return booking;
   }

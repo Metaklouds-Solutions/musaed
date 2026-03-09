@@ -35,7 +35,7 @@ export function HelpCenterPage() {
     }
   };
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     const rows = tickets.map((t) => ({
       Title: t.title,
       Category: t.category,
@@ -43,7 +43,7 @@ export function HelpCenterPage() {
       Priority: t.priority,
       Created: new Date(t.createdAt).toLocaleDateString(),
     }));
-    exportAdapter.exportCsv(rows, `my-tickets-${new Date().toISOString().slice(0, 10)}.csv`);
+    await exportAdapter.exportTicketsCsv(rows);
     toast.success('Tickets exported');
   }, [tickets]);
 

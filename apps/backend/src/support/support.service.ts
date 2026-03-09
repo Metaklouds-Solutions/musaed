@@ -4,11 +4,13 @@ import { Model, Types, FilterQuery } from 'mongoose';
 import { SupportTicket, SupportTicketDocument } from './schemas/support-ticket.schema';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { AddMessageDto } from './dto/add-message.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SupportService {
   constructor(
     @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async findAllForTenant(
@@ -82,6 +84,15 @@ export class SupportService {
         : [],
     });
 
+    await this.notificationsService.createForTenantStaff(tenantId, {
+      type: 'ticket_new',
+      title: 'New support ticket',
+      message: dto.title,
+      link: `/help/tickets/${ticket._id}`,
+      meta: { ticketId: ticket._id.toString() },
+      priority: dto.priority === 'high' || dto.priority === 'critical' ? 'high' : 'normal',
+    });
+
     return ticket;
   }
 
@@ -108,6 +119,17 @@ export class SupportService {
     }
 
     const updated = await this.ticketModel.findOneAndUpdate(filter, update, { new: true });
+    const tid = tenantId ?? (ticket.tenantId ? String(ticket.tenantId) : undefined);
+    if (updated && tid) {
+      await this.notificationsService.createForTenantStaff(tid, {
+        type: 'ticket_updated',
+        title: 'Ticket updated',
+        message: `New reply on: ${ticket.title}`,
+        link: `/help/tickets/${ticket._id}`,
+        meta: { ticketId: ticket._id.toString() },
+        priority: 'normal',
+      });
+    }
     return updated;
   }
 }

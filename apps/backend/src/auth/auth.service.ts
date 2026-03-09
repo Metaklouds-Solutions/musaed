@@ -20,6 +20,7 @@ import {
   TenantStaff,
   TenantStaffDocument,
 } from '../tenants/schemas/tenant-staff.schema';
+import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
 import {
   InviteToken,
   InviteTokenDocument,
@@ -44,6 +45,7 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(TenantStaff.name) private tenantStaffModel: Model<TenantStaffDocument>,
+    @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
     @InjectModel(InviteToken.name) private inviteTokenModel: Model<InviteTokenDocument>,
     @InjectModel(RefreshToken.name) private refreshTokenModel: Model<RefreshTokenDocument>,
     private jwtService: JwtService,
@@ -61,6 +63,24 @@ export class AuthService {
     }
     if (user.status === 'disabled') {
       throw new ForbiddenException('Account is disabled. Contact your administrator.');
+    }
+
+    if (user.role !== 'ADMIN') {
+      const membership = await this.tenantStaffModel.findOne({
+        userId: user._id,
+        status: 'active',
+      });
+      if (membership) {
+        const tenant = await this.tenantModel.findOne({
+          _id: membership.tenantId,
+          deletedAt: null,
+        });
+        if (tenant?.status === 'SUSPENDED') {
+          throw new ForbiddenException(
+            'Your account has been disabled. Please contact your administrator.',
+          );
+        }
+      }
     }
 
     if (!user.passwordHash) {
@@ -107,6 +127,22 @@ export class AuthService {
         { $set: { revokedAt: new Date() } },
       );
       throw new UnauthorizedException('User not found');
+    }
+
+    if (user.role !== 'ADMIN' && payload.tenantId) {
+      const tenant = await this.tenantModel.findOne({
+        _id: payload.tenantId,
+        deletedAt: null,
+      });
+      if (tenant?.status === 'SUSPENDED') {
+        await this.refreshTokenModel.updateOne(
+          { token: refreshToken },
+          { $set: { revokedAt: new Date() } },
+        );
+        throw new ForbiddenException(
+          'Your account has been disabled. Please contact your administrator.',
+        );
+      }
     }
 
     const newPayload = {
@@ -251,6 +287,25 @@ export class AuthService {
     if (!user) throw new BadRequestException('User not found');
 
     return { message: 'Password has been reset successfully. You can now log in.' };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.userModel.findOne({ _id: userId, deletedAt: null });
+    if (!user) throw new UnauthorizedException('User not found');
+
+    if (!user.passwordHash) {
+      throw new ForbiddenException('Account not activated. Use the setup link from your email.');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+    await this.userModel.updateOne({ _id: userId }, { $set: { passwordHash } });
+
+    return { message: 'Password updated' };
   }
 
   private async issueTokens(user: UserDocument) {

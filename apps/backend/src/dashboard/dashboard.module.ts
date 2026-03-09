@@ -4,6 +4,7 @@ import { Booking, BookingSchema } from '../bookings/schemas/booking.schema';
 import { Customer, CustomerSchema } from '../customers/schemas/customer.schema';
 import { AgentInstance, AgentInstanceSchema } from '../agent-instances/schemas/agent-instance.schema';
 import { SupportTicket, SupportTicketSchema } from '../support/schemas/support-ticket.schema';
+import { TenantStaff, TenantStaffSchema } from '../tenants/schemas/tenant-staff.schema';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 
@@ -14,6 +15,7 @@ import { DashboardService } from './dashboard.service';
       { name: Customer.name, schema: CustomerSchema },
       { name: AgentInstance.name, schema: AgentInstanceSchema },
       { name: SupportTicket.name, schema: SupportTicketSchema },
+      { name: TenantStaff.name, schema: TenantStaffSchema },
     ]),
   ],
   controllers: [DashboardController],

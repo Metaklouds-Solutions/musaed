@@ -54,17 +54,26 @@ export const reportsAdapter = {
     }
   },
 
-  getScheduledReportConfig(): ScheduledReportConfig {
-    return { enabled: false, frequency: 'weekly', recipients: [], dayOfWeek: 1, dayOfMonth: 1 };
+  async getScheduledReportConfig(): Promise<ScheduledReportConfig> {
+    try {
+      const data = await api.get<ScheduledReportConfig>('/admin/settings/scheduled-reports');
+      return {
+        enabled: data.enabled ?? false,
+        frequency: data.frequency ?? 'weekly',
+        recipients: data.recipients ?? [],
+        dayOfWeek: data.dayOfWeek ?? 1,
+        dayOfMonth: data.dayOfMonth ?? 1,
+      };
+    } catch {
+      return { enabled: false, frequency: 'weekly', recipients: [], dayOfWeek: 1, dayOfMonth: 1 };
+    }
   },
 
-  setScheduledReportConfig(_config: ScheduledReportConfig): void {},
+  async setScheduledReportConfig(config: ScheduledReportConfig): Promise<void> {
+    await api.patch('/admin/settings/scheduled-reports', config);
+  },
 
   getOutcomesByVersion(_tenantId: string | undefined, _dateRange?: DateRangeFilter): ABTestOutcomeRow[] {
-    return [];
-  },
-
-  getTenantComparison(_tenantIds: string[], _dateRange?: DateRangeFilter): TenantComparisonRow[] {
     return [];
   },
 
@@ -87,7 +96,29 @@ export const reportsAdapter = {
     return [];
   },
 
-  getOutcomesByDay(_tenantId: string | undefined, _dateRange?: DateRangeFilter): OutcomesByDay[] {
-    return [];
+  async getOutcomesByDay(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<OutcomesByDay[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<OutcomesByDay[]>(`/tenant/reports/outcomes-by-day?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async getTenantComparison(tenantIds: string[], dateRange?: DateRangeFilter): Promise<TenantComparisonRow[]> {
+    if (tenantIds.length === 0) return [];
+    try {
+      const params = new URLSearchParams({ tenantIds: tenantIds.join(',') });
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<TenantComparisonRow[]>(`/admin/reports/tenant-comparison?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 };

@@ -6,12 +6,10 @@ import { useState, useCallback } from 'react';
 import { Bell, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../session/SessionContext';
+import { useNotifications } from '../../../hooks/useNotifications';
 import { GlobalSearch } from '../../../components/GlobalSearch';
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
-import {
-  NotificationDrawer,
-  type NotificationItem,
-} from './NotificationDrawer';
+import { NotificationDrawer } from './NotificationDrawer';
 import { UserMenu } from './UserMenu';
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
 
@@ -29,8 +27,8 @@ const THEME_STORAGE_KEY = 'clinic-crm-theme';
 export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShortcutsHelp }: HeaderProps) {
   const { t } = useTranslation();
   useSession(); // SessionProvider required for UserMenu
+  const { items: notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications] = useState<NotificationItem[]>([]);
   const openNotifications = useCallback(() => setNotificationsOpen(true), []);
   const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
 
@@ -87,6 +85,9 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
           open={notificationsOpen}
           onClose={closeNotifications}
           items={notifications}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          hasUnread={unreadCount > 0}
         />
         <UserMenu
           themeStorageKey={THEME_STORAGE_KEY}

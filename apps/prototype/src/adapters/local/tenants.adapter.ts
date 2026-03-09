@@ -24,6 +24,9 @@ import type { TenantDetail, AdminTenantRow, TenantListRow, TenantDetailFull, Ten
 /** In-memory tenants added via Add Tenant modal. */
 const addedTenants: AdminTenantRow[] = [];
 
+/** Status overrides for enable/disable in local mode. */
+const tenantStatusOverrides: Record<string, 'ACTIVE' | 'SUSPENDED'> = {};
+
 const ROLE_LABELS: Record<string, string> = {
   tenant_owner: 'Tenant Owner',
   doctor: 'Doctor',
@@ -37,18 +40,26 @@ export const tenantsAdapter = {
     const deleted = softDeleteAdapter.getDeletedTenantIds();
     const fromAdded: TenantListRow[] = addedTenants
       .filter((t) => !deleted.has(t.id))
-      .map((t) => ({
-        id: t.id,
-        name: t.name,
-        plan: t.plan,
-        status: 'TRIAL' as const,
+      .map((t) => {
+        const override = tenantStatusOverrides[t.id];
+        return {
+          id: t.id,
+          name: t.name,
+          plan: t.plan,
+          status: (override ?? 'TRIAL') as 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'ONBOARDING' | 'CHURNED',
         agentCount: 0,
         mrr: 0,
         callsThisMonth: 0,
         onboardingStatus: 'Step 1/4',
         createdAt: new Date().toISOString(),
-      }));
-    const fromSeed = seedTenantListRows.filter((t) => !deleted.has(t.id));
+      };
+      });
+    const fromSeed = seedTenantListRows
+      .filter((t) => !deleted.has(t.id))
+      .map((t) => {
+        const override = tenantStatusOverrides[t.id];
+        return override ? { ...t, status: override } : t;
+      });
     const existingIds = new Set(fromSeed.map((r) => r.id));
     const addedOnly = fromAdded.filter((a) => !existingIds.has(a.id));
     let rows = [...addedOnly.reverse(), ...fromSeed];
@@ -213,6 +224,14 @@ export const tenantsAdapter = {
 
   deleteTenant(id: string): void {
     softDeleteAdapter.softDeleteTenant(id);
+  },
+
+  enableTenant(id: string): void {
+    tenantStatusOverrides[id] = 'ACTIVE';
+  },
+
+  disableTenant(id: string): void {
+    tenantStatusOverrides[id] = 'SUSPENDED';
   },
 
   /** Get full tenant detail by ID. Returns null for soft-deleted tenants. */

@@ -12,6 +12,8 @@ import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { AuthService } from '../auth/auth.service';
 import { EmailService } from '../email/email.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class TenantsService {
@@ -21,6 +23,8 @@ export class TenantsService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private authService: AuthService,
     private emailService: EmailService,
+    private notificationsService: NotificationsService,
+    private auditService: AuditService,
   ) {}
 
   async findAll(query: { status?: string; page?: number; limit?: number }) {
@@ -51,18 +55,30 @@ export class TenantsService {
     return tenant;
   }
 
-  async create(dto: CreateTenantDto) {
+  async create(dto: CreateTenantDto, adminUserId?: string) {
     const existing = await this.tenantModel.findOne({ slug: dto.slug, deletedAt: null });
     if (existing) throw new ConflictException('Slug already taken');
 
-    let owner = await this.userModel.findOne({ email: dto.ownerEmail, deletedAt: null });
+    const ownerEmail = dto.ownerEmail.toLowerCase().trim();
+    const existingOwner = await this.userModel.findOne({ email: ownerEmail, deletedAt: null });
+    if (existingOwner) {
+      const tenantWithOwner = await this.tenantModel.findOne({
+        ownerId: existingOwner._id,
+        deletedAt: null,
+      });
+      if (tenantWithOwner) {
+        throw new ConflictException('A tenant with this owner email already exists');
+      }
+    }
+
+    let owner = await this.userModel.findOne({ email: ownerEmail, deletedAt: null });
     const isNewUser = !owner;
 
     if (!owner) {
       owner = await this.userModel.create({
-        email: dto.ownerEmail,
+        email: ownerEmail,
         passwordHash: null,
-        name: (dto.ownerName?.trim() || dto.ownerEmail.split('@')[0]) ?? 'Owner',
+        name: (dto.ownerName?.trim() || ownerEmail.split('@')[0]) ?? 'Owner',
         role: 'TENANT_OWNER',
         status: 'pending',
       });
@@ -89,6 +105,24 @@ export class TenantsService {
     if (isNewUser) {
       const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
       inviteSetupUrl = await this.emailService.sendInviteEmail(owner.email, owner.name, token);
+    }
+
+    await this.notificationsService.createForAdmins({
+      type: 'tenant_created',
+      title: 'New tenant',
+      message: `${tenant.name} (${tenant.slug})`,
+      link: `/admin/tenants/${tenant._id}`,
+      meta: { tenantId: tenant._id.toString(), name: tenant.name },
+      priority: 'normal',
+    });
+
+    if (adminUserId) {
+      await this.auditService.log(
+        'tenant.created',
+        adminUserId,
+        { tenantId: tenant._id.toString(), name: tenant.name, slug: tenant.slug },
+        tenant._id.toString(),
+      );
     }
 
     return { tenant, owner, staff, inviteSetupUrl };
@@ -120,17 +154,39 @@ export class TenantsService {
     return tenant;
   }
 
-  async suspend(id: string) {
+  async suspend(id: string, adminUserId?: string) {
     const tenant = await this.tenantModel.findOneAndUpdate(
       { _id: id, deletedAt: null },
       { $set: { status: 'SUSPENDED' } },
       { new: true },
     );
     if (!tenant) throw new NotFoundException('Tenant not found');
+    if (adminUserId) {
+      await this.auditService.log(
+        'tenant.disabled',
+        adminUserId,
+        { tenantId: id, name: tenant.name },
+        id,
+      );
+    }
     return tenant;
   }
 
-  async remove(id: string) {
+  async disable(id: string, adminUserId?: string) {
+    return this.suspend(id, adminUserId);
+  }
+
+  async enable(id: string, _adminUserId?: string) {
+    const tenant = await this.tenantModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
+      { $set: { status: 'ACTIVE' } },
+      { new: true },
+    );
+    if (!tenant) throw new NotFoundException('Tenant not found');
+    return tenant;
+  }
+
+  async remove(id: string, adminUserId?: string) {
     const tenant = await this.tenantModel.findOneAndUpdate(
       { _id: id, deletedAt: null },
       { $set: { deletedAt: new Date() } },
@@ -141,6 +197,14 @@ export class TenantsService {
       { tenantId: tenant._id },
       { $set: { status: 'disabled' } },
     );
+    if (adminUserId) {
+      await this.auditService.log(
+        'tenant.deleted',
+        adminUserId,
+        { tenantId: id, name: tenant.name },
+        id,
+      );
+    }
     return { message: 'Tenant deleted' };
   }
 }

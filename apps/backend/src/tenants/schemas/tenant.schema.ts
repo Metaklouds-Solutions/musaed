@@ -4,6 +4,15 @@ import { Document, Types } from 'mongoose';
 export type TenantDocument = Tenant & Document;
 
 @Schema({ _id: false })
+export class AppointmentRemindersConfig {
+  @Prop({ default: 60 })
+  advanceMinutes: number;
+
+  @Prop({ default: 'email' })
+  channel: string;
+}
+
+@Schema({ _id: false })
 export class TenantSettings {
   @Prop({ type: Object, default: {} })
   businessHours: Record<string, unknown>;
@@ -16,6 +25,9 @@ export class TenantSettings {
 
   @Prop({ type: [Object], default: [] })
   locations: Record<string, unknown>[];
+
+  @Prop({ type: AppointmentRemindersConfig, default: () => ({ advanceMinutes: 60, channel: 'email' }) })
+  appointmentReminders?: AppointmentRemindersConfig;
 }
 
 @Schema({ timestamps: true, collection: 'tenants' })

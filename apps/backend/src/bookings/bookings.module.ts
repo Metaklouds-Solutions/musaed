@@ -2,18 +2,23 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Booking, BookingSchema } from './schemas/booking.schema';
 import { Customer, CustomerSchema } from '../customers/schemas/customer.schema';
+import { Tenant, TenantSchema } from '../tenants/schemas/tenant.schema';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
+import { RemindersProcessor } from './reminders.processor';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Booking.name, schema: BookingSchema },
       { name: Customer.name, schema: CustomerSchema },
+      { name: Tenant.name, schema: TenantSchema },
     ]),
+    NotificationsModule,
   ],
   controllers: [BookingsController],
-  providers: [BookingsService],
+  providers: [BookingsService, RemindersProcessor],
   exports: [BookingsService, MongooseModule],
 })
 export class BookingsModule {}

@@ -60,12 +60,22 @@ export const bookingsAdapter = {
     }
   },
 
-  getAvailabilitySlots(
-    _tenantId: string | undefined,
-    _start: Date,
-    _end: Date
-  ): CalendarAvailability[] {
-    return [];
+  async getAvailabilitySlots(
+    tenantId: string | undefined,
+    start: Date,
+    end: Date
+  ): Promise<CalendarAvailability[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams({
+        start: start.toISOString(),
+        end: end.toISOString(),
+      });
+      const data = await api.get<CalendarAvailability[]>(`/tenant/availability?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
   async getBookings(tenantId: string | undefined, filters?: { status?: string; date?: string }): Promise<Booking[]> {

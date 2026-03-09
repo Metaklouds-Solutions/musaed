@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, type FormEvent } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useLocation } from 'react-router-dom';
 import { Zap, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '../session/SessionContext';
 import type { Theme } from '../layout/Header';
 import FloatingLines from '../../components/FloatingLines';
+import { Button } from '../../shared/ui';
 import { api, setTokens } from '../../lib/apiClient';
 import type { User as UserType } from '../../shared/types';
 
@@ -20,7 +21,9 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
-  const { isAuthenticated, user, loginWithTokens, restoring } = useSession();
+  const { isAuthenticated, user, loginWithTokens, logout, restoring } = useSession();
+  const location = useLocation();
+  const stateMessage = (location.state as { message?: string } | null)?.message;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -64,8 +67,8 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
           tenantId: data.user.tenantId,
           tenantRole: data.user.tenantRole,
         });
-      } catch (err: any) {
-        const message = err?.message ?? 'Login failed. Please try again.';
+      } catch (err: unknown) {
+        const message = err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : 'Login failed. Please try again.';
         setError(message);
         toast.error(message);
       } finally {
@@ -85,6 +88,20 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
 
   if (isAuthenticated && user) {
     if (user.role === 'ADMIN') return <Navigate to="/admin/overview" replace />;
+    // Tenant users without tenantId must stay on login (breaks redirect loop with TenantGuard)
+    const tenantRoles = ['TENANT_OWNER', 'STAFF'] as const;
+    if (tenantRoles.includes(user.role as (typeof tenantRoles)[number]) && !user.tenantId) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
+          <p className="text-[var(--text-muted)] text-center">
+            {stateMessage ?? 'No tenant assigned. Contact your administrator.'}
+          </p>
+          <Button variant="secondary" onClick={logout}>
+            Log out and try again
+          </Button>
+        </div>
+      );
+    }
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -128,8 +145,16 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-5">
           {error && (
-            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-              {error}
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm space-y-2">
+              <p>{error}</p>
+              {error.toLowerCase().includes('disabled') && error.toLowerCase().includes('contact') && (
+                <a
+                  href={`mailto:${import.meta.env.VITE_SUPPORT_EMAIL ?? 'support@example.com'}?subject=Account%20Disabled%20-%20Access%20Request`}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  Contact administrator
+                </a>
+              )}
             </div>
           )}
 

@@ -37,11 +37,11 @@ export class StaffController {
     @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateStaffDto,
   ) {
-    return this.staffService.update(id, req.tenantId!, dto);
+    return this.staffService.update(id, req.tenantId!, dto, req.user._id.toString());
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.staffService.remove(id);
+  remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.staffService.remove(id, req.tenantId ?? null, req.user._id.toString());
   }
 }
