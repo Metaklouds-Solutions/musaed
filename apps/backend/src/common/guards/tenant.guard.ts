@@ -1,14 +1,15 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
 
     if (user?.role === 'ADMIN') {
-      // Admins can optionally scope to a tenant via query param
-      request.tenantId = request.query?.tenantId ?? null;
+      const queryTenantId = request.query?.tenantId;
+      request.tenantId = typeof queryTenantId === 'string' ? queryTenantId : null;
       return true;
     }
 

@@ -11,6 +11,12 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import {
+  BCRYPT_SALT_ROUNDS,
+  INVITE_TOKEN_EXPIRY_MS,
+  REFRESH_TOKEN_EXPIRY_MS,
+  REFRESH_TOKEN_EXPIRY,
+} from '../common/constants';
+import {
   TenantStaff,
   TenantStaffDocument,
 } from '../tenants/schemas/tenant-staff.schema';
@@ -145,7 +151,7 @@ export class AuthService {
     );
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + INVITE_TOKEN_EXPIRY_MS);
 
     await this.inviteTokenModel.create({ userId: userObjectId, token, type, expiresAt });
 
@@ -187,7 +193,7 @@ export class AuthService {
       throw new BadRequestException('This link has expired. Please request a new invitation.');
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
     const user = await this.userModel.findByIdAndUpdate(
       record.userId,
       { $set: { passwordHash, status: 'active' } },
@@ -235,7 +241,7 @@ export class AuthService {
       throw new BadRequestException('This link has expired. Please request a new password reset.');
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
     const user = await this.userModel.findByIdAndUpdate(
       record.userId,
       { $set: { passwordHash } },
@@ -271,12 +277,15 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign({ ...baseClaims, type: 'access' });
-    const refreshToken = this.jwtService.sign({ ...baseClaims, type: 'refresh' }, { expiresIn: '7d' });
+    const refreshToken = this.jwtService.sign(
+      { ...baseClaims, type: 'refresh' },
+      { expiresIn: REFRESH_TOKEN_EXPIRY },
+    );
 
     await this.refreshTokenModel.create({
       token: refreshToken,
       userId: user._id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
     });
 
     await this.userModel.updateOne({ _id: user._id }, { lastLoginAt: new Date() });

@@ -6,6 +6,7 @@ import { SetupPasswordDto } from './dto/setup-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -28,8 +29,11 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async me(@Request() req: any) {
-    const user = req.user.toObject ? req.user.toObject() : { ...req.user };
+  async me(@Request() req: AuthenticatedRequest) {
+    const raw = req.user as unknown as Record<string, unknown> & {
+      toObject?: () => Record<string, unknown>;
+    };
+    const user = typeof raw.toObject === 'function' ? raw.toObject() : { ...raw };
     delete user.passwordHash;
     return user;
   }

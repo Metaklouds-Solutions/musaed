@@ -14,6 +14,7 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { AgentsService } from './agents.service';
 import { UpdatePromptsDto } from './dto/update-prompts.dto';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('tenant/agents')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -21,27 +22,27 @@ export class AgentsTenantController {
   constructor(private agentsService: AgentsService) {}
 
   @Get()
-  findAll(@Request() req: any) {
-    return this.agentsService.findAllForTenant(req.tenantId);
+  findAll(@Request() req: AuthenticatedRequest) {
+    return this.agentsService.findAllForTenant(req.tenantId!);
   }
 
   @Get(':id')
-  findById(@Param('id') id: string, @Request() req: any) {
-    return this.agentsService.findById(id, req.tenantId);
+  findById(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.agentsService.findById(id, req.tenantId!);
   }
 
   @Patch(':id/prompts')
   updatePrompts(
     @Param('id') id: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: UpdatePromptsDto,
   ) {
-    return this.agentsService.updatePrompts(id, req.tenantId, dto);
+    return this.agentsService.updatePrompts(id, req.tenantId!, dto);
   }
 
   @Post(':id/sync')
-  syncAgent(@Param('id') id: string, @Request() req: any) {
-    return this.agentsService.syncAgent(id, req.tenantId);
+  syncAgent(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.agentsService.syncAgent(id, req.tenantId!);
   }
 }
 

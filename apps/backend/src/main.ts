@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import helmet from 'helmet';
 import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  const app = await NestFactory.create(AppModule);
 
   const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173')
     .split(',')
@@ -17,6 +18,8 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  app.setGlobalPrefix('api', { exclude: ['health', 'webhooks/stripe', 'webhooks/retell'] });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -25,10 +28,12 @@ async function bootstrap() {
     }),
   );
 
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
   app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
-  console.log(`MUSAED API running at http://localhost:${port}`);
+  new Logger('Bootstrap').log(`MUSAED API running at http://localhost:${port}`);
 }
 bootstrap();

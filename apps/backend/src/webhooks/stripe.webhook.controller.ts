@@ -50,19 +50,30 @@ export class StripeWebhookController {
       throw new BadRequestException('Invalid signature');
     }
 
+    const isDuplicate = await this.webhooksService.isDuplicateEvent(
+      event.id,
+      'stripe',
+      event.type,
+    );
+    if (isDuplicate) {
+      return { received: true, duplicate: true };
+    }
+
     this.logger.log(`Stripe event received: ${event.type}`);
+
+    const data = event.data.object as unknown as Record<string, unknown>;
 
     switch (event.type) {
       case 'invoice.payment_succeeded':
-        await this.webhooksService.handleInvoicePaid(event.data.object as any);
+        await this.webhooksService.handleInvoicePaid(data);
         break;
 
       case 'invoice.payment_failed':
-        await this.webhooksService.handleInvoiceFailed(event.data.object as any);
+        await this.webhooksService.handleInvoiceFailed(data);
         break;
 
       case 'customer.subscription.deleted':
-        await this.webhooksService.handleSubscriptionDeleted(event.data.object as any);
+        await this.webhooksService.handleSubscriptionDeleted(data);
         break;
 
       default:

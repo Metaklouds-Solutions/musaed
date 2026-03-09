@@ -13,7 +13,7 @@ export class TemplatesService {
 
   async findAll(query: { channel?: string; page?: number; limit?: number }) {
     const { channel, page = 1, limit = 20 } = query;
-    const filter: any = {};
+    const filter: Record<string, unknown> = { deletedAt: null };
     if (channel) filter.channel = channel;
 
     const [data, total] = await Promise.all([
@@ -29,7 +29,7 @@ export class TemplatesService {
   }
 
   async findById(id: string) {
-    const template = await this.templateModel.findById(id);
+    const template = await this.templateModel.findOne({ _id: id, deletedAt: null });
     if (!template) throw new NotFoundException('Template not found');
     return template;
   }
@@ -52,8 +52,12 @@ export class TemplatesService {
   }
 
   async remove(id: string) {
-    const template = await this.templateModel.findByIdAndDelete(id);
+    const template = await this.templateModel.findByIdAndUpdate(
+      id,
+      { $set: { deletedAt: new Date() } },
+      { new: true },
+    );
     if (!template) throw new NotFoundException('Template not found');
-    return { message: 'Template deleted' };
+    return { message: 'Template archived' };
   }
 }

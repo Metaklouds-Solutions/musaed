@@ -6,10 +6,14 @@ import { type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { AnimatedNumber } from '../AnimatedNumber';
 
 interface StatCardEnhancedProps {
   label: string;
   value: ReactNode;
+  animateValue?: number;
+  format?: (n: number) => string;
+  decimals?: number;
   trend?: 'up' | 'down' | 'neutral';
   sparklineData?: number[];
   className?: string;
@@ -53,6 +57,9 @@ function Sparkline({ data }: { data: number[] }) {
 export function StatCardEnhanced({
   label,
   value,
+  animateValue,
+  format,
+  decimals,
   trend,
   sparklineData,
   className,
@@ -90,7 +97,11 @@ export function StatCardEnhanced({
             {label}
           </p>
           <p className="mt-2 text-2xl font-semibold leading-tight text-[var(--text-primary)] tabular-nums">
-            {value}
+            {animateValue != null ? (
+              <AnimatedNumber value={animateValue} format={format} decimals={decimals} />
+            ) : (
+              value
+            )}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">

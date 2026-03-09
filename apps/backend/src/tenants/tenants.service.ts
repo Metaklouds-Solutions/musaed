@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, FilterQuery } from 'mongoose';
 import { Tenant, TenantDocument } from './schemas/tenant.schema';
 import { TenantStaff, TenantStaffDocument } from './schemas/tenant-staff.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
@@ -25,7 +25,7 @@ export class TenantsService {
 
   async findAll(query: { status?: string; page?: number; limit?: number }) {
     const { status, page = 1, limit = 20 } = query;
-    const filter: any = { deletedAt: null };
+    const filter: FilterQuery<TenantDocument> = { deletedAt: null };
     if (status) filter.status = status;
 
     const [data, total] = await Promise.all([
@@ -52,7 +52,7 @@ export class TenantsService {
   }
 
   async create(dto: CreateTenantDto) {
-    const existing = await this.tenantModel.findOne({ slug: dto.slug });
+    const existing = await this.tenantModel.findOne({ slug: dto.slug, deletedAt: null });
     if (existing) throw new ConflictException('Slug already taken');
 
     let owner = await this.userModel.findOne({ email: dto.ownerEmail, deletedAt: null });

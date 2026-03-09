@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, FilterQuery } from 'mongoose';
 import { Customer, CustomerDocument } from './schemas/customer.schema';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 @Injectable()
 export class CustomersService {
@@ -17,7 +18,7 @@ export class CustomersService {
     query: { page?: number; limit?: number; search?: string },
   ) {
     const { page = 1, limit = 20, search } = query;
-    const filter: any = {
+    const filter: FilterQuery<CustomerDocument> = {
       tenantId: new Types.ObjectId(tenantId),
       deletedAt: null,
     };
@@ -64,6 +65,20 @@ export class CustomersService {
       ...dto,
       tenantId: new Types.ObjectId(tenantId),
     });
+  }
+
+  async update(id: string, tenantId: string, dto: UpdateCustomerDto) {
+    const customer = await this.customerModel.findOneAndUpdate(
+      {
+        _id: id,
+        tenantId: new Types.ObjectId(tenantId),
+        deletedAt: null,
+      },
+      { $set: dto },
+      { new: true },
+    );
+    if (!customer) throw new NotFoundException('Customer not found');
+    return customer;
   }
 
   async exportData(id: string, tenantId: string) {

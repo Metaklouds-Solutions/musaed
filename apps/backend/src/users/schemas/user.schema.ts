@@ -7,7 +7,7 @@ export type UserDocument = User & Document;
   timestamps: true,
   collection: 'users',
   toJSON: {
-    transform: (_doc: any, ret: any) => {
+    transform: (_doc: unknown, ret: Record<string, unknown>) => {
       delete ret.passwordHash;
       return ret;
     },

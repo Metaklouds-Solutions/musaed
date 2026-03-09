@@ -49,9 +49,13 @@ export class AgentTemplate {
 
   @Prop({ type: Types.ObjectId, ref: 'User', default: null })
   createdBy: Types.ObjectId | null;
+
+  @Prop({ type: Date, default: null })
+  deletedAt: Date | null;
 }
 
 export const AgentTemplateSchema = SchemaFactory.createForClass(AgentTemplate);
 
 AgentTemplateSchema.index({ channel: 1 });
 AgentTemplateSchema.index({ isDefault: 1 });
+AgentTemplateSchema.index({ name: 1 });

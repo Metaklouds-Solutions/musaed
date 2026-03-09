@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, AlertTriangle } from 'lucide-react';
-import { Card } from '../../../../shared/ui';
+import { Card, AnimatedNumber } from '../../../../shared/ui';
 import type { DashboardMetrics } from '../../../../shared/types';
 
 const EMPTY_AI_METRICS: Pick<DashboardMetrics, 'aiConfidenceScore' | 'escalationRate'> = {
@@ -81,7 +81,7 @@ export function AgentIntelligence({ metrics }: AgentIntelligenceProps) {
           <div>
             <p className="text-xs font-medium text-[var(--text-muted)]">AI confidence score</p>
             <p className="text-[length:var(--typography-heading)] font-semibold text-[var(--text-primary)]">
-              {m.aiConfidenceScore}%
+              <AnimatedNumber value={m.aiConfidenceScore} format={(n) => `${n}%`} />
             </p>
           </div>
         </motion.div>
@@ -105,7 +105,7 @@ export function AgentIntelligence({ metrics }: AgentIntelligenceProps) {
           <div>
             <p className="text-xs font-medium text-[var(--text-muted)]">Escalation rate</p>
             <p className="text-[length:var(--typography-heading)] font-semibold text-[var(--text-primary)]">
-              {m.escalationRate.toFixed(1)}%
+              <AnimatedNumber value={m.escalationRate} decimals={1} format={(n) => `${n.toFixed(1)}%`} />
             </p>
           </div>
           {escalationHovered && (

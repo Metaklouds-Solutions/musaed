@@ -30,15 +30,15 @@ export function TenantKpiCards({ kpis }: TenantKpiCardsProps) {
         <p className="text-xs text-[var(--text-muted)]">Fast snapshot of call flow, bookings, and operational load</p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <TenantKpiCard label="Calls Today" value={kpis.callsToday} />
-        <TenantKpiCard label="Calls 7d" value={kpis.calls7d} />
-        <TenantKpiCard label="Booked" value={kpis.appointmentsBooked} trend="up" />
-        <TenantKpiCard label="Escalations" value={kpis.escalations} />
-        <TenantKpiCard label="Failed" value={kpis.failedCalls} />
-        <TenantKpiCard label="Avg Duration" value={formatDuration(kpis.avgDurationSec)} />
+        <TenantKpiCard label="Calls Today" value={kpis.callsToday} animateValue={kpis.callsToday} />
+        <TenantKpiCard label="Calls 7d" value={kpis.calls7d} animateValue={kpis.calls7d} />
+        <TenantKpiCard label="Booked" value={kpis.appointmentsBooked} animateValue={kpis.appointmentsBooked} trend="up" />
+        <TenantKpiCard label="Escalations" value={kpis.escalations} animateValue={kpis.escalations} />
+        <TenantKpiCard label="Failed" value={kpis.failedCalls} animateValue={kpis.failedCalls} />
+        <TenantKpiCard label="Avg Duration" value={formatDuration(kpis.avgDurationSec)} animateValue={kpis.avgDurationSec} format={formatDuration} />
         <TenantKpiCard label="Top Outcome" value={kpis.topOutcome} />
-        <TenantKpiCard label="Minutes Used" value={kpis.minutesUsed.toLocaleString()} />
-        <TenantKpiCard label="Credits" value={kpis.creditBalance} />
+        <TenantKpiCard label="Minutes Used" value={kpis.minutesUsed.toLocaleString()} animateValue={kpis.minutesUsed} format={(n) => n.toLocaleString()} />
+        <TenantKpiCard label="Credits" value={kpis.creditBalance} animateValue={kpis.creditBalance} />
       </div>
     </motion.section>
   );

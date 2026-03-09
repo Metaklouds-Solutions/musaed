@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsNumber,
   IsIn,
+  Matches,
 } from 'class-validator';
 
 export class CreateBookingDto {
@@ -15,7 +16,7 @@ export class CreateBookingDto {
   @IsOptional()
   providerId?: string;
 
-  @IsString()
+  @IsMongoId()
   @IsOptional()
   locationId?: string;
 
@@ -25,7 +26,7 @@ export class CreateBookingDto {
   @IsDateString()
   date: string;
 
-  @IsString()
+  @Matches(/^\d{2}:\d{2}$/, { message: 'timeSlot must be in HH:mm format' })
   timeSlot: string;
 
   @IsNumber()

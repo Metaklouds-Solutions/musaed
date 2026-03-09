@@ -22,7 +22,7 @@ export class StaffService {
   ) {}
 
   async findAllForTenant(tenantId: string | null) {
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
     if (tenantId) {
       filter.tenantId = new Types.ObjectId(tenantId);
     }

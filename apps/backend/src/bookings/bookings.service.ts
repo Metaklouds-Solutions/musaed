@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, FilterQuery } from 'mongoose';
 import { Booking, BookingDocument } from './schemas/booking.schema';
 import { Customer, CustomerDocument } from '../customers/schemas/customer.schema';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
+import { DEFAULT_PAGE, DEFAULT_LIMIT } from '../common/constants';
 
 @Injectable()
 export class BookingsService {
@@ -17,8 +23,10 @@ export class BookingsService {
     tenantId: string,
     query: { page?: number; limit?: number; date?: string; status?: string },
   ) {
-    const { page = 1, limit = 20, date, status } = query;
-    const filter: any = { tenantId: new Types.ObjectId(tenantId) };
+    const { page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, date, status } = query;
+    const filter: FilterQuery<BookingDocument> = {
+      tenantId: new Types.ObjectId(tenantId),
+    };
 
     if (date) {
       const dayStart = new Date(date);
@@ -52,6 +60,21 @@ export class BookingsService {
     });
     if (!customer) {
       throw new BadRequestException('Customer not found in this tenant');
+    }
+
+    if (dto.providerId) {
+      const conflict = await this.bookingModel.findOne({
+        tenantId: tid,
+        providerId: new Types.ObjectId(dto.providerId),
+        date: new Date(dto.date),
+        timeSlot: dto.timeSlot,
+        status: { $nin: ['cancelled'] },
+      });
+      if (conflict) {
+        throw new ConflictException(
+          'This provider already has a booking at the selected date and time slot',
+        );
+      }
     }
 
     const booking = await this.bookingModel.create({

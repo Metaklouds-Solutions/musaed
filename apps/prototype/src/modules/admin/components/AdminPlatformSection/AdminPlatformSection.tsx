@@ -18,22 +18,30 @@ export function AdminPlatformSection({ metrics }: AdminPlatformSectionProps) {
         Platform usage
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-        <StatCardEnhanced label="Active tenants" value={metrics.activeTenants} />
-        <StatCardEnhanced label="Active agents" value={metrics.activeAgents} />
+        <StatCardEnhanced label="Active tenants" value={metrics.activeTenants} animateValue={metrics.activeTenants} />
+        <StatCardEnhanced label="Active agents" value={metrics.activeAgents} animateValue={metrics.activeAgents} />
         <StatCardEnhanced
           label="AI minutes used"
           value={metrics.aiMinutesUsed.toLocaleString()}
+          animateValue={metrics.aiMinutesUsed}
+          format={(n) => n.toLocaleString()}
           trend="up"
         />
-        <StatCardEnhanced label="Platform calls handled" value={metrics.platformCallsHandled} />
-        <StatCardEnhanced label="Platform bookings created" value={metrics.platformBookingsCreated} />
+        <StatCardEnhanced label="Platform calls handled" value={metrics.platformCallsHandled} animateValue={metrics.platformCallsHandled} />
+        <StatCardEnhanced label="Platform bookings created" value={metrics.platformBookingsCreated} animateValue={metrics.platformBookingsCreated} />
         <StatCardEnhanced
           label="Platform conversion rate"
           value={`${metrics.platformConversionRate.toFixed(1)}%`}
+          animateValue={metrics.platformConversionRate}
+          decimals={1}
+          format={(n) => `${n.toFixed(1)}%`}
         />
         <StatCardEnhanced
           label="Escalation rate"
           value={`${metrics.escalationRate.toFixed(1)}%`}
+          animateValue={metrics.escalationRate}
+          decimals={1}
+          format={(n) => `${n.toFixed(1)}%`}
           trend={metrics.escalationRate > 10 ? 'down' : 'neutral'}
         />
       </div>

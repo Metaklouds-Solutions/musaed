@@ -30,16 +30,16 @@ export function AdminKpiCards({ kpis }: AdminKpiCardsProps) {
         <p className="text-xs text-[var(--text-muted)]">Live platform pulse across growth, quality, and spend</p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <AdminKpiCard label="Total Tenants" value={kpis.totalTenants} />
-        <AdminKpiCard label="Active" value={kpis.activeTenants} />
-        <AdminKpiCard label="Trial" value={kpis.trialTenants} />
-        <AdminKpiCard label="Suspended" value={kpis.suspendedTenants} />
-        <AdminKpiCard label="Calls Today" value={kpis.callsToday} />
-        <AdminKpiCard label="Calls 7d" value={kpis.calls7d} />
-        <AdminKpiCard label="Booked %" value={`${kpis.bookedPercent.toFixed(1)}%`} trend="up" />
-        <AdminKpiCard label="Escalation %" value={`${kpis.escalationPercent.toFixed(1)}%`} trend={kpis.escalationPercent > 10 ? 'down' : 'neutral'} />
-        <AdminKpiCard label="Failed %" value={`${kpis.failedPercent.toFixed(1)}%`} trend={kpis.failedPercent > 20 ? 'down' : 'neutral'} />
-        <AdminKpiCard label="Total Cost" value={formatUsd(kpis.totalCostUsd)} />
+        <AdminKpiCard label="Total Tenants" value={kpis.totalTenants} animateValue={kpis.totalTenants} />
+        <AdminKpiCard label="Active" value={kpis.activeTenants} animateValue={kpis.activeTenants} />
+        <AdminKpiCard label="Trial" value={kpis.trialTenants} animateValue={kpis.trialTenants} />
+        <AdminKpiCard label="Suspended" value={kpis.suspendedTenants} animateValue={kpis.suspendedTenants} />
+        <AdminKpiCard label="Calls Today" value={kpis.callsToday} animateValue={kpis.callsToday} />
+        <AdminKpiCard label="Calls 7d" value={kpis.calls7d} animateValue={kpis.calls7d} />
+        <AdminKpiCard label="Booked %" value={`${kpis.bookedPercent.toFixed(1)}%`} animateValue={kpis.bookedPercent} decimals={1} format={(n) => `${n.toFixed(1)}%`} trend="up" />
+        <AdminKpiCard label="Escalation %" value={`${kpis.escalationPercent.toFixed(1)}%`} animateValue={kpis.escalationPercent} decimals={1} format={(n) => `${n.toFixed(1)}%`} trend={kpis.escalationPercent > 10 ? 'down' : 'neutral'} />
+        <AdminKpiCard label="Failed %" value={`${kpis.failedPercent.toFixed(1)}%`} animateValue={kpis.failedPercent} decimals={1} format={(n) => `${n.toFixed(1)}%`} trend={kpis.failedPercent > 20 ? 'down' : 'neutral'} />
+        <AdminKpiCard label="Total Cost" value={formatUsd(kpis.totalCostUsd)} animateValue={kpis.totalCostUsd} format={formatUsd} />
       </div>
     </motion.section>
   );

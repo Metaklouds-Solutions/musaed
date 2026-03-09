@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, FilterQuery } from 'mongoose';
 import { AgentInstance, AgentInstanceDocument } from './schemas/agent-instance.schema';
 import { UpdatePromptsDto } from './dto/update-prompts.dto';
 
@@ -19,7 +19,7 @@ export class AgentsService {
 
   async findAllAdmin(query: { status?: string; page?: number; limit?: number }) {
     const { status, page = 1, limit = 20 } = query;
-    const filter: any = {};
+    const filter: FilterQuery<AgentInstanceDocument> = {};
     if (status) filter.status = status;
 
     const [data, total] = await Promise.all([
@@ -37,7 +37,7 @@ export class AgentsService {
   }
 
   async findById(id: string, tenantId?: string) {
-    const filter: any = { _id: id };
+    const filter: FilterQuery<AgentInstanceDocument> = { _id: id };
     if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
 
     const instance = await this.instanceModel

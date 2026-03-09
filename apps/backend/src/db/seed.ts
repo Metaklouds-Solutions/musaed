@@ -163,7 +163,8 @@ async function seed() {
     const adminEmail = 'admin@musaed.com';
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
-      const passwordHash = await bcrypt.hash('Admin123!', 10);
+      const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'Admin123!';
+      const passwordHash = await bcrypt.hash(adminPassword, 10);
       await User.create({
         email: adminEmail,
         passwordHash,
@@ -181,7 +182,8 @@ async function seed() {
     const tenantOwnerEmail = 'owner@democlinic.com';
     let tenantOwner = await User.findOne({ email: tenantOwnerEmail });
     if (!tenantOwner) {
-      const passwordHash = await bcrypt.hash('Owner123!', 10);
+      const ownerPassword = process.env.OWNER_SEED_PASSWORD || 'Owner123!';
+      const passwordHash = await bcrypt.hash(ownerPassword, 10);
       tenantOwner = await User.create({
         email: tenantOwnerEmail,
         passwordHash,

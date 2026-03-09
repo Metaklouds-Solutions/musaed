@@ -14,6 +14,7 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { BillingService } from './billing.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('admin/billing')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -47,7 +48,7 @@ export class BillingTenantController {
   constructor(private billingService: BillingService) {}
 
   @Get()
-  getTenantBilling(@Request() req: any) {
-    return this.billingService.getTenantBilling(req.tenantId);
+  getTenantBilling(@Request() req: AuthenticatedRequest) {
+    return this.billingService.getTenantBilling(req.tenantId!);
   }
 }

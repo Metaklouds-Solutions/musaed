@@ -4,7 +4,7 @@
 
 import { motion } from 'motion/react';
 import { AlertCircle } from 'lucide-react';
-import { ViewButton } from '../../../../shared/ui';
+import { ViewButton, AnimatedNumber } from '../../../../shared/ui';
 import type { AdminSupportSnapshot } from '../../../../shared/types';
 
 interface AdminSupportSnapshotProps {
@@ -28,15 +28,15 @@ export function AdminSupportSnapshot({ snapshot }: AdminSupportSnapshotProps) {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/70 p-4 transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Open Tickets</p>
-          <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{snapshot.openCount}</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]"><AnimatedNumber value={snapshot.openCount} /></p>
         </div>
         <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/70 p-4 transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Critical</p>
-          <p className="mt-1 text-2xl font-bold text-[var(--error)]">{snapshot.criticalCount}</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--error)]"><AnimatedNumber value={snapshot.criticalCount} /></p>
         </div>
         <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/70 p-4 transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Oldest Waiting</p>
-          <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{snapshot.oldestWaitingDays}d</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--text-primary)]"><AnimatedNumber value={snapshot.oldestWaitingDays} format={(n) => `${n}d`} /></p>
         </div>
       </div>
       {snapshot.criticalCount > 0 && (

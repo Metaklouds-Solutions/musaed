@@ -4,7 +4,7 @@
 
 import { motion } from 'motion/react';
 import { Users, Stethoscope, UserCircle } from 'lucide-react';
-import { ViewButton } from '../../../../shared/ui';
+import { ViewButton, AnimatedNumber } from '../../../../shared/ui';
 import type { TenantStaffCounts } from '../../../../shared/types';
 
 interface StaffQuickViewProps {
@@ -30,7 +30,7 @@ export function StaffQuickView({ counts }: StaffQuickViewProps) {
             <Users className="w-5 h-5" aria-hidden />
           </span>
           <div>
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{counts.total}</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]"><AnimatedNumber value={counts.total} /></p>
             <p className="text-xs text-[var(--text-muted)]">Total</p>
           </div>
         </div>
@@ -39,7 +39,7 @@ export function StaffQuickView({ counts }: StaffQuickViewProps) {
             <Stethoscope className="w-5 h-5" aria-hidden />
           </span>
           <div>
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{counts.doctors}</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]"><AnimatedNumber value={counts.doctors} /></p>
             <p className="text-xs text-[var(--text-muted)]">Doctors</p>
           </div>
         </div>
@@ -48,7 +48,7 @@ export function StaffQuickView({ counts }: StaffQuickViewProps) {
             <UserCircle className="w-5 h-5" aria-hidden />
           </span>
           <div>
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{counts.receptionists}</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]"><AnimatedNumber value={counts.receptionists} /></p>
             <p className="text-xs text-[var(--text-muted)]">Receptionists</p>
           </div>
         </div>

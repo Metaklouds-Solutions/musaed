@@ -25,7 +25,7 @@ export class SettingsService {
   }
 
   async updateSettings(tenantId: string, dto: UpdateSettingsDto) {
-    const update: any = {};
+    const update: Record<string, unknown> = {};
 
     if (dto.timezone !== undefined) update.timezone = dto.timezone;
     if (dto.locale !== undefined) update.locale = dto.locale;

@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsObject,
   IsArray,
+  IsIn,
 } from 'class-validator';
 
 export class UpdateTemplateDto {
@@ -14,6 +15,10 @@ export class UpdateTemplateDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsIn(['voice', 'chat', 'email'])
+  @IsOptional()
+  channel?: string;
 
   @IsObject()
   @IsOptional()

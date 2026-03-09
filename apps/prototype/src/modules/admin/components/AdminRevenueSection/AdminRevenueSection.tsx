@@ -38,20 +38,27 @@ export function AdminRevenueSection({ metrics }: AdminRevenueSectionProps) {
         <StatCardEnhanced
           label="MRR (subscriptions)"
           value={formatCurrency(metrics.mrr)}
+          animateValue={metrics.mrr}
+          format={formatCurrency}
           sparklineData={sparklineFromPlans}
         />
         <StatCardEnhanced
           label="Credits revenue (top-ups)"
           value={formatCurrency(metrics.creditsRevenue)}
+          animateValue={metrics.creditsRevenue}
+          format={formatCurrency}
         />
         <StatCardEnhanced
           label="Total revenue"
           value={formatCurrency(metrics.totalRevenue)}
+          animateValue={metrics.totalRevenue}
+          format={formatCurrency}
           trend={metrics.totalRevenue > 0 ? 'up' : 'neutral'}
         />
         <StatCardEnhanced
           label="Payment failures"
           value={metrics.paymentFailures.length}
+          animateValue={metrics.paymentFailures.length}
           trend={metrics.paymentFailures.length > 0 ? 'down' : 'neutral'}
         />
       </div>

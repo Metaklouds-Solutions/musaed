@@ -48,10 +48,16 @@ export class AdminService {
   }
 
   async getSystemHealth() {
+    const mem = process.memoryUsage();
+    const MB = 1024 * 1024;
     return {
       status: 'ok',
-      uptime: process.uptime(),
-      memoryUsage: process.memoryUsage(),
+      uptime: Math.round(process.uptime()),
+      memory: {
+        heapUsedMB: Math.round(mem.heapUsed / MB),
+        heapTotalMB: Math.round(mem.heapTotal / MB),
+        rssMB: Math.round(mem.rss / MB),
+      },
       timestamp: new Date().toISOString(),
     };
   }

@@ -14,6 +14,7 @@ import { AdminGuard } from '../common/guards/admin.guard';
 import { SupportService } from './support.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { AddMessageDto } from './dto/add-message.dto';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('tenant/support/tickets')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -22,12 +23,12 @@ export class SupportTenantController {
 
   @Get()
   findAll(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('status') status?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.supportService.findAllForTenant(req.tenantId, {
+    return this.supportService.findAllForTenant(req.tenantId!, {
       status,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
@@ -35,22 +36,22 @@ export class SupportTenantController {
   }
 
   @Post()
-  create(@Request() req: any, @Body() dto: CreateTicketDto) {
-    return this.supportService.create(req.tenantId, req.user._id.toString(), dto);
+  create(@Request() req: AuthenticatedRequest, @Body() dto: CreateTicketDto) {
+    return this.supportService.create(req.tenantId!, req.user._id.toString(), dto);
   }
 
   @Get(':id')
-  findById(@Param('id') id: string, @Request() req: any) {
-    return this.supportService.findById(id, req.tenantId);
+  findById(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.supportService.findById(id, req.tenantId!);
   }
 
   @Post(':id/messages')
   addMessage(
     @Param('id') id: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: AddMessageDto,
   ) {
-    return this.supportService.addMessage(id, req.tenantId, req.user._id.toString(), dto);
+    return this.supportService.addMessage(id, req.user._id.toString(), dto, req.tenantId!);
   }
 }
 
@@ -75,5 +76,14 @@ export class SupportAdminController {
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.supportService.findById(id);
+  }
+
+  @Post(':id/messages')
+  addMessage(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: AddMessageDto,
+  ) {
+    return this.supportService.addMessage(id, req.user._id.toString(), dto);
   }
 }
