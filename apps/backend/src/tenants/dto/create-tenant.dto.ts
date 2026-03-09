@@ -13,7 +13,8 @@ export class CreateTenantDto {
   ownerEmail: string;
 
   @IsString()
-  ownerName: string;
+  @IsOptional()
+  ownerName?: string;
 
   @IsMongoId()
   @IsOptional()

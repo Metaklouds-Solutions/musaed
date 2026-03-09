@@ -1,13 +1,21 @@
 import { useState, useMemo, useCallback } from 'react';
 import { adminAdapter, agentsAdapter, auditAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 import type { AdminAgentRow } from '../../../shared/types';
 
 /** Admin agents data hook with filtering and tenant assignment actions. */
 export function useAdminAgents() {
-  const [agents, setAgents] = useState<AdminAgentRow[]>(() => agentsAdapter.list());
   const [tenantFilter, setTenantFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const tenants = useMemo(() => adminAdapter.getTenants(), []);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const { data: agents, loading, refetch } = useAsyncData(
+    () => agentsAdapter.list(),
+    [refreshKey],
+    [] as AdminAgentRow[],
+  );
+
+  const { data: tenants } = useAsyncData(() => adminAdapter.getTenants(), [], []);
 
   const filteredAgents = useMemo(() => {
     let list = agents;
@@ -16,24 +24,24 @@ export function useAdminAgents() {
     return list;
   }, [agents, tenantFilter, statusFilter]);
 
-  const refetch = useCallback(() => setAgents(agentsAdapter.list()), []);
-
   const assignAgent = useCallback(
     (agent: AdminAgentRow, tenantId: string) => {
       agentsAdapter.assign(agent.id, tenantId);
       auditAdapter.log('agent.assigned', { agentId: agent.id, agentName: agent.name, tenantId });
-      refetch();
+      setRefreshKey((k) => k + 1);
     },
-    [refetch]
+    []
   );
 
   return {
     tenants,
     filteredAgents,
+    loading,
     tenantFilter,
     setTenantFilter,
     statusFilter,
     setStatusFilter,
     assignAgent,
+    refetch,
   };
 }

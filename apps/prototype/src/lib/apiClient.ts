@@ -12,8 +12,8 @@ export function setTokens(access: string, refresh: string) {
   accessToken = access;
   refreshToken = refresh;
   try {
-    sessionStorage.setItem('musaed_access_token', access);
-    sessionStorage.setItem('musaed_refresh_token', refresh);
+    localStorage.setItem('musaed_access_token', access);
+    localStorage.setItem('musaed_refresh_token', refresh);
   } catch {
     // SSR or restricted context
   }
@@ -23,8 +23,9 @@ export function clearTokens() {
   accessToken = null;
   refreshToken = null;
   try {
-    sessionStorage.removeItem('musaed_access_token');
-    sessionStorage.removeItem('musaed_refresh_token');
+    localStorage.removeItem('musaed_access_token');
+    localStorage.removeItem('musaed_refresh_token');
+    localStorage.removeItem('musaed_user');
   } catch {
     // ignore
   }
@@ -33,7 +34,7 @@ export function clearTokens() {
 export function getAccessToken(): string | null {
   if (accessToken) return accessToken;
   try {
-    accessToken = sessionStorage.getItem('musaed_access_token');
+    accessToken = localStorage.getItem('musaed_access_token');
   } catch {
     // ignore
   }
@@ -43,11 +44,28 @@ export function getAccessToken(): string | null {
 export function getRefreshToken(): string | null {
   if (refreshToken) return refreshToken;
   try {
-    refreshToken = sessionStorage.getItem('musaed_refresh_token');
+    refreshToken = localStorage.getItem('musaed_refresh_token');
   } catch {
     // ignore
   }
   return refreshToken;
+}
+
+export function saveUser(user: Record<string, unknown>): void {
+  try {
+    localStorage.setItem('musaed_user', JSON.stringify(user));
+  } catch {
+    // ignore
+  }
+}
+
+export function getSavedUser(): Record<string, unknown> | null {
+  try {
+    const raw = localStorage.getItem('musaed_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function tryRefresh(): Promise<boolean> {

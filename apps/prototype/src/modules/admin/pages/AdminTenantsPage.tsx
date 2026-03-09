@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 're
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserPlus, Users, GitCompare, Archive, Download } from 'lucide-react';
+import { UserPlus, Users, GitCompare, Trash2 } from 'lucide-react';
 import {
   PageHeader,
   DataTable,
@@ -23,9 +23,12 @@ import {
   PillTag,
   TableFilters,
   BulkActionsBar,
+  ConfirmDeleteBar,
+  Pagination,
 } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useAdminTenantList, useAdminTenantsActions } from '../hooks';
+import { useAdminTenantList } from '../hooks';
+import { tenantsAdapter } from '../../../adapters';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useTableSelection } from '../../../shared/hooks/useTableSelection';
 import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
@@ -66,39 +69,75 @@ export function AdminTenantsPage() {
   const [planFilter, setPlanFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { archiveTenant, toExportRows, exportTenantsCsv } = useAdminTenantsActions();
-  const { tenants, plans, statuses } = useAdminTenantList(refreshKey, {
+  const { tenants, loading: tenantsLoading, refetch: refetchTenants, plans, statuses } = useAdminTenantList(refreshKey, {
     plan: planFilter,
     status: statusFilter,
     search: searchQuery,
   });
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const { items: displayTenants, removeOptimistic, rollbackRemove, commit } = useOptimisticList<TenantListRow>({
+  const { items: displayTenants, addOptimistic } = useOptimisticList<TenantListRow>({
     items: tenants,
     getKey: (t) => t.id,
   });
+
+  const totalPages = Math.max(1, Math.ceil(displayTenants.length / pageSize));
+  const pagedTenants = displayTenants.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [planFilter, statusFilter, searchQuery]);
   const selection = useTableSelection((t: TenantListRow) => t.id);
 
-  const handleAddSuccess = useCallback(() => setRefreshKey((k) => k + 1), []);
-
-  const handleArchive = useCallback(
-    (id: string) => () => {
-      if (!window.confirm('Archive this tenant? They will be hidden from the list.')) return;
-      removeOptimistic(id);
-      try {
-        archiveTenant(id);
-        setRefreshKey((k) => k + 1);
-        commit();
-        toast.success('Tenant archived');
-      } catch {
-        rollbackRemove(id);
-        toast.error('Failed to archive');
-      }
+  const handleAddSuccess = useCallback(
+    (created: { id: string; name: string; plan: string }) => {
+      addOptimistic({
+        id: created.id,
+        name: created.name,
+        plan: created.plan,
+        status: 'ONBOARDING',
+        agentCount: 0,
+        mrr: 0,
+        callsThisMonth: 0,
+        onboardingStatus: 'Step 1/4',
+      });
+      setRefreshKey((k) => k + 1);
+      refetchTenants();
     },
-    [removeOptimistic, rollbackRemove, commit]
+    [addOptimistic, refetchTenants]
   );
+
+  const handleDeleteClick = useCallback(
+    (id: string, name: string) => () => setDeleteTarget({ id, name }),
+    []
+  );
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const ids = deleteTarget.id.split(',');
+      for (const id of ids) {
+        await Promise.resolve(tenantsAdapter.deleteTenant(id));
+      }
+      toast.success(ids.length > 1 ? `${ids.length} tenants deleted` : `"${deleteTarget.name}" deleted`);
+      setDeleteTarget(null);
+      selection.clear();
+      setRefreshKey((k) => k + 1);
+      refetchTenants();
+    } catch {
+      toast.error('Failed to delete tenant');
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteTarget, refetchTenants, selection]);
+
+  const handleDeleteCancel = useCallback(() => setDeleteTarget(null), []);
 
   const selectedTenants = displayTenants.filter((t) => selection.selectedSet.has(t.id));
   const handleView = useCallback(
@@ -106,38 +145,18 @@ export function AdminTenantsPage() {
     [navigate]
   );
 
-  const handleBulkArchive = useCallback(() => {
+  const handleBulkDelete = useCallback(() => {
     if (selectedTenants.length === 0) return;
-    if (!window.confirm(`Archive ${selectedTenants.length} tenant(s)? They will be hidden from the list.`)) return;
-    let failed = 0;
-    for (const t of selectedTenants) {
-      removeOptimistic(t.id);
-      try {
-        archiveTenant(t.id);
-      } catch {
-        rollbackRemove(t.id);
-        failed++;
-      }
-    }
-    selection.clear();
-    setRefreshKey((k) => k + 1);
-    commit();
-    if (failed > 0) toast.error(`Failed to archive ${failed} tenant(s)`);
-    else toast.success(`Archived ${selectedTenants.length} tenant(s)`);
-  }, [selectedTenants, removeOptimistic, rollbackRemove, commit, selection]);
-
-  const handleBulkExport = useCallback(() => {
-    if (selectedTenants.length === 0) return;
-    const rows = toExportRows(selectedTenants);
-    exportTenantsCsv(rows, `tenants-selected-${new Date().toISOString().slice(0, 10)}.csv`);
-    selection.clear();
-    toast.success(`Exported ${selectedTenants.length} tenant(s)`);
-  }, [selectedTenants, selection, toExportRows, exportTenantsCsv]);
+    setDeleteTarget({
+      id: selectedTenants.map((t) => t.id).join(','),
+      name: `${selectedTenants.length} tenant(s)`,
+    });
+  }, [selectedTenants]);
 
   const checkboxClass =
     'w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--ds-primary)] focus:ring-2 focus:ring-[var(--ds-primary)] cursor-pointer';
-  const allTenantsSelected = displayTenants.length > 0 && displayTenants.every((t) => selection.selectedSet.has(t.id));
-  const someTenantsSelected = displayTenants.some((t) => selection.selectedSet.has(t.id));
+  const allTenantsSelected = pagedTenants.length > 0 && pagedTenants.every((t) => selection.selectedSet.has(t.id));
+  const someTenantsSelected = pagedTenants.some((t) => selection.selectedSet.has(t.id));
   const headerCheckRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const el = headerCheckRef.current;
@@ -225,7 +244,7 @@ export function AdminTenantsPage() {
       </div>
 
       <AnimatePresence mode="wait">
-        {!ready ? (
+        {!ready || (tenantsLoading && displayTenants.length === 0) ? (
           <motion.div
             key="skeleton"
             initial={{ opacity: 0 }}
@@ -263,13 +282,9 @@ export function AdminTenantsPage() {
                   searchPlaceholder="Search tenants…"
                 />
                 <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
-                  <Button variant="secondary" size="sm" onClick={handleBulkExport} className="shrink-0">
-                    <Download className="w-4 h-4" aria-hidden />
-                    Export
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={handleBulkArchive} className="shrink-0">
-                    <Archive className="w-4 h-4" aria-hidden />
-                    Archive
+                  <Button variant="secondary" size="sm" onClick={handleBulkDelete} className="shrink-0">
+                    <Trash2 className="w-4 h-4" aria-hidden />
+                    Delete
                   </Button>
                 </BulkActionsBar>
                 <div className="rounded-xl overflow-x-auto overflow-y-visible border border-[var(--border-subtle)] shadow-sm">
@@ -282,7 +297,7 @@ export function AdminTenantsPage() {
                               ref={headerCheckRef}
                               type="checkbox"
                               checked={allTenantsSelected}
-                              onChange={() => selection.toggleAll(displayTenants)}
+                              onChange={() => selection.toggleAll(pagedTenants)}
                               className={checkboxClass}
                               aria-label="Select all"
                             />
@@ -298,7 +313,7 @@ export function AdminTenantsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {displayTenants.map((t) => (
+                        {pagedTenants.map((t) => (
                           <TableRow
                             key={t.id}
                             className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
@@ -339,11 +354,11 @@ export function AdminTenantsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={handleArchive(t.id)}
-                                  aria-label="Archive tenant"
+                                  onClick={handleDeleteClick(t.id, t.name)}
+                                  aria-label="Delete tenant"
                                   className="text-[var(--text-muted)] hover:text-[var(--destructive)]"
                                 >
-                                  <Archive size={16} aria-hidden />
+                                  <Trash2 size={16} aria-hidden />
                                 </Button>
                               </div>
                             </TableCell>
@@ -353,6 +368,12 @@ export function AdminTenantsPage() {
                     </Table>
                   </DataTable>
                 </div>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={displayTenants.length}
+                />
               </>
             )}
           </motion.div>
@@ -379,6 +400,14 @@ export function AdminTenantsPage() {
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onSuccess={handleAddSuccess}
+      />
+
+      <ConfirmDeleteBar
+        open={deleteTarget !== null}
+        itemName={deleteTarget?.name ?? ''}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        loading={deleting}
       />
     </div>
   );

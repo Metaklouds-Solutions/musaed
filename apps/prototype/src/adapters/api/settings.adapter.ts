@@ -72,40 +72,32 @@ const defaultTenantSettings: TenantSettings = {
   notifications: { emailDigest: true, ticketAlerts: true, bookingReminders: true },
 };
 
-let cachedTenantSettings: TenantSettings | null = null;
-
 export const settingsAdapter = {
   getAdminSettings(): AdminSettings {
     return defaultAdminSettings;
   },
 
-  saveAdminSettings(_settings: AdminSettings): void {
-    // future: api.patch('/admin/settings', settings)
+  saveAdminSettings(_settings: AdminSettings): void {},
+
+  async getTenantSettings(tenantId?: string): Promise<TenantSettings> {
+    try {
+      const data = await api.get<any>('/tenant/settings');
+      return {
+        timezone: data.timezone ?? defaultTenantSettings.timezone,
+        locale: data.locale ?? defaultTenantSettings.locale,
+        businessHours: data.settings?.businessHours ?? defaultTenantSettings.businessHours,
+        notifications: data.settings?.notifications ?? defaultTenantSettings.notifications,
+      };
+    } catch {
+      return defaultTenantSettings;
+    }
   },
 
-  getTenantSettings(_tenantId?: string): TenantSettings {
-    return cachedTenantSettings ?? defaultTenantSettings;
-  },
-
-  saveTenantSettings(settings: TenantSettings, _tenantId?: string): void {
-    cachedTenantSettings = settings;
-    api.patch('/tenant/settings', settings).catch(() => {});
+  async saveTenantSettings(settings: TenantSettings, _tenantId?: string): Promise<void> {
+    await api.patch('/tenant/settings', settings);
   },
 
   getAgentPrompts(tenantId: string | undefined, _agentId: string): AgentPromptConfig {
-    const s = this.getTenantSettings(tenantId);
-    return {
-      greetingMessage: s.greetingMessage ?? defaultTenantSettings.greetingMessage,
-      agentName: s.agentName,
-      systemPrompt: s.systemPrompt,
-    };
-  },
-
-  async refresh(): Promise<void> {
-    try {
-      cachedTenantSettings = await api.get<TenantSettings>('/tenant/settings');
-    } catch {
-      // keep cache as-is
-    }
+    return { greetingMessage: '', agentName: '', systemPrompt: '' };
   },
 };

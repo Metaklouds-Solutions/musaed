@@ -25,5 +25,6 @@ export { BulkActionsBar } from './BulkActionsBar/BulkActionsBar';
 export { SavedFiltersDropdown } from './SavedFiltersDropdown';
 export { Drawer, DrawerHeader } from './Drawer';
 export { Modal, ModalHeader } from './Modal';
+export { ConfirmDeleteBar } from './ConfirmDeleteBar';
 export { PasswordInput } from './PasswordInput';
 export { Pagination, type PaginationProps } from './Pagination';

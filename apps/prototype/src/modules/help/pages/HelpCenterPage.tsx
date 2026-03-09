@@ -19,13 +19,13 @@ export function HelpCenterPage() {
   const { tickets, createTicket } = useHelpCenter(tenantId, user?.id);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const handleCreate = (data: {
+  const handleCreate = async (data: {
     title: string;
     category: string;
     priority: 'low' | 'medium' | 'high' | 'critical';
     initialMessage: string;
   }) => {
-    const ticket = createTicket(data);
+    const ticket = await createTicket(data);
     setCreateOpen(false);
     if (ticket) {
       toast.success('Ticket created');

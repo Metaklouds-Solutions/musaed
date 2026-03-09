@@ -18,6 +18,10 @@ import {
   InviteToken,
   InviteTokenDocument,
 } from './schemas/invite-token.schema';
+import {
+  RefreshToken,
+  RefreshTokenDocument,
+} from './schemas/refresh-token.schema';
 import { EmailService } from '../email/email.service';
 
 export interface JwtPayload {
@@ -31,12 +35,11 @@ export interface JwtPayload {
 
 @Injectable()
 export class AuthService {
-  private readonly refreshTokens = new Map<string, { userId: string; expiresAt: Date }>();
-
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(TenantStaff.name) private tenantStaffModel: Model<TenantStaffDocument>,
     @InjectModel(InviteToken.name) private inviteTokenModel: Model<InviteTokenDocument>,
+    @InjectModel(RefreshToken.name) private refreshTokenModel: Model<RefreshTokenDocument>,
     private jwtService: JwtService,
     private emailService: EmailService,
   ) {}
@@ -67,9 +70,12 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
-    const stored = this.refreshTokens.get(refreshToken);
-    if (!stored || stored.expiresAt < new Date()) {
-      this.refreshTokens.delete(refreshToken);
+    const stored = await this.refreshTokenModel.findOne({
+      token: refreshToken,
+      revokedAt: null,
+      expiresAt: { $gt: new Date() },
+    });
+    if (!stored) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -77,7 +83,10 @@ export class AuthService {
     try {
       payload = this.jwtService.verify<JwtPayload>(refreshToken);
     } catch {
-      this.refreshTokens.delete(refreshToken);
+      await this.refreshTokenModel.updateOne(
+        { token: refreshToken },
+        { $set: { revokedAt: new Date() } },
+      );
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -87,7 +96,10 @@ export class AuthService {
 
     const user = await this.userModel.findOne({ _id: payload.sub, deletedAt: null });
     if (!user) {
-      this.refreshTokens.delete(refreshToken);
+      await this.refreshTokenModel.updateOne(
+        { token: refreshToken },
+        { $set: { revokedAt: new Date() } },
+      );
       throw new UnauthorizedException('User not found');
     }
 
@@ -106,7 +118,10 @@ export class AuthService {
   }
 
   async logout(refreshToken: string) {
-    this.refreshTokens.delete(refreshToken);
+    await this.refreshTokenModel.updateOne(
+      { token: refreshToken },
+      { $set: { revokedAt: new Date() } },
+    );
     return { message: 'Logged out' };
   }
 
@@ -258,8 +273,9 @@ export class AuthService {
     const accessToken = this.jwtService.sign({ ...baseClaims, type: 'access' });
     const refreshToken = this.jwtService.sign({ ...baseClaims, type: 'refresh' }, { expiresIn: '7d' });
 
-    this.refreshTokens.set(refreshToken, {
-      userId: user._id.toString(),
+    await this.refreshTokenModel.create({
+      token: refreshToken,
+      userId: user._id,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 

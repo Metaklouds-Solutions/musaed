@@ -2,25 +2,27 @@
  * Billing overview and actions. Adapter only; tenant-scoped via session.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { billingAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 import type { BillingOverview } from '../../../shared/types';
 
 export function useBilling() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
-  const [overview, setOverview] = useState<BillingOverview | undefined>(() =>
-    tenantId ? billingAdapter.getBillingOverview(tenantId) : undefined
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const { data: overview, refetch } = useAsyncData(
+    () => (tenantId ? billingAdapter.getBillingOverview(tenantId) : undefined),
+    [tenantId, refreshKey],
+    undefined as BillingOverview | undefined
   );
 
   const refresh = useCallback(() => {
-    setOverview(tenantId ? billingAdapter.getBillingOverview(tenantId) : undefined);
-  }, [tenantId]);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+    setRefreshKey((k) => k + 1);
+    refetch();
+  }, [refetch]);
 
   const buyCredits = useCallback(() => {
     if (tenantId == null) return;

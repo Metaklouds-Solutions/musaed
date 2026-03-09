@@ -24,8 +24,6 @@ export interface ScheduledReportConfig {
   dayOfMonth?: number;
 }
 
-let cachedPerformance: PerformanceMetrics | null = null;
-
 const defaultPerformance: PerformanceMetrics = {
   totalCalls: 0, totalBookings: 0, avgDurationSec: 0,
   conversionRate: 0, escalationRate: 0, sentimentAvg: 0,
@@ -40,17 +38,27 @@ export const reportsAdapter = {
     ];
   },
 
-  getPerformance(_tenantId: string | undefined, _dateRange?: DateRangeFilter): PerformanceMetrics {
-    return cachedPerformance ?? defaultPerformance;
+  async getPerformance(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<PerformanceMetrics> {
+    try {
+      const data = await api.get<any>('/tenant/reports/performance');
+      return {
+        totalCalls: 0,
+        totalBookings: data.totalBookings ?? 0,
+        avgDurationSec: 0,
+        conversionRate: 0,
+        escalationRate: 0,
+        sentimentAvg: 0,
+      };
+    } catch {
+      return defaultPerformance;
+    }
   },
 
   getScheduledReportConfig(): ScheduledReportConfig {
     return { enabled: false, frequency: 'weekly', recipients: [], dayOfWeek: 1, dayOfMonth: 1 };
   },
 
-  setScheduledReportConfig(_config: ScheduledReportConfig): void {
-    // Will be persisted via backend settings API
-  },
+  setScheduledReportConfig(_config: ScheduledReportConfig): void {},
 
   getOutcomesByVersion(_tenantId: string | undefined, _dateRange?: DateRangeFilter): ABTestOutcomeRow[] {
     return [];
@@ -64,7 +72,7 @@ export const reportsAdapter = {
     _tenantId: string | undefined,
     _period: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth',
   ): PerformanceMetrics {
-    return cachedPerformance ?? defaultPerformance;
+    return defaultPerformance;
   },
 
   getSentimentDistribution(_tenantId: string | undefined, _dateRange?: DateRangeFilter): SentimentBucket[] {
@@ -81,13 +89,5 @@ export const reportsAdapter = {
 
   getOutcomesByDay(_tenantId: string | undefined, _dateRange?: DateRangeFilter): OutcomesByDay[] {
     return [];
-  },
-
-  async refresh(): Promise<void> {
-    try {
-      cachedPerformance = await api.get<PerformanceMetrics>('/tenant/reports/performance');
-    } catch {
-      // keep cache as-is
-    }
   },
 };

@@ -4,6 +4,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import { staffAdapter, adminAdapter, exportAdapter, softDeleteAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 import type { StaffRow } from '../../../shared/types';
 
 /** Returns staff list state, filters, and admin staff mutation/export actions. */
@@ -12,8 +13,12 @@ export function useAdminStaff() {
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const tenants = useMemo(() => adminAdapter.getTenants(), []);
-  const allStaff = useMemo(() => staffAdapter.list(), [refreshKey]);
+  const { data: tenants } = useAsyncData(() => adminAdapter.getTenants(), [], []);
+  const { data: allStaff, loading, refetch } = useAsyncData(
+    () => staffAdapter.list(),
+    [refreshKey],
+    [] as StaffRow[],
+  );
 
   const staff = useMemo(() => {
     let result = allStaff;
@@ -22,23 +27,21 @@ export function useAdminStaff() {
     return result;
   }, [allStaff, tenantFilter, roleFilter]);
 
-  const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
-
   const addStaff = useCallback(
-    (data: { name: string; email: string; roleSlug: string; tenantId: string }) => {
-      const added = staffAdapter.add(data);
-      refetch();
+    async (data: { name: string; email: string; roleSlug: string; tenantId: string }) => {
+      const added = await Promise.resolve(staffAdapter.add(data));
+      setRefreshKey((k) => k + 1);
       return added;
     },
-    [refetch]
+    []
   );
 
   const archiveStaff = useCallback(
     (userId: string, tenantId: string) => {
       softDeleteAdapter.softDeleteStaff(userId, tenantId);
-      refetch();
+      setRefreshKey((k) => k + 1);
     },
-    [refetch]
+    []
   );
 
   const exportStaffCsv = useCallback((rows: Record<string, string>[], fileName: string) => {
@@ -65,6 +68,7 @@ export function useAdminStaff() {
     roleFilter,
     setRoleFilter,
     refetch,
+    loading,
     addStaff,
     archiveStaff,
     exportStaffCsv,

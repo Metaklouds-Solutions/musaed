@@ -219,32 +219,32 @@ export function BillingPage() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <ModernStatCard 
           label="Current plan" 
-          value={overview.plan} 
+          value={overview.plan ?? '—'} 
           icon={icons.plan}
           trend={{ value: 12, positive: true }}
         />
         <ModernStatCard 
           label="Minutes used" 
-          value={overview.minutesUsed.toLocaleString()} 
+          value={(overview.minutesUsed ?? 0).toLocaleString()} 
           icon={icons.minutes}
         />
         <ModernStatCard 
           label="Credit balance" 
-          value={overview.creditBalance} 
+          value={overview.creditBalance ?? 0} 
           icon={icons.credits}
           trend={{ value: 8, positive: true }}
         />
         <ModernStatCard 
           label="Estimated savings" 
-          value={formatCurrency(overview.estimatedSavings)} 
+          value={formatCurrency(overview.estimatedSavings ?? 0)} 
           icon={icons.savings}
           trend={{ value: 24, positive: true }}
         />
         <ModernStatCard 
           label="Net ROI" 
-          value={`${overview.netROI}%`} 
+          value={`${overview.netROI ?? 0}%`} 
           icon={icons.roi}
-          trend={{ value: 5, positive: overview.netROI > 0 }}
+          trend={{ value: 5, positive: (overview.netROI ?? 0) > 0 }}
         />
       </section>
 

@@ -5,6 +5,8 @@
 import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { bookingsAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
+import type { Booking } from '../../../shared/types';
 
 export function useBookingsList() {
   const { user } = useSession();
@@ -13,11 +15,15 @@ export function useBookingsList() {
     return user.tenantId;
   }, [user]);
 
-  const bookings = useMemo(() => bookingsAdapter.getBookings(tenantId), [tenantId]);
+  const { data: bookings, loading, refetch } = useAsyncData(
+    () => bookingsAdapter.getBookings(tenantId),
+    [tenantId],
+    [] as Booking[],
+  );
   const conversionSummary = useMemo(() => {
     const fromCalls = bookings.filter((b) => b.callId).length;
     return { totalBookings: bookings.length, fromCalls };
   }, [bookings]);
 
-  return { user, bookings, conversionSummary };
+  return { user, bookings, conversionSummary, loading, refetch };
 }

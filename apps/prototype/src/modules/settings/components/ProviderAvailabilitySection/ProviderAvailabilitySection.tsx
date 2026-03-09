@@ -3,8 +3,9 @@
  * Edit time ranges per day; used for appointment scheduling.
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { staffAdapter, staffProfileAdapter } from '../../../../adapters';
+import { useAsyncData } from '../../../../shared/hooks/useAsyncData';
 import {
   DataTable,
   Table,
@@ -38,9 +39,14 @@ interface ProviderAvailabilitySectionProps {
 export function ProviderAvailabilitySection({ tenantId, onSaved }: ProviderAvailabilitySectionProps) {
   const [saved, setSaved] = useState(false);
 
+  const { data: staffList } = useAsyncData(
+    () => (tenantId ? staffAdapter.list(tenantId) : []),
+    [tenantId],
+    []
+  );
   const staff = useMemo(
-    () => (tenantId ? staffAdapter.list(tenantId).filter((s) => s.roleSlug === 'doctor' || s.roleSlug === 'tenant_owner') : []),
-    [tenantId]
+    () => (Array.isArray(staffList) ? staffList.filter((s) => s.roleSlug === 'doctor' || s.roleSlug === 'tenant_owner') : []),
+    [staffList]
   );
   const profiles = useMemo(
     () => (tenantId ? staffProfileAdapter.getProfiles(tenantId) : []),

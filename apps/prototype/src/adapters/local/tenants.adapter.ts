@@ -51,7 +51,7 @@ export const tenantsAdapter = {
     const fromSeed = seedTenantListRows.filter((t) => !deleted.has(t.id));
     const existingIds = new Set(fromSeed.map((r) => r.id));
     const addedOnly = fromAdded.filter((a) => !existingIds.has(a.id));
-    let rows = [...fromSeed, ...addedOnly];
+    let rows = [...addedOnly.reverse(), ...fromSeed];
     if (filters?.status) {
       rows = rows.filter((t) => t.status === filters.status);
     }
@@ -185,7 +185,7 @@ export const tenantsAdapter = {
         return { id: t.id, name: t.name, plan: plan?.plan ?? '—' };
       });
     const fromAdded = addedTenants.filter((t) => !deleted.has(t.id));
-    return [...fromSeed, ...fromAdded];
+    return [...fromAdded.reverse(), ...fromSeed];
   },
 
   /** Get platform agents available for deployment. */
@@ -209,6 +209,10 @@ export const tenantsAdapter = {
     const row: AdminTenantRow = { id, name: data.name, plan: data.plan };
     addedTenants.push(row);
     return row;
+  },
+
+  deleteTenant(id: string): void {
+    softDeleteAdapter.softDeleteTenant(id);
   },
 
   /** Get full tenant detail by ID. Returns null for soft-deleted tenants. */

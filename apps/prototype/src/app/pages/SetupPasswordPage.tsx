@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, type FormEvent } from 'react';
-import { useSearchParams, Navigate, Link } from 'react-router-dom';
+import { useSearchParams, Navigate, useNavigate, Link } from 'react-router-dom';
 import { Zap, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '../session/SessionContext';
@@ -25,6 +25,7 @@ export function SetupPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const { isAuthenticated, user, loginWithTokens } = useSession();
+  const navigate = useNavigate();
 
   const [verifying, setVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
@@ -101,16 +102,18 @@ export function SetupPasswordPage() {
           tenantRole: data.user.tenantRole,
         });
         toast.success('Account activated! Welcome aboard.');
+        const dest = data.user.role === 'ADMIN' ? '/admin/overview' : '/dashboard';
+        navigate(dest, { replace: true });
       } catch (err: any) {
         setError(err?.message ?? 'Failed to set password. Please try again.');
       } finally {
         setLoading(false);
       }
     },
-    [token, password, confirmPassword, loginWithTokens]
+    [token, password, confirmPassword, loginWithTokens, navigate]
   );
 
-  if (isAuthenticated && user) {
+  if (isAuthenticated && user && !token) {
     if (user.role === 'ADMIN') return <Navigate to="/admin/overview" replace />;
     return <Navigate to="/dashboard" replace />;
   }

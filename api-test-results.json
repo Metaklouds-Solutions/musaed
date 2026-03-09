@@ -5,7 +5,7 @@
         "Endpoint":  "/health",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"status\":\"ok\",\"timestamp\":\"2026-03-08T16:05:57.849Z\"}"
+        "Response":  "{\"status\":\"ok\",\"timestamp\":\"2026-03-08T21:52:06.841Z\"}"
     },
     {
         "Label":  "POST /auth/login (admin)",
@@ -13,7 +13,7 @@
         "Endpoint":  "/auth/login",
         "Status":  "201",
         "Pass":  true,
-        "Response":  "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkOTZiNmE1MzU5M2I1YjZjNjMzMWIiLCJlbWFpbCI6ImFkbWluQG11c2FlZC5jb20iLCJyb2xlIjoiQURNSU4iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzcyOTg1OTU4LCJleHAiOjE3NzI5ODY4NTh9.SVJFizft4wgVPzo3oMzP8PCYYmVZewdRzAO_POLmyIk\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkOTZiNmE1MzU5M2I1YjZjNjMzMWIiLCJlbWFpbCI6ImFkbWluQG11c2FlZC5jb20iLCJyb2xlIjoiQURNSU4iLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3Mjk4NTk1OCwiZXhwIjoxNzczNTkwNzU4fQ.tFczrED_8mSpUX72mmjnrI9B0IVLM958JjoggjvbF8c\",\"user\":{\"id\":\"69ad96b6a53593b5b6c6331b\",\"email\":\"admin@musaed.co..."
+        "Response":  "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkZWY3MWU1NmYwZDdkNDBhN2YxMmEiLCJlbWFpbCI6ImFkbWluQG11c2FlZC5jb20iLCJyb2xlIjoiQURNSU4iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzczMDA2NzI3LCJleHAiOjE3NzMwMDc2Mjd9.V8eBVPiD2jvP5co19dNEVmTcSYpdf6kYcHSgkyR5i7Y\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkZWY3MWU1NmYwZDdkNDBhN2YxMmEiLCJlbWFpbCI6ImFkbWluQG11c2FlZC5jb20iLCJyb2xlIjoiQURNSU4iLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3MzAwNjcyNywiZXhwIjoxNzczNjExNTI3fQ.AfsIuijU2ifeQohKWCyTgXJ7E67lKNTYRfNyWRnG2ck\",\"user\":{\"id\":\"69adef71e56f0d7d40a7f12a\",\"email\":\"admin@musaed.co..."
     },
     {
         "Label":  "GET /auth/me (admin)",
@@ -21,7 +21,7 @@
         "Endpoint":  "/auth/me",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"avatarUrl\":null,\"deletedAt\":null,\"_id\":\"69ad96b6a53593b5b6c6331b\",\"email\":\"admin@musaed.com\",\"name\":\"Admin\",\"role\":\"ADMIN\",\"status\":\"active\",\"createdAt\":\"2026-03-08T15:33:10.126Z\",\"updatedAt\":\"2026-03-08T16:05:58.226Z\",\"__v\":0,\"lastLoginAt\":\"2026-03-08T16:05:58.224Z\"}"
+        "Response":  "{\"avatarUrl\":null,\"deletedAt\":null,\"_id\":\"69adef71e56f0d7d40a7f12a\",\"email\":\"admin@musaed.com\",\"name\":\"Admin\",\"role\":\"ADMIN\",\"status\":\"active\",\"createdAt\":\"2026-03-08T21:51:45.481Z\",\"updatedAt\":\"2026-03-08T21:52:07.118Z\",\"__v\":0,\"lastLoginAt\":\"2026-03-08T21:52:07.117Z\"}"
     },
     {
         "Label":  "POST /admin/tenants (create)",
@@ -29,7 +29,7 @@
         "Endpoint":  "/admin/tenants",
         "Status":  "201",
         "Pass":  true,
-        "Response":  "{\"tenant\":{\"name\":\"Riyadh Dental Clinic\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":\"69ad9e6655f136960e8ce4de\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"_id\":\"69ad9e6655f136960e8ce4e0\",\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T16:05:58.497Z\",\"updatedAt\":\"2026-03-08T16:05:58.497Z\",\"__v\":0},\"owner\":{\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\",\"role\":\"TENANT_OWNER\",\"status\":\"pending\",\"avatarUrl\":null,\"lastLoginAt\":null,\"deletedAt\":null..."
+        "Response":  "{\"tenant\":{\"name\":\"Riyadh Dental Clinic\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":\"69adef87065d783488219d60\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"_id\":\"69adef87065d783488219d62\",\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T21:52:07.755Z\",\"updatedAt\":\"2026-03-08T21:52:07.755Z\",\"__v\":0},\"owner\":{\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\",\"role\":\"TENANT_OWNER\",\"status\":\"pending\",\"avatarUrl\":null,\"lastLoginAt\":null,\"deletedAt\":null..."
     },
     {
         "Label":  "GET /admin/tenants (list)",
@@ -37,47 +37,47 @@
         "Endpoint":  "/admin/tenants?page=1\u0026limit=10",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Riyadh Dental Clinic\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T16:05:58.497Z\",\"updatedAt\":\"2026-03-08T16:05:58.497Z\",\"__v\":0}],\"total\":1,\"page\":1,\"limit\":10}"
+        "Response":  "{\"data\":[{\"_id\":\"69adef87065d783488219d62\",\"name\":\"Riyadh Dental Clinic\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":{\"_id\":\"69adef87065d783488219d60\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T21:52:07.755Z\",\"updatedAt\":\"2026-03-08T21:52:07.755Z\",\"__v\":0},{\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"_id\":\"69adef71e56f0d7d40a7f..."
     },
     {
         "Label":  "GET /admin/tenants/:id (detail)",
         "Method":  "GET",
-        "Endpoint":  "/admin/tenants/69ad9e6655f136960e8ce4e0",
+        "Endpoint":  "/admin/tenants/69adef87065d783488219d62",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Riyadh Dental Clinic\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T16:05:58.497Z\",\"updatedAt\":\"2026-03-08T16:05:58.497Z\",\"__v\":0}"
+        "Response":  "{\"_id\":\"69adef87065d783488219d62\",\"name\":\"Riyadh Dental Clinic\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":{\"_id\":\"69adef87065d783488219d60\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T21:52:07.755Z\",\"updatedAt\":\"2026-03-08T21:52:07.755Z\",\"__v\":0}"
     },
     {
         "Label":  "PATCH /admin/tenants/:id (update)",
         "Method":  "PATCH",
-        "Endpoint":  "/admin/tenants/69ad9e6655f136960e8ce4e0",
+        "Endpoint":  "/admin/tenants/69adef87065d783488219d62",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Riyadh Dental Clinic (Updated)\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":\"69ad9e6655f136960e8ce4de\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T16:05:58.497Z\",\"updatedAt\":\"2026-03-08T16:06:00.211Z\",\"__v\":0}"
+        "Response":  "{\"_id\":\"69adef87065d783488219d62\",\"name\":\"Riyadh Dental Clinic (Updated)\",\"slug\":\"riyadh-dental\",\"status\":\"ONBOARDING\",\"ownerId\":\"69adef87065d783488219d60\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T21:52:07.755Z\",\"updatedAt\":\"2026-03-08T21:52:10.861Z\",\"__v\":0}"
     },
     {
         "Label":  "POST /admin/tenants/:id/suspend",
         "Method":  "POST",
-        "Endpoint":  "/admin/tenants/69ad9e6655f136960e8ce4e0/suspend",
+        "Endpoint":  "/admin/tenants/69adef87065d783488219d62/suspend",
         "Status":  "201",
         "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Riyadh Dental Clinic (Updated)\",\"slug\":\"riyadh-dental\",\"status\":\"SUSPENDED\",\"ownerId\":\"69ad9e6655f136960e8ce4de\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T16:05:58.497Z\",\"updatedAt\":\"2026-03-08T16:06:00.265Z\",\"__v\":0}"
+        "Response":  "{\"_id\":\"69adef87065d783488219d62\",\"name\":\"Riyadh Dental Clinic (Updated)\",\"slug\":\"riyadh-dental\",\"status\":\"SUSPENDED\",\"ownerId\":\"69adef87065d783488219d60\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T21:52:07.755Z\",\"updatedAt\":\"2026-03-08T21:52:11.078Z\",\"__v\":0}"
     },
     {
         "Label":  "PATCH /admin/tenants/:id (reactivate)",
         "Method":  "PATCH",
-        "Endpoint":  "/admin/tenants/69ad9e6655f136960e8ce4e0",
+        "Endpoint":  "/admin/tenants/69adef87065d783488219d62",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Riyadh Dental Clinic (Updated)\",\"slug\":\"riyadh-dental\",\"status\":\"ACTIVE\",\"ownerId\":\"69ad9e6655f136960e8ce4de\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T16:05:58.497Z\",\"updatedAt\":\"2026-03-08T16:06:00.307Z\",\"__v\":0}"
+        "Response":  "{\"_id\":\"69adef87065d783488219d62\",\"name\":\"Riyadh Dental Clinic (Updated)\",\"slug\":\"riyadh-dental\",\"status\":\"ACTIVE\",\"ownerId\":\"69adef87065d783488219d60\",\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"planId\":null,\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"onboardingStep\":0,\"onboardingComplete\":false,\"deletedAt\":null,\"settings\":{\"locations\":[]},\"createdAt\":\"2026-03-08T21:52:07.755Z\",\"updatedAt\":\"2026-03-08T21:52:11.277Z\",\"__v\":0}"
     },
     {
         "Label":  "POST /admin/tenants/:id/resend-invite",
         "Method":  "POST",
-        "Endpoint":  "/admin/tenants/69ad9e6655f136960e8ce4e0/resend-invite",
+        "Endpoint":  "/admin/tenants/69adef87065d783488219d62/resend-invite",
         "Status":  "201",
         "Pass":  true,
-        "Response":  "{\"message\":\"Invitation email has been resent.\"}"
+        "Response":  "{\"message\":\"Invitation email has been resent.\",\"inviteSetupUrl\":\"http://localhost:3002/auth/setup-password?token=71e511b0dda5d7d4c238a77e587fa0d54850cd96def6702688ab9cab7dc7acf0\"}"
     },
     {
         "Label":  "GET /admin/billing/plans (list)",
@@ -85,7 +85,7 @@
         "Endpoint":  "/admin/billing/plans",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "[{\"_id\":\"69ad96b5a53593b5b6c63315\",\"name\":\"Starter\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":0,\"maxVoiceAgents\":1,\"maxChatAgents\":1,\"maxEmailAgents\":0,\"maxStaff\":3,\"features\":{\"support\":\"email\"},\"isActive\":true,\"__v\":0,\"createdAt\":\"2026-03-08T15:33:09.848Z\",\"updatedAt\":\"2026-03-08T15:33:09.848Z\"},{\"_id\":\"69ad96b5a53593b5b6c63316\",\"name\":\"Professional\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":4900,\"maxVoiceAgents\":5,\"maxChatAgents\":5,\"maxEmailAgents\":2,\"maxStaff\":15,\"features\":{\"support\":\"priority\",\"analytics\":true},\"isActive\":true,\"__v\":0,\"createdA..."
+        "Response":  "[{\"_id\":\"69adef71e56f0d7d40a7f125\",\"name\":\"Starter\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":0,\"maxVoiceAgents\":1,\"maxChatAgents\":1,\"maxEmailAgents\":0,\"maxStaff\":3,\"features\":{\"support\":\"email\"},\"isActive\":true,\"__v\":0,\"createdAt\":\"2026-03-08T21:51:45.223Z\",\"updatedAt\":\"2026-03-08T21:51:45.223Z\"},{\"_id\":\"69adef71e56f0d7d40a7f126\",\"name\":\"Professional\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":4900,\"maxVoiceAgents\":5,\"maxChatAgents\":5,\"maxEmailAgents\":2,\"maxStaff\":15,\"features\":{\"support\":\"priority\",\"analytics\":true},\"isActive\":true,\"__v\":0,\"createdA..."
     },
     {
         "Label":  "POST /admin/billing/plans (create)",
@@ -93,15 +93,15 @@
         "Endpoint":  "/admin/billing/plans",
         "Status":  "201",
         "Pass":  true,
-        "Response":  "{\"name\":\"Growth\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":2900,\"maxVoiceAgents\":3,\"maxChatAgents\":3,\"maxEmailAgents\":1,\"maxStaff\":10,\"features\":{\"support\":\"standard\",\"analytics\":true},\"isActive\":true,\"_id\":\"69ad9e6855f136960e8ce4fd\",\"createdAt\":\"2026-03-08T16:06:00.843Z\",\"updatedAt\":\"2026-03-08T16:06:00.843Z\",\"__v\":0}"
+        "Response":  "{\"name\":\"Growth\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":2900,\"maxVoiceAgents\":3,\"maxChatAgents\":3,\"maxEmailAgents\":1,\"maxStaff\":10,\"features\":{\"support\":\"standard\",\"analytics\":true},\"isActive\":true,\"_id\":\"69adef8c065d783488219d7f\",\"createdAt\":\"2026-03-08T21:52:12.663Z\",\"updatedAt\":\"2026-03-08T21:52:12.663Z\",\"__v\":0}"
     },
     {
         "Label":  "PATCH /admin/billing/plans/:id (update)",
         "Method":  "PATCH",
-        "Endpoint":  "/admin/billing/plans/69ad9e6855f136960e8ce4fd",
+        "Endpoint":  "/admin/billing/plans/69adef8c065d783488219d7f",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6855f136960e8ce4fd\",\"name\":\"Growth Plus\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":3400,\"maxVoiceAgents\":3,\"maxChatAgents\":3,\"maxEmailAgents\":1,\"maxStaff\":10,\"features\":{\"support\":\"standard\",\"analytics\":true},\"isActive\":true,\"createdAt\":\"2026-03-08T16:06:00.843Z\",\"updatedAt\":\"2026-03-08T16:06:00.893Z\",\"__v\":0}"
+        "Response":  "{\"_id\":\"69adef8c065d783488219d7f\",\"name\":\"Growth Plus\",\"stripeProductId\":null,\"stripePriceId\":null,\"monthlyPriceCents\":3400,\"maxVoiceAgents\":3,\"maxChatAgents\":3,\"maxEmailAgents\":1,\"maxStaff\":10,\"features\":{\"support\":\"standard\",\"analytics\":true},\"isActive\":true,\"createdAt\":\"2026-03-08T21:52:12.663Z\",\"updatedAt\":\"2026-03-08T21:52:12.914Z\",\"__v\":0}"
     },
     {
         "Label":  "GET /admin/billing/overview",
@@ -109,15 +109,15 @@
         "Endpoint":  "/admin/billing/overview",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"totalTenants\":1,\"totalMrrCents\":0,\"plans\":[{\"id\":\"69ad96b5a53593b5b6c63315\",\"name\":\"Starter\",\"monthlyPriceCents\":0,\"subscriberCount\":0},{\"id\":\"69ad96b5a53593b5b6c63316\",\"name\":\"Professional\",\"monthlyPriceCents\":4900,\"subscriberCount\":0},{\"id\":\"69ad96b5a53593b5b6c63317\",\"name\":\"Enterprise\",\"monthlyPriceCents\":19900,\"subscriberCount\":0},{\"id\":\"69ad9e6855f136960e8ce4fd\",\"name\":\"Growth Plus\",\"monthlyPriceCents\":3400,\"subscriberCount\":0}]}"
+        "Response":  "{\"totalTenants\":2,\"totalMrrCents\":0,\"plans\":[{\"id\":\"69adef71e56f0d7d40a7f125\",\"name\":\"Starter\",\"monthlyPriceCents\":0,\"subscriberCount\":0},{\"id\":\"69adef71e56f0d7d40a7f126\",\"name\":\"Professional\",\"monthlyPriceCents\":4900,\"subscriberCount\":0},{\"id\":\"69adef71e56f0d7d40a7f127\",\"name\":\"Enterprise\",\"monthlyPriceCents\":19900,\"subscriberCount\":0},{\"id\":\"69adef8c065d783488219d7f\",\"name\":\"Growth Plus\",\"monthlyPriceCents\":3400,\"subscriberCount\":0}]}"
     },
     {
         "Label":  "GET /tenant/billing (admin query)",
         "Method":  "GET",
-        "Endpoint":  "/tenant/billing?tenantId=69ad9e6655f136960e8ce4e0",
+        "Endpoint":  "/tenant/billing?tenantId=69adef87065d783488219d62",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"plan\":null,\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"status\":\"ACTIVE\"}"
+        "Response":  "{\"tenantId\":\"69adef87065d783488219d62\",\"plan\":null,\"stripeCustomerId\":null,\"stripeSubscriptionId\":null,\"status\":\"ACTIVE\"}"
     },
     {
         "Label":  "POST /admin/templates (create)",
@@ -125,7 +125,7 @@
         "Endpoint":  "/admin/templates",
         "Status":  "201",
         "Pass":  true,
-        "Response":  "{\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69ad96b6a53593b5b6c6331b\",\"_id\":\"69ad9e6955f136960e8ce508\",\"createdAt\":\"2026-03-08T16:06:01.066Z\",\"updatedAt\":\"2026-03-08T16:06:01.066Z\",\"__v\":0}"
+        "Response":  "{\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69adef71e56f0d7d40a7f12a\",\"_id\":\"69adef8d065d783488219d8a\",\"createdAt\":\"2026-03-08T21:52:13.561Z\",\"updatedAt\":\"2026-03-08T21:52:13.561Z\",\"__v\":0}"
     },
     {
         "Label":  "GET /admin/templates (list)",
@@ -133,7 +133,7 @@
         "Endpoint":  "/admin/templates?page=1\u0026limit=10",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6955f136960e8ce508\",\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69ad96b6a53593b5b6c6331b\",\"createdAt\":\"2026-03-08T16:06:01.066Z\",\"updatedAt\":\"2026-03-08T16:06:01.066Z\",\"__v\":0}],\"total\":1,\"page\":1,\"limit\":10}"
+        "Response":  "{\"data\":[{\"_id\":\"69adef8d065d783488219d8a\",\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69adef71e56f0d7d40a7f12a\",\"createdAt\":\"2026-03-08T21:52:13.561Z\",\"updatedAt\":\"2026-03-08T21:52:13.561Z\",\"__v\":0}],\"total\":1,\"page\":1,\"limit\":10}"
     },
     {
         "Label":  "GET /admin/templates (filter voice)",
@@ -141,28 +141,28 @@
         "Endpoint":  "/admin/templates?channel=voice\u0026page=1\u0026limit=10",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6955f136960e8ce508\",\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69ad96b6a53593b5b6c6331b\",\"createdAt\":\"2026-03-08T16:06:01.066Z\",\"updatedAt\":\"2026-03-08T16:06:01.066Z\",\"__v\":0}],\"total\":1,\"page\":1,\"limit\":10}"
+        "Response":  "{\"data\":[{\"_id\":\"69adef8d065d783488219d8a\",\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69adef71e56f0d7d40a7f12a\",\"createdAt\":\"2026-03-08T21:52:13.561Z\",\"updatedAt\":\"2026-03-08T21:52:13.561Z\",\"__v\":0}],\"total\":1,\"page\":1,\"limit\":10}"
     },
     {
         "Label":  "GET /admin/templates/:id (detail)",
         "Method":  "GET",
-        "Endpoint":  "/admin/templates/69ad9e6955f136960e8ce508",
+        "Endpoint":  "/admin/templates/69adef8d065d783488219d8a",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6955f136960e8ce508\",\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69ad96b6a53593b5b6c6331b\",\"createdAt\":\"2026-03-08T16:06:01.066Z\",\"updatedAt\":\"2026-03-08T16:06:01.066Z\",\"__v\":0}"
+        "Response":  "{\"_id\":\"69adef8d065d783488219d8a\",\"name\":\"Reception Voice Agent\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":false,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69adef71e56f0d7d40a7f12a\",\"createdAt\":\"2026-03-08T21:52:13.561Z\",\"updatedAt\":\"2026-03-08T21:52:13.561Z\",\"__v\":0}"
     },
     {
         "Label":  "PATCH /admin/templates/:id (update)",
         "Method":  "PATCH",
-        "Endpoint":  "/admin/templates/69ad9e6955f136960e8ce508",
+        "Endpoint":  "/admin/templates/69adef8d065d783488219d8a",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6955f136960e8ce508\",\"name\":\"Reception Voice Agent v2\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":true,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69ad96b6a53593b5b6c6331b\",\"createdAt\":\"2026-03-08T16:06:01.066Z\",\"updatedAt\":\"2026-03-08T16:06:01.260Z\",\"__v\":0}"
+        "Response":  "{\"_id\":\"69adef8d065d783488219d8a\",\"name\":\"Reception Voice Agent v2\",\"description\":\"Handles appointment scheduling\",\"channel\":\"voice\",\"voiceConfig\":{\"language\":\"ar\",\"voice\":\"Fatima\"},\"llmConfig\":{\"model\":\"gpt-4o\",\"temperature\":0.7},\"basePrompt\":\"You are a professional clinic receptionist.\",\"webhookUrl\":null,\"mcpServerUrl\":null,\"isDefault\":true,\"tags\":[\"reception\",\"scheduling\"],\"version\":1,\"createdBy\":\"69adef71e56f0d7d40a7f12a\",\"createdAt\":\"2026-03-08T21:52:13.561Z\",\"updatedAt\":\"2026-03-08T21:52:14.400Z\",\"__v\":0}"
     },
     {
         "Label":  "DELETE /admin/templates/:id",
         "Method":  "DELETE",
-        "Endpoint":  "/admin/templates/69ad9e6955f136960e8ce508",
+        "Endpoint":  "/admin/templates/69adef8d065d783488219d8a",
         "Status":  "200",
         "Pass":  true,
         "Response":  "{\"message\":\"Template deleted\"}"
@@ -189,7 +189,7 @@
         "Endpoint":  "/admin/overview",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"totalUsers\":2,\"totalTenants\":1,\"activeTenants\":1,\"totalStaff\":1,\"totalAgents\":0,\"activeAgents\":0,\"openTickets\":0}"
+        "Response":  "{\"totalUsers\":3,\"totalTenants\":2,\"activeTenants\":2,\"totalStaff\":2,\"totalAgents\":0,\"activeAgents\":0,\"openTickets\":0}"
     },
     {
         "Label":  "GET /admin/system",
@@ -197,7 +197,7 @@
         "Endpoint":  "/admin/system",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"status\":\"ok\",\"uptime\":53.0314557,\"memoryUsage\":{\"rss\":132829184,\"heapTotal\":63750144,\"heapUsed\":54717472,\"external\":22118978,\"arrayBuffers\":18377589},\"timestamp\":\"2026-03-08T16:06:01.505Z\"}"
+        "Response":  "{\"status\":\"ok\",\"uptime\":37.2788473,\"memoryUsage\":{\"rss\":127877120,\"heapTotal\":62439424,\"heapUsed\":54246344,\"external\":22191705,\"arrayBuffers\":18455456},\"timestamp\":\"2026-03-08T21:52:15.442Z\"}"
     },
     {
         "Label":  "GET /admin/support (list - empty)",
@@ -210,274 +210,26 @@
     {
         "Label":  "GET /auth/verify-token (valid)",
         "Method":  "GET",
-        "Endpoint":  "/auth/verify-token?token=5a7bec131496ae5d198afc844c51c2cccaf6242874d23e5bdae00466c8332c7a",
+        "Endpoint":  "/auth/verify-token?token=NO_USER",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"valid\":true,\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\",\"type\":\"invite\"}"
+        "Response":  "{\"valid\":false,\"reason\":\"invalid\"}"
     },
     {
         "Label":  "POST /auth/setup-password (owner)",
         "Method":  "POST",
         "Endpoint":  "/auth/setup-password",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkOWU2NjU1ZjEzNjk2MGU4Y2U0ZGUiLCJlbWFpbCI6Im93bmVyQHJpeWFkaC1kZW50YWwuY29tIiwicm9sZSI6IlRFTkFOVF9PV05FUiIsInRlbmFudElkIjoiNjlhZDllNjY1NWYxMzY5NjBlOGNlNGUwIiwidGVuYW50Um9sZSI6ImNsaW5pY19hZG1pbiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzI5ODU5NjIsImV4cCI6MTc3Mjk4Njg2Mn0.8lB72-tSyb_jMsDKNflG3vN64KwpErWR62palPd7Ytk\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkOWU2NjU1ZjEzNjk2MGU4Y2U0ZGUiLCJlbWFpbCI6Im93bmVyQHJpeWFkaC1kZW50YWwuY29tIiwicm9sZSI6IlRFTkFOVF9PV05FUiIsInRlbmFudElkIjoiNjlhZDllNjY1NWYxMzY5NjBlOGNlNGUwIiwid..."
+        "Status":  "400",
+        "Pass":  false,
+        "Response":  "{\"message\":\"Invalid token\",\"error\":\"Bad Request\",\"statusCode\":400}"
     },
     {
         "Label":  "GET /auth/verify-token (already used)",
         "Method":  "GET",
-        "Endpoint":  "/auth/verify-token?token=5a7bec131496ae5d198afc844c51c2cccaf6242874d23e5bdae00466c8332c7a",
+        "Endpoint":  "/auth/verify-token?token=NO_USER",
         "Status":  "200",
         "Pass":  true,
-        "Response":  "{\"valid\":false,\"reason\":\"used\"}"
-    },
-    {
-        "Label":  "GET /tenant/staff (list)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/staff",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "[{\"_id\":\"69ad9e6655f136960e8ce4e2\",\"userId\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\",\"role\":\"TENANT_OWNER\",\"avatarUrl\":null},\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"roleSlug\":\"clinic_admin\",\"status\":\"active\",\"invitedAt\":\"2026-03-08T16:05:58.500Z\",\"joinedAt\":\"2026-03-08T16:06:02.616Z\",\"createdAt\":\"2026-03-08T16:05:58.501Z\",\"updatedAt\":\"2026-03-08T16:06:02.616Z\",\"__v\":0}]"
-    },
-    {
-        "Label":  "POST /tenant/staff (invite)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/staff",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"userId\":\"69ad9e6a55f136960e8ce536\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"roleSlug\":\"doctor\",\"status\":\"invited\",\"invitedAt\":\"2026-03-08T16:06:02.810Z\",\"joinedAt\":null,\"_id\":\"69ad9e6a55f136960e8ce539\",\"createdAt\":\"2026-03-08T16:06:02.811Z\",\"updatedAt\":\"2026-03-08T16:06:02.811Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "PATCH /tenant/staff/:id (update)",
-        "Method":  "PATCH",
-        "Endpoint":  "/tenant/staff/69ad9e6a55f136960e8ce539",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6a55f136960e8ce539\",\"userId\":\"69ad9e6a55f136960e8ce536\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"roleSlug\":\"clinic_admin\",\"status\":\"invited\",\"invitedAt\":\"2026-03-08T16:06:02.810Z\",\"joinedAt\":null,\"createdAt\":\"2026-03-08T16:06:02.811Z\",\"updatedAt\":\"2026-03-08T16:06:03.173Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "POST /tenant/customers (create 1)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/customers",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\",\"dateOfBirth\":\"1990-05-15T00:00:00.000Z\",\"source\":\"manual\",\"tags\":[\"vip\",\"returning\"],\"metadata\":{\"referral\":\"friend\"},\"totalBookings\":0,\"deletedAt\":null,\"_id\":\"69ad9e6b55f136960e8ce541\",\"createdAt\":\"2026-03-08T16:06:03.239Z\",\"updatedAt\":\"2026-03-08T16:06:03.239Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "POST /tenant/customers (create 2)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/customers",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Fatima Noor\",\"email\":\"fatima@example.com\",\"phone\":\"+966509876543\",\"dateOfBirth\":null,\"source\":\"call\",\"tags\":[],\"totalBookings\":0,\"deletedAt\":null,\"_id\":\"69ad9e6b55f136960e8ce544\",\"createdAt\":\"2026-03-08T16:06:03.285Z\",\"updatedAt\":\"2026-03-08T16:06:03.285Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "GET /tenant/customers (list)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/customers?page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6b55f136960e8ce544\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Fatima Noor\",\"email\":\"fatima@example.com\",\"phone\":\"+966509876543\",\"dateOfBirth\":null,\"source\":\"call\",\"tags\":[],\"totalBookings\":0,\"deletedAt\":null,\"createdAt\":\"2026-03-08T16:06:03.285Z\",\"updatedAt\":\"2026-03-08T16:06:03.285Z\",\"__v\":0},{\"_id\":\"69ad9e6b55f136960e8ce541\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\",\"dateOfBirth\":\"1990-05-15T00:00:00.000Z\",\"source\":\"manual\",\"tags\":[\"vip\",\"returning\"],\"metadata\":{\"referral\":\"friend\"},\"totalBook..."
-    },
-    {
-        "Label":  "GET /tenant/customers (search)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/customers?search=Ahmed\u0026page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6b55f136960e8ce541\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\",\"dateOfBirth\":\"1990-05-15T00:00:00.000Z\",\"source\":\"manual\",\"tags\":[\"vip\",\"returning\"],\"metadata\":{\"referral\":\"friend\"},\"totalBookings\":0,\"deletedAt\":null,\"createdAt\":\"2026-03-08T16:06:03.239Z\",\"updatedAt\":\"2026-03-08T16:06:03.239Z\",\"__v\":0}],\"total\":1,\"page\":1,\"limit\":10}"
-    },
-    {
-        "Label":  "GET /tenant/customers/:id (detail)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/customers/69ad9e6b55f136960e8ce541",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"customer\":{\"_id\":\"69ad9e6b55f136960e8ce541\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\",\"dateOfBirth\":\"1990-05-15T00:00:00.000Z\",\"source\":\"manual\",\"tags\":[\"vip\",\"returning\"],\"metadata\":{\"referral\":\"friend\"},\"totalBookings\":0,\"deletedAt\":null,\"createdAt\":\"2026-03-08T16:06:03.239Z\",\"updatedAt\":\"2026-03-08T16:06:03.239Z\",\"__v\":0},\"recentBookings\":[]}"
-    },
-    {
-        "Label":  "POST /tenant/customers/:id/export (GDPR)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/customers/69ad9e6b55f136960e8ce541/export",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"customer\":{\"_id\":\"69ad9e6b55f136960e8ce541\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\",\"dateOfBirth\":\"1990-05-15T00:00:00.000Z\",\"source\":\"manual\",\"tags\":[\"vip\",\"returning\"],\"metadata\":{\"referral\":\"friend\"},\"totalBookings\":0,\"deletedAt\":null,\"createdAt\":\"2026-03-08T16:06:03.239Z\",\"updatedAt\":\"2026-03-08T16:06:03.239Z\",\"__v\":0},\"bookings\":[],\"exportedAt\":\"2026-03-08T16:06:03.520Z\"}"
-    },
-    {
-        "Label":  "DELETE /tenant/customers/:id (soft delete)",
-        "Method":  "DELETE",
-        "Endpoint":  "/tenant/customers/69ad9e6b55f136960e8ce544",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"message\":\"Customer deleted\"}"
-    },
-    {
-        "Label":  "POST /tenant/bookings (create 1)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/bookings",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":\"69ad9e6b55f136960e8ce541\",\"providerId\":null,\"locationId\":null,\"serviceType\":\"consultation\",\"date\":\"2026-03-15T00:00:00.000Z\",\"timeSlot\":\"10:00\",\"durationMinutes\":30,\"status\":\"confirmed\",\"notes\":\"First visit\",\"reminderSent\":false,\"reminderAt\":null,\"_id\":\"69ad9e6b55f136960e8ce556\",\"createdAt\":\"2026-03-08T16:06:03.624Z\",\"updatedAt\":\"2026-03-08T16:06:03.624Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "POST /tenant/bookings (create 2)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/bookings",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":\"69ad9e6b55f136960e8ce541\",\"providerId\":null,\"locationId\":null,\"serviceType\":\"cleaning\",\"date\":\"2026-03-16T00:00:00.000Z\",\"timeSlot\":\"14:00\",\"durationMinutes\":45,\"status\":\"confirmed\",\"notes\":null,\"reminderSent\":false,\"reminderAt\":null,\"_id\":\"69ad9e6b55f136960e8ce55b\",\"createdAt\":\"2026-03-08T16:06:03.666Z\",\"updatedAt\":\"2026-03-08T16:06:03.666Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "GET /tenant/bookings (list)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/bookings?page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6b55f136960e8ce55b\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":{\"_id\":\"69ad9e6b55f136960e8ce541\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\"},\"providerId\":null,\"locationId\":null,\"serviceType\":\"cleaning\",\"date\":\"2026-03-16T00:00:00.000Z\",\"timeSlot\":\"14:00\",\"durationMinutes\":45,\"status\":\"confirmed\",\"notes\":null,\"reminderSent\":false,\"reminderAt\":null,\"createdAt\":\"2026-03-08T16:06:03.666Z\",\"updatedAt\":\"2026-03-08T16:06:03.666Z\",\"__v\":0},{\"_id\":\"69ad9e6b55f136960e8ce556\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":{\"_id\":\"69ad9e..."
-    },
-    {
-        "Label":  "GET /tenant/bookings (filter date)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/bookings?date=2026-03-15\u0026page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6b55f136960e8ce556\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":{\"_id\":\"69ad9e6b55f136960e8ce541\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\"},\"providerId\":null,\"locationId\":null,\"serviceType\":\"consultation\",\"date\":\"2026-03-15T00:00:00.000Z\",\"timeSlot\":\"10:00\",\"durationMinutes\":30,\"status\":\"confirmed\",\"notes\":\"First visit\",\"reminderSent\":false,\"reminderAt\":null,\"createdAt\":\"2026-03-08T16:06:03.624Z\",\"updatedAt\":\"2026-03-08T16:06:03.624Z\",\"__v\":0}],\"total\":1,\"page\":1,\"limit\":10}"
-    },
-    {
-        "Label":  "GET /tenant/bookings (filter status)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/bookings?status=confirmed\u0026page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6b55f136960e8ce55b\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":{\"_id\":\"69ad9e6b55f136960e8ce541\",\"name\":\"Ahmed Al-Rashid\",\"email\":\"ahmed@example.com\",\"phone\":\"+966501234567\"},\"providerId\":null,\"locationId\":null,\"serviceType\":\"cleaning\",\"date\":\"2026-03-16T00:00:00.000Z\",\"timeSlot\":\"14:00\",\"durationMinutes\":45,\"status\":\"confirmed\",\"notes\":null,\"reminderSent\":false,\"reminderAt\":null,\"createdAt\":\"2026-03-08T16:06:03.666Z\",\"updatedAt\":\"2026-03-08T16:06:03.666Z\",\"__v\":0},{\"_id\":\"69ad9e6b55f136960e8ce556\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":{\"_id\":\"69ad9e..."
-    },
-    {
-        "Label":  "PATCH /tenant/bookings/:id (complete)",
-        "Method":  "PATCH",
-        "Endpoint":  "/tenant/bookings/69ad9e6b55f136960e8ce556",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6b55f136960e8ce556\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":\"69ad9e6b55f136960e8ce541\",\"providerId\":null,\"locationId\":null,\"serviceType\":\"consultation\",\"date\":\"2026-03-15T00:00:00.000Z\",\"timeSlot\":\"10:00\",\"durationMinutes\":30,\"status\":\"completed\",\"notes\":\"Patient seen. All good.\",\"reminderSent\":false,\"reminderAt\":null,\"createdAt\":\"2026-03-08T16:06:03.624Z\",\"updatedAt\":\"2026-03-08T16:06:03.923Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "PATCH /tenant/bookings/:id (cancel)",
-        "Method":  "PATCH",
-        "Endpoint":  "/tenant/bookings/69ad9e6b55f136960e8ce556",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6b55f136960e8ce556\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":\"69ad9e6b55f136960e8ce541\",\"providerId\":null,\"locationId\":null,\"serviceType\":\"consultation\",\"date\":\"2026-03-15T00:00:00.000Z\",\"timeSlot\":\"10:00\",\"durationMinutes\":30,\"status\":\"cancelled\",\"notes\":\"Patient seen. All good.\",\"reminderSent\":false,\"reminderAt\":null,\"createdAt\":\"2026-03-08T16:06:03.624Z\",\"updatedAt\":\"2026-03-08T16:06:03.970Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "POST /tenant/support/tickets (create 1)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/support/tickets",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"title\":\"Agent not responding to Arabic callers\",\"category\":\"agent\",\"status\":\"open\",\"priority\":\"high\",\"assignedTo\":null,\"createdBy\":\"69ad9e6655f136960e8ce4de\",\"closedAt\":null,\"messages\":[{\"authorId\":\"69ad9e6655f136960e8ce4de\",\"body\":\"Our voice agent fails when Arabic is spoken.\",\"createdAt\":\"2026-03-08T16:06:04.031Z\"}],\"_id\":\"69ad9e6c55f136960e8ce572\",\"createdAt\":\"2026-03-08T16:06:04.036Z\",\"updatedAt\":\"2026-03-08T16:06:04.036Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "POST /tenant/support/tickets (create 2)",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/support/tickets",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"title\":\"Billing question\",\"category\":\"billing\",\"status\":\"open\",\"priority\":\"low\",\"assignedTo\":null,\"createdBy\":\"69ad9e6655f136960e8ce4de\",\"closedAt\":null,\"messages\":[{\"authorId\":\"69ad9e6655f136960e8ce4de\",\"body\":\"When will next invoice be generated?\",\"createdAt\":\"2026-03-08T16:06:04.079Z\"}],\"_id\":\"69ad9e6c55f136960e8ce575\",\"createdAt\":\"2026-03-08T16:06:04.081Z\",\"updatedAt\":\"2026-03-08T16:06:04.081Z\",\"__v\":0}"
-    },
-    {
-        "Label":  "GET /tenant/support/tickets (list)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/support/tickets?page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6c55f136960e8ce575\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"title\":\"Billing question\",\"category\":\"billing\",\"status\":\"open\",\"priority\":\"low\",\"assignedTo\":null,\"createdBy\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"closedAt\":null,\"messages\":[{\"authorId\":\"69ad9e6655f136960e8ce4de\",\"body\":\"When will next invoice be generated?\",\"createdAt\":\"2026-03-08T16:06:04.079Z\"}],\"createdAt\":\"2026-03-08T16:06:04.081Z\",\"updatedAt\":\"2026-03-08T16:06:04.081Z\",\"__v\":0},{\"_id\":\"69ad9e6c55f136960e8ce572\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"..."
-    },
-    {
-        "Label":  "GET /tenant/support/tickets (filter open)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/support/tickets?status=open\u0026page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6c55f136960e8ce575\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"title\":\"Billing question\",\"category\":\"billing\",\"status\":\"open\",\"priority\":\"low\",\"assignedTo\":null,\"createdBy\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"closedAt\":null,\"messages\":[{\"authorId\":\"69ad9e6655f136960e8ce4de\",\"body\":\"When will next invoice be generated?\",\"createdAt\":\"2026-03-08T16:06:04.079Z\"}],\"createdAt\":\"2026-03-08T16:06:04.081Z\",\"updatedAt\":\"2026-03-08T16:06:04.081Z\",\"__v\":0},{\"_id\":\"69ad9e6c55f136960e8ce572\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"..."
-    },
-    {
-        "Label":  "GET /tenant/support/tickets/:id (detail)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/support/tickets/69ad9e6c55f136960e8ce572",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6c55f136960e8ce572\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"title\":\"Agent not responding to Arabic callers\",\"category\":\"agent\",\"status\":\"open\",\"priority\":\"high\",\"assignedTo\":null,\"createdBy\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"closedAt\":null,\"messages\":[{\"authorId\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"body\":\"Our voice agent fails when Arabic is spoken.\",\"createdAt\":\"2026-03-08T16:06:04.031Z\"}],\"createdAt\":\"2026-03-08T16:06:04.036Z\",\"updatedAt\":\"2026-03-08T16:06:04.0..."
-    },
-    {
-        "Label":  "POST /tenant/support/tickets/:id/messages",
-        "Method":  "POST",
-        "Endpoint":  "/tenant/support/tickets/69ad9e6c55f136960e8ce572/messages",
-        "Status":  "201",
-        "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6c55f136960e8ce572\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"title\":\"Agent not responding to Arabic callers\",\"category\":\"agent\",\"status\":\"in_progress\",\"priority\":\"high\",\"assignedTo\":null,\"createdBy\":\"69ad9e6655f136960e8ce4de\",\"closedAt\":null,\"messages\":[{\"authorId\":\"69ad9e6655f136960e8ce4de\",\"body\":\"Our voice agent fails when Arabic is spoken.\",\"createdAt\":\"2026-03-08T16:06:04.031Z\"},{\"authorId\":\"69ad9e6655f136960e8ce4de\",\"body\":\"I have attached a screenshot of the error.\",\"createdAt\":\"2026-03-08T16:06:04.641Z\"}],\"createdAt\":\"2026-03-08T16:06:04.036Z\",\"updatedAt\":\"2026-03-08T16:06:..."
-    },
-    {
-        "Label":  "GET /admin/support (list with data)",
-        "Method":  "GET",
-        "Endpoint":  "/admin/support?page=1\u0026limit=10",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"data\":[{\"_id\":\"69ad9e6c55f136960e8ce575\",\"tenantId\":{\"_id\":\"69ad9e6655f136960e8ce4e0\",\"name\":\"Riyadh Dental Clinic (Updated)\",\"slug\":\"riyadh-dental\"},\"title\":\"Billing question\",\"category\":\"billing\",\"status\":\"open\",\"priority\":\"low\",\"assignedTo\":null,\"createdBy\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"closedAt\":null,\"messages\":[{\"authorId\":\"69ad9e6655f136960e8ce4de\",\"body\":\"When will next invoice be generated?\",\"createdAt\":\"2026-03-08T16:06:04.079Z\"}],\"createdAt\":\"2026-03-08T16:06:04.081Z\",\"updatedAt\":\"2026-03-08T16:06:04.081Z\",\"__v\":0},{\"..."
-    },
-    {
-        "Label":  "GET /admin/support/:id (detail)",
-        "Method":  "GET",
-        "Endpoint":  "/admin/support/69ad9e6c55f136960e8ce572",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"_id\":\"69ad9e6c55f136960e8ce572\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"title\":\"Agent not responding to Arabic callers\",\"category\":\"agent\",\"status\":\"in_progress\",\"priority\":\"high\",\"assignedTo\":null,\"createdBy\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"closedAt\":null,\"messages\":[{\"authorId\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh-dental.com\",\"name\":\"Khalid Al-Fahad\"},\"body\":\"Our voice agent fails when Arabic is spoken.\",\"createdAt\":\"2026-03-08T16:06:04.031Z\"},{\"authorId\":{\"_id\":\"69ad9e6655f136960e8ce4de\",\"email\":\"owner@riyadh..."
-    },
-    {
-        "Label":  "GET /tenant/dashboard/metrics",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/dashboard/metrics",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"totalCustomers\":1,\"totalBookings\":2,\"activeAgents\":0,\"openTickets\":2,\"bookingsThisMonth\":2,\"newCustomersThisMonth\":1,\"recentBookings\":[{\"_id\":\"69ad9e6b55f136960e8ce55b\",\"tenantId\":\"69ad9e6655f136960e8ce4e0\",\"customerId\":{\"_id\":\"69ad9e6b55f136960e8ce541\",\"name\":\"Ahmed Al-Rashid\"},\"providerId\":null,\"locationId\":null,\"serviceType\":\"cleaning\",\"date\":\"2026-03-16T00:00:00.000Z\",\"timeSlot\":\"14:00\",\"durationMinutes\":45,\"status\":\"confirmed\",\"notes\":null,\"reminderSent\":false,\"reminderAt\":null,\"createdAt\":\"2026-03-08T16:06:03.666Z\",\"updatedAt\":\"2026-03-08T16:06:03.666Z\",\"__v\":0},{\"_id\":\"69ad9e6b55f1369..."
-    },
-    {
-        "Label":  "GET /tenant/reports/performance",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/reports/performance",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"totalBookings\":2,\"byStatus\":{\"cancelled\":1,\"confirmed\":1},\"byServiceType\":{\"consultation\":1,\"cleaning\":1},\"totalCustomers\":1}"
-    },
-    {
-        "Label":  "GET /tenant/reports/performance (date range)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/reports/performance?dateFrom=2026-03-01\u0026dateTo=2026-03-31",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"totalBookings\":2,\"byStatus\":{\"cancelled\":1,\"confirmed\":1},\"byServiceType\":{\"consultation\":1,\"cleaning\":1},\"totalCustomers\":1}"
-    },
-    {
-        "Label":  "GET /tenant/settings",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/settings",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar\",\"settings\":{\"locations\":[]}}"
-    },
-    {
-        "Label":  "PATCH /tenant/settings (update)",
-        "Method":  "PATCH",
-        "Endpoint":  "/tenant/settings",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "{\"timezone\":\"Asia/Riyadh\",\"locale\":\"ar-SA\",\"settings\":{\"locations\":[{\"name\":\"Main Branch\",\"address\":\"King Fahd Rd\"}],\"businessHours\":{\"sun\":\"09:00-17:00\",\"mon\":\"09:00-17:00\"},\"notifications\":{\"emailDigest\":true}}}"
-    },
-    {
-        "Label":  "GET /tenant/agents (list)",
-        "Method":  "GET",
-        "Endpoint":  "/tenant/agents",
-        "Status":  "200",
-        "Pass":  true,
-        "Response":  "[]"
+        "Response":  "{\"valid\":false,\"reason\":\"invalid\"}"
     },
     {
         "Label":  "POST /auth/refresh",
@@ -485,7 +237,7 @@
         "Endpoint":  "/auth/refresh",
         "Status":  "201",
         "Pass":  true,
-        "Response":  "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkOTZiNmE1MzU5M2I1YjZjNjMzMWIiLCJlbWFpbCI6ImFkbWluQG11c2FlZC5jb20iLCJyb2xlIjoiQURNSU4iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzcyOTg1OTY1LCJleHAiOjE3NzI5ODY4NjV9.w-2rl6GR8wnWMzGXF6NiUBixciRQF9382nz0v7ZnigQ\"}"
+        "Response":  "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWFkZWY3MWU1NmYwZDdkNDBhN2YxMmEiLCJlbWFpbCI6ImFkbWluQG11c2FlZC5jb20iLCJyb2xlIjoiQURNSU4iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzczMDA2NzM2LCJleHAiOjE3NzMwMDc2MzZ9.T2lt-LGM0jOpVPjqEORHtSi0yWUTZikXgA1OvmNw7oA\"}"
     },
     {
         "Label":  "POST /auth/logout",
@@ -542,13 +294,5 @@
         "Status":  "401",
         "Pass":  true,
         "Response":  "{\"message\":\"Unauthorized\",\"statusCode\":401}"
-    },
-    {
-        "Label":  "GET /admin/tenants (owner accessing admin)",
-        "Method":  "GET",
-        "Endpoint":  "/admin/tenants",
-        "Status":  "403",
-        "Pass":  true,
-        "Response":  "{\"message\":\"Admin access required\",\"error\":\"Forbidden\",\"statusCode\":403}"
     }
 ]

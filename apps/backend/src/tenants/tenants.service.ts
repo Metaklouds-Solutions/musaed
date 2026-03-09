@@ -62,7 +62,7 @@ export class TenantsService {
       owner = await this.userModel.create({
         email: dto.ownerEmail,
         passwordHash: null,
-        name: dto.ownerName,
+        name: (dto.ownerName?.trim() || dto.ownerEmail.split('@')[0]) ?? 'Owner',
         role: 'TENANT_OWNER',
         status: 'pending',
       });
@@ -85,12 +85,13 @@ export class TenantsService {
       ...(isNewUser ? { invitedAt: new Date() } : { joinedAt: new Date() }),
     });
 
+    let inviteSetupUrl: string | undefined;
     if (isNewUser) {
       const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
-      await this.emailService.sendInviteEmail(owner.email, owner.name, token);
+      inviteSetupUrl = await this.emailService.sendInviteEmail(owner.email, owner.name, token);
     }
 
-    return { tenant, owner, staff };
+    return { tenant, owner, staff, inviteSetupUrl };
   }
 
   async resendInvite(tenantId: string) {
@@ -105,9 +106,8 @@ export class TenantsService {
     }
 
     const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
-    await this.emailService.sendInviteEmail(owner.email, owner.name, token);
-
-    return { message: 'Invitation email has been resent.' };
+    const inviteSetupUrl = await this.emailService.sendInviteEmail(owner.email, owner.name, token);
+    return { message: 'Invitation email has been resent.', inviteSetupUrl };
   }
 
   async update(id: string, dto: UpdateTenantDto) {
@@ -128,5 +128,19 @@ export class TenantsService {
     );
     if (!tenant) throw new NotFoundException('Tenant not found');
     return tenant;
+  }
+
+  async remove(id: string) {
+    const tenant = await this.tenantModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
+      { $set: { deletedAt: new Date() } },
+      { new: true },
+    );
+    if (!tenant) throw new NotFoundException('Tenant not found');
+    await this.staffModel.updateMany(
+      { tenantId: tenant._id },
+      { $set: { status: 'disabled' } },
+    );
+    return { message: 'Tenant deleted' };
   }
 }

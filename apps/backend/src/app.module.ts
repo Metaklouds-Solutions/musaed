@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
+import { Connection } from 'mongoose';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -27,9 +28,33 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.getOrThrow<string>('MONGODB_URI'),
-      }),
+      useFactory: (config: ConfigService) => {
+        const mongoUri = config.getOrThrow<string>('MONGODB_URI');
+        return {
+          uri: mongoUri,
+          serverSelectionTimeoutMS: 10_000,
+          socketTimeoutMS: 45_000,
+          retryWrites: true,
+          w: 'majority',
+          directConnection: false,
+          family: 4,
+          appName: 'mosaed',
+          connectionFactory: (connection: Connection) => {
+            const log = () => {
+              new Logger('MongoDB').log('Database connected successfully');
+            };
+            if (connection.readyState === 1) {
+              log();
+            } else {
+              connection.once('connected', log);
+            }
+            connection.on('error', (err: Error) => {
+              new Logger('MongoDB').error(`Connection error: ${err.message}`);
+            });
+            return connection;
+          },
+        };
+      },
     }),
     HealthModule,
     EmailModule,

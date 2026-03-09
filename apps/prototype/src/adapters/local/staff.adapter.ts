@@ -70,6 +70,11 @@ export const staffAdapter = {
     return row;
   },
 
+  deleteStaff(id: string): void {
+    const idx = addedStaff.findIndex((s) => s.userId === id);
+    if (idx >= 0) addedStaff.splice(idx, 1);
+  },
+
   /** Import CSV (stub). Returns count of rows processed. */
   importCsv(_csv: string, tenantId: string): number {
     // Stub: parse CSV and call add() for each row

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -55,5 +56,10 @@ export class TenantsController {
   @Post(':id/resend-invite')
   resendInvite(@Param('id') id: string) {
     return this.tenantsService.resendInvite(id);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.tenantsService.remove(id);
   }
 }

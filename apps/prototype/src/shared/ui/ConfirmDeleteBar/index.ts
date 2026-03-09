@@ -1,0 +1,1 @@
+export { ConfirmDeleteBar } from './ConfirmDeleteBar';

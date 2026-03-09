@@ -3,9 +3,28 @@ import * as bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Load .env file
+const result = dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+if (result.error) {
+  console.warn('⚠️  Warning: .env file not found, falling back to system environment variables');
+}
 
-const MONGODB_URI = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/musaed';
+// Validate MONGODB_URI
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI is not defined. Add it to your .env file.');
+  console.error('   Example: MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/musaed?retryWrites=true&w=majority&appName=mosaed');
+  process.exit(1);
+}
+
+// Ensure DB name is present (MongoDB URIs with multiple hosts fail new URL() parsing)
+const dbPathMatch = MONGODB_URI.match(/\/[a-zA-Z0-9_-]+(\?|$)/);
+if (!dbPathMatch || dbPathMatch[0] === '/?' || dbPathMatch[0] === '/') {
+  console.error('❌ MONGODB_URI is missing the database name (e.g. /musaed).');
+  process.exit(1);
+}
+
+// ─── Schemas ────────────────────────────────────────────────────────────────
 
 const subscriptionPlanSchema = new mongoose.Schema(
   {
@@ -37,8 +56,42 @@ const userSchema = new mongoose.Schema(
   { timestamps: true, collection: 'users' },
 );
 
+const tenantSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    status: { type: String, default: 'ACTIVE' },
+    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    timezone: { type: String, default: 'Asia/Riyadh' },
+    locale: { type: String, default: 'ar' },
+    onboardingStep: { type: Number, default: 4 },
+    onboardingComplete: { type: Boolean, default: true },
+    settings: { type: Object, default: {} },
+    deletedAt: { type: Date, default: null },
+  },
+  { timestamps: true, collection: 'tenants' },
+);
+
+const tenantStaffSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
+    roleSlug: { type: String, required: true },
+    status: { type: String, required: true },
+    invitedAt: { type: Date, default: null },
+    joinedAt: { type: Date, default: null },
+  },
+  { timestamps: true, collection: 'tenant_staff' },
+);
+
+// ─── Models ─────────────────────────────────────────────────────────────────
+
 const SubscriptionPlan = mongoose.model('SubscriptionPlan', subscriptionPlanSchema);
 const User = mongoose.model('User', userSchema);
+const Tenant = mongoose.model('Tenant', tenantSchema);
+const TenantStaff = mongoose.model('TenantStaff', tenantStaffSchema);
+
+// ─── Seed Data ───────────────────────────────────────────────────────────────
 
 const PLANS = [
   {
@@ -79,19 +132,34 @@ const PLANS = [
   },
 ];
 
+// ─── Seed Function ───────────────────────────────────────────────────────────
+
 async function seed() {
   try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
+    console.log('🔌 Connecting to MongoDB...');
+    await mongoose.connect(MONGODB_URI as string, {
+      appName: 'mosaed',
+      retryWrites: true,
+      w: 'majority',
+      serverSelectionTimeoutMS: 10_000,
+      socketTimeoutMS: 45_000,
+      directConnection: false,
+      family: 4,
+    });
+    console.log('✅ Connected to MongoDB\n');
 
+    // ── Subscription Plans ──
+    console.log('📦 Seeding subscription plans...');
     const existingPlans = await SubscriptionPlan.countDocuments();
     if (existingPlans === 0) {
       await SubscriptionPlan.insertMany(PLANS);
-      console.log('Seeded subscription plans: Starter, Professional, Enterprise');
+      console.log('   ✅ Seeded: Starter, Professional, Enterprise\n');
     } else {
-      console.log('Subscription plans already exist, skipping');
+      console.log('   ⏭️  Subscription plans already exist, skipping\n');
     }
 
+    // ── Admin User ──
+    console.log('👤 Seeding admin user...');
     const adminEmail = 'admin@musaed.com';
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
@@ -103,17 +171,72 @@ async function seed() {
         role: 'ADMIN',
         status: 'active',
       });
-      console.log('Seeded admin user: admin@musaed.com / Admin123!');
+      console.log('   ✅ Seeded admin user: admin@musaed.com\n');
     } else {
-      console.log('Admin user already exists, skipping');
+      console.log('   ⏭️  Admin user already exists, skipping\n');
     }
 
-    console.log('Seed complete');
+    // ── Tenant Owner ──
+    console.log('🏢 Seeding tenant owner...');
+    const tenantOwnerEmail = 'owner@democlinic.com';
+    let tenantOwner = await User.findOne({ email: tenantOwnerEmail });
+    if (!tenantOwner) {
+      const passwordHash = await bcrypt.hash('Owner123!', 10);
+      tenantOwner = await User.create({
+        email: tenantOwnerEmail,
+        passwordHash,
+        name: 'Demo Owner',
+        role: 'TENANT_OWNER',
+        status: 'active',
+      });
+      console.log('   ✅ Seeded tenant owner: owner@democlinic.com\n');
+    } else {
+      console.log('   ⏭️  Tenant owner already exists, skipping\n');
+    }
+
+    // ── Demo Tenant ──
+    console.log('🏥 Seeding demo tenant...');
+    let tenant = await Tenant.findOne({ slug: 'demo-clinic' });
+    if (!tenant) {
+      tenant = await Tenant.create({
+        name: 'Demo Clinic',
+        slug: 'demo-clinic',
+        status: 'ACTIVE',
+        ownerId: tenantOwner._id,
+        onboardingStep: 4,
+        onboardingComplete: true,
+      });
+      console.log('   ✅ Seeded tenant: Demo Clinic\n');
+    } else {
+      console.log('   ⏭️  Demo tenant already exists, skipping\n');
+    }
+
+    // ── Tenant Staff Link ──
+    console.log('🔗 Seeding tenant staff membership...');
+    const existingStaff = await TenantStaff.findOne({
+      userId: tenantOwner._id,
+      tenantId: tenant._id,
+    });
+    if (!existingStaff) {
+      await TenantStaff.create({
+        userId: tenantOwner._id,
+        tenantId: tenant._id,
+        roleSlug: 'clinic_admin',
+        status: 'active',
+        joinedAt: new Date(),
+      });
+      console.log('   ✅ Seeded tenant staff membership\n');
+    } else {
+      console.log('   ⏭️  Tenant staff membership already exists, skipping\n');
+    }
+
+    console.log('🎉 Seed complete!');
   } catch (err) {
-    console.error('Seed failed:', err);
+    console.error('\n❌ Seed failed:', err);
     process.exit(1);
   } finally {
     await mongoose.disconnect();
+    console.log('🔌 Disconnected from MongoDB');
     process.exit(0);
   }
 }

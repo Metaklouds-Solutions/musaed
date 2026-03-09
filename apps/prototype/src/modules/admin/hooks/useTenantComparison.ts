@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { tenantsAdapter, reportsAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 import type { TenantComparisonRow } from '../../../shared/types/reports';
 
 const DEFAULT_RANGE = (() => {
@@ -20,7 +21,8 @@ export function useTenantComparison(
   const [tenantA, setTenantA] = useState<string>('');
   const [tenantB, setTenantB] = useState<string>('');
 
-  const tenants = useMemo(() => tenantsAdapter.getAllTenants(), []);
+  const { data: tenants } = useAsyncData(() => tenantsAdapter.getAllTenants(), [], []);
+
   const tenantOptions = useMemo(
     () => tenants.map((t) => ({ value: t.id, label: t.name })),
     [tenants]

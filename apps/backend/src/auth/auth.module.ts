@@ -15,6 +15,10 @@ import {
   InviteToken,
   InviteTokenSchema,
 } from './schemas/invite-token.schema';
+import {
+  RefreshToken,
+  RefreshTokenSchema,
+} from './schemas/refresh-token.schema';
 
 @Module({
   imports: [
@@ -24,13 +28,14 @@ import {
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '15m') },
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '8h') },
       }),
     }),
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: TenantStaff.name, schema: TenantStaffSchema },
       { name: InviteToken.name, schema: InviteTokenSchema },
+      { name: RefreshToken.name, schema: RefreshTokenSchema },
     ]),
   ],
   controllers: [AuthController],

@@ -14,7 +14,7 @@ export type UserDocument = User & Document;
   },
 })
 export class User {
-  @Prop({ required: true, unique: true, lowercase: true })
+  @Prop({ required: true, lowercase: true })
   email: string;
 
   @Prop({ type: String, required: false, default: null })

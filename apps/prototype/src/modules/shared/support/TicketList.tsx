@@ -13,7 +13,8 @@ interface TicketListProps {
 }
 
 export function TicketList({ tickets, getTenantName, showTenant, toPath }: TicketListProps) {
-  if (tickets.length === 0) {
+  const list = Array.isArray(tickets) ? tickets : [];
+  if (list.length === 0) {
     return (
       <p className="text-sm text-[var(--text-muted)] py-8 text-center">
         No tickets found.
@@ -23,7 +24,7 @@ export function TicketList({ tickets, getTenantName, showTenant, toPath }: Ticke
 
   return (
     <div className="space-y-2">
-      {tickets.map((t) => (
+      {list.map((t) => (
         <TicketRow
           key={t.id}
           ticket={t}

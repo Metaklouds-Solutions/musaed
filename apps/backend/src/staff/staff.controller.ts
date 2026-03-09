@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -36,5 +37,10 @@ export class StaffController {
     @Body() dto: UpdateStaffDto,
   ) {
     return this.staffService.update(id, req.tenantId, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.staffService.remove(id);
   }
 }

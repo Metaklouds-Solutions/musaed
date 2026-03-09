@@ -20,7 +20,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
-  const { isAuthenticated, user, loginWithTokens } = useSession();
+  const { isAuthenticated, user, loginWithTokens, restoring } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -74,6 +74,14 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
     },
     [email, password, loginWithTokens]
   );
+
+  if (restoring) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (isAuthenticated && user) {
     if (user.role === 'ADMIN') return <Navigate to="/admin/overview" replace />;

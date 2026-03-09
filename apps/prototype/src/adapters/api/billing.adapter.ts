@@ -5,22 +5,26 @@
 import { api } from '../../lib/apiClient';
 import type { BillingOverview } from '../../shared/types';
 
-let cachedBilling: BillingOverview | undefined;
-
 export const billingAdapter = {
-  getBillingOverview(_tenantId: string | undefined): BillingOverview | undefined {
-    return cachedBilling;
+  async getBillingOverview(tenantId: string | undefined): Promise<BillingOverview | undefined> {
+    try {
+      const qs = tenantId ? `?tenantId=${tenantId}` : '';
+      const raw = await api.get<any>(`/tenant/billing${qs}`);
+      if (!raw) return undefined;
+      const plan = raw.plan?.name ?? raw.plan ?? '—';
+      return {
+        plan: typeof plan === 'string' ? plan : '—',
+        minutesUsed: typeof raw.minutesUsed === 'number' ? raw.minutesUsed : 0,
+        creditBalance: typeof raw.creditBalance === 'number' ? raw.creditBalance : 0,
+        estimatedSavings: typeof raw.estimatedSavings === 'number' ? raw.estimatedSavings : 0,
+        netROI: typeof raw.netROI === 'number' ? raw.netROI : 0,
+      };
+    } catch {
+      return undefined;
+    }
   },
 
   buyCredits(_tenantId: string | undefined): void {
-    // Stripe checkout will be handled by backend
-  },
-
-  async refresh(): Promise<void> {
-    try {
-      cachedBilling = await api.get<BillingOverview>('/tenant/billing');
-    } catch {
-      // keep cache as-is
-    }
+    // Stripe checkout handled by backend
   },
 };

@@ -21,10 +21,16 @@ export class StaffService {
     private emailService: EmailService,
   ) {}
 
-  async findAllForTenant(tenantId: string) {
+  async findAllForTenant(tenantId: string | null) {
+    const filter: any = {};
+    if (tenantId) {
+      filter.tenantId = new Types.ObjectId(tenantId);
+    }
     return this.staffModel
-      .find({ tenantId: new Types.ObjectId(tenantId) })
-      .populate('userId', 'email name avatarUrl role');
+      .find(filter)
+      .populate('userId', 'email name avatarUrl role')
+      .populate('tenantId', 'name')
+      .sort({ createdAt: -1 });
   }
 
   async invite(tenantId: string, dto: InviteStaffDto) {
@@ -71,5 +77,11 @@ export class StaffService {
     );
     if (!staff) throw new NotFoundException('Staff member not found');
     return staff;
+  }
+
+  async remove(id: string) {
+    const staff = await this.staffModel.findByIdAndDelete(id);
+    if (!staff) throw new NotFoundException('Staff member not found');
+    return { message: 'Staff member deleted' };
   }
 }

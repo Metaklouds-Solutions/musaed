@@ -16,14 +16,13 @@ createRoot(document.getElementById('root')!).render(
       <AppRouter />
       <Toaster
         position="top-right"
-        closeButton
+        duration={2000}
         toastOptions={{
           unstyled: true,
           classNames: {
             toast: 'toast-pop',
             title: 'toast-pop-title',
             description: 'toast-pop-desc',
-            closeButton: 'toast-pop-close',
             content: 'toast-pop-content',
           },
         }}

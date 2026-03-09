@@ -50,19 +50,19 @@ import * as apiSettings from './api/settings.adapter';
 const dataMode = import.meta.env.VITE_DATA_MODE as string | undefined;
 const isLocal = dataMode !== 'api';
 
-export const dashboardAdapter = isLocal ? localDashboard.dashboardAdapter : apiDashboard.dashboardAdapter;
-export const callsAdapter = isLocal ? localCalls.callsAdapter : apiCalls.callsAdapter;
-export const bookingsAdapter = isLocal ? localBookings.bookingsAdapter : apiBookings.bookingsAdapter;
-export const customersAdapter = isLocal ? localCustomers.customersAdapter : apiCustomers.customersAdapter;
-export const alertsAdapter = isLocal ? localAlerts.alertsAdapter : apiAlerts.alertsAdapter;
-export const billingAdapter = isLocal ? localBilling.billingAdapter : apiBilling.billingAdapter;
-export const staffAdapter = isLocal ? localStaff.staffAdapter : apiStaff.staffAdapter;
-export const supportAdapter = isLocal ? localSupport.supportAdapter : apiSupport.supportAdapter;
-export const reportsAdapter = isLocal ? localReports.reportsAdapter : apiReports.reportsAdapter;
-export const adminAdapter = isLocal ? localAdmin.adminAdapter : apiAdmin.adminAdapter;
-export const tenantsAdapter = isLocal ? localTenants.tenantsAdapter : apiTenants.tenantsAdapter;
-export const agentsAdapter = isLocal ? localAgents.agentsAdapter : apiAgents.agentsAdapter;
-export const settingsAdapter = isLocal ? localSettings.settingsAdapter : apiSettings.settingsAdapter;
+export const dashboardAdapter = (isLocal ? localDashboard.dashboardAdapter : apiDashboard.dashboardAdapter) as typeof localDashboard.dashboardAdapter;
+export const callsAdapter = (isLocal ? localCalls.callsAdapter : apiCalls.callsAdapter) as typeof localCalls.callsAdapter;
+export const bookingsAdapter = (isLocal ? localBookings.bookingsAdapter : apiBookings.bookingsAdapter) as typeof localBookings.bookingsAdapter;
+export const customersAdapter = (isLocal ? localCustomers.customersAdapter : apiCustomers.customersAdapter) as typeof localCustomers.customersAdapter;
+export const alertsAdapter = (isLocal ? localAlerts.alertsAdapter : apiAlerts.alertsAdapter) as typeof localAlerts.alertsAdapter;
+export const billingAdapter = (isLocal ? localBilling.billingAdapter : apiBilling.billingAdapter) as typeof localBilling.billingAdapter;
+export const staffAdapter = (isLocal ? localStaff.staffAdapter : apiStaff.staffAdapter) as typeof localStaff.staffAdapter;
+export const supportAdapter = (isLocal ? localSupport.supportAdapter : apiSupport.supportAdapter) as typeof localSupport.supportAdapter;
+export const reportsAdapter = (isLocal ? localReports.reportsAdapter : apiReports.reportsAdapter) as typeof localReports.reportsAdapter;
+export const adminAdapter = (isLocal ? localAdmin.adminAdapter : apiAdmin.adminAdapter) as typeof localAdmin.adminAdapter;
+export const tenantsAdapter = (isLocal ? localTenants.tenantsAdapter : apiTenants.tenantsAdapter) as typeof localTenants.tenantsAdapter;
+export const agentsAdapter = (isLocal ? localAgents.agentsAdapter : apiAgents.agentsAdapter) as typeof localAgents.agentsAdapter;
+export const settingsAdapter = (isLocal ? localSettings.settingsAdapter : apiSettings.settingsAdapter) as typeof localSettings.settingsAdapter;
 
 // Adapters that remain local-only (no backend endpoints yet)
 export const runsAdapter = localRuns.runsAdapter;

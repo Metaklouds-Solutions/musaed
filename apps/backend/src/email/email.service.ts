@@ -1,25 +1,33 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import sgMail from '@sendgrid/mail';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly fromEmail: string;
   private readonly frontendUrl: string;
+  private transporter: nodemailer.Transporter | null = null;
 
   constructor(private config: ConfigService) {
-    const apiKey = this.config.get<string>('SENDGRID_API_KEY');
-    if (apiKey) {
-      sgMail.setApiKey(apiKey);
+    const smtpUser = this.config.get<string>('SMTP_USER');
+    const smtpPass = this.config.get<string>('SMTP_PASS');
+
+    if (smtpUser && smtpPass) {
+      this.transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+      this.logger.log(`Email transport ready (Gmail SMTP via ${smtpUser})`);
     } else {
-      this.logger.warn('SENDGRID_API_KEY not set — emails will be logged but not sent');
+      this.logger.warn('SMTP_USER / SMTP_PASS not set — emails will be logged but not sent');
     }
-    this.fromEmail = this.config.get<string>('SENDGRID_FROM_EMAIL', 'noreply@musaed.app');
+
+    this.fromEmail = this.config.get<string>('SMTP_FROM', smtpUser ?? 'noreply@musaed.app');
     this.frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:5173');
   }
 
-  async sendInviteEmail(to: string, name: string, token: string): Promise<void> {
+  async sendInviteEmail(to: string, name: string, token: string): Promise<string> {
     const setupUrl = `${this.frontendUrl}/auth/setup-password?token=${token}`;
     const msg = {
       to,
@@ -41,6 +49,7 @@ export class EmailService {
     };
 
     await this.send(msg);
+    return setupUrl;
   }
 
   async sendPasswordResetEmail(to: string, name: string, token: string): Promise<void> {
@@ -67,19 +76,25 @@ export class EmailService {
     await this.send(msg);
   }
 
-  private async send(msg: sgMail.MailDataRequired): Promise<void> {
-    const apiKey = this.config.get<string>('SENDGRID_API_KEY');
-    if (!apiKey) {
+  private async send(msg: { to: string; from: string; subject: string; html: string }): Promise<void> {
+    if (!this.transporter) {
       this.logger.log(`[DEV] Email to ${msg.to}: ${msg.subject}`);
-      this.logger.log(`[DEV] Would send: ${JSON.stringify(msg, null, 2)}`);
+      const linkMatch = msg.html.match(/href="([^"]+)"/);
+      if (linkMatch) {
+        this.logger.warn(`[DEV] Copy this invite link manually: ${linkMatch[1]}`);
+      }
       return;
     }
 
     try {
-      await sgMail.send(msg);
+      await this.transporter.sendMail(msg);
       this.logger.log(`Email sent to ${msg.to}`);
     } catch (err) {
       this.logger.error(`Failed to send email to ${msg.to}`, err instanceof Error ? err.stack : err);
+      const linkMatch = msg.html.match(/href="([^"]+)"/);
+      if (linkMatch) {
+        this.logger.warn(`[DEV] Copy this invite link manually: ${linkMatch[1]}`);
+      }
     }
   }
 }

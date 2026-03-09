@@ -1,34 +1,46 @@
 /**
- * API customers adapter. Fetches from backend, serves cached data synchronously.
+ * API customers adapter. Fetches from backend.
  */
 
 import { api } from '../../lib/apiClient';
 import type { Customer } from '../../shared/types';
 
-let cachedCustomers: Customer[] = [];
+function mapCustomer(c: any): Customer {
+  return {
+    id: c._id,
+    tenantId: c.tenantId,
+    name: c.name,
+    email: c.email ?? '',
+  };
+}
 
 export const customersAdapter = {
-  getCustomers(_tenantId: string | undefined): Customer[] {
-    return cachedCustomers;
-  },
-
-  getCustomerById(id: string, _tenantId: string | undefined): Customer | undefined {
-    return cachedCustomers.find((c) => c.id === id);
-  },
-
-  async refresh(): Promise<void> {
+  async getCustomers(tenantId: string | undefined, filters?: { search?: string }): Promise<Customer[]> {
     try {
-      cachedCustomers = await api.get<Customer[]>('/tenant/customers');
+      const params: Record<string, string> = { page: '1', limit: '100' };
+      if (filters?.search) params.search = filters.search;
+      const qs = new URLSearchParams(params).toString();
+      const resp = await api.get<{ data: any[] }>(`/tenant/customers?${qs}`);
+      return (resp.data ?? []).map(mapCustomer);
     } catch {
-      // keep cache as-is
+      return [];
+    }
+  },
+
+  async getCustomerById(id: string, tenantId: string | undefined): Promise<Customer | undefined> {
+    try {
+      const resp = await api.get<any>(`/tenant/customers/${id}`);
+      const c = resp.customer ?? resp;
+      return mapCustomer(c);
+    } catch {
+      return undefined;
     }
   },
 
   async create(data: Partial<Customer>): Promise<Customer | null> {
     try {
-      const created = await api.post<Customer>('/tenant/customers', data);
-      cachedCustomers = [...cachedCustomers, created];
-      return created;
+      const created = await api.post<any>('/tenant/customers', data);
+      return mapCustomer(created);
     } catch {
       return null;
     }
@@ -37,7 +49,6 @@ export const customersAdapter = {
   async deleteCustomer(id: string): Promise<boolean> {
     try {
       await api.delete(`/tenant/customers/${id}`);
-      cachedCustomers = cachedCustomers.filter((c) => c.id !== id);
       return true;
     } catch {
       return false;

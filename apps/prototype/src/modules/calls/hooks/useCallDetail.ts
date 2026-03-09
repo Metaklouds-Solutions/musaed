@@ -5,6 +5,8 @@
 import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { callsAdapter, bookingsAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
+import type { Booking } from '../../../shared/types';
 
 /** Returns current user, selected call, and booking linkage for call-detail view. */
 export function useCallDetail(callId: string | undefined) {
@@ -18,12 +20,14 @@ export function useCallDetail(callId: string | undefined) {
     () => (callId ? callsAdapter.getCallById(callId, tenantId) : undefined),
     [callId, tenantId]
   );
-  const linkedBooking = useMemo(
+
+  const { data: linkedBooking } = useAsyncData(
     () =>
       call?.bookingId
         ? bookingsAdapter.getBookingById(call.bookingId, tenantId)
         : undefined,
-    [call?.bookingId, tenantId]
+    [call?.bookingId, tenantId],
+    undefined as Booking | undefined,
   );
 
   return { user, call, linkedBooking };

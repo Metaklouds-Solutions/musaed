@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { runsAdapter, tenantsAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 
 const PAGE_SIZE = 10;
 
@@ -8,7 +9,7 @@ export function useAdminRuns() {
   const [tenantFilter, setTenantFilter] = useState<string>('');
   const [page, setPage] = useState(1);
 
-  const tenants = useMemo(() => tenantsAdapter.getAllTenants(), []);
+  const { data: tenants } = useAsyncData(() => tenantsAdapter.getAllTenants(), [], []);
   const runs = useMemo(
     () => runsAdapter.listRuns(tenantFilter || undefined),
     [tenantFilter]

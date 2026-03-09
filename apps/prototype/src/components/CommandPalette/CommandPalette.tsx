@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '../../app/session/SessionContext';
 import { ADMIN_NAV, TENANT_NAV } from '../../app/layout/Sidebar/navConfig';
 import { tenantsAdapter, agentsAdapter, supportAdapter } from '../../adapters';
+import { useAsyncData } from '../../shared/hooks/useAsyncData';
 import { cn } from '@/lib/utils';
 
 function isIconComponent(x: unknown): x is React.ComponentType<{ className?: string }> {
@@ -67,9 +68,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     [isAdmin, t]
   );
 
-  const tenants = React.useMemo(() => tenantsAdapter.getAllTenants(), []);
-  const agents = React.useMemo(() => agentsAdapter.list(), []);
-  const tickets = React.useMemo(() => supportAdapter.listTickets(), []);
+  const { data: tenants } = useAsyncData(() => tenantsAdapter.getAllTenants(), [], []);
+  const { data: agents } = useAsyncData(() => agentsAdapter.list(), [], []);
+  const { data: tickets } = useAsyncData(() => supportAdapter.listTickets(), [], []);
 
   const tenantsItems: CommandItem[] = React.useMemo(
     () => tenants.slice(0, 5).map((t) => ({ id: `tenant-${t.id}`, label: t.name, meta: 'Tenant', path: `/admin/tenants/${t.id}` })),

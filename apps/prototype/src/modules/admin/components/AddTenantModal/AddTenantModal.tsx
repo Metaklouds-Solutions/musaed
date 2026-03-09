@@ -28,7 +28,7 @@ const INITIAL_CLINIC: ClinicInfoData = {
 interface AddTenantModalProps {
   open: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (created: { id: string; name: string; plan: string }) => void;
 }
 
 /** Two-step wizard: clinic info → deploy agent. Creates tenant via adapter. */
@@ -59,10 +59,10 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
   }, [canProceedStep1]);
 
   const handleComplete = useCallback(
-    (agentId?: string) => {
+    async (agentId?: string) => {
       setIsDeploying(true);
       try {
-        createTenant({
+        const result = await createTenant({
           name: clinicData.name.trim(),
           plan: clinicData.plan,
           ownerEmail: clinicData.ownerEmail.trim(),
@@ -75,15 +75,21 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         });
         reset();
         onClose();
-        onSuccess?.();
+        onSuccess?.({ id: result.id, name: result.name, plan: result.plan });
         toast.success('Tenant created successfully');
+        if (result.inviteSetupUrl) {
+          navigator.clipboard.writeText(result.inviteSetupUrl).catch(() => {});
+          toast.info('Invite link copied to clipboard. Paste it in your browser (e.g. for TempMail).', {
+            duration: 8000,
+          });
+        }
       } catch {
         toast.error('Failed to create tenant');
       } finally {
         setIsDeploying(false);
       }
     },
-    [clinicData, reset, onClose, onSuccess]
+    [clinicData, reset, onClose, onSuccess, createTenant]
   );
 
   const handleDeploy = useCallback(() => handleComplete(selectedAgentId ?? undefined), [handleComplete, selectedAgentId]);

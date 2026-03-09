@@ -3,13 +3,7 @@
  */
 
 import { api } from '../../lib/apiClient';
-import type { AdminOverviewMetrics, AdminTenantRow, SystemHealth } from '../../shared/types';
-
-const cache = {
-  overview: null as AdminOverviewMetrics | null,
-  tenants: null as AdminTenantRow[] | null,
-  health: null as SystemHealth | null,
-};
+import type { AdminOverviewMetrics, AdminTenantRow, SystemHealth, AdminKpis, AdminSupportSnapshot, AdminSystemHealthExtended } from '../../shared/types';
 
 const defaultOverview: AdminOverviewMetrics = {
   mrr: 0, creditsRevenue: 0, totalRevenue: 0, paymentFailures: [],
@@ -20,28 +14,74 @@ const defaultOverview: AdminOverviewMetrics = {
 };
 
 export const adminAdapter = {
-  getOverview(): AdminOverviewMetrics {
-    return cache.overview ?? defaultOverview;
-  },
-
-  getTenants(): AdminTenantRow[] {
-    return cache.tenants ?? [];
-  },
-
-  getSystemHealth(): SystemHealth {
-    return cache.health ?? { status: 'ok', integrations: [] };
-  },
-
-  async refresh(): Promise<void> {
+  async getOverview(): Promise<AdminOverviewMetrics> {
     try {
-      const [overview, health] = await Promise.all([
-        api.get<any>('/admin/overview'),
-        api.get<any>('/admin/system'),
-      ]);
-      cache.overview = { ...defaultOverview, ...overview };
-      cache.health = health;
+      const overview = await api.get<any>('/admin/overview');
+      return {
+        ...defaultOverview,
+        activeTenants: overview.totalTenants ?? overview.activeTenants ?? 0,
+        activeAgents: overview.totalAgents ?? 0,
+        ...overview,
+      };
     } catch {
-      // keep cache as-is
+      return defaultOverview;
     }
+  },
+
+  async getTenants(): Promise<AdminTenantRow[]> {
+    try {
+      const resp = await api.get<{ data: any[] }>('/admin/tenants?page=1&limit=100');
+      return (resp.data ?? []).map((t: any) => ({
+        id: t._id,
+        name: t.name,
+        plan: t.planId?.name ?? '—',
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  async getSystemHealth(): Promise<SystemHealth> {
+    try {
+      const health = await api.get<any>('/admin/system');
+      return { status: health.status ?? 'ok', integrations: [] };
+    } catch {
+      return { status: 'ok', integrations: [] };
+    }
+  },
+
+  getAdminKpis(): AdminKpis {
+    return {
+      totalTenants: 0,
+      activeTenants: 0,
+      trialTenants: 0,
+      suspendedTenants: 0,
+      callsToday: 0,
+      calls7d: 0,
+      bookedPercent: 0,
+      escalationPercent: 0,
+      failedPercent: 0,
+      totalCostUsd: 0,
+    };
+  },
+
+  getRecentTenants(_limit?: number) {
+    return [];
+  },
+
+  getSupportSnapshot(): AdminSupportSnapshot {
+    return { openCount: 0, criticalCount: 0, oldestWaitingDays: 0 };
+  },
+
+  getRecentCalls(_limit?: number) {
+    return [];
+  },
+
+  getSystemHealthExtended(): AdminSystemHealthExtended {
+    return { status: 'ok', integrations: [], retellSync: 'ok', webhooks: 'ok' };
+  },
+
+  getBillingOverview() {
+    return [];
   },
 };

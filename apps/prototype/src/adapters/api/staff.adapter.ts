@@ -5,43 +5,54 @@
 import { api } from '../../lib/apiClient';
 import type { StaffRow } from '../../shared/types';
 
-let cachedStaff: StaffRow[] = [];
+const ROLE_LABELS: Record<string, string> = {
+  tenant_owner: 'Tenant Owner',
+  clinic_admin: 'Clinic Admin',
+  doctor: 'Doctor',
+  receptionist: 'Receptionist',
+  auditor: 'Auditor',
+  tenant_staff: 'Staff',
+};
+
+function mapStaffRow(s: any): StaffRow {
+  const user = s.userId ?? {};
+  return {
+    userId: s._id,
+    name: user.name ?? s.name ?? '',
+    email: user.email ?? s.email ?? '',
+    roleSlug: s.roleSlug,
+    roleLabel: ROLE_LABELS[s.roleSlug] ?? s.roleSlug,
+    tenantId: typeof s.tenantId === 'string' ? s.tenantId : s.tenantId?._id ?? '',
+    tenantName: s.tenantId?.name ?? '',
+    status: s.status,
+  };
+}
 
 export const staffAdapter = {
-  list(tenantId?: string): StaffRow[] {
-    if (tenantId) return cachedStaff.filter((s) => s.tenantId === tenantId);
-    return cachedStaff;
+  async list(tenantId?: string): Promise<StaffRow[]> {
+    try {
+      const qs = tenantId ? `?tenantId=${tenantId}` : '';
+      const data = await api.get<any[]>(`/tenant/staff${qs}`);
+      return (data ?? []).map(mapStaffRow);
+    } catch {
+      return [];
+    }
   },
 
-  add(data: { name: string; email: string; roleSlug: string; tenantId: string }): StaffRow {
-    const row: StaffRow = {
-      userId: `pending_${Date.now()}`,
+  async add(data: { name: string; email: string; roleSlug: string; tenantId: string }): Promise<StaffRow> {
+    const created = await api.post<any>(`/tenant/staff?tenantId=${data.tenantId}`, {
       name: data.name,
       email: data.email,
       roleSlug: data.roleSlug,
-      roleLabel: data.roleSlug,
-      tenantId: data.tenantId,
-      tenantName: '',
-      status: 'invited',
-    };
-    api.post('/tenant/staff', { name: data.name, email: data.email, role: data.roleSlug })
-      .then((created: any) => {
-        row.userId = created.userId ?? row.userId;
-        cachedStaff = [...cachedStaff, row];
-      })
-      .catch(() => {});
-    return row;
+    });
+    return mapStaffRow(created);
+  },
+
+  async deleteStaff(id: string): Promise<void> {
+    await api.delete(`/tenant/staff/${id}`);
   },
 
   importCsv(_csv: string, _tenantId: string): number {
     return 0;
-  },
-
-  async refresh(): Promise<void> {
-    try {
-      cachedStaff = await api.get<StaffRow[]>('/tenant/staff');
-    } catch {
-      // keep cache as-is
-    }
   },
 };

@@ -23,7 +23,7 @@ export class Tenant {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   slug: string;
 
   @Prop({ required: true, enum: ['ONBOARDING', 'ACTIVE', 'TRIAL', 'SUSPENDED', 'CHURNED'] })

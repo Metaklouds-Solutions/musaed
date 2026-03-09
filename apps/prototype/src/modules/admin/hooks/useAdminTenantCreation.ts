@@ -17,8 +17,8 @@ interface CreateTenantInput {
 export function useAdminTenantCreation() {
   const platformAgents = useMemo(() => tenantsAdapter.getPlatformAgents(), []);
 
-  const createTenant = useCallback((input: CreateTenantInput) => {
-    const tenant = tenantsAdapter.createTenant(input);
+  const createTenant = useCallback(async (input: CreateTenantInput) => {
+    const tenant = await Promise.resolve(tenantsAdapter.createTenant(input));
     auditAdapter.log('tenant.created', { tenantId: tenant.id, name: tenant.name, plan: tenant.plan });
     return tenant;
   }, []);
