@@ -30,6 +30,11 @@ import {
   RefreshTokenDocument,
 } from './schemas/refresh-token.schema';
 import { EmailService } from '../email/email.service';
+import {
+  ALL_PERMISSIONS,
+  ROLE_PERMISSIONS,
+  type Permission,
+} from '../common/constants/permissions';
 
 export interface JwtPayload {
   sub: string;
@@ -176,6 +181,20 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     return user;
+  }
+
+  /**
+   * Returns permissions for a user. ADMIN gets all; tenant staff get role-based permissions.
+   */
+  getPermissionsForUser(
+    role: string,
+    tenantRole?: string | null,
+  ): Permission[] {
+    if (role === 'ADMIN') {
+      return [...ALL_PERMISSIONS];
+    }
+    const slug = tenantRole ?? 'tenant_staff';
+    return ROLE_PERMISSIONS[slug] ?? ROLE_PERMISSIONS.tenant_staff;
   }
 
   async generateInviteToken(userId: string, type: 'invite' | 'password_reset'): Promise<string> {

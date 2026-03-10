@@ -32,6 +32,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
         : randomUUID();
     req.headers[CORRELATION_HEADER] = requestId;
     req.headers[REQUEST_ID_HEADER] = requestId;
+    (req as Request & { id?: string }).id = requestId;
     res.setHeader(CORRELATION_HEADER, requestId);
     res.setHeader(REQUEST_ID_HEADER, requestId);
 

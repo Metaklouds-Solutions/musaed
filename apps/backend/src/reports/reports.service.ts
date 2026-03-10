@@ -87,14 +87,21 @@ export class ReportsService {
       tenantId: tid,
       deletedAt: null,
     });
+    const callMatch: Record<string, unknown> = { tenantId: tid };
+    if (dateFrom || dateTo) {
+      const createdAtFilter: Record<string, Date> = {};
+      if (dateFrom) createdAtFilter.$gte = new Date(dateFrom);
+      if (dateTo) createdAtFilter.$lte = new Date(dateTo);
+      callMatch.createdAt = createdAtFilter;
+    }
     const [totalCalls, callOutcomeRows, avgCallDuration] = await Promise.all([
-      this.callSessionModel.countDocuments({ tenantId: tid }),
+      this.callSessionModel.countDocuments(callMatch),
       this.callSessionModel.aggregate<{ _id: string; count: number }>([
-        { $match: { tenantId: tid } },
+        { $match: callMatch },
         { $group: { _id: '$outcome', count: { $sum: 1 } } },
       ]),
       this.callSessionModel.aggregate<{ value: number }>([
-        { $match: { tenantId: tid, durationMs: { $ne: null } } },
+        { $match: { ...callMatch, durationMs: { $ne: null } } },
         { $group: { _id: null, value: { $avg: '$durationMs' } } },
       ]),
     ]);

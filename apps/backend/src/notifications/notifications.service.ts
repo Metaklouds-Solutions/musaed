@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
-
-function isRecord(x: unknown): x is Record<string, unknown> {
-  return typeof x === 'object' && x !== null && !Array.isArray(x);
-}
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
 import { Notification, NotificationDocument } from './schemas/notification.schema';
 import { NotificationsGateway } from './notifications.gateway';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { TenantStaff, TenantStaffDocument } from '../tenants/schemas/tenant-staff.schema';
+import { NotificationsQueueService } from './notifications.queue.service';
+
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null && !Array.isArray(x);
+}
 
 export interface CreateNotificationInput {
   userId: string;
@@ -23,11 +24,14 @@ export interface CreateNotificationInput {
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(TenantStaff.name) private tenantStaffModel: Model<TenantStaffDocument>,
     private gateway: NotificationsGateway,
+    @Optional() private notificationsQueue: NotificationsQueueService | null,
   ) {}
 
   /**
@@ -54,15 +58,62 @@ export class NotificationsService {
 
   /**
    * Create notifications for multiple users (e.g. all admins, all tenant staff).
+   * Uses queue when enabled to avoid synchronous loops.
    */
   async createForUsers(
     userIds: string[],
     data: Omit<CreateNotificationInput, 'userId'>,
   ): Promise<void> {
     const uniqueIds = [...new Set(userIds)];
+    if (this.notificationsQueue?.isEnabled?.()) {
+      const jobId = await this.notificationsQueue.enqueueFanout({
+        userIds: uniqueIds,
+        tenantId: data.tenantId ?? null,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        link: data.link,
+        meta: data.meta,
+        priority: data.priority,
+      });
+      if (jobId) {
+        this.logger.debug({
+          event: 'notification_fanout_queued',
+          type: data.type,
+          userCount: uniqueIds.length,
+          jobId,
+        });
+        return;
+      }
+    }
     for (const userId of uniqueIds) {
       await this.create({ ...data, userId });
     }
+  }
+
+  /**
+   * Creates a single notification from queue job. Used by worker only.
+   */
+  async createFromQueue(payload: {
+    userId: string;
+    tenantId: string | null;
+    type: string;
+    title: string;
+    message: string;
+    link?: string;
+    meta?: Record<string, unknown>;
+    priority?: string;
+  }): Promise<NotificationDocument> {
+    return this.create({
+      userId: payload.userId,
+      tenantId: payload.tenantId,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+      link: payload.link,
+      meta: payload.meta,
+      priority: payload.priority,
+    });
   }
 
   /**

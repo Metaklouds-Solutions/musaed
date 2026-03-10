@@ -6,6 +6,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -112,9 +113,13 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     );
     this.worker.on('failed', (job, error) => {
       const instanceId = job?.data?.agentInstanceId ?? 'unknown';
+      const tenantId = job?.data?.tenantId ?? 'unknown';
       this.logger.error(
-        `Deployment job failed: agentInstanceId=${instanceId} error=${error.message}`,
+        `Deployment job failed (DLQ): agentInstanceId=${instanceId} tenantId=${tenantId} — ${error.message}`,
       );
+      Sentry.captureException(error, {
+        extra: { agentInstanceId: instanceId, tenantId, jobId: job?.id },
+      });
     });
   }
 

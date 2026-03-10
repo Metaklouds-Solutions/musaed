@@ -30,12 +30,33 @@ const defaultPerformance: PerformanceMetrics = {
 };
 
 export const reportsAdapter = {
-  async getOutcomes(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<OutcomeBreakdown[]> {
-    return [
-      { outcome: 'booked', count: 0, percentage: 0 },
-      { outcome: 'escalated', count: 0, percentage: 0 },
-      { outcome: 'failed', count: 0, percentage: 0 },
-    ];
+  async getOutcomes(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<OutcomeBreakdown[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<{
+        callMetrics?: { totalCalls?: number; outcomes?: Record<string, number> };
+      }>(`/tenant/reports/performance?${params.toString()}`);
+      const outcomes = data.callMetrics?.outcomes ?? {};
+      const total = data.callMetrics?.totalCalls ?? 0;
+      const booked = outcomes.booked ?? 0;
+      const escalated = outcomes.escalated ?? 0;
+      const failed = outcomes.failed ?? 0;
+      const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
+      return [
+        { outcome: 'booked', count: booked, percentage: pct(booked) },
+        { outcome: 'escalated', count: escalated, percentage: pct(escalated) },
+        { outcome: 'failed', count: failed, percentage: pct(failed) },
+      ];
+    } catch {
+      return [
+        { outcome: 'booked', count: 0, percentage: 0 },
+        { outcome: 'escalated', count: 0, percentage: 0 },
+        { outcome: 'failed', count: 0, percentage: 0 },
+      ];
+    }
   },
 
   async getPerformance(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<PerformanceMetrics> {

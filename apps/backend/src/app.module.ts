@@ -47,6 +47,8 @@ import { MetricsModule } from './metrics/metrics.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const mongoUri = config.getOrThrow<string>('MONGODB_URI');
+        const maxPoolSize = config.get<string>('MONGODB_MAX_POOL_SIZE');
+        const minPoolSize = config.get<string>('MONGODB_MIN_POOL_SIZE');
         return {
           uri: mongoUri,
           serverSelectionTimeoutMS: 10_000,
@@ -56,6 +58,8 @@ import { MetricsModule } from './metrics/metrics.module';
           directConnection: false,
           family: 4,
           appName: 'mosaed',
+          ...(maxPoolSize && { maxPoolSize: parseInt(maxPoolSize, 10) }),
+          ...(minPoolSize && { minPoolSize: parseInt(minPoolSize, 10) }),
           connectionFactory: (connection: Connection) => {
             const log = () => {
               new Logger('MongoDB').log('Database connected successfully');

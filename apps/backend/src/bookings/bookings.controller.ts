@@ -11,13 +11,17 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
+import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
+import { PERMISSIONS } from '../common/constants/permissions';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('tenant/bookings')
-@UseGuards(JwtAuthGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
+@RequirePermissions(PERMISSIONS.BOOKINGS_READ)
 export class BookingsController {
   constructor(private bookingsService: BookingsService) {}
 
@@ -38,11 +42,13 @@ export class BookingsController {
   }
 
   @Post()
+  @RequirePermissions(PERMISSIONS.BOOKINGS_WRITE)
   create(@Request() req: AuthenticatedRequest, @Body() dto: CreateBookingDto) {
     return this.bookingsService.create(req.tenantId!, dto);
   }
 
   @Patch(':id')
+  @RequirePermissions(PERMISSIONS.BOOKINGS_WRITE)
   update(
     @Param('id') id: string,
     @Request() req: AuthenticatedRequest,

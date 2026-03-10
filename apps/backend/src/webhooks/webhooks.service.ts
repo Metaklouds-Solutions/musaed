@@ -8,6 +8,24 @@ import { ProcessedEvent, ProcessedEventDocument } from './schemas/processed-even
 import { RetellWebhookDto } from './dto/retell-webhook.dto';
 import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
 
+/** Status order for Retell call events. Higher = more advanced. Prevents downgrades. */
+const RETELL_STATUS_ORDER: Record<string, number> = {
+  created: 0,
+  started: 1,
+  ended: 2,
+  analyzed: 3,
+};
+
+/** Maps Retell event type to call session status. */
+function getIncomingStatusFromEvent(event: string): string | null {
+  const map: Record<string, string> = {
+    call_started: 'started',
+    call_ended: 'ended',
+    call_analyzed: 'analyzed',
+  };
+  return map[event] ?? null;
+}
+
 interface ResolvedAgentContext {
   tenantId: Types.ObjectId;
   agentInstanceId: Types.ObjectId;
@@ -28,16 +46,23 @@ export class WebhooksService {
 
   /**
    * Returns true if the event was already processed (duplicate).
-   * Returns false and records the event if it's new.
+   * Returns false if it's new (does NOT record — caller records after processing).
    */
   async isDuplicateEvent(eventId: string, source: string, eventType: string): Promise<boolean> {
+    const existing = await this.processedEventModel.findOne({ eventId, source });
+    return existing !== null;
+  }
+
+  /**
+   * Records an event as processed. Call after successful processing (e.g. in queue worker).
+   */
+  async recordProcessedEvent(eventId: string, source: string, eventType: string): Promise<void> {
     try {
       await this.processedEventModel.create({ eventId, source, eventType });
-      return false;
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err && (err as Record<string, unknown>).code === 11000) {
-        this.logger.warn(`Duplicate ${source} event skipped: ${eventId}`);
-        return true;
+        this.logger.debug(`Duplicate ${source} event already recorded: ${eventId}`);
+        return;
       }
       throw err;
     }
@@ -174,17 +199,62 @@ export class WebhooksService {
       return;
     }
 
-    const existing = await this.callSessionModel.findOne({ callId }).select('_id');
+    const incomingStatus = getIncomingStatusFromEvent(payload.event);
+    const incomingTimestamp = this.readEventTimestamp(payload);
+
+    const existing = await this.callSessionModel
+      .findOne({ callId })
+      .select('_id status metadata')
+      .lean();
+
+    if (existing) {
+      const currentStatus = existing.status ?? 'created';
+      const currentOrder = RETELL_STATUS_ORDER[currentStatus] ?? RETELL_STATUS_ORDER.created;
+      const incomingOrder = incomingStatus
+        ? (RETELL_STATUS_ORDER[incomingStatus] ?? -1)
+        : -1;
+
+      if (incomingStatus && incomingOrder <= currentOrder) {
+        this.logger.debug({
+          callId,
+          incomingStatus,
+          currentStatus,
+          message: 'Ignored stale webhook event',
+        });
+        return;
+      }
+
+      const lastEventTs = this.readLastEventTimestamp(existing.metadata);
+      if (
+        incomingTimestamp !== null &&
+        lastEventTs !== null &&
+        incomingTimestamp <= lastEventTs
+      ) {
+        this.logger.debug({
+          callId,
+          incomingTimestamp,
+          lastEventTimestamp: lastEventTs,
+          message: 'Ignored webhook event with older timestamp',
+        });
+        return;
+      }
+    }
+
+    const metadataPatch: Record<string, unknown> = {
+      ...(payload.metadata ?? {}),
+      lastEvent: payload.event,
+    };
+    if (incomingTimestamp !== null) {
+      metadataPatch.lastEventTimestamp = incomingTimestamp;
+    }
+
     if (existing) {
       await this.callSessionModel.updateOne(
         { callId },
         {
           $set: {
             ...patch,
-            metadata: {
-              ...(payload.metadata ?? {}),
-              lastEvent: payload.event,
-            },
+            metadata: metadataPatch,
           },
         },
       );
@@ -209,14 +279,32 @@ export class WebhooksService {
         },
         $set: {
           ...patch,
-          metadata: {
-            ...(payload.metadata ?? {}),
-            lastEvent: payload.event,
-          },
+          metadata: metadataPatch,
         },
       },
       { upsert: true },
     );
+  }
+
+  /** Extracts event timestamp from payload (ms). Returns null if not present. */
+  private readEventTimestamp(payload: RetellWebhookDto): number | null {
+    const meta = payload.metadata ?? {};
+    const ts = meta.timestamp ?? meta.event_timestamp ?? meta.created_at;
+    if (typeof ts === 'number' && Number.isFinite(ts)) {
+      return ts > 1e12 ? ts : ts * 1000;
+    }
+    if (typeof ts === 'string') {
+      const parsed = Date.parse(ts);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  }
+
+  private readLastEventTimestamp(metadata?: Record<string, unknown> | null): number | null {
+    if (!metadata) return null;
+    const ts = metadata.lastEventTimestamp;
+    if (typeof ts === 'number' && Number.isFinite(ts)) return ts;
+    return null;
   }
 
   private async resolveAgentContext(

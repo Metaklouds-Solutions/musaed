@@ -2,17 +2,22 @@ import {
   Controller,
   Post,
   Req,
+  Res,
   Headers,
   HttpCode,
+  HttpStatus,
   Logger,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { Request } from 'express';
 import { WebhooksService } from './webhooks.service';
 import { RetellWebhookDto } from './dto/retell-webhook.dto';
+import { WebhookQueueService } from '../queue/webhook-queue.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 /** Maximum age of webhook timestamp in seconds (0 = disabled). */
 const DEFAULT_TIMESTAMP_MAX_AGE_SEC = 0;
@@ -41,6 +46,8 @@ export class RetellWebhookController {
 
   constructor(
     private webhooksService: WebhooksService,
+    private webhookQueue: WebhookQueueService,
+    private metrics: MetricsService,
     config: ConfigService,
   ) {
     const nodeEnv = config.get<string>('NODE_ENV', 'development');
@@ -60,9 +67,9 @@ export class RetellWebhookController {
   }
 
   @Post()
-  @HttpCode(200)
   async handleWebhook(
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
     @Headers('x-retell-signature') signature?: string,
     @Headers('x-retell-timestamp') timestampHeader?: string,
   ) {
@@ -121,6 +128,7 @@ export class RetellWebhookController {
     }
 
     const eventType = body.event;
+    this.metrics.recordWebhookReceived('retell');
     const eventId = this.webhooksService.getRetellEventId(body);
     const isDuplicate = await this.webhooksService.isDuplicateEvent(
       eventId,
@@ -129,6 +137,19 @@ export class RetellWebhookController {
     );
     if (isDuplicate) {
       return { received: true, duplicate: true };
+    }
+
+    if (this.webhookQueue.isEnabled()) {
+      const jobId = await this.webhookQueue.add({
+        source: 'retell',
+        eventId,
+        eventType,
+        payload: body as unknown as Record<string, unknown>,
+      });
+      if (jobId) {
+        res.status(HttpStatus.ACCEPTED);
+        return { received: true, queued: true };
+      }
     }
 
     this.logger.log(`Retell event received: ${eventType}`);
@@ -154,6 +175,7 @@ export class RetellWebhookController {
         this.logger.log(`Unhandled Retell event: ${eventType}`);
     }
 
+    await this.webhooksService.recordProcessedEvent(eventId, 'retell', eventType);
     return { received: true };
   }
 }

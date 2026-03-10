@@ -16,6 +16,9 @@ export class MetricsService implements OnModuleInit {
   private readonly registry: Registry = register;
   private readonly httpRequestDuration: Histogram<string>;
   private readonly httpRequestTotal: Counter<string>;
+  private readonly emailSentTotal: Counter<string>;
+  private readonly emailFailedTotal: Counter<string>;
+  private readonly webhooksReceivedTotal: Counter<string>;
 
   constructor() {
     this.httpRequestDuration = new Histogram({
@@ -32,6 +35,48 @@ export class MetricsService implements OnModuleInit {
       labelNames: ['method', 'path', 'status'],
       registers: [this.registry],
     });
+
+    this.emailSentTotal = new Counter({
+      name: 'email_sent_total',
+      help: 'Total number of emails sent successfully',
+      labelNames: ['type'],
+      registers: [this.registry],
+    });
+
+    this.emailFailedTotal = new Counter({
+      name: 'email_failed_total',
+      help: 'Total number of email send failures',
+      labelNames: ['type'],
+      registers: [this.registry],
+    });
+
+    this.webhooksReceivedTotal = new Counter({
+      name: 'webhooks_received_total',
+      help: 'Total number of webhooks received (by source)',
+      labelNames: ['source'],
+      registers: [this.registry],
+    });
+  }
+
+  /**
+   * Records a successful email send.
+   */
+  recordEmailSent(type: string): void {
+    this.emailSentTotal.inc({ type });
+  }
+
+  /**
+   * Records an email send failure.
+   */
+  recordEmailFailed(type: string): void {
+    this.emailFailedTotal.inc({ type });
+  }
+
+  /**
+   * Records a webhook received (after signature verification).
+   */
+  recordWebhookReceived(source: string): void {
+    this.webhooksReceivedTotal.inc({ source });
   }
 
   onModuleInit(): void {

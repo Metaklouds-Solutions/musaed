@@ -6,6 +6,8 @@ export interface AuthenticatedUser
   _id: string;
   tenantId?: string;
   tenantRole?: string;
+  /** Fine-grained permissions for RBAC. */
+  permissions?: string[];
 }
 
 export interface AuthenticatedRequest extends Request {

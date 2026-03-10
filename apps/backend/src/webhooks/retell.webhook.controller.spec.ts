@@ -1,17 +1,27 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { RetellWebhookController } from './retell.webhook.controller';
 import { WebhooksService } from './webhooks.service';
+import { WebhookQueueService } from '../queue/webhook-queue.service';
+import { MetricsService } from '../metrics/metrics.service';
 import * as crypto from 'crypto';
 
 describe('RetellWebhookController', () => {
   let controller: RetellWebhookController;
   let webhooksService: WebhooksService;
 
+  const mockWebhookQueue = {
+    isEnabled: jest.fn().mockReturnValue(false),
+    add: jest.fn(),
+  };
+
+  const mockMetrics = { recordWebhookReceived: jest.fn() };
+
   const mockWebhooksService = {
     getRetellEventId: jest.fn().mockReturnValue('evt_123'),
     isDuplicateEvent: jest.fn().mockResolvedValue(false),
+    recordProcessedEvent: jest.fn().mockResolvedValue(undefined),
     handleRetellCallStarted: jest.fn().mockResolvedValue(undefined),
     handleRetellCallEnded: jest.fn().mockResolvedValue(undefined),
     handleRetellCallAnalyzed: jest.fn().mockResolvedValue(undefined),
@@ -22,12 +32,19 @@ describe('RetellWebhookController', () => {
   const rawBody = JSON.stringify({ event: 'call_started', call_id: 'call_1' });
   const validSignature = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
 
+  const mockRes = {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+  } as unknown as Response;
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockWebhookQueue.isEnabled.mockReturnValue(false);
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RetellWebhookController],
       providers: [
         { provide: WebhooksService, useValue: mockWebhooksService },
+        { provide: WebhookQueueService, useValue: mockWebhookQueue },
         {
           provide: ConfigService,
           useValue: {
@@ -53,8 +70,9 @@ describe('RetellWebhookController', () => {
     const req = {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
-    const result = await controller.handleWebhook(req, validSignature, undefined);
+    const result = await controller.handleWebhook(req, mockRes, validSignature, undefined);
     expect(result).toEqual({ received: true });
+    expect(mockMetrics.recordWebhookReceived).toHaveBeenCalledWith('retell');
     expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
   });
 
@@ -63,7 +81,7 @@ describe('RetellWebhookController', () => {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
     await expect(
-      controller.handleWebhook(req, 'invalid_signature_hex', undefined),
+      controller.handleWebhook(req, mockRes, 'invalid_signature_hex', undefined),
     ).rejects.toThrow('Invalid webhook signature');
     expect(mockWebhooksService.handleRetellCallStarted).not.toHaveBeenCalled();
   });
@@ -72,7 +90,7 @@ describe('RetellWebhookController', () => {
     const req = {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
-    await expect(controller.handleWebhook(req, undefined, undefined)).rejects.toThrow(
+    await expect(controller.handleWebhook(req, mockRes, undefined, undefined)).rejects.toThrow(
       'Missing webhook signature',
     );
   });
@@ -85,6 +103,7 @@ describe('RetellWebhookController', () => {
       controllers: [RetellWebhookController],
       providers: [
         { provide: WebhooksService, useValue: mockWebhooksService },
+        { provide: WebhookQueueService, useValue: mockWebhookQueue },
         {
           provide: ConfigService,
           useValue: {
@@ -104,7 +123,7 @@ describe('RetellWebhookController', () => {
 
     const ctrl = module.get<RetellWebhookController>(RetellWebhookController);
     const req = { body: Buffer.from(rawBody, 'utf8') } as unknown as Request;
-    const result = await ctrl.handleWebhook(req, legacySig, undefined);
+    const result = await ctrl.handleWebhook(req, mockRes, legacySig, undefined);
     expect(result).toEqual({ received: true });
     expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
   });

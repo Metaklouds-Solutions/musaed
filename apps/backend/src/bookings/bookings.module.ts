@@ -7,6 +7,7 @@ import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 import { RemindersProcessor } from './reminders.processor';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [BookingsController],
-  providers: [BookingsService, RemindersProcessor],
+  providers: [BookingsService, RemindersProcessor, PermissionsGuard],
   exports: [BookingsService, MongooseModule],
 })
 export class BookingsModule {}

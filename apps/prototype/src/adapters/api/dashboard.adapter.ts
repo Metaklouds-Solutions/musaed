@@ -33,14 +33,26 @@ const defaultStaffCounts: TenantStaffCounts = { doctors: 0, receptionists: 0, to
 export const dashboardAdapter = {
   async getMetrics(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<DashboardMetrics> {
     try {
-      const data = await api.get<any>('/tenant/dashboard/metrics');
+      const data = await api.get<{
+        totalBookings?: number;
+        totalCalls?: number;
+        callOutcomes?: { booked?: number; escalated?: number; failed?: number };
+        avgCallDurationMs?: number;
+      }>('/tenant/dashboard/metrics');
+      const totalCalls = data.totalCalls ?? 0;
+      const outcomes = data.callOutcomes ?? {};
+      const booked = outcomes.booked ?? 0;
+      const escalated = outcomes.escalated ?? 0;
+      const avgMs = data.avgCallDurationMs ?? 0;
+      const totalMinutes = totalCalls > 0 ? (avgMs * totalCalls) / 60_000 : 0;
+      const costSaved = totalMinutes * 2;
       return {
         totalBookings: data.totalBookings ?? 0,
-        conversionRate: data.conversionRate ?? 0,
-        callsHandled: data.callsHandled ?? 0,
-        escalationRate: data.escalationRate ?? 0,
-        costSaved: data.costSaved ?? 0,
-        aiConfidenceScore: data.aiConfidenceScore ?? 0,
+        conversionRate: totalCalls > 0 ? (booked / totalCalls) * 100 : 0,
+        callsHandled: totalCalls,
+        escalationRate: totalCalls > 0 ? (escalated / totalCalls) * 100 : 0,
+        costSaved,
+        aiConfidenceScore: 0,
       };
     } catch {
       return defaultMetrics;
@@ -94,17 +106,36 @@ export const dashboardAdapter = {
 
   async getTenantKpis(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<TenantKpis> {
     try {
-      const data = await api.get<any>('/tenant/dashboard/metrics');
+      const data = await api.get<{
+        totalBookings?: number;
+        totalCalls?: number;
+        callOutcomes?: { booked?: number; escalated?: number; failed?: number; unknown?: number };
+        avgCallDurationMs?: number;
+      }>('/tenant/dashboard/metrics');
+      const totalCalls = data.totalCalls ?? 0;
+      const outcomes = data.callOutcomes ?? {};
+      const booked = outcomes.booked ?? 0;
+      const escalated = outcomes.escalated ?? 0;
+      const failed = outcomes.failed ?? 0;
+      const topOutcome =
+        booked >= escalated && booked >= failed
+          ? 'booked'
+          : escalated >= failed
+            ? 'escalated'
+            : failed > 0
+              ? 'failed'
+              : '—';
+      const totalMinutes = totalCalls > 0 ? ((data.avgCallDurationMs ?? 0) * totalCalls) / 60_000 : 0;
       return {
         callsToday: 0,
         calls7d: 0,
         appointmentsBooked: data.totalBookings ?? 0,
-        escalations: 0,
+        escalations: escalated,
         missedNoAnswer: 0,
-        failedCalls: 0,
-        avgDurationSec: 0,
-        topOutcome: '—',
-        minutesUsed: 0,
+        failedCalls: failed,
+        avgDurationSec: (data.avgCallDurationMs ?? 0) / 1000,
+        topOutcome,
+        minutesUsed: totalMinutes,
         creditBalance: 0,
       };
     } catch {

@@ -1,7 +1,8 @@
 # Phase 1 — Security Hardening Summary
 
-**Completed:** March 2025  
-**Scope:** Webhook constant-time signature verification, secret rotation, timestamp/replay protection, HSTS
+## Overview
+
+Eliminates timing attacks on webhook verification, adds replay protection, secret rotation support, CORS allowlist, RBAC foundation, and security headers.
 
 ---
 
@@ -9,7 +10,9 @@
 
 | File | Purpose |
 |------|---------|
-| `apps/backend/src/webhooks/retell.webhook.controller.spec.ts` | Unit tests for Retell webhook signature verification, legacy secret, and rejection cases |
+| `apps/backend/src/common/constants/permissions.ts` | Permission enum and role-to-permissions mapping |
+| `apps/backend/src/common/decorators/require-permissions.decorator.ts` | `@RequirePermissions(...)` decorator |
+| `apps/backend/src/common/guards/permissions.guard.ts` | Guard that checks user permissions |
 
 ---
 
@@ -17,104 +20,90 @@
 
 | File | Changes |
 |------|---------|
-| `apps/backend/src/webhooks/retell.webhook.controller.ts` | Constant-time `timingSafeEqualHex()`; secret rotation (`RETELL_WEBHOOK_SECRET_LEGACY`); optional timestamp validation (`x-retell-timestamp`, `WEBHOOK_TIMESTAMP_MAX_AGE_SEC`); `@Headers('x-retell-timestamp')` |
-| `apps/backend/src/main.ts` | Helmet config with HSTS enabled in production (`maxAge: 31536000`, `includeSubDomains`, `preload`) |
-| `apps/backend/.env.example` | Added `RETELL_WEBHOOK_SECRET_LEGACY`, `WEBHOOK_TIMESTAMP_MAX_AGE_SEC` |
+| `apps/backend/src/main.ts` | CORS: `ALLOWED_ORIGINS` takes precedence over `CORS_ORIGIN` |
+| `apps/backend/src/webhooks/stripe.webhook.controller.ts` | `STRIPE_WEBHOOK_SECRET_LEGACY` for zero-downtime rotation |
+| `apps/backend/src/auth/auth.service.ts` | `getPermissionsForUser()` for role-based permissions |
+| `apps/backend/src/auth/strategies/jwt.strategy.ts` | Adds `permissions` to user object |
+| `apps/backend/src/common/interfaces/authenticated-request.interface.ts` | Added `permissions?: string[]` to AuthenticatedUser |
+| `apps/backend/src/bookings/bookings.controller.ts` | Example: `PermissionsGuard` + `@RequirePermissions` |
+| `apps/backend/src/bookings/bookings.module.ts` | Added `PermissionsGuard` provider |
+| `apps/backend/.env.example` | `ALLOWED_ORIGINS`, `STRIPE_WEBHOOK_SECRET_LEGACY` |
 
 ---
 
-## Database Migrations
+## Already Implemented (Retell)
 
-**None.** Phase 1 does not touch the database.
-
----
-
-## New Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `RETELL_WEBHOOK_SECRET_LEGACY` | No | `''` | Legacy webhook secret for zero-downtime rotation |
-| `WEBHOOK_TIMESTAMP_MAX_AGE_SEC` | No | `0` | Max age of `x-retell-timestamp` in seconds; `0` = disabled |
+- Constant-time signature comparison (`timingSafeEqualHex`)
+- Timestamp validation (`WEBHOOK_TIMESTAMP_MAX_AGE_SEC`)
+- Secret rotation (`RETELL_WEBHOOK_SECRET_LEGACY`)
+- Helm with HSTS in production
 
 ---
 
-## Potential Breaking Changes
+## New Logic
 
-| Change | Risk | Mitigation |
-|--------|------|------------|
-| Constant-time signature compare | **None** | Behaviorally identical; only prevents timing attacks |
-| Timestamp validation | **Low** | Disabled by default (`WEBHOOK_TIMESTAMP_MAX_AGE_SEC=0`). If enabled and Retell does not send `x-retell-timestamp`, webhooks would be rejected. **Do not enable** until Retell confirms timestamp header support. |
-| HSTS in production | **Low** | Only applies when `NODE_ENV=production` and over HTTPS. Ensures browsers enforce HTTPS. |
-| Secret rotation | **None** | Additive; legacy secret is optional |
+### 1. CORS
+
+- `ALLOWED_ORIGINS` (comma-separated) takes precedence over `CORS_ORIGIN`
+- Both support multiple origins
+
+### 2. Stripe Secret Rotation
+
+- `STRIPE_WEBHOOK_SECRET_LEGACY` for zero-downtime rotation
+- Tries primary secret first; on failure, retries with legacy
+- Logs when legacy secret is used
+
+### 3. RBAC Foundation
+
+- **Permissions**: `calls:read`, `bookings:write`, etc. (see `permissions.ts`)
+- **Role mapping**: `tenant_owner`, `clinic_admin`, `receptionist`, etc. → permission sets
+- **PermissionsGuard**: Checks `@RequirePermissions(...)` against `request.user.permissions`
+- **JWT payload**: `permissions` added from role mapping
+- **Admin**: Bypasses permission checks (all access)
+
+### 4. Example Usage
+
+- Bookings controller: `@UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)`
+- `@RequirePermissions(PERMISSIONS.BOOKINGS_READ)` at class level
+- `@RequirePermissions(PERMISSIONS.BOOKINGS_WRITE)` on POST and PATCH
+
+---
+
+## Environment Variables Added
+
+| Variable | Description |
+|----------|-------------|
+| `ALLOWED_ORIGINS` | Comma-separated CORS origins (takes precedence over CORS_ORIGIN) |
+| `STRIPE_WEBHOOK_SECRET_LEGACY` | Legacy Stripe webhook secret for rotation |
 
 ---
 
 ## Verification Steps
 
-### 1. Build
+1. **Build and test**
+   ```bash
+   cd apps/backend && npm run build && npm test
+   ```
 
-```bash
-cd apps/backend && npm run build
-```
+2. **CORS**
+   - Set `ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com`
+   - Verify only those origins are accepted
 
-Expected: Build succeeds.
+3. **Stripe rotation**
+   - Set `STRIPE_WEBHOOK_SECRET_LEGACY` to old secret
+   - Rotate primary secret; verify webhooks still work
 
-### 2. Unit Tests
-
-```bash
-cd apps/backend && npm test -- retell.webhook.controller
-```
-
-Expected: 4 tests pass (valid signature, invalid signature, missing signature, legacy secret).
-
-### 3. Manual Webhook Test (with Retell)
-
-1. Set `RETELL_WEBHOOK_SECRET` in `.env`.
-2. Start backend: `npm run start:dev`.
-3. Trigger a Retell webhook (e.g. test call).
-4. Verify 200 response and event processing in logs.
-
-### 4. Secret Rotation Test
-
-1. Set `RETELL_WEBHOOK_SECRET` = new secret, `RETELL_WEBHOOK_SECRET_LEGACY` = old secret.
-2. Send webhook signed with old secret.
-3. Verify 200 response and log: `Retell webhook verified with legacy secret (rotation in progress)`.
-
-### 5. HSTS Check (Production)
-
-1. Set `NODE_ENV=production`.
-2. Deploy behind HTTPS reverse proxy.
-3. Inspect response headers: `Strict-Transport-Security` should be present.
+4. **RBAC**
+   - Bookings API requires `bookings:read` (and `bookings:write` for create/update)
+   - Tenant staff with `receptionist` role have these permissions
 
 ---
 
 ## Rollback Instructions
 
-### If webhook verification fails
-
-1. **Temporary:** Set `NODE_ENV=development` to skip signature requirement (not recommended for production).
-2. **Permanent:** Revert `retell.webhook.controller.ts` to use `signature !== expected` instead of `timingSafeEqualHex()`.
-
-### If HSTS causes issues
-
-Revert `main.ts` helmet config:
-
-```typescript
-app.use(helmet());
-```
-
-### Git rollback
-
-```bash
-git checkout HEAD -- apps/backend/src/webhooks/retell.webhook.controller.ts
-git checkout HEAD -- apps/backend/src/main.ts
-git checkout HEAD -- apps/backend/.env.example
-rm apps/backend/src/webhooks/retell.webhook.controller.spec.ts
-```
-
----
-
-## Not Implemented (Deferred)
-
-- **RBAC foundation** — Schema changes, `PermissionsGuard`, `@RequirePermissions` (Phase 1 plan item; deferred to later phase)
-- **Stripe webhook** — Stripe uses `constructEvent`, which already performs constant-time verification; no change needed
+1. Revert `bookings.controller.ts` and `bookings.module.ts` (remove PermissionsGuard)
+2. Revert `auth.service.ts`, `jwt.strategy.ts`, `authenticated-request.interface.ts`
+3. Remove `permissions.ts`, `require-permissions.decorator.ts`, `permissions.guard.ts`
+4. Revert `stripe.webhook.controller.ts` (remove legacy secret)
+5. Revert `main.ts` (remove ALLOWED_ORIGINS)
+6. Revert `.env.example`

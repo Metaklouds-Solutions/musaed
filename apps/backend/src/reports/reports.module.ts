@@ -5,9 +5,14 @@ import { Customer, CustomerSchema } from '../customers/schemas/customer.schema';
 import { Tenant, TenantSchema } from '../tenants/schemas/tenant.schema';
 import { CallSession, CallSessionSchema } from '../calls/schemas/call-session.schema';
 import { AgentInstance, AgentInstanceSchema } from '../agent-instances/schemas/agent-instance.schema';
+import {
+  ReportSnapshot,
+  ReportSnapshotSchema,
+} from './schemas/report-snapshot.schema';
 import { ReportsController } from './reports.controller';
 import { AdminReportsController } from './admin-reports.controller';
 import { ReportsService } from './reports.service';
+import { ReportAggregationService } from './report-aggregation.service';
 
 @Module({
   imports: [
@@ -17,9 +22,10 @@ import { ReportsService } from './reports.service';
       { name: Tenant.name, schema: TenantSchema },
       { name: CallSession.name, schema: CallSessionSchema },
       { name: AgentInstance.name, schema: AgentInstanceSchema },
+      { name: ReportSnapshot.name, schema: ReportSnapshotSchema },
     ]),
   ],
   controllers: [ReportsController, AdminReportsController],
-  providers: [ReportsService],
+  providers: [ReportsService, ReportAggregationService],
 })
 export class ReportsModule {}

@@ -7,6 +7,8 @@ import { CallSession, CallSessionSchema } from '../calls/schemas/call-session.sc
 import { StripeWebhookController } from './stripe.webhook.controller';
 import { RetellWebhookController } from './retell.webhook.controller';
 import { WebhooksService } from './webhooks.service';
+import { QueueModule } from '../queue/queue.module';
+import { WebhookProcessor } from '../queue/webhook.processor';
 
 @Module({
   imports: [
@@ -16,8 +18,10 @@ import { WebhooksService } from './webhooks.service';
       { name: ProcessedEvent.name, schema: ProcessedEventSchema },
       { name: CallSession.name, schema: CallSessionSchema },
     ]),
+    QueueModule.forRoot(),
   ],
   controllers: [StripeWebhookController, RetellWebhookController],
-  providers: [WebhooksService],
+  providers: [WebhooksService, WebhookProcessor],
+  exports: [WebhooksService],
 })
 export class WebhooksModule {}

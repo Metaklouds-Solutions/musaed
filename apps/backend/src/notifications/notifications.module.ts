@@ -8,6 +8,8 @@ import { NotificationsGateway } from './notifications.gateway';
 import { Notification, NotificationSchema } from './schemas/notification.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { TenantStaff, TenantStaffSchema } from '../tenants/schemas/tenant-staff.schema';
+import { QueueModule } from '../queue/queue.module';
+import { NotificationsProcessor } from './workers/notifications.worker';
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { TenantStaff, TenantStaffSchema } from '../tenants/schemas/tenant-staff.
       { name: User.name, schema: UserSchema },
       { name: TenantStaff.name, schema: TenantStaffSchema },
     ]),
+    QueueModule.forRoot(),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -26,7 +29,7 @@ import { TenantStaff, TenantStaffSchema } from '../tenants/schemas/tenant-staff.
     }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationsGateway],
+  providers: [NotificationsService, NotificationsGateway, NotificationsProcessor],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

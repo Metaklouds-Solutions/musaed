@@ -50,3 +50,4 @@ export const SupportTicketSchema = SchemaFactory.createForClass(SupportTicket);
 SupportTicketSchema.index({ tenantId: 1 });
 SupportTicketSchema.index({ status: 1 });
 SupportTicketSchema.index({ createdBy: 1 });
+SupportTicketSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
