@@ -48,6 +48,8 @@ export interface AdminAgentRow {
   tenantName: string | null;
   status: string;
   lastSyncedAt: string;
+  /** Retell agent ID for linking to Retell dashboard. */
+  retellAgentId?: string | null;
 }
 
 /** Admin agent detail for agent detail page. */
@@ -171,6 +173,8 @@ export interface TenantAgentRow {
   voice: string;
   language: string;
   lastSynced: string;
+  /** Retell agent ID for linking to Retell dashboard. */
+  retellAgentId?: string | null;
 }
 
 /** Tenant support ticket row. */

@@ -18,9 +18,10 @@ const defaultPerformance: PerformanceMetrics = {
 };
 
 export function useReports(tenantId: string | undefined, dateRange?: DateRangeFilter) {
-  const outcomes = useMemo(
+  const { data: outcomes } = useAsyncData(
     () => reportsAdapter.getOutcomes(tenantId, dateRange),
-    [tenantId, dateRange]
+    [tenantId, dateRange],
+    []
   );
 
   const { data: performance } = useAsyncData(
@@ -29,40 +30,45 @@ export function useReports(tenantId: string | undefined, dateRange?: DateRangeFi
     defaultPerformance,
   );
 
-  const outcomesByVersion = useMemo(
+  const { data: outcomesByVersion } = useAsyncData(
     () => reportsAdapter.getOutcomesByVersion(tenantId, dateRange),
-    [tenantId, dateRange]
+    [tenantId, dateRange],
+    []
   );
 
-  const periodComparison = useMemo(() => {
+  const { data: periodComparison } = useAsyncData(async () => {
     if (!tenantId) return null;
-    const thisWeek = reportsAdapter.getPerformanceForPeriod(tenantId, 'thisWeek');
-    const lastWeek = reportsAdapter.getPerformanceForPeriod(tenantId, 'lastWeek');
+    const thisWeek = await reportsAdapter.getPerformanceForPeriod(tenantId, 'thisWeek');
+    const lastWeek = await reportsAdapter.getPerformanceForPeriod(tenantId, 'lastWeek');
     return {
       current: thisWeek,
       previous: lastWeek,
       label: 'vs last week',
     };
-  }, [tenantId]);
+  }, [tenantId], null);
 
-  const sentimentDistribution = useMemo(
+  const { data: sentimentDistribution } = useAsyncData(
     () => reportsAdapter.getSentimentDistribution(tenantId, dateRange),
-    [tenantId, dateRange]
+    [tenantId, dateRange],
+    []
   );
 
-  const peakHours = useMemo(
+  const { data: peakHours } = useAsyncData(
     () => reportsAdapter.getPeakHours(tenantId, dateRange),
-    [tenantId, dateRange]
+    [tenantId, dateRange],
+    []
   );
 
-  const outcomesByDay = useMemo(
+  const { data: outcomesByDay } = useAsyncData(
     () => reportsAdapter.getOutcomesByDay(tenantId, dateRange),
-    [tenantId, dateRange]
+    [tenantId, dateRange],
+    []
   );
 
-  const intentDistribution = useMemo(
+  const { data: intentDistribution } = useAsyncData(
     () => reportsAdapter.getIntentDistribution(tenantId, dateRange),
-    [tenantId, dateRange]
+    [tenantId, dateRange],
+    []
   );
 
   return {

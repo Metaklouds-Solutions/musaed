@@ -39,6 +39,8 @@ export interface Call {
   createdAt: string;
   /** A/B test version (e.g. 'A' | 'B') when agent A/B testing is enabled. */
   agentVersion?: string;
+  recordingUrl?: string;
+  summary?: string;
 }
 
 export interface Booking {

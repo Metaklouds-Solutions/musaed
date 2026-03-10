@@ -1,8 +1,8 @@
 /**
- * Agent detail hook. Uses agentsAdapter.getAgentDetailFull.
+ * Agent detail hook. Fetches agent via agentsAdapter.getAgentDetailFullAsync.
  */
 
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { agentsAdapter } from '../../../adapters';
 import type { AgentDetailFull } from '../../../shared/types';
@@ -14,14 +14,43 @@ export function useAgentDetail(): {
   isLoading: boolean;
 } {
   const { id, agentId } = useParams<{ id: string; agentId: string }>();
-  const agent = useMemo(() => {
-    if (!id || !agentId) return null;
-    return agentsAdapter.getAgentDetailFull(id, agentId);
+  const [agent, setAgent] = useState<AgentDetailFull | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!agentId) {
+      setAgent(null);
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    agentsAdapter
+      .getAgentDetailFullAsync(id ?? undefined, agentId)
+      .then((data) => {
+        if (!cancelled) {
+          setAgent(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAgent(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id, agentId]);
+
   return {
     agent,
     tenantId: id ?? null,
     agentId: agentId ?? null,
-    isLoading: false,
+    isLoading,
   };
 }

@@ -116,6 +116,10 @@ export class TenantsService {
       });
     }
 
+    const hasPassword =
+      typeof owner.passwordHash === 'string' && owner.passwordHash.trim().length > 0;
+    const shouldSendInvite = !hasPassword || owner.status === 'pending' || owner.status === 'invited';
+
     const tenant = await this.tenantModel.create({
       name: dto.name,
       slug: dto.slug,
@@ -129,12 +133,12 @@ export class TenantsService {
       userId: owner._id,
       tenantId: tenant._id,
       roleSlug: 'clinic_admin',
-      status: isNewUser ? 'invited' : 'active',
-      ...(isNewUser ? { invitedAt: new Date() } : { joinedAt: new Date() }),
+      status: shouldSendInvite ? 'invited' : 'active',
+      ...(shouldSendInvite ? { invitedAt: new Date() } : { joinedAt: new Date() }),
     });
 
     let inviteSetupUrl: string | undefined;
-    if (isNewUser) {
+    if (shouldSendInvite) {
       const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
       inviteSetupUrl = await this.emailService.sendInviteEmail(owner.email, owner.name, token);
     }

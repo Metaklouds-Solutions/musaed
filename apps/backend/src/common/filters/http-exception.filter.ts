@@ -7,6 +7,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
+import * as Sentry from '@sentry/node';
+import type { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -34,6 +36,20 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         `${request.method} ${request.url} — ${status} — ${errMessage}`,
         exception instanceof Error ? exception.stack : undefined,
       );
+
+      if (process.env.SENTRY_DSN) {
+        const authReq = request as AuthenticatedRequest;
+        Sentry.withScope((scope) => {
+          scope.setTag('path', request.url);
+          scope.setTag('method', request.method);
+          scope.setTag('status', String(status));
+          const requestId = request.header('x-request-id') ?? request.header('x-correlation-id');
+          if (requestId) scope.setTag('requestId', requestId);
+          if (authReq.tenantId) scope.setTag('tenantId', authReq.tenantId);
+          if (authReq.user?._id) scope.setUser({ id: authReq.user._id });
+          Sentry.captureException(exception);
+        });
+      }
     }
 
     response.status(status).json({

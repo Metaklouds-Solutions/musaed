@@ -3,6 +3,7 @@
  */
 
 import { api } from '../../lib/apiClient';
+import { ApiClientError } from '../../lib/apiClient';
 import type {
   TenantAgentDetail,
   AdminAgentRow,
@@ -11,6 +12,15 @@ import type {
   AgentDetailFull,
   AgentInstanceSummary,
   ChannelDeploymentSummary,
+  AgentVoiceConfig,
+  AgentChatConfig,
+  AgentEmailConfig,
+  AgentLlmConfig,
+  AgentSkillRow,
+  AgentPerformanceMetrics,
+  AgentAbTest,
+  AgentRunRow,
+  AgentSyncInfo,
 } from '../../shared/types';
 
 interface AdminAgentsListResponse {
@@ -26,6 +36,8 @@ interface AgentInstanceApiResponse extends Record<string, unknown> {
   channelsEnabled?: unknown;
   deployedAt?: string;
   lastSyncedAt?: string;
+  createdAt?: string;
+  retellAgentId?: string | null;
 }
 
 interface DeployAgentResponse extends Record<string, unknown> {
@@ -114,6 +126,73 @@ function toChannelDeploymentSummary(
   };
 }
 
+const DEFAULT_VOICE_CONFIG: AgentVoiceConfig = {
+  voiceId: '',
+  voiceName: '—',
+  gender: '',
+  accent: '',
+  speakingRate: 1,
+  stability: 0.75,
+  similarityBoost: 0.85,
+  fillerWords: true,
+  interruptionSensitivity: 'Medium',
+  ambientSound: false,
+};
+
+const DEFAULT_CHAT_CONFIG: AgentChatConfig = {
+  status: 'Not Configured',
+  channel: '',
+  widgetEmbed: '',
+  languages: [],
+  fallbackBehavior: '',
+  typingIndicator: false,
+  responseDelay: 0,
+};
+
+const DEFAULT_EMAIL_CONFIG: AgentEmailConfig = {
+  status: 'Not Configured',
+  inboundEmail: '—',
+  autoReply: '—',
+  note: '',
+};
+
+const DEFAULT_LLM_CONFIG: AgentLlmConfig = {
+  model: 'GPT-4o',
+  systemPrompt: '',
+  temperature: 0.7,
+  maxTokens: 1024,
+  customPromptEnabled: false,
+  languageDetection: 'Auto',
+  fallbackLanguage: 'English',
+};
+
+const DEFAULT_PERFORMANCE: AgentPerformanceMetrics = {
+  totalCalls: 0,
+  avgHandleTime: '—',
+  successfulBookings: 0,
+  escalations: 0,
+  avgSentimentScore: 0,
+  firstCallResolution: 0,
+  interruptionRate: 0,
+  silenceRate: 0,
+};
+
+const DEFAULT_AB_TEST: AgentAbTest = {
+  status: 'Inactive',
+  versionA: '',
+  versionB: '',
+  splitPercent: 50,
+  started: '',
+  winnerSoFar: '',
+};
+
+const DEFAULT_SYNC_INFO: AgentSyncInfo = {
+  webhookUrl: '',
+  lastWebhookEvent: '',
+  webhookStatus: '—',
+  autoSync: '—',
+};
+
 function toAgentInstanceSummary(agent: AgentInstanceApiResponse): AgentInstanceSummary {
   const channelsEnabled = normalizeChannels(agent.channelsEnabled, agent.channel);
   const tenantId =
@@ -147,19 +226,53 @@ export const agentsAdapter = {
   async list(): Promise<AdminAgentRow[]> {
     try {
       const resp = await api.get<AdminAgentsListResponse>('/admin/agents?page=1&limit=100');
-      const summaries = (resp.data ?? []).map((agent) => toAgentInstanceSummary(agent));
-      return summaries.map((summary) => ({
-        id: summary.id,
-        name: summary.name,
-        externalAgentId: summary.id,
-        voice: summary.channelsEnabled.join(' + '),
-        language: 'en',
-        status: summary.status,
-        tenantId: summary.tenantId,
-        tenantName: summary.tenantName,
-        lastSyncedAt: summary.lastSyncedAt ?? '',
-      }));
-    } catch {
+      const items = resp?.data ?? [];
+      return items.map((agent) => {
+        const summary = toAgentInstanceSummary(agent);
+        const retellAgentId =
+          typeof agent.retellAgentId === 'string' && agent.retellAgentId.trim().length > 0
+            ? agent.retellAgentId
+            : null;
+        return {
+          id: summary.id,
+          name: summary.name,
+          externalAgentId: summary.id,
+          voice: summary.channelsEnabled.join(' + '),
+          language: 'en',
+          status: summary.status,
+          tenantId: summary.tenantId,
+          tenantName: summary.tenantName,
+          lastSyncedAt: summary.lastSyncedAt ?? '',
+          retellAgentId,
+        };
+      });
+    } catch (error: unknown) {
+      // Browser-level conditional cache can surface as 304 with empty body in fetch clients.
+      if (error instanceof ApiClientError && error.status === 304) {
+        const resp = await api.get<AdminAgentsListResponse>(
+          `/admin/agents?page=1&limit=100&_=${Date.now()}`,
+        );
+        const items = resp?.data ?? [];
+        return items.map((agent) => {
+          const summary = toAgentInstanceSummary(agent);
+          const retellAgentId =
+            typeof agent.retellAgentId === 'string' && agent.retellAgentId.trim().length > 0
+              ? agent.retellAgentId
+              : null;
+          return {
+            id: summary.id,
+            name: summary.name,
+            externalAgentId: summary.id,
+            voice: summary.channelsEnabled.join(' + '),
+            language: 'en',
+            status: summary.status,
+            tenantId: summary.tenantId,
+            tenantName: summary.tenantName,
+            lastSyncedAt: summary.lastSyncedAt ?? '',
+            retellAgentId,
+          };
+        });
+      }
       return [];
     }
   },
@@ -177,6 +290,10 @@ export const agentsAdapter = {
     await api.post(`/admin/agents/${agentId}/unassign`);
   },
 
+  async updateAgent(agentId: string, data: { name?: string }): Promise<void> {
+    await api.patch(`/admin/agents/${agentId}`, data);
+  },
+
   async deploy(agentId: string): Promise<DeployAgentResponse> {
     return api.post<DeployAgentResponse>(`/v1/admin/agents/${agentId}/deploy`);
   },
@@ -186,6 +303,11 @@ export const agentsAdapter = {
     input: CreateAgentForTenantInput,
   ): Promise<AgentInstanceSummary> {
     const created = await api.post<AgentInstanceApiResponse>(`/admin/agents/tenants/${tenantId}`, input);
+    return toAgentInstanceSummary(created);
+  },
+
+  async createUnassigned(input: CreateAgentForTenantInput): Promise<AgentInstanceSummary> {
+    const created = await api.post<AgentInstanceApiResponse>('/admin/agents', input);
     return toAgentInstanceSummary(created);
   },
 
@@ -265,6 +387,83 @@ export const agentsAdapter = {
 
   getAgentDetailFull(_tenantId: string | undefined, _agentId: string): AgentDetailFull | null {
     return null;
+  },
+
+  /**
+   * Fetches full agent detail from API for AgentDetailPage.
+   * Syncs with Retell first if configured.
+   */
+  async getAgentDetailFullAsync(
+    tenantId: string | undefined,
+    agentId: string,
+  ): Promise<AgentDetailFull | null> {
+    if (!agentId) return null;
+    try {
+      let agent: any;
+      if (tenantId) {
+        // Tenant context: sync then get
+        try { await api.post(`/tenant/agents/${agentId}/sync`); } catch {}
+        agent = await api.get<AgentInstanceApiResponse>(`/tenant/agents/${agentId}`);
+      } else {
+        // Admin context: sync via retell-config (which returns the agent)
+        try {
+          agent = await api.get<AgentInstanceApiResponse>(`/admin/agents/${agentId}/retell-config`);
+        } catch {
+          agent = await api.get<AgentInstanceApiResponse>(`/admin/agents/${agentId}`);
+        }
+      }
+
+      const id = readStringOrNull(agent._id) ?? agentId;
+      const tenantObj =
+        agent.tenantId && typeof agent.tenantId === 'object'
+          ? (agent.tenantId as Record<string, unknown>)
+          : null;
+      const tenantName =
+        tenantObj && typeof tenantObj.name === 'string' ? tenantObj.name : '—';
+      const resolvedTenantId =
+        tenantObj && typeof tenantObj._id === 'string'
+          ? tenantObj._id
+          : tenantId ?? '';
+
+      // Parse Retell config
+      const customConfig = agent.configSnapshot || {};
+      const voiceConfig = { ...DEFAULT_VOICE_CONFIG };
+      if (customConfig.voice_id) voiceConfig.voiceId = customConfig.voice_id;
+      if (customConfig.voice_temperature) voiceConfig.stability = customConfig.voice_temperature;
+      if (customConfig.ambient_sound) voiceConfig.ambientSound = true;
+      if (customConfig.language) voiceConfig.language = customConfig.language;
+      
+      const llmConfig = { ...DEFAULT_LLM_CONFIG };
+      if (customConfig.llm_websocket_url) llmConfig.provider = customConfig.llm_websocket_url;
+      if (customConfig.general_prompt) llmConfig.systemPrompt = customConfig.general_prompt;
+
+      return {
+        id,
+        name: readStringOrNull(agent.name) ?? '—',
+        retellAgentId: readStringOrNull(agent.retellAgentId) ?? '',
+        tenantId: resolvedTenantId,
+        tenantName,
+        channel: normalizeChannel(agent.channel),
+        createdAt: readStringOrNull(agent.createdAt) ?? '',
+        lastSynced: readStringOrNull(agent.lastSyncedAt) ?? '',
+        syncStatus: 'synced',
+        voiceConfig,
+        chatConfig: DEFAULT_CHAT_CONFIG,
+        emailConfig: DEFAULT_EMAIL_CONFIG,
+        llmConfig,
+        skills: [] as AgentSkillRow[],
+        performance: DEFAULT_PERFORMANCE,
+        abTest: DEFAULT_AB_TEST,
+        recentRuns: [] as AgentRunRow[],
+        syncInfo: {
+          lastSync: readStringOrNull(agent.lastSyncedAt) ?? '',
+          status: 'synced',
+          message: 'Synced successfully with Retell.',
+        },
+      };
+    } catch {
+      return null;
+    }
   },
 
   getAgentForTenant(_tenantId: string | undefined): TenantAgentDetail | null {

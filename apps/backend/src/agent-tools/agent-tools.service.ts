@@ -22,9 +22,10 @@ import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
 import { Customer, CustomerDocument } from '../customers/schemas/customer.schema';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
 
 interface AgentContext {
-  agent: AgentInstanceDocument;
+  agent: AgentInstanceDocument & { tenantId: Types.ObjectId };
   tenant: TenantDocument;
   template: AgentTemplateDocument | null;
 }
@@ -47,6 +48,8 @@ export class AgentToolsService {
     private readonly tenantModel: Model<TenantDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    @InjectModel(CallSession.name)
+    private readonly callSessionModel: Model<CallSessionDocument>,
   ) {}
 
   validateToolApiKey(rawApiKey?: string): void {
@@ -230,6 +233,21 @@ export class AgentToolsService {
       { _id: customer._id },
       { $inc: { totalBookings: 1 } },
     );
+    const callId = this.readString(extras.call_id);
+    if (callId) {
+      await this.callSessionModel.updateOne(
+        {
+          tenantId: context.agent.tenantId,
+          callId,
+        },
+        {
+          $set: {
+            bookingId: booking._id,
+            outcome: 'booked',
+          },
+        },
+      );
+    }
     return {
       result: {
         meeting_id: booking._id.toString(),
@@ -254,6 +272,9 @@ export class AgentToolsService {
     if (!agent || agent.status === 'deleted') {
       throw new NotFoundException('Agent instance not found');
     }
+    if (!agent.tenantId) {
+      throw new NotFoundException('Tenant not found for this agent');
+    }
     const tenant = await this.tenantModel.findOne({
       _id: agent.tenantId,
       deletedAt: null,
@@ -265,7 +286,7 @@ export class AgentToolsService {
       agent.templateId != null
         ? await this.templateModel.findOne({ _id: agent.templateId, deletedAt: null })
         : null;
-    return { agent, tenant, template };
+    return { agent: agent as AgentInstanceDocument & { tenantId: Types.ObjectId }, tenant, template };
   }
 
   private readCapabilityLevel(config: Record<string, unknown>): string | null {

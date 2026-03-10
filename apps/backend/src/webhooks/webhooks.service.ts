@@ -1,19 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
 import { AgentInstance, AgentInstanceDocument } from '../agent-instances/schemas/agent-instance.schema';
 import { ProcessedEvent, ProcessedEventDocument } from './schemas/processed-event.schema';
 import { RetellWebhookDto } from './dto/retell-webhook.dto';
+import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
+
+interface ResolvedAgentContext {
+  tenantId: Types.ObjectId;
+  agentInstanceId: Types.ObjectId;
+  retellAgentId: string | null;
+}
 
 @Injectable()
 export class WebhooksService {
   private readonly logger = new Logger(WebhooksService.name);
 
   constructor(
+    private readonly configService: ConfigService,
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
     @InjectModel(AgentInstance.name) private agentModel: Model<AgentInstanceDocument>,
     @InjectModel(ProcessedEvent.name) private processedEventModel: Model<ProcessedEventDocument>,
+    @InjectModel(CallSession.name) private callSessionModel: Model<CallSessionDocument>,
   ) {}
 
   /**
@@ -31,6 +41,14 @@ export class WebhooksService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Resolves a deterministic event ID for Retell deduplication.
+   */
+  getRetellEventId(payload: RetellWebhookDto): string {
+    const metadataEventId = this.readString(payload.metadata?.event_id);
+    return payload.event_id ?? metadataEventId ?? `${payload.call_id ?? 'unknown'}:${payload.event}`;
   }
 
   // ─── Stripe ────────────────────────────────────────────────
@@ -85,18 +103,179 @@ export class WebhooksService {
   async handleRetellCallStarted(payload: RetellWebhookDto) {
     const { call_id, agent_id } = payload;
     this.logger.log(`Retell call started: ${call_id} for agent ${agent_id}`);
-    // Future: update agent instance live status, record call start
+    if (!this.isCallIngestEnabled()) {
+      return;
+    }
+    await this.upsertCallSession(payload, {
+      status: 'started',
+      startedAt: new Date(),
+    });
   }
 
   async handleRetellCallEnded(payload: RetellWebhookDto) {
     const { call_id, agent_id, duration_ms } = payload;
     this.logger.log(`Retell call ended: ${call_id} (${duration_ms}ms)`);
-    // Future: persist call record, update usage counters
+    if (!this.isCallIngestEnabled()) {
+      return;
+    }
+    await this.upsertCallSession(payload, {
+      status: 'ended',
+      endedAt: new Date(),
+      durationMs: typeof duration_ms === 'number' ? duration_ms : null,
+    });
   }
 
   async handleRetellCallAnalyzed(payload: RetellWebhookDto) {
     const { call_id, summary, sentiment } = payload;
     this.logger.log(`Retell call analyzed: ${call_id} — sentiment: ${sentiment}`);
-    // Future: store analysis results, trigger follow-up actions
+    if (!this.isCallIngestEnabled()) {
+      return;
+    }
+    await this.upsertCallSession(payload, {
+      status: 'analyzed',
+      summary: this.readString(summary),
+      sentiment: this.readString(sentiment),
+      transcript: this.readString(payload.transcript),
+      outcome: this.deriveOutcome(summary),
+    });
+  }
+
+  async handleRetellAlertTriggered(payload: RetellWebhookDto) {
+    // Phase 4.4 Handle alert_triggered webhook
+    this.logger.log(`Retell alert triggered for call: ${payload.call_id}`);
+    const context = await this.resolveAgentContext(payload);
+    if (!context) {
+      this.logger.warn(`No context found for alert_triggered on call ${payload.call_id}`);
+      return;
+    }
+    // Route to tenant notifications or alerts table in the future
+    // For now, we update the call session metadata with the alert flag
+    await this.callSessionModel.updateOne(
+      { callId: payload.call_id },
+      { $set: { 'metadata.alertTriggered': true, 'metadata.lastAlert': new Date() } }
+    );
+  }
+
+  private isCallIngestEnabled(): boolean {
+    const value = this.configService
+      .get<string>('CALL_SESSION_INGEST_ENABLED', 'true')
+      .toLowerCase()
+      .trim();
+    return value === 'true';
+  }
+
+  private async upsertCallSession(
+    payload: RetellWebhookDto,
+    patch: Partial<CallSession>,
+  ): Promise<void> {
+    const callId = this.readString(payload.call_id);
+    if (!callId) {
+      this.logger.warn('Retell payload missing call_id; skipping call-session upsert');
+      return;
+    }
+
+    const existing = await this.callSessionModel.findOne({ callId }).select('_id');
+    if (existing) {
+      await this.callSessionModel.updateOne(
+        { callId },
+        {
+          $set: {
+            ...patch,
+            metadata: {
+              ...(payload.metadata ?? {}),
+              lastEvent: payload.event,
+            },
+          },
+        },
+      );
+      return;
+    }
+
+    const context = await this.resolveAgentContext(payload);
+    if (!context) {
+      this.logger.warn(`Unable to resolve tenant/agent context for call ${callId}`);
+      return;
+    }
+
+    await this.callSessionModel.updateOne(
+      { callId },
+      {
+        $setOnInsert: {
+          tenantId: context.tenantId,
+          agentInstanceId: context.agentInstanceId,
+          retellAgentId: context.retellAgentId,
+          callId,
+          outcome: 'unknown',
+        },
+        $set: {
+          ...patch,
+          metadata: {
+            ...(payload.metadata ?? {}),
+            lastEvent: payload.event,
+          },
+        },
+      },
+      { upsert: true },
+    );
+  }
+
+  private async resolveAgentContext(
+    payload: RetellWebhookDto,
+  ): Promise<ResolvedAgentContext | null> {
+    const metadata = payload.metadata ?? {};
+    const metaTenantId = this.readString(metadata.tenant_id);
+    const metaAgentInstanceId = this.readString(metadata.agent_instance_id);
+    if (
+      metaTenantId &&
+      metaAgentInstanceId &&
+      Types.ObjectId.isValid(metaTenantId) &&
+      Types.ObjectId.isValid(metaAgentInstanceId)
+    ) {
+      return {
+        tenantId: new Types.ObjectId(metaTenantId),
+        agentInstanceId: new Types.ObjectId(metaAgentInstanceId),
+        retellAgentId: this.readString(payload.agent_id),
+      };
+    }
+
+    const retellAgentId = this.readString(payload.agent_id);
+    if (!retellAgentId) {
+      return null;
+    }
+    const agent = await this.agentModel
+      .findOne({ retellAgentId, status: { $ne: 'deleted' } })
+      .select('_id tenantId retellAgentId');
+    if (!agent) {
+      return null;
+    }
+    if (!agent.tenantId) {
+      return null;
+    }
+    return {
+      tenantId: agent.tenantId,
+      agentInstanceId: agent._id,
+      retellAgentId: agent.retellAgentId,
+    };
+  }
+
+  private readString(value: unknown): string | null {
+    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+  }
+
+  private deriveOutcome(summary?: string): string {
+    const normalized = (summary ?? '').toLowerCase();
+    if (normalized.includes('booked') || normalized.includes('appointment confirmed')) {
+      return 'booked';
+    }
+    if (normalized.includes('escalat')) {
+      return 'escalated';
+    }
+    if (normalized.includes('failed') || normalized.includes('unable')) {
+      return 'failed';
+    }
+    if (normalized.length > 0) {
+      return 'info_only';
+    }
+    return 'unknown';
   }
 }

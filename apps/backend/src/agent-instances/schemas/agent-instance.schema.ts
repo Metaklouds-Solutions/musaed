@@ -5,8 +5,8 @@ export type AgentInstanceDocument = AgentInstance & Document;
 
 @Schema({ timestamps: true, collection: 'agent_instances' })
 export class AgentInstance {
-  @Prop({ type: Types.ObjectId, ref: 'Tenant', required: true })
-  tenantId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Tenant', default: null })
+  tenantId: Types.ObjectId | null;
 
   @Prop({ type: Types.ObjectId, ref: 'AgentTemplate', default: null })
   templateId: Types.ObjectId | null;

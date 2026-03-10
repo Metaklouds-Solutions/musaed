@@ -33,12 +33,12 @@ export function useTenantComparison(
     [dateRange]
   );
 
-  const rows: TenantComparisonRow[] = useMemo(() => {
+  const { data: rows } = useAsyncData(async () => {
     const ids: string[] = [];
     if (tenantA) ids.push(tenantA);
     if (tenantB && tenantB !== tenantA) ids.push(tenantB);
     return reportsAdapter.getTenantComparison(ids, dateRangeFilter);
-  }, [tenantA, tenantB, dateRangeFilter]);
+  }, [tenantA, tenantB, dateRangeFilter], []);
 
   return {
     tenantA,

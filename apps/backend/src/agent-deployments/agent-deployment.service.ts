@@ -207,11 +207,12 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
       }
       throw new ConflictException('Agent deployment already in progress');
     }
+    const tenantId = this.requireTenantId(instance);
 
     try {
       const template = await this.loadTemplate(instance.templateId);
       const templateFlow = this.getTemplateFlow(template);
-      const apiBaseUrl = this.configService.getOrThrow<string>('API_BASE_URL');
+      const apiBaseUrl = this.resolveApiBaseUrl();
       const channels = this.resolveChannels(instance);
       const channelResults: ChannelDeployResult[] = [];
 
@@ -242,7 +243,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
       this.logStructured('agent.deployment.completed', {
         correlationId,
         agentInstanceId: instance._id.toString(),
-        tenantId: instance.tenantId.toString(),
+        tenantId,
         overallStatus,
         channelCount: channelResults.length,
         latencyMs: Date.now() - startedAt,
@@ -250,7 +251,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
 
       return {
         agentInstanceId: instance._id.toString(),
-        tenantId: instance.tenantId.toString(),
+        tenantId,
         overallStatus,
         channels: channelResults,
       };
@@ -277,7 +278,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
             overallStatus: 'failed',
             error: message,
           },
-          instance.tenantId.toString(),
+          tenantId,
         )
         .catch((auditError: unknown) => {
           const auditMessage =
@@ -290,7 +291,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
       this.logStructured('agent.deployment.failed', {
         correlationId,
         agentInstanceId: instance._id.toString(),
-        tenantId: instance.tenantId.toString(),
+        tenantId,
         error: message,
         latencyMs: Date.now() - startedAt,
       });
@@ -303,7 +304,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     overallStatus: 'active' | 'partially_deployed' | 'failed',
     channels: ChannelDeployResult[],
   ): Promise<void> {
-    const tenantId = instance.tenantId.toString();
+    const tenantId = this.requireTenantId(instance);
     const instanceId = instance._id.toString();
     const meta: Record<string, unknown> = {
       agentInstanceId: instanceId,
@@ -334,7 +335,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     instance: AgentInstanceDocument;
   }): Promise<ChannelDeployResult> {
     const { channel, templateFlow, apiBaseUrl, instance } = params;
-    const tenantId = instance.tenantId.toString();
+    const tenantId = this.requireTenantId(instance);
     const instanceId = instance._id.toString();
     let createdRetellAgentId: string | null = null;
     let createdConversationFlowId: string | null = null;
@@ -488,6 +489,19 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     throw new NotFoundException('No channels enabled for this agent instance');
   }
 
+  private resolveApiBaseUrl(): string {
+    const configured = this.configService.get<string>('API_BASE_URL')?.trim();
+    if (configured) {
+      return configured;
+    }
+    const port = this.configService.get<string>('PORT')?.trim() || '3001';
+    const fallback = `http://localhost:${port}`;
+    this.logger.warn(
+      `API_BASE_URL is not configured. Falling back to ${fallback}. Configure API_BASE_URL for non-local deployments.`,
+    );
+    return fallback;
+  }
+
   private buildConversationFlowPayload(
     processedFlow: Record<string, unknown>,
   ): RetellConversationFlowPayload {
@@ -587,6 +601,13 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
       }
     }
     return next;
+  }
+
+  private requireTenantId(instance: AgentInstanceDocument): string {
+    if (!instance.tenantId) {
+      throw new ConflictException('Agent must be assigned to a tenant before deployment');
+    }
+    return instance.tenantId.toString();
   }
 
   private logStructured(event: string, payload: Record<string, unknown>): void {

@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Bot, Building2, CircleCheck, Cog, KeyRound, Rocket } from 'lucide-react';
+import { Bot, CircleCheck, Cog, KeyRound, Rocket } from 'lucide-react';
 import { Button, Modal, ModalHeader } from '../../../../shared/ui';
 import { useAdminAgentCreation } from '../../hooks';
-import type { AdminTenantRow } from '../../../../shared/types';
 
 type AgentChannel = 'voice' | 'chat' | 'email';
 type AgentType = 'product' | 'custom';
@@ -11,31 +10,27 @@ type AgentType = 'product' | 'custom';
 interface CreateAgentModalProps {
   open: boolean;
   onClose: () => void;
-  tenants: AdminTenantRow[];
   onCreated?: () => void;
 }
 
 const STEPS = [
-  { label: 'Customer', icon: Building2 },
   { label: 'Type', icon: Bot },
   { label: 'Configure', icon: Cog },
   { label: 'Credentials', icon: KeyRound },
-  { label: 'Deploy', icon: Rocket },
+  { label: 'Review', icon: Rocket },
 ];
 
 const inputClass =
   'w-full px-4 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)] text-sm';
 
 /** Renders step-based agent creation modal for admin page with tenant assignment. */
-export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAgentModalProps) {
+export function CreateAgentModal({ open, onClose, onCreated }: CreateAgentModalProps) {
   const [step, setStep] = useState(1);
-  const [tenantId, setTenantId] = useState<string>('');
   const [agentType, setAgentType] = useState<AgentType>('product');
   const [templateId, setTemplateId] = useState<string>('');
   const [name, setName] = useState('');
   const [channelsEnabled, setChannelsEnabled] = useState<AgentChannel[]>(['voice']);
   const [capabilityLevel, setCapabilityLevel] = useState('L1');
-  const [deployNow, setDeployNow] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { templates, templatesLoading, templatesError, refetchTemplates, createAgent } =
     useAdminAgentCreation();
@@ -46,21 +41,18 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
   );
 
   const canContinue = useMemo(() => {
-    if (step === 1) return tenantId.length > 0;
-    if (step === 2) return templateId.length > 0;
-    if (step === 3) return name.trim().length > 0 && channelsEnabled.length > 0;
+    if (step === 1) return templateId.length > 0;
+    if (step === 2) return name.trim().length > 0 && channelsEnabled.length > 0;
     return true;
-  }, [channelsEnabled.length, name, step, templateId, tenantId]);
+  }, [channelsEnabled.length, name, step, templateId]);
 
   function resetState(): void {
     setStep(1);
-    setTenantId('');
     setAgentType('product');
     setTemplateId('');
     setName('');
     setChannelsEnabled(['voice']);
     setCapabilityLevel('L1');
-    setDeployNow(true);
     setIsSubmitting(false);
   }
 
@@ -92,7 +84,7 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
   }, [name, templates]);
 
   useEffect(() => {
-    if (!open || step !== 2) return;
+    if (!open || step !== 1) return;
     if (templateId.length > 0) return;
     if (templatesLoading) return;
     const firstTemplate = templates[0];
@@ -105,14 +97,12 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
     setIsSubmitting(true);
     try {
       await createAgent({
-        tenantId,
         templateId: selectedTemplate.id,
         name: name.trim(),
         channelsEnabled,
         capabilityLevel: capabilityLevel.trim() || undefined,
-        deployNow,
       });
-      toast.success(deployNow ? 'Agent created and deployment queued' : 'Agent created successfully');
+      toast.success('Agent created. Assign it to a tenant during onboarding to deploy.');
       resetState();
       onClose();
       onCreated?.();
@@ -129,9 +119,9 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
       <ModalHeader title="Onboard Agent" onClose={handleClose} />
       <div className="p-5 md:p-6 space-y-5 bg-[var(--bg-subtle)]/35">
         <div className="rounded-2xl border border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(56,189,248,0.14),rgba(124,92,255,0.08))] p-4">
-          <p className="text-base font-semibold text-[var(--text-primary)]">Create and Assign Agent</p>
+          <p className="text-base font-semibold text-[var(--text-primary)]">Create Platform Agent</p>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Follow the onboarding steps and bind this agent to a tenant.
+            Create an unassigned agent first, then assign it from tenant onboarding.
           </p>
         </div>
 
@@ -166,33 +156,6 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
         </div>
 
         {step === 1 && (
-          <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-3">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Who is this agent for?</p>
-            <p className="text-xs text-[var(--text-muted)]">Select the tenant that will own this agent instance.</p>
-            <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
-              {tenants.map((tenant) => {
-                const selected = tenant.id === tenantId;
-                return (
-                  <button
-                    key={tenant.id}
-                    type="button"
-                    onClick={() => setTenantId(tenant.id)}
-                    className={`w-full rounded-xl border px-4 py-3 text-left transition-colors ${
-                      selected
-                        ? 'border-[var(--ds-primary)] bg-[rgba(124,92,255,0.1)]'
-                        : 'border-[var(--border-subtle)] bg-[var(--bg-base)] hover:bg-[var(--bg-hover)]'
-                    }`}
-                  >
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">{tenant.name}</p>
-                    <p className="text-xs text-[var(--text-muted)]">{tenant.plan}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {step === 2 && (
           <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-3">
             <p className="text-sm font-semibold text-[var(--text-primary)]">What type of agent?</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -256,7 +219,7 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
           </section>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-4">
             <p className="text-sm font-semibold text-[var(--text-primary)]">Configure agent</p>
             <div>
@@ -302,7 +265,7 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
           </section>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-3">
             <p className="text-sm font-semibold text-[var(--text-primary)]">Credentials</p>
             <p className="text-sm text-[var(--text-muted)]">
@@ -316,24 +279,18 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
           </section>
         )}
 
-        {step === 5 && (
+        {step === 4 && (
           <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-3">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Deploy & Notify</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Review & Create</p>
             <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-base)] p-3 text-sm space-y-1">
-              <p className="text-[var(--text-primary)]">Tenant: {tenants.find((tenant) => tenant.id === tenantId)?.name ?? '—'}</p>
+              <p className="text-[var(--text-primary)]">Tenant: Unassigned</p>
               <p className="text-[var(--text-muted)]">Template: {selectedTemplate?.name ?? '—'}</p>
               <p className="text-[var(--text-muted)]">Agent name: {name || '—'}</p>
               <p className="text-[var(--text-muted)]">Channels: {channelsEnabled.join(', ')}</p>
             </div>
-            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
-              <input
-                type="checkbox"
-                checked={deployNow}
-                onChange={(event) => setDeployNow(event.target.checked)}
-                className="accent-[var(--ds-primary)]"
-              />
-              Queue deployment immediately after creation
-            </label>
+            <p className="text-xs text-[var(--text-muted)]">
+              Assign this agent to a tenant during onboarding, then deploy from the tenant or agent page.
+            </p>
           </section>
         )}
 
@@ -357,7 +314,7 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
               >
                 Continue
               </Button>
-              {step === 2 && !canContinue && !templatesLoading && (
+              {step === 1 && !canContinue && !templatesLoading && (
                 <p className="text-xs text-[var(--text-muted)]">
                   {templates.length === 0
                     ? 'No template can be selected yet.'
@@ -375,7 +332,7 @@ export function CreateAgentModal({ open, onClose, tenants, onCreated }: CreateAg
               disabled={!canContinue || isSubmitting}
               className="rounded-xl px-5"
             >
-              {deployNow ? 'Create & Deploy Agent' : 'Create Agent'}
+              Create Agent
             </Button>
           )}
         </div>

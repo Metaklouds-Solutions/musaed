@@ -35,6 +35,8 @@ import { AlertsModule } from './alerts/alerts.module';
 import { AgentDeploymentsModule } from './agent-deployments/agent-deployments.module';
 import { RetellModule } from './retell/retell.module';
 import { AgentToolsModule } from './agent-tools/agent-tools.module';
+import { CallsModule } from './calls/calls.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -100,9 +102,12 @@ import { AgentToolsModule } from './agent-tools/agent-tools.module';
     AgentDeploymentsModule,
     RetellModule,
     AgentToolsModule,
+    CallsModule,
+    MetricsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    RequestLoggerMiddleware,
   ],
 })
 export class AppModule implements NestModule {

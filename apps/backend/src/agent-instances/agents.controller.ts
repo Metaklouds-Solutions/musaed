@@ -15,9 +15,11 @@ import { AdminGuard } from '../common/guards/admin.guard';
 import { Throttle } from '@nestjs/throttler';
 import { AgentsService } from './agents.service';
 import { UpdatePromptsDto } from './dto/update-prompts.dto';
+import { UpdateAgentDto } from './dto/update-agent.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { CreateAgentInstanceDto } from './dto/create-agent-instance.dto';
 import { StartConversationDto } from './dto/start-conversation.dto';
+import { AssignAgentDto } from './dto/assign-agent.dto';
 
 @Controller('tenant/agents')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -61,6 +63,18 @@ export class AgentsTenantController {
   ) {
     return this.agentsService.startConversationForTenant(id, req.tenantId!, dto);
   }
+  @Get('chats/:chatId')
+  getChat(@Param('chatId') chatId: string) {
+    return this.agentsService.getChat(chatId);
+  }
+
+  @Post('chats/:chatId/messages')
+  sendChatMessage(
+    @Param('chatId') chatId: string,
+    @Body() dto: { messages: any[] },
+  ) {
+    return this.agentsService.sendChatMessage(chatId, dto.messages);
+  }
 }
 
 @Controller('admin/agents')
@@ -94,6 +108,21 @@ export class AgentsAdminController {
     return this.agentsService.createForTenant(tenantId, dto);
   }
 
+  @Post()
+  createUnassigned(@Body() dto: CreateAgentInstanceDto) {
+    return this.agentsService.createUnassigned(dto);
+  }
+
+  @Post(':id/assign')
+  assign(@Param('id') id: string, @Body() dto: AssignAgentDto) {
+    return this.agentsService.assignToTenant(id, dto.tenantId);
+  }
+
+  @Post(':id/unassign')
+  unassign(@Param('id') id: string) {
+    return this.agentsService.unassignFromTenant(id);
+  }
+
   @Post(':id/deploy')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   deploy(@Param('id') id: string) {
@@ -105,9 +134,19 @@ export class AgentsAdminController {
     return this.agentsService.getDeploymentsForAdmin(id);
   }
 
+  @Get(':id/retell-config')
+  getRetellConfig(@Param('id') id: string) {
+    return this.agentsService.syncAgentAdmin(id);
+  }
+
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.agentsService.findById(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateAgentDto) {
+    return this.agentsService.update(id, dto);
   }
 }
 

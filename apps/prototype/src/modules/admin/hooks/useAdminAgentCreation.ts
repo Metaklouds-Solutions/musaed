@@ -7,12 +7,10 @@ import type { AgentTemplateOption } from '../../../shared/types';
 type AgentChannel = 'voice' | 'chat' | 'email';
 
 interface CreateAdminAgentInput {
-  tenantId: string;
   templateId: string;
   name: string;
   channelsEnabled: AgentChannel[];
   capabilityLevel?: string;
-  deployNow: boolean;
 }
 
 function mapApiError(error: unknown): string {
@@ -41,7 +39,7 @@ export function useAdminAgentCreation() {
 
   const createAgent = useCallback(async (input: CreateAdminAgentInput) => {
     try {
-      const created = await agentsAdapter.createForTenant(input.tenantId, {
+      const created = await agentsAdapter.createUnassigned({
         templateId: input.templateId,
         name: input.name,
         channelsEnabled: input.channelsEnabled,
@@ -49,14 +47,9 @@ export function useAdminAgentCreation() {
       });
       auditAdapter.log('agent.created', {
         agentId: created.id,
-        tenantId: input.tenantId,
         templateId: input.templateId,
         channelsEnabled: input.channelsEnabled,
       });
-      if (input.deployNow) {
-        await agentsAdapter.deploy(created.id);
-        auditAdapter.log('agent.deployment_queued', { agentId: created.id, tenantId: input.tenantId });
-      }
       return created;
     } catch (error: unknown) {
       throw new Error(mapApiError(error));

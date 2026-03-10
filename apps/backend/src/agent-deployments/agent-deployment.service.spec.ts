@@ -113,4 +113,65 @@ describe('AgentDeploymentService', () => {
     expect(instance.save).toHaveBeenCalledTimes(1);
     expect(upsertByChannel).toHaveBeenCalled();
   });
+
+  it('falls back to localhost API base URL when API_BASE_URL is missing', async () => {
+    const instance = createMockAgentInstance();
+    const agentInstanceModel = {
+      findOneAndUpdate: jest.fn().mockResolvedValue(instance),
+      findById: jest.fn().mockResolvedValue(instance),
+      updateOne: jest.fn().mockResolvedValue({ acknowledged: true }),
+    };
+    const agentTemplateModel = {
+      findOne: jest.fn().mockResolvedValue({
+        flowTemplate: {
+          conversationFlow: {
+            nodes: [],
+            tools: [
+              {
+                name: 'get_agent_config',
+                url: '{{API_BASE_URL}}/agents/tools/get_agent_config',
+              },
+            ],
+          },
+          response_engine: { version: 1 },
+        },
+      }),
+    };
+    const createConversationFlow = jest
+      .fn()
+      .mockResolvedValue({ conversation_flow_id: 'flow_456' });
+    const service = new AgentDeploymentService(
+      agentInstanceModel as never,
+      agentTemplateModel as never,
+      {
+        upsertByChannel: jest.fn().mockResolvedValue(undefined),
+      } as never,
+      {
+        createConversationFlow,
+        createChatAgent: jest.fn().mockResolvedValue({ agent_id: 'agent_456' }),
+      } as never,
+      {
+        getOrThrow: jest.fn(),
+        get: jest.fn(),
+      } as never,
+      {
+        log: jest.fn().mockResolvedValue(undefined),
+      } as never,
+      {
+        record: jest.fn(),
+      } as never,
+    );
+
+    await service.deployAgentInstance(instance._id.toString());
+
+    expect(createConversationFlow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tools: expect.arrayContaining([
+          expect.objectContaining({
+            url: 'http://localhost:3001/api/agents/tools/get_agent_config',
+          }),
+        ]),
+      }),
+    );
+  });
 });

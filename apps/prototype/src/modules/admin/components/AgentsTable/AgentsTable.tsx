@@ -4,6 +4,7 @@
  */
 
 import { Link } from 'react-router-dom';
+import { ExternalLink, MoreHorizontal } from 'lucide-react';
 import {
   DataTable,
   Table,
@@ -15,16 +16,16 @@ import {
   ViewButton,
   StatusDot,
   PillTag,
+  Button,
 } from '../../../../shared/ui';
+import { getRetellAgentUrl } from '../../../../lib/retell';
 import type { AdminAgentRow } from '../../../../shared/types';
 
 interface AgentsTableProps {
   agents: AdminAgentRow[];
-  onAssignClick?: (agent: AdminAgentRow) => void;
-  onDeployClick?: (agent: AdminAgentRow) => void;
-  onViewDeploymentsClick?: (agent: AdminAgentRow) => void;
-  deployingAgentId?: string | null;
-  selectedDeploymentsAgentId?: string | null;
+  onActionsClick?: (agent: AdminAgentRow) => void;
+  /** When true, table has no card styling (used inside a card container). */
+  embedded?: boolean;
 }
 
 function formatDate(iso: string): string {
@@ -33,14 +34,11 @@ function formatDate(iso: string): string {
   return parsed.toLocaleDateString();
 }
 
-/** Renders admin agents table with assignment and deployment actions. */
+/** Renders admin agents table with Actions button. */
 export function AgentsTable({
   agents,
-  onAssignClick,
-  onDeployClick,
-  onViewDeploymentsClick,
-  deployingAgentId = null,
-  selectedDeploymentsAgentId = null,
+  onActionsClick,
+  embedded = false,
 }: AgentsTableProps) {
   if (agents.length === 0) {
     return (
@@ -51,12 +49,15 @@ export function AgentsTable({
   }
 
   return (
-    <DataTable minWidth="min-w-[640px]">
+    <DataTable
+      minWidth="min-w-[640px]"
+      className={embedded ? '!bg-transparent !border-0 !shadow-none !rounded-none' : undefined}
+    >
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Retell ID</TableHead>
+            <TableHead>Agent ID</TableHead>
             <TableHead>Voice</TableHead>
             <TableHead>Language</TableHead>
             <TableHead>Linked Tenant</TableHead>
@@ -78,7 +79,21 @@ export function AgentsTable({
                 )}
               </TableCell>
               <TableCell className="font-mono text-sm text-[var(--text-muted)]">
-                {a.externalAgentId}
+                <span title={a.id} className="truncate max-w-[100px] inline-block">
+                  {a.id}
+                </span>
+                {a.retellAgentId && (
+                  <a
+                    href={getRetellAgentUrl(a.retellAgentId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1.5 inline-flex items-center gap-0.5 text-[var(--ds-primary)] hover:underline"
+                    aria-label={`Open ${a.name} in Retell`}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden />
+                    Retell
+                  </a>
+                )}
               </TableCell>
               <TableCell>{a.voice}</TableCell>
               <TableCell>{a.language}</TableCell>
@@ -106,42 +121,22 @@ export function AgentsTable({
                 {a.lastSyncedAt === '—' ? '—' : formatDate(a.lastSyncedAt)}
               </TableCell>
               <TableCell>
-                {a.tenantId ? (
-                  <div className="flex items-center gap-2">
-                    {onDeployClick && (
-                      <button
-                        type="button"
-                        onClick={() => onDeployClick(a)}
-                        disabled={deployingAgentId === a.id}
-                        className="text-sm font-medium text-[var(--ds-primary)] hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {deployingAgentId === a.id ? 'Deploying...' : 'Deploy'}
-                      </button>
-                    )}
-                    {onViewDeploymentsClick && (
-                      <button
-                        type="button"
-                        onClick={() => onViewDeploymentsClick(a)}
-                        className={`text-sm font-medium hover:underline ${
-                          selectedDeploymentsAgentId === a.id
-                            ? 'text-[var(--text-primary)]'
-                            : 'text-[var(--text-muted)]'
-                        }`}
-                      >
-                        Deployments
-                      </button>
-                    )}
+                <div className="flex items-center gap-2">
+                  {a.tenantId && (
                     <ViewButton to={`/admin/tenants/${a.tenantId}/agents/${a.id}`} aria-label="View agent" />
-                  </div>
-                ) : onAssignClick ? (
-                  <button
-                    type="button"
-                    onClick={() => onAssignClick(a)}
-                    className="text-sm font-medium text-[var(--ds-primary)] hover:underline"
-                  >
-                    Assign
-                  </button>
-                ) : null}
+                  )}
+                  {onActionsClick && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onActionsClick(a)}
+                      aria-label="Agent actions"
+                      className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    >
+                      <MoreHorizontal size={18} aria-hidden />
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

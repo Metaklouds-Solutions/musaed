@@ -1,21 +1,20 @@
 /**
- * Admin agents page. Table + Assign agent modal.
+ * Admin agents page. Table + Create agent modal + Agent actions modal.
  */
 
 import { useState, useCallback } from 'react';
 import { PageHeader, TableFilters, Button } from '../../../shared/ui';
 import { AgentsTable } from '../components/AgentsTable';
-import { AssignAgentModal } from '../components/AssignAgentModal';
+import { AgentActionsModal } from '../components/AgentActionsModal';
 import { CreateAgentModal } from '../components/CreateAgentModal';
 import { toast } from 'sonner';
 import { useAdminAgents } from '../hooks';
 import type { AdminAgentRow } from '../../../shared/types';
 
-/** Renders admin agents catalog with tenant assignment flow and table filters. */
+/** Renders admin agents catalog with Create and Actions modals. */
 export function AdminAgentsPage() {
-  const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<AdminAgentRow | null>(null);
+  const [actionsModalAgent, setActionsModalAgent] = useState<AdminAgentRow | null>(null);
   const {
     tenants,
     filteredAgents,
@@ -23,7 +22,6 @@ export function AdminAgentsPage() {
     setTenantFilter,
     statusFilter,
     setStatusFilter,
-    assignAgent,
     deployAgent,
     loadDeployments,
     deploymentsByAgentId,
@@ -34,25 +32,9 @@ export function AdminAgentsPage() {
     refetch,
   } = useAdminAgents();
 
-  const handleAssignClick = (agent: AdminAgentRow) => {
-    if (agent.tenantId) return;
-    setSelectedAgent(agent);
-    setAssignModalOpen(true);
-  };
-
-  const handleAssign = useCallback(
-    async (tenantId: string) => {
-      if (!selectedAgent) return;
-      try {
-        await assignAgent(selectedAgent, tenantId);
-        setSelectedAgent(null);
-        toast.success('Agent assigned to tenant');
-      } catch {
-        toast.error('Failed to assign agent');
-      }
-    },
-    [selectedAgent, assignAgent]
-  );
+  const handleActionsClick = useCallback((agent: AdminAgentRow) => {
+    setActionsModalAgent(agent);
+  }, []);
 
   const handleDeployClick = useCallback(
     async (agent: AdminAgentRow) => {
@@ -67,60 +49,51 @@ export function AdminAgentsPage() {
     [deployAgent],
   );
 
-  const handleViewDeploymentsClick = useCallback(
-    async (agent: AdminAgentRow) => {
-      if (deploymentsLoadingFor === agent.id) {
-        return;
-      }
-      const deployments = await loadDeployments(agent.id);
-      if (deployments.length === 0) {
-        toast.info('No deployments found for this agent yet');
-      }
-    },
-    [deploymentsLoadingFor, loadDeployments],
-  );
-
   const selectedDeployments = selectedDeploymentsAgentId
     ? (deploymentsByAgentId[selectedDeploymentsAgentId] ?? [])
     : [];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <PageHeader
-          title="Agents"
-          description="Create, assign, and deploy tenant agent instances"
-          className="mb-0"
-        />
-        <Button type="button" onClick={() => setCreateModalOpen(true)} className="rounded-xl px-5">
-          + Add Agent
-        </Button>
+      <div className="rounded-[var(--radius-card)] card-glass border border-[var(--border-subtle)] overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-[var(--border-subtle)]/50">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <PageHeader
+              title="Agents"
+              description="Create, assign, and deploy tenant agent instances"
+              className="mb-0"
+            />
+            <Button type="button" onClick={() => setCreateModalOpen(true)} className="rounded-xl px-5">
+              + Add Agent
+            </Button>
+          </div>
+
+          <TableFilters
+            className="mt-5"
+            showTenantFilter
+            tenants={tenants.map((t) => ({ value: t.id, label: t.name }))}
+            selectedTenantId={tenantFilter}
+            onTenantChange={setTenantFilter}
+            statuses={[
+              { value: 'active', label: 'Active' },
+              { value: 'paused', label: 'Paused' },
+              { value: 'deploying', label: 'Deploying' },
+              { value: 'failed', label: 'Failed' },
+              { value: 'partially_deployed', label: 'Partially Deployed' },
+            ]}
+            selectedStatus={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
+        </div>
+
+        <div className="overflow-x-auto overscroll-contain scroll-smooth">
+          <AgentsTable
+            agents={filteredAgents}
+            onActionsClick={handleActionsClick}
+            embedded
+          />
+        </div>
       </div>
-
-      <TableFilters
-        showTenantFilter
-        tenants={tenants.map((t) => ({ value: t.id, label: t.name }))}
-        selectedTenantId={tenantFilter}
-        onTenantChange={setTenantFilter}
-        statuses={[
-          { value: 'active', label: 'Active' },
-          { value: 'paused', label: 'Paused' },
-          { value: 'deploying', label: 'Deploying' },
-          { value: 'failed', label: 'Failed' },
-          { value: 'partially_deployed', label: 'Partially Deployed' },
-        ]}
-        selectedStatus={statusFilter}
-        onStatusChange={setStatusFilter}
-      />
-
-      <AgentsTable
-        agents={filteredAgents}
-        onAssignClick={handleAssignClick}
-        onDeployClick={handleDeployClick}
-        onViewDeploymentsClick={handleViewDeploymentsClick}
-        deployingAgentId={deployingAgentId}
-        selectedDeploymentsAgentId={selectedDeploymentsAgentId}
-      />
 
       {selectedDeploymentsAgentId && (
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 p-4 space-y-3">
@@ -183,22 +156,24 @@ export function AdminAgentsPage() {
         </div>
       )}
 
-      <AssignAgentModal
-        open={assignModalOpen}
-        onClose={() => {
-          setAssignModalOpen(false);
-          setSelectedAgent(null);
-        }}
-        agent={selectedAgent}
+      <AgentActionsModal
+        open={actionsModalAgent !== null}
+        onClose={() => setActionsModalAgent(null)}
+        agent={actionsModalAgent}
         tenants={tenants}
-        onAssign={handleAssign}
+        onSuccess={() => refetch()}
+        onDeploy={handleDeployClick}
+        onViewDeployments={async (a) => {
+          const deployments = await loadDeployments(a.id);
+          if (deployments.length === 0) toast.info('No deployments found for this agent yet');
+        }}
+        deployingAgentId={deployingAgentId}
       />
       <CreateAgentModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        tenants={tenants}
         onCreated={() => {
-          refetch().catch(() => {});
+          refetch();
           setCreateModalOpen(false);
         }}
       />

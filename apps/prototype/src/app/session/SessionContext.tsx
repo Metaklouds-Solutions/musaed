@@ -26,6 +26,7 @@ interface SessionContextValue {
   login: (user: User) => void;
   loginWithTokens: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
   isAuthenticated: boolean;
   user: User | null;
   tenantId: string | null;
@@ -69,6 +70,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setSessionStartedAt(null);
   }, []);
 
+  const updateUser = useCallback((updates: Partial<User>) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const updatedUser = { ...prev.user, ...updates };
+      saveUser(updatedUser as unknown as Record<string, unknown>);
+      return { ...prev, user: updatedUser };
+    });
+  }, []);
+
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
@@ -109,6 +119,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           email: userData.email,
           name: userData.name,
           role: userData.role,
+          avatarUrl: userData.avatarUrl,
           tenantId: userData.tenantId,
           tenantRole: userData.tenantRole,
         };
@@ -131,6 +142,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             email: String(cached.email),
             name: String(cached.name ?? ''),
             role: String(cached.role),
+            avatarUrl: cached.avatarUrl ? String(cached.avatarUrl) : undefined,
             tenantId: cached.tenantId ? String(cached.tenantId) : undefined,
             tenantRole: cached.tenantRole ? String(cached.tenantRole) : undefined,
           });
@@ -194,6 +206,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       login,
       loginWithTokens,
       logout,
+      updateUser,
       isAuthenticated: session !== null,
       user: session?.user ?? null,
       tenantId: session?.user?.tenantId ?? null,
@@ -202,7 +215,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       extendSession,
       restoring,
     }),
-    [session, login, loginWithTokens, logout, sessionStartedAt, lastActivityAt, extendSession, restoring]
+    [session, login, loginWithTokens, logout, updateUser, sessionStartedAt, lastActivityAt, extendSession, restoring]
   );
 
   return (

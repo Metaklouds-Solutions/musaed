@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 export function CallDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { pathname } = useLocation();
-  const { user, call, linkedBooking } = useCallDetail(id);
+  const { user, call, linkedBooking, isLoading } = useCallDetail(id);
   const isAdminContext = pathname.startsWith('/admin');
   const callsPath = isAdminContext ? '/admin/calls' : '/calls';
   const { canAccessRunEvents } = usePermissions();
@@ -39,6 +39,14 @@ export function CallDetailPage() {
           <Button variant="secondary">Back to calls</Button>
         </Link>
       </EmptyState>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-[var(--text-muted)]">
+        Loading call details...
+      </div>
     );
   }
 
@@ -92,7 +100,13 @@ export function CallDetailPage() {
           )}
         </div>
 
-        <AudioMockPlayer durationSeconds={call.duration} />
+        {call.recordingUrl ? (
+          <div className="rounded-[var(--radius-card)] card-glass p-5 flex items-center justify-center">
+            <audio controls src={call.recordingUrl} className="w-full max-w-2xl outline-none" />
+          </div>
+        ) : (
+          <AudioMockPlayer durationSeconds={call.duration} />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <CallMetaPanel call={call} linkedBooking={linkedBooking ?? undefined} />

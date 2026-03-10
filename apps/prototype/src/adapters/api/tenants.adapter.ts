@@ -51,6 +51,7 @@ interface TenantAgentApiResponse extends Record<string, unknown> {
   status?: string;
   deployedAt?: string;
   lastSyncedAt?: string;
+  retellAgentId?: string | null;
 }
 
 const templateChannelsCache = new Map<string, AgentChannel[]>();
@@ -212,15 +213,23 @@ export const tenantsAdapter = {
           creditsRemaining: 0,
         },
         members: [],
-        agents: summaries.map((summary) => ({
-          id: summary.id,
-          name: summary.name,
-          channel: summary.channel,
-          status: summary.status,
-          voice: '—',
-          language: 'en',
-          lastSynced: summary.lastSyncedAt ?? summary.deployedAt ?? '—',
-        })),
+        agents: agents.map((agent) => {
+          const summary = toAgentInstanceSummary(agent, id);
+          const retellAgentId =
+            typeof agent.retellAgentId === 'string' && agent.retellAgentId.trim().length > 0
+              ? agent.retellAgentId
+              : null;
+          return {
+            id: summary.id,
+            name: summary.name,
+            channel: summary.channel,
+            status: summary.status,
+            voice: '—',
+            language: 'en',
+            lastSynced: summary.lastSyncedAt ?? summary.deployedAt ?? '—',
+            retellAgentId,
+          };
+        }),
         tickets: [],
         billing: {
           currentPlan:
@@ -324,13 +333,23 @@ export const tenantsAdapter = {
       '/admin/tenants',
       body,
     );
-    const tenant = created.tenant ?? created;
+    const wrappedTenant = 'tenant' in created ? created.tenant : undefined;
+    const tenant = wrappedTenant ?? created;
+    const inviteSetupUrl =
+      'inviteSetupUrl' in created ? readString(created.inviteSetupUrl) ?? undefined : undefined;
     return {
       id: readString(tenant._id) ?? '',
       name: readString(tenant.name) ?? data.name,
       plan: data.plan,
-      inviteSetupUrl: created.inviteSetupUrl,
+      inviteSetupUrl,
     };
+  },
+
+  async updateTenant(
+    id: string,
+    data: { name?: string; timezone?: string; locale?: string },
+  ): Promise<void> {
+    await api.patch(`/admin/tenants/${id}`, data);
   },
 
   async deleteTenant(id: string): Promise<void> {

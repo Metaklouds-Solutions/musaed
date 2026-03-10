@@ -5,7 +5,8 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Bot, Phone, MessageSquare, Mail } from 'lucide-react';
+import { Bot, Phone, MessageSquare, Mail, ExternalLink } from 'lucide-react';
+import { getRetellAgentUrl } from '../../../../lib/retell';
 import {
   Card,
   CardHeader,
@@ -180,6 +181,7 @@ export function TenantAgentsTab({ agents }: TenantAgentsTabProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Agent ID</TableHead>
                   <TableHead>Channel</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Voice</TableHead>
@@ -211,10 +213,31 @@ export function TenantAgentsTab({ agents }: TenantAgentsTabProps) {
                     error: null,
                     success: null,
                   };
+                  const retellAgentId =
+                    a.retellAgentId ??
+                    deployments.find((d) => d.retellAgentId)?.retellAgentId ??
+                    null;
                   return (
                     <Fragment key={a.id}>
                       <TableRow key={a.id} className="border-t border-[var(--border-subtle)]/50 first:border-t-0">
                         <TableCell className="font-medium text-[var(--text-primary)]">{a.name}</TableCell>
+                        <TableCell className="font-mono text-xs text-[var(--text-muted)]">
+                          <span title={a.id} className="truncate max-w-[120px] inline-block">
+                            {a.id}
+                          </span>
+                          {retellAgentId && (
+                            <a
+                              href={getRetellAgentUrl(retellAgentId)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-1.5 inline-flex items-center gap-0.5 text-[var(--ds-primary)] hover:underline"
+                              aria-label={`Open ${a.name} in Retell`}
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" aria-hidden />
+                              Retell
+                            </a>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <span className="inline-flex items-center gap-1.5 text-sm">
                             <Icon className="w-4 h-4 text-[var(--text-muted)]" aria-hidden />
@@ -237,7 +260,7 @@ export function TenantAgentsTab({ agents }: TenantAgentsTabProps) {
                       </TableRow>
                       {deployments.length > 0 && (
                         <TableRow className="border-t border-[var(--border-subtle)]/30 bg-[var(--bg-elevated)]/20">
-                          <TableCell colSpan={7}>
+                          <TableCell colSpan={8}>
                             <div className="space-y-1 py-1">
                               {deployments.map((deployment) => (
                                 <div

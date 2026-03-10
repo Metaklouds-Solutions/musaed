@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 're
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserPlus, Users, GitCompare, Power, PowerOff } from 'lucide-react';
+import { UserPlus, Users, GitCompare, MoreHorizontal, Power, PowerOff } from 'lucide-react';
 import {
   PageHeader,
   DataTable,
@@ -35,6 +35,7 @@ import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
 import type { TenantListRow } from '../../../shared/types';
 import type { PillTagVariant } from '../../../shared/ui';
 import { AddTenantModal } from '../components/AddTenantModal';
+import { TenantActionsModal } from '../components/TenantActionsModal';
 import { TenantComparisonView } from '../components/TenantComparisonView';
 
 type ViewMode = 'list' | 'compare';
@@ -76,6 +77,7 @@ export function AdminTenantsPage() {
   });
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [actionsModalTenant, setActionsModalTenant] = useState<TenantListRow | null>(null);
   const [actionTarget, setActionTarget] = useState<{
     id: string;
     name: string;
@@ -117,12 +119,8 @@ export function AdminTenantsPage() {
     [addOptimistic, refetchTenants]
   );
 
-  const handleEnableClick = useCallback((id: string, name: string) => () => {
-    setActionTarget({ id, name, action: 'enable', ids: [id] });
-  }, []);
-
-  const handleDisableClick = useCallback((id: string, name: string) => () => {
-    setActionTarget({ id, name, action: 'disable', ids: [id] });
+  const handleActionsClick = useCallback((tenant: TenantListRow) => () => {
+    setActionsModalTenant(tenant);
   }, []);
 
   const handleActionConfirm = useCallback(async () => {
@@ -212,29 +210,31 @@ export function AdminTenantsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header with tabs */}
-      <div className="flex flex-col gap-4 sm:gap-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <PageHeader
-            title="Tenants"
-            description="Platform tenant list and performance comparison"
-          />
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {viewMode === 'compare' && (
-              <DateRangePicker
-                value={dateRange}
-                onChange={setDateRange}
-                aria-label="Date range for comparison"
-              />
-            )}
-            {viewMode === 'list' && (
-              <Button onClick={() => setAddModalOpen(true)}>
-                <UserPlus className="w-4 h-4" aria-hidden />
-                Add Tenant
-              </Button>
-            )}
+      <div className="rounded-[var(--radius-card)] card-glass border border-[var(--border-subtle)] overflow-hidden flex flex-col">
+        {/* Header with tabs */}
+        <div className="p-4 sm:p-5 border-b border-[var(--border-subtle)]/50 space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <PageHeader
+              title="Tenants"
+              description="Platform tenant list and performance comparison"
+              className="mb-0"
+            />
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {viewMode === 'compare' && (
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={setDateRange}
+                  aria-label="Date range for comparison"
+                />
+              )}
+              {viewMode === 'list' && (
+                <Button onClick={() => setAddModalOpen(true)} className="rounded-xl px-5">
+                  <UserPlus className="w-4 h-4" aria-hidden />
+                  Add Tenant
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
 
         {/* Tab switcher - unified with Settings */}
         <div
@@ -290,7 +290,7 @@ export function AdminTenantsPage() {
             <TableSkeleton rows={6} cols={4} />
           </motion.div>
         ) : viewMode === 'list' ? (
-          <motion.div
+            <motion.div
             key="list"
             id={getViewPanelId('list')}
             role="tabpanel"
@@ -299,144 +299,156 @@ export function AdminTenantsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="space-y-4"
+            className="flex flex-col"
           >
-            {displayTenants.length === 0 ? (
-              <p className="text-sm text-[var(--text-muted)] py-8">No tenants.</p>
+            {displayTenants.length === 0 && !searchQuery && !planFilter && !statusFilter ? (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-[var(--text-muted)]" />
+                </div>
+                <p className="text-base font-semibold text-[var(--text-primary)]">No tenants yet</p>
+                <p className="mt-1 text-sm text-[var(--text-muted)] max-w-sm">
+                  Get started by adding your first tenant. You can assign agents and monitor their performance.
+                </p>
+                <Button onClick={() => setAddModalOpen(true)} className="mt-6 rounded-xl px-5">
+                  <UserPlus className="w-4 h-4" aria-hidden />
+                  Add Tenant
+                </Button>
+              </div>
             ) : (
               <>
-                <TableFilters
-                  plans={plans}
-                  selectedPlan={planFilter}
-                  onPlanChange={setPlanFilter}
-                  statuses={statuses}
-                  selectedStatus={statusFilter}
-                  onStatusChange={setStatusFilter}
-                  search={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  searchPlaceholder="Search tenants…"
-                />
-                <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleBulkDisable}
-                    className="shrink-0"
-                    disabled={!selectedTenants.some((t) => t.status !== 'SUSPENDED')}
-                  >
-                    <PowerOff className="w-4 h-4" aria-hidden />
-                    Disable
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleBulkEnable}
-                    className="shrink-0"
-                    disabled={!selectedTenants.some((t) => t.status === 'SUSPENDED')}
-                  >
-                    <Power className="w-4 h-4" aria-hidden />
-                    Enable
-                  </Button>
-                </BulkActionsBar>
-                <div className="rounded-xl overflow-x-auto overflow-y-visible border border-[var(--border-subtle)] shadow-sm">
-                  <DataTable minWidth="min-w-[900px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <input
-                              ref={headerCheckRef}
-                              type="checkbox"
-                              checked={allTenantsSelected}
-                              onChange={() => selection.toggleAll(pagedTenants)}
-                              className={checkboxClass}
-                              aria-label="Select all"
-                            />
-                          </TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Plan</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Agents</TableHead>
-                          <TableHead className="text-right">MRR</TableHead>
-                          <TableHead className="text-right">Calls</TableHead>
-                          <TableHead>Onboarding</TableHead>
-                          <TableHead className="w-[100px]">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {pagedTenants.map((t) => (
-                          <TableRow
-                            key={t.id}
-                            className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
-                          >
-                            <TableCell className="w-12 py-4">
-                              <input
-                                type="checkbox"
-                                checked={selection.selectedSet.has(t.id)}
-                                onChange={() => selection.toggle(t.id)}
-                                className={checkboxClass}
-                                aria-label={`Select ${t.name}`}
-                              />
-                            </TableCell>
-                            <TableCell className="font-medium text-[var(--text-primary)] py-4">
-                              {t.name}
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <PillTag variant="plan">{t.plan}</PillTag>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <PillTag variant={statusVariant(t.status)}>{t.status}</PillTag>
-                            </TableCell>
-                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
-                              {t.agentCount}
-                            </TableCell>
-                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
-                              ${t.mrr}
-                            </TableCell>
-                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
-                              {t.callsThisMonth}
-                            </TableCell>
-                            <TableCell className="py-4 text-sm text-[var(--text-secondary)]">
-                              {t.onboardingStatus}
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <div className="flex items-center gap-2">
-                                <ViewButton onClick={handleView(t.id)} aria-label="View tenant" />
-                                {t.status === 'SUSPENDED' ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleEnableClick(t.id, t.name)}
-                                    aria-label="Enable tenant"
-                                    className="text-[var(--text-muted)] hover:text-green-600"
-                                  >
-                                    <Power size={16} aria-hidden />
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleDisableClick(t.id, t.name)}
-                                    aria-label="Disable tenant"
-                                    className="text-[var(--text-muted)] hover:text-[var(--destructive)]"
-                                  >
-                                    <PowerOff size={16} aria-hidden />
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </DataTable>
+                <div className="p-4 sm:p-5 border-b border-[var(--border-subtle)]/50 space-y-4">
+                  <TableFilters
+                    plans={plans}
+                    selectedPlan={planFilter}
+                    onPlanChange={setPlanFilter}
+                    statuses={statuses}
+                    selectedStatus={statusFilter}
+                    onStatusChange={setStatusFilter}
+                    search={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    searchPlaceholder="Search tenants…"
+                  />
+                  <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleBulkDisable}
+                      className="shrink-0"
+                      disabled={!selectedTenants.some((t) => t.status !== 'SUSPENDED')}
+                    >
+                      <PowerOff className="w-4 h-4" aria-hidden />
+                      Disable
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleBulkEnable}
+                      className="shrink-0"
+                      disabled={!selectedTenants.some((t) => t.status === 'SUSPENDED')}
+                    >
+                      <Power className="w-4 h-4" aria-hidden />
+                      Enable
+                    </Button>
+                  </BulkActionsBar>
                 </div>
-                <Pagination
-                  page={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  totalItems={displayTenants.length}
-                />
+                <div className="overflow-x-auto overscroll-contain scroll-smooth">
+                  {displayTenants.length === 0 ? (
+                    <div className="py-12 text-center text-sm text-[var(--text-muted)]">
+                      No tenants match your search or filters.
+                    </div>
+                  ) : (
+                    <DataTable minWidth="min-w-[900px]" className="!bg-transparent !border-0 !shadow-none !rounded-none">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">
+                              <input
+                                ref={headerCheckRef}
+                                type="checkbox"
+                                checked={allTenantsSelected}
+                                onChange={() => selection.toggleAll(pagedTenants)}
+                                className={checkboxClass}
+                                aria-label="Select all"
+                              />
+                            </TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Plan</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Agents</TableHead>
+                            <TableHead className="text-right">MRR</TableHead>
+                            <TableHead className="text-right">Calls</TableHead>
+                            <TableHead>Onboarding</TableHead>
+                            <TableHead className="w-[100px]">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pagedTenants.map((t) => (
+                            <TableRow
+                              key={t.id}
+                              className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
+                            >
+                              <TableCell className="w-12 py-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selection.selectedSet.has(t.id)}
+                                  onChange={() => selection.toggle(t.id)}
+                                  className={checkboxClass}
+                                  aria-label={`Select ${t.name}`}
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium text-[var(--text-primary)] py-4">
+                                {t.name}
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <PillTag variant="plan">{t.plan}</PillTag>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <PillTag variant={statusVariant(t.status)}>{t.status}</PillTag>
+                              </TableCell>
+                              <TableCell className="py-4 text-right text-[var(--text-secondary)]">
+                                {t.agentCount}
+                              </TableCell>
+                              <TableCell className="py-4 text-right text-[var(--text-secondary)]">
+                                ${t.mrr}
+                              </TableCell>
+                              <TableCell className="py-4 text-right text-[var(--text-secondary)]">
+                                {t.callsThisMonth}
+                              </TableCell>
+                              <TableCell className="py-4 text-sm text-[var(--text-secondary)]">
+                                {t.onboardingStatus}
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <div className="flex items-center gap-2">
+                                  <ViewButton onClick={handleView(t.id)} aria-label="View tenant" />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleActionsClick(t)}
+                                    aria-label="Tenant actions"
+                                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                  >
+                                    <MoreHorizontal size={18} aria-hidden />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </DataTable>
+                  )}
+                </div>
+                {displayTenants.length > 0 && (
+                  <div className="p-4 sm:p-5 border-t border-[var(--border-subtle)]/50">
+                    <Pagination
+                      page={page}
+                      totalPages={totalPages}
+                      onPageChange={setPage}
+                      totalItems={displayTenants.length}
+                    />
+                  </div>
+                )}
               </>
             )}
           </motion.div>
@@ -458,11 +470,22 @@ export function AdminTenantsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
 
       <AddTenantModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onSuccess={handleAddSuccess}
+      />
+
+      <TenantActionsModal
+        open={actionsModalTenant !== null}
+        onClose={() => setActionsModalTenant(null)}
+        tenant={actionsModalTenant}
+        onSuccess={() => {
+          setRefreshKey((k) => k + 1);
+          refetchTenants();
+        }}
       />
 
       <ConfirmDeleteBar
@@ -480,6 +503,7 @@ export function AdminTenantsPage() {
         onCancel={handleActionCancel}
         loading={processing}
       />
+
     </div>
   );
 }

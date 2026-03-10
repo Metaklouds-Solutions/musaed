@@ -30,7 +30,7 @@ const defaultPerformance: PerformanceMetrics = {
 };
 
 export const reportsAdapter = {
-  getOutcomes(_tenantId: string | undefined, _dateRange?: DateRangeFilter): OutcomeBreakdown[] {
+  async getOutcomes(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<OutcomeBreakdown[]> {
     return [
       { outcome: 'booked', count: 0, percentage: 0 },
       { outcome: 'escalated', count: 0, percentage: 0 },
@@ -38,15 +38,29 @@ export const reportsAdapter = {
     ];
   },
 
-  async getPerformance(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<PerformanceMetrics> {
+  async getPerformance(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<PerformanceMetrics> {
+    if (!tenantId) return defaultPerformance;
     try {
-      const data = await api.get<any>('/tenant/reports/performance');
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<{
+        totalBookings?: number;
+        callMetrics?: { totalCalls?: number; outcomes?: Record<string, number>; avgDurationMs?: number };
+      }>(`/tenant/reports/performance?${params.toString()}`);
+      const cm = data.callMetrics ?? {};
+      const totalCalls = cm.totalCalls ?? 0;
+      const outcomes = cm.outcomes ?? {};
+      const booked = outcomes.booked ?? 0;
+      const escalated = outcomes.escalated ?? 0;
+      const conversionRate = totalCalls > 0 ? (booked / totalCalls) * 100 : 0;
+      const escalationRate = totalCalls > 0 ? (escalated / totalCalls) * 100 : 0;
       return {
-        totalCalls: 0,
+        totalCalls,
         totalBookings: data.totalBookings ?? 0,
-        avgDurationSec: 0,
-        conversionRate: 0,
-        escalationRate: 0,
+        avgDurationSec: (cm.avgDurationMs ?? 0) / 1000,
+        conversionRate,
+        escalationRate,
         sentimentAvg: 0,
       };
     } catch {
@@ -73,27 +87,76 @@ export const reportsAdapter = {
     await api.patch('/admin/settings/scheduled-reports', config);
   },
 
-  getOutcomesByVersion(_tenantId: string | undefined, _dateRange?: DateRangeFilter): ABTestOutcomeRow[] {
-    return [];
+  async getOutcomesByVersion(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<ABTestOutcomeRow[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<ABTestOutcomeRow[]>(`/tenant/reports/outcomes-by-version?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
-  getPerformanceForPeriod(
-    _tenantId: string | undefined,
-    _period: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth',
-  ): PerformanceMetrics {
-    return defaultPerformance;
+  async getPerformanceForPeriod(
+    tenantId: string | undefined,
+    period: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth',
+  ): Promise<PerformanceMetrics> {
+    if (!tenantId) return defaultPerformance;
+    try {
+      const data = await api.get<PerformanceMetrics>(`/tenant/reports/performance-for-period?period=${period}`);
+      return {
+        totalCalls: data.totalCalls ?? 0,
+        totalBookings: data.totalBookings ?? 0,
+        avgDurationSec: data.avgDurationSec ?? 0,
+        conversionRate: data.conversionRate ?? 0,
+        escalationRate: data.escalationRate ?? 0,
+        sentimentAvg: data.sentimentAvg ?? 0,
+      };
+    } catch {
+      return defaultPerformance;
+    }
   },
 
-  getSentimentDistribution(_tenantId: string | undefined, _dateRange?: DateRangeFilter): SentimentBucket[] {
-    return [];
+  async getSentimentDistribution(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<SentimentBucket[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<SentimentBucket[]>(`/tenant/reports/sentiment-distribution?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
-  getPeakHours(_tenantId: string | undefined, _dateRange?: DateRangeFilter): PeakHourPoint[] {
-    return [];
+  async getPeakHours(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<PeakHourPoint[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<PeakHourPoint[]>(`/tenant/reports/peak-hours?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
-  getIntentDistribution(_tenantId: string | undefined, _dateRange?: DateRangeFilter): IntentBucket[] {
-    return [];
+  async getIntentDistribution(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<IntentBucket[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<IntentBucket[]>(`/tenant/reports/intent-distribution?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
   async getOutcomesByDay(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<OutcomesByDay[]> {

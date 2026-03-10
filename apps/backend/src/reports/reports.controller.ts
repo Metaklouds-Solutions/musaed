@@ -26,4 +26,48 @@ export class ReportsController {
   ) {
     return this.reportsService.getOutcomesByDay(req.tenantId!, dateFrom, dateTo);
   }
+
+  @Get('outcomes-by-version')
+  getOutcomesByVersion(
+    @Request() req: AuthenticatedRequest,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.reportsService.getOutcomesByVersion(req.tenantId!, dateFrom, dateTo);
+  }
+
+  @Get('performance-for-period')
+  getPerformanceForPeriod(
+    @Request() req: AuthenticatedRequest,
+    @Query('period') period?: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth',
+  ) {
+    return this.reportsService.getPerformanceForPeriod(req.tenantId!, period ?? 'thisWeek');
+  }
+
+  @Get('sentiment-distribution')
+  getSentimentDistribution(
+    @Request() req: AuthenticatedRequest,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.reportsService.getSentimentDistribution(req.tenantId!, dateFrom, dateTo);
+  }
+
+  @Get('peak-hours')
+  getPeakHours(
+    @Request() req: AuthenticatedRequest,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.reportsService.getPeakHours(req.tenantId!, dateFrom, dateTo);
+  }
+
+  @Get('intent-distribution')
+  getIntentDistribution(
+    @Request() req: AuthenticatedRequest,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.reportsService.getIntentDistribution(req.tenantId!, dateFrom, dateTo);
+  }
 }

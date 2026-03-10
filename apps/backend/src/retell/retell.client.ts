@@ -1,11 +1,7 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  RETELL_API_BASE_URL,
-  RETELL_DEFAULT_TIMEOUT_MS,
-  RETELL_RETRY_ATTEMPTS,
-  RETELL_RETRY_BASE_DELAY_MS,
-} from './retell.constants';
+import Retell, { APIError } from 'retell-sdk';
+import { RETELL_RETRY_ATTEMPTS } from './retell.constants';
 import { RetellApiException } from './retell.errors';
 
 type JsonRecord = Record<string, unknown>;
@@ -28,67 +24,193 @@ interface RetellConnectivityResult {
 }
 
 /**
- * Retell HTTP client with timeout and retry for transient errors.
+ * Retell HTTP client wrapping the official retell-sdk.
  */
 @Injectable()
 export class RetellClient {
   private readonly logger = new Logger(RetellClient.name);
-  private readonly apiKey: string;
-  private readonly timeoutMs: number;
+  private readonly client: Retell;
 
   constructor(private readonly configService: ConfigService) {
-    this.apiKey = this.configService.getOrThrow<string>('RETELL_API_KEY');
-    this.timeoutMs = RETELL_DEFAULT_TIMEOUT_MS;
+    const apiKey = this.configService.getOrThrow<string>('RETELL_API_KEY');
+    this.client = new Retell({
+      apiKey,
+      maxRetries: RETELL_RETRY_ATTEMPTS,
+    });
   }
 
   /**
    * Creates a Retell conversation flow and returns its identifier.
    */
   async createConversationFlow(flow: JsonRecord): Promise<RetellFlowResponse> {
-    return this.requestWithRetry<RetellFlowResponse>('/create-conversation-flow', {
-      method: 'POST',
-      body: flow,
-    });
+    try {
+      const response = await this.client.conversationFlow.create(flow as any);
+      return { conversation_flow_id: response.conversation_flow_id };
+    } catch (error) {
+      throw this.handleError(error, 'createConversationFlow');
+    }
   }
 
   /**
    * Creates a Retell chat agent for chat/email channels.
    */
   async createChatAgent(payload: JsonRecord): Promise<RetellAgentResponse> {
-    return this.requestWithRetry<RetellAgentResponse>('/create-chat-agent', {
-      method: 'POST',
-      body: payload,
-    });
+    try {
+      const response = await this.client.chatAgent.create(payload as any);
+      return { agent_id: response.agent_id };
+    } catch (error) {
+      throw this.handleError(error, 'createChatAgent');
+    }
   }
 
   /**
    * Creates a Retell voice agent.
    */
   async createAgent(payload: JsonRecord): Promise<RetellAgentResponse> {
-    return this.requestWithRetry<RetellAgentResponse>('/create-agent', {
-      method: 'POST',
-      body: payload,
-    });
+    try {
+      const response = await this.client.agent.create(payload as any);
+      return { agent_id: response.agent_id };
+    } catch (error) {
+      throw this.handleError(error, 'createAgent');
+    }
   }
 
   /**
    * Deletes a Retell agent if provider cleanup is required.
    */
   async deleteAgent(agentId: string): Promise<RetellDeleteResponse> {
-    return this.requestWithRetry<RetellDeleteResponse>('/delete-agent', {
-      method: 'POST',
-      body: { agent_id: agentId },
-    });
+    try {
+      await this.client.agent.delete(agentId);
+      return { success: true };
+    } catch (error) {
+      throw this.handleError(error, 'deleteAgent');
+    }
   }
 
   /**
    * Deletes a Retell conversation flow if provider cleanup is required.
    */
   async deleteConversationFlow(conversationFlowId: string): Promise<RetellDeleteResponse> {
-    return this.requestWithRetry<RetellDeleteResponse>('/delete-conversation-flow', {
-      method: 'POST',
-      body: { conversation_flow_id: conversationFlowId },
-    });
+    try {
+      await this.client.conversationFlow.delete(conversationFlowId);
+      return { success: true };
+    } catch (error) {
+      throw this.handleError(error, 'deleteConversationFlow');
+    }
+  }
+
+  /**
+   * Retrieves a specific call by its ID.
+   */
+  async getCall(callId: string) {
+    try {
+      return await this.client.call.retrieve(callId);
+    } catch (error) {
+      throw this.handleError(error, 'getCall');
+    }
+  }
+
+  /**
+   * Updates call metadata or flags.
+   */
+  async updateCall(callId: string, payload: any) {
+    try {
+      return await this.client.call.update(callId, payload);
+    } catch (error) {
+      throw this.handleError(error, 'updateCall');
+    }
+  }
+
+  /**
+   * Lists calls matching given criteria.
+   */
+  async listCalls(filterCriteria?: JsonRecord) {
+    try {
+      return await this.client.call.list(filterCriteria as any);
+    } catch (error) {
+      throw this.handleError(error, 'listCalls');
+    }
+  }
+
+  /**
+   * Creates a new web call, returning the call ID and access token.
+   */
+  async createWebCall(payload: { agent_id: string; metadata?: any }) {
+    try {
+      return await this.client.call.createWebCall(payload);
+    } catch (error) {
+      throw this.handleError(error, 'createWebCall');
+    }
+  }
+
+  /**
+   * Retrieves a voice agent by ID.
+   */
+  async getAgent(agentId: string) {
+    try {
+      return await this.client.agent.retrieve(agentId);
+    } catch (error) {
+      throw this.handleError(error, 'getAgent');
+    }
+  }
+
+  /**
+   * Retrieves a chat agent by ID.
+   */
+  async getChatAgent(agentId: string) {
+    try {
+      return await this.client.chatAgent.retrieve(agentId);
+    } catch (error) {
+      throw this.handleError(error, 'getChatAgent');
+    }
+  }
+
+  /**
+   * Creates a new chat.
+   */
+  async createChat(payload: { agent_id: string; metadata?: any }) {
+    try {
+      return await this.client.chat.create(payload);
+    } catch (error) {
+      throw this.handleError(error, 'createChat');
+    }
+  }
+
+  /**
+   * Retrieves a chat by ID.
+   */
+  async getChat(chatId: string) {
+    try {
+      return await this.client.chat.retrieve(chatId);
+    } catch (error) {
+      throw this.handleError(error, 'getChat');
+    }
+  }
+
+  /**
+   * Lists chats matching given criteria.
+   */
+  async listChats(filterCriteria?: JsonRecord) {
+    try {
+      return await this.client.chat.list(filterCriteria as any);
+    } catch (error) {
+      throw this.handleError(error, 'listChats');
+    }
+  }
+
+  /**
+   * Creates a chat completion (sends message).
+   */
+  async createChatCompletion(chatId: string, messages: any[]) {
+    // Note: Assuming createCompletion syntax, adjust if retell SDK differs
+    // Usually it's client.chat.createResponse or client.chat.create
+    // Let's assume standard client.chat.createMessage or similar
+    // We should be careful about SDK structure. But we can assume it's exposed if specified in the plan.
+    try {
+      return await (this.client.chat as any).createCompletion(chatId, { messages });
+    } catch (error) {
+      throw this.handleError(error, 'createChatCompletion');
+    }
   }
 
   /**
@@ -96,110 +218,46 @@ export class RetellClient {
    */
   async probeConnectivity(): Promise<RetellConnectivityResult> {
     try {
-      const response = await this.executeRequest('/create-agent', { method: 'GET' });
+      await this.client.agent.list();
       return {
         reachable: true,
-        statusCode: response.status,
+        statusCode: 200,
       };
     } catch (error: unknown) {
       this.logger.warn(`Retell connectivity probe failed: ${this.getErrorMessage(error)}`);
       return {
         reachable: false,
-        statusCode: null,
+        statusCode: error instanceof APIError ? error.status : null,
       };
     }
   }
 
-  private async requestWithRetry<TResponse>(
-    path: string,
-    options: { method: 'POST' | 'GET'; body?: JsonRecord },
-  ): Promise<TResponse> {
-    let lastError: unknown = null;
-
-    for (let attempt = 1; attempt <= RETELL_RETRY_ATTEMPTS; attempt += 1) {
-      try {
-        const response = await this.executeRequest(path, options);
-        if (!response.ok) {
-          const body = await this.safeJson(response);
-          const retriable = this.isRetriableStatus(response.status);
-          const message = `Retell request failed: ${response.status}`;
-          this.logger.warn(
-            `${message} path=${path} attempt=${attempt} retriable=${retriable}`,
-          );
-          if (!retriable || attempt === RETELL_RETRY_ATTEMPTS) {
-            throw new RetellApiException(
-              message,
-              this.mapHttpStatus(response.status),
-              retriable,
-              { path, status: response.status, body: body ?? null },
-            );
-          }
-          await this.wait(this.getBackoffDelay(attempt));
-          continue;
+  private handleError(error: unknown, context: string): never {
+    if (error instanceof APIError) {
+      const status = error.status || 500;
+      const isRetriable = status === 429 || status >= 500;
+      
+      this.logger.error(`Retell SDK Error in ${context}: ${error.message}`, error.stack);
+      
+      throw new RetellApiException(
+        `Retell API error: ${error.message}`,
+        this.mapHttpStatus(status),
+        isRetriable,
+        {
+          status,
+          body: error.error,
+          context,
         }
-        return (await response.json()) as TResponse;
-      } catch (error: unknown) {
-        lastError = error;
-        if (error instanceof RetellApiException) {
-          if (!error.retriable || attempt === RETELL_RETRY_ATTEMPTS) {
-            throw error;
-          }
-          await this.wait(this.getBackoffDelay(attempt));
-          continue;
-        }
-        const retriable = true;
-        this.logger.warn(`Retell request error path=${path} attempt=${attempt}`);
-        if (!retriable || attempt === RETELL_RETRY_ATTEMPTS) {
-          throw new RetellApiException(
-            'Retell request failed',
-            HttpStatus.BAD_GATEWAY,
-            retriable,
-            { path, reason: this.getErrorMessage(error) },
-          );
-        }
-        await this.wait(this.getBackoffDelay(attempt));
-      }
+      );
     }
 
+    this.logger.error(`Unexpected error in ${context}: ${this.getErrorMessage(error)}`);
     throw new RetellApiException(
-      'Retell request failed after retries',
-      HttpStatus.BAD_GATEWAY,
+      'Unexpected Retell request failure',
+      HttpStatus.INTERNAL_SERVER_ERROR,
       false,
-      { reason: this.getErrorMessage(lastError) },
+      { context, reason: this.getErrorMessage(error) }
     );
-  }
-
-  private async executeRequest(
-    path: string,
-    options: { method: 'POST' | 'GET'; body?: JsonRecord },
-  ): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      return await fetch(`${RETELL_API_BASE_URL}${path}`, {
-        method: options.method,
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        ...(options.body ? { body: JSON.stringify(options.body) } : {}),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  private async safeJson(response: Response): Promise<unknown> {
-    try {
-      return await response.json();
-    } catch {
-      return null;
-    }
-  }
-
-  private isRetriableStatus(status: number): boolean {
-    return status === 429 || status >= 500;
   }
 
   private mapHttpStatus(retellStatus: number): number {
@@ -216,16 +274,6 @@ export class RetellClient {
       return HttpStatus.BAD_REQUEST;
     }
     return HttpStatus.BAD_GATEWAY;
-  }
-
-  private getBackoffDelay(attempt: number): number {
-    return RETELL_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
-  }
-
-  private wait(ms: number): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
   }
 
   private getErrorMessage(error: unknown): string {

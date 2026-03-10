@@ -32,7 +32,12 @@ export const searchAdapter = {
    * For tenant users: only search within their tenantId.
    * For admin: search all.
    */
-  search(query: string, tenantId?: string, isAdmin?: boolean): Promise<SearchResult[]> {
+  async search(
+    query: string,
+    tenantId?: string,
+    isAdmin?: boolean,
+    _types?: string[],
+  ): Promise<SearchResult[]> {
     const q = query.trim();
     if (!q) return [];
 
@@ -100,6 +105,6 @@ export const searchAdapter = {
       }
     }
 
-    return Promise.resolve(results.slice(0, 15));
+    return results.slice(0, 15);
   },
 };

@@ -27,11 +27,11 @@ function filterByDateRange<T extends { createdAt: string }>(items: T[], range?: 
 }
 
 export const callsAdapter = {
-  getCalls(tenantId: string | undefined, dateRange?: DateRangeFilter): Call[] {
+  async getCalls(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<Call[]> {
     const byTenant = filterByTenant(seedCalls, tenantId);
     return filterByDateRange(byTenant, dateRange);
   },
-  getCallById(id: string, tenantId: string | undefined): Call | undefined {
+  async getCallById(id: string, tenantId: string | undefined): Promise<Call | undefined> {
     const calls = filterByTenant(seedCalls, tenantId);
     return calls.find((c) => c.id === id);
   },

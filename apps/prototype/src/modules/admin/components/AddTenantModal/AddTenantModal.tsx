@@ -1,8 +1,8 @@
 /**
- * Add Tenant wizard modal. Step 1: Tenant details. Step 2: Select template/channels.
+ * Add Tenant wizard modal. Step 1: Tenant details. Step 2: Assign existing agent.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Modal, ModalHeader, Button } from '../../../../shared/ui';
 import { useAdminTenantCreation } from '../../hooks';
@@ -12,6 +12,8 @@ import {
   TenantWizardStep2DeployAgent,
   type ClinicInfoData,
 } from '../TenantWizard';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const INITIAL_CLINIC: ClinicInfoData = {
   name: '',
@@ -34,22 +36,21 @@ interface AddTenantModalProps {
 export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps) {
   const [step, setStep] = useState(1);
   const [clinicData, setClinicData] = useState<ClinicInfoData>(INITIAL_CLINIC);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [selectedChannels, setSelectedChannels] = useState<Array<'voice' | 'chat' | 'email'>>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
-    templates,
-    templatesLoading,
-    templatesError,
-    refetchTemplates,
+    assignableAgents,
+    assignableAgentsLoading,
+    assignableAgentsError,
+    refetchAssignableAgents,
     createTenant,
+    assignAgentToTenant,
   } = useAdminTenantCreation();
 
   const reset = useCallback(() => {
     setStep(1);
     setClinicData(INITIAL_CLINIC);
-    setSelectedTemplateId(null);
-    setSelectedChannels([]);
+    setSelectedAgentId(null);
     setIsSubmitting(false);
   }, []);
 
@@ -58,12 +59,19 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
     onClose();
   }, [reset, onClose]);
 
-  const canProceedStep1 = clinicData.name.trim() && clinicData.ownerEmail.trim();
+  const normalizedOwnerEmail = clinicData.ownerEmail.trim().toLowerCase();
+  const isOwnerEmailValid = EMAIL_REGEX.test(normalizedOwnerEmail);
+  const canProceedStep1 = clinicData.name.trim() && isOwnerEmailValid;
 
   const handleStep1Next = useCallback(() => {
     if (!canProceedStep1) return;
     setStep(2);
   }, [canProceedStep1]);
+
+  useEffect(() => {
+    if (!open || step !== 2) return;
+    refetchAssignableAgents();
+  }, [open, refetchAssignableAgents, step]);
 
   const handleComplete = useCallback(async () => {
       setIsSubmitting(true);
@@ -71,15 +79,17 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         const result = await createTenant({
           name: clinicData.name.trim(),
           plan: clinicData.plan,
-          ownerEmail: clinicData.ownerEmail.trim(),
+          ownerEmail: normalizedOwnerEmail,
           ownerName: clinicData.ownerName.trim() || undefined,
           phone: clinicData.phone.trim() || undefined,
           address: clinicData.address.trim() || undefined,
           timezone: clinicData.timezone,
           locale: clinicData.locale,
-          templateId: selectedTemplateId ?? undefined,
-          channelsEnabled: selectedTemplateId ? selectedChannels : undefined,
         });
+        if (selectedAgentId) {
+          await assignAgentToTenant(selectedAgentId, result.id);
+          refetchAssignableAgents();
+        }
         reset();
         onClose();
         onSuccess?.({ id: result.id, name: result.name, plan: result.plan });
@@ -96,34 +106,16 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
       } finally {
         setIsSubmitting(false);
       }
-    }, [clinicData, createTenant, onClose, onSuccess, reset, selectedChannels, selectedTemplateId]);
-
-  const handleTemplateSelect = useCallback(
-    (templateId: string) => {
-      setSelectedTemplateId(templateId);
-      const template = templates.find((item) => item.id === templateId);
-      setSelectedChannels(template ? [...template.channels] : []);
-    },
-    [templates],
-  );
-
-  const handleToggleChannel = useCallback((channel: 'voice' | 'chat' | 'email') => {
-    setSelectedChannels((current) => {
-      if (current.includes(channel)) {
-        return current.filter((item) => item !== channel);
-      }
-      return [...current, channel];
-    });
-  }, []);
+    }, [assignAgentToTenant, clinicData, createTenant, normalizedOwnerEmail, onClose, onSuccess, refetchAssignableAgents, reset, selectedAgentId]);
 
   return (
-    <Modal open={open} onClose={handleClose} title="Onboard Tenant" maxWidthRem={52}>
+    <Modal open={open} onClose={handleClose} title="Onboard Tenant" maxWidthRem={42}>
       <ModalHeader title="Onboard Tenant" onClose={handleClose} />
-      <div className="p-5 md:p-6 space-y-6 bg-[var(--bg-subtle)]/35">
-        <div className="rounded-2xl border border-[var(--border-subtle)]/80 bg-[linear-gradient(180deg,rgba(124,92,255,0.12),rgba(16,185,129,0.05))] p-4">
+      <div className="max-h-[min(74dvh,40rem)] overflow-y-auto p-3 sm:p-4 md:p-5 space-y-4 bg-[var(--bg-subtle)]/35">
+        <div className="rounded-2xl border border-[var(--border-subtle)]/80 bg-[linear-gradient(180deg,rgba(124,92,255,0.12),rgba(16,185,129,0.05))] p-3.5">
           <h3 className="text-base font-semibold text-[var(--text-primary)]">Create Tenant Workspace</h3>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Complete tenant profile and optionally create an agent from a template during onboarding.
+            Complete tenant profile and optionally assign an existing agent.
           </p>
         </div>
         <TenantWizardProgress currentStep={step} />
@@ -131,12 +123,12 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         {step === 1 && (
           <>
             <TenantWizardStep1ClinicInfo data={clinicData} onChange={setClinicData} />
-            <div className="flex justify-end gap-3 pt-4 border-t border-[var(--separator)]">
+            <div className="flex justify-end gap-3 pt-3 border-t border-[var(--separator)]">
               <Button type="button" variant="secondary" onClick={handleClose} className="rounded-xl px-5">
                 Cancel
               </Button>
               <Button onClick={handleStep1Next} disabled={!canProceedStep1} className="rounded-xl px-5">
-                Next: Select Template
+                Next: Assign Agent
               </Button>
             </div>
           </>
@@ -145,19 +137,17 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         {step === 2 && (
           <>
             <TenantWizardStep2DeployAgent
-              templates={templates}
-              selectedTemplateId={selectedTemplateId}
-              selectedChannels={selectedChannels}
-              onSelectTemplate={handleTemplateSelect}
-              onToggleChannel={handleToggleChannel}
+              agents={assignableAgents}
+              selectedAgentId={selectedAgentId}
+              onSelectAgent={setSelectedAgentId}
               onContinue={handleComplete}
               onSkip={handleComplete}
-              isSubmitting={isSubmitting || templatesLoading}
-              isLoading={templatesLoading}
-              loadError={templatesError?.message ?? null}
-              onRetryLoad={refetchTemplates}
+              isSubmitting={isSubmitting || assignableAgentsLoading}
+              isLoading={assignableAgentsLoading}
+              loadError={assignableAgentsError?.message ?? null}
+              onRetryLoad={refetchAssignableAgents}
             />
-            <div className="flex justify-between pt-4 border-t border-[var(--separator)]">
+            <div className="flex justify-between pt-3 border-t border-[var(--separator)]">
               <Button type="button" variant="secondary" onClick={() => setStep(1)} className="rounded-xl px-5">
                 Back
               </Button>

@@ -20,6 +20,7 @@ export interface User {
   email: string;
   name: string;
   role: Role;
+  avatarUrl?: string;
   /** Set for TENANT_OWNER and STAFF: the tenant this user belongs to. */
   tenantId?: string;
   /** Tenant-scoped role (from tenant_memberships). Used for feature-level permissions. */

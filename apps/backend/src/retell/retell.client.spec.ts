@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { RetellClient } from './retell.client';
 import { RetellApiException } from './retell.errors';
+import { APIError } from 'retell-sdk';
 
 describe('RetellClient', () => {
   let client: RetellClient;
@@ -15,44 +16,43 @@ describe('RetellClient', () => {
     jest.restoreAllMocks();
   });
 
-  it('throws RetellApiException on non-retriable 4xx response', async () => {
-    const mockJson = jest.fn().mockResolvedValue({ message: 'bad request' });
-    const mockResponse = {
-      ok: false,
-      status: 400,
-      json: mockJson,
-    } as unknown as Response;
-    global.fetch = jest.fn().mockResolvedValue(mockResponse) as unknown as typeof fetch;
+  it('throws RetellApiException on SDK APIError', async () => {
+    // Mock the SDK's agent.create method to throw an APIError
+    const mockError = new APIError(400, { message: 'bad request' }, 'bad request', undefined);
+    jest.spyOn((client as any).client.agent, 'create').mockRejectedValue(mockError);
 
     await expect(
-      client.createChatAgent({
+      client.createAgent({
         agent_name: 'Test',
       }),
     ).rejects.toBeInstanceOf(RetellApiException);
-    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('retries retriable errors and eventually succeeds', async () => {
-    jest.spyOn(client as never, 'wait').mockResolvedValue(undefined);
-    const failingResponse = {
-      ok: false,
-      status: 500,
-      json: jest.fn().mockResolvedValue({ message: 'server error' }),
-    } as unknown as Response;
-    const successResponse = {
-      ok: true,
-      status: 200,
-      json: jest.fn().mockResolvedValue({ conversation_flow_id: 'flow_1' }),
-    } as unknown as Response;
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce(failingResponse)
-      .mockResolvedValueOnce(successResponse) as unknown as typeof fetch;
-
-    const result = await client.createConversationFlow({
-      nodes: [],
+  it('successfully creates an agent', async () => {
+    jest.spyOn((client as any).client.agent, 'create').mockResolvedValue({
+      agent_id: 'agent_1',
     });
-    expect(result.conversation_flow_id).toBe('flow_1');
-    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    const result = await client.createAgent({
+      agent_name: 'Test',
+    });
+    expect(result.agent_id).toBe('agent_1');
+  });
+
+  it('successfully probes connectivity', async () => {
+    jest.spyOn((client as any).client.agent, 'list').mockResolvedValue([]);
+
+    const result = await client.probeConnectivity();
+    expect(result.reachable).toBe(true);
+    expect(result.statusCode).toBe(200);
+  });
+
+  it('handles probe connectivity failure', async () => {
+    const mockError = new APIError(401, { message: 'unauthorized' }, 'unauthorized', undefined);
+    jest.spyOn((client as any).client.agent, 'list').mockRejectedValue(mockError);
+
+    const result = await client.probeConnectivity();
+    expect(result.reachable).toBe(false);
+    expect(result.statusCode).toBe(401);
   });
 });

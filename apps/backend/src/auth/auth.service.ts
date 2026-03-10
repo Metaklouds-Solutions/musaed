@@ -308,6 +308,22 @@ export class AuthService {
     return { message: 'Password updated' };
   }
 
+  async updateProfile(userId: string, dto: { name?: string; avatarUrl?: string }) {
+    const updateData: any = {};
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
+
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true },
+    );
+
+    if (!user) throw new BadRequestException('User not found');
+
+    return user.toJSON();
+  }
+
   private async issueTokens(user: UserDocument) {
     let tenantId: string | undefined;
     let tenantRole: string | undefined;
@@ -320,6 +336,25 @@ export class AuthService {
       if (membership) {
         tenantId = membership.tenantId.toString();
         tenantRole = membership.roleSlug;
+      } else {
+        const fallbackMembership = await this.tenantStaffModel.findOne({
+          userId: user._id,
+        });
+        if (fallbackMembership) {
+          tenantId = fallbackMembership.tenantId.toString();
+          tenantRole = fallbackMembership.roleSlug;
+        }
+      }
+      if (!tenantId && user.role === 'TENANT_OWNER') {
+        // Fallback for legacy owner records that may exist without tenant_staff links.
+        const ownedTenant = await this.tenantModel.findOne({
+          ownerId: user._id,
+          deletedAt: null,
+        });
+        if (ownedTenant) {
+          tenantId = ownedTenant._id.toString();
+          tenantRole = 'clinic_admin';
+        }
       }
     }
 

@@ -47,16 +47,49 @@ export const dashboardAdapter = {
     }
   },
 
-  getFunnel(_tenantId: string | undefined, _dateRange?: DateRangeFilter): FunnelStage[] {
-    return [];
+  async getFunnel(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<FunnelStage[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<FunnelStage[]>(`/tenant/dashboard/funnel?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
-  getTrend(_tenantId: string | undefined, _dateRange?: DateRangeFilter): TrendPoint[] {
-    return [];
+  async getTrend(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<TrendPoint[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<TrendPoint[]>(`/tenant/dashboard/trend?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 
-  getRoiMetrics(_tenantId: string | undefined, _dateRange?: DateRangeFilter): RoiMetrics {
-    return { revenue: 0, aiCost: 0, costSaved: 0, roiPercent: 0, totalMinutes: 0 };
+  async getRoiMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<RoiMetrics> {
+    if (!tenantId) return { revenue: 0, aiCost: 0, costSaved: 0, roiPercent: 0, totalMinutes: 0 };
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<RoiMetrics>(`/tenant/dashboard/roi?${params.toString()}`);
+      return {
+        revenue: data.revenue ?? 0,
+        aiCost: data.aiCost ?? 0,
+        costSaved: data.costSaved ?? 0,
+        roiPercent: data.roiPercent ?? 0,
+        totalMinutes: data.totalMinutes ?? 0,
+      };
+    } catch {
+      return { revenue: 0, aiCost: 0, costSaved: 0, roiPercent: 0, totalMinutes: 0 };
+    }
   },
 
   async getTenantKpis(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<TenantKpis> {
@@ -79,8 +112,14 @@ export const dashboardAdapter = {
     }
   },
 
-  getTenantAgentStatus(_tenantId: string | undefined): TenantAgentStatus | null {
-    return null;
+  async getTenantAgentStatus(tenantId: string | undefined): Promise<TenantAgentStatus | null> {
+    if (!tenantId) return null;
+    try {
+      const data = await api.get<TenantAgentStatus | null>('/tenant/dashboard/agent-status');
+      return data;
+    } catch {
+      return null;
+    }
   },
 
   async getTenantStaffCounts(tenantId: string | undefined): Promise<TenantStaffCounts> {
@@ -110,7 +149,16 @@ export const dashboardAdapter = {
     }
   },
 
-  getTenantRecentCalls(_tenantId: string | undefined, _limit?: number, _dateRange?: DateRangeFilter): TenantRecentCall[] {
-    return [];
+  async getTenantRecentCalls(tenantId: string | undefined, limit = 10, dateRange?: DateRangeFilter): Promise<TenantRecentCall[]> {
+    if (!tenantId) return [];
+    try {
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      const data = await api.get<TenantRecentCall[]>(`/tenant/dashboard/recent-calls?${params.toString()}`);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
   },
 };

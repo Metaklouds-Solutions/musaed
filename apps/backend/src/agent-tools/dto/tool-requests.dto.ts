@@ -86,6 +86,10 @@ export class BookMeetingDto extends AgentIdDto {
   @IsString()
   @IsOptional()
   meeting_type?: string;
+
+  @IsString()
+  @IsOptional()
+  call_id?: string;
 }
 
 export class ResendInviteDto extends AgentIdDto {

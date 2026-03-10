@@ -34,14 +34,26 @@ export function useDashboard(dateRange?: DateRangeFilter) {
     [tenantId, dateRange],
     defaultMetrics,
   );
-  const funnel = useMemo(() => dashboardAdapter.getFunnel(tenantId, dateRange), [tenantId, dateRange]);
-  const trend = useMemo(() => dashboardAdapter.getTrend(tenantId, dateRange), [tenantId, dateRange]);
+  const { data: funnel } = useAsyncData(
+    () => dashboardAdapter.getFunnel(tenantId, dateRange),
+    [tenantId, dateRange],
+    []
+  );
+  const { data: trend } = useAsyncData(
+    () => dashboardAdapter.getTrend(tenantId, dateRange),
+    [tenantId, dateRange],
+    []
+  );
   const { data: kpis } = useAsyncData(
     () => dashboardAdapter.getTenantKpis(tenantId, dateRange),
     [tenantId, dateRange],
     defaultKpis,
   );
-  const agentStatus = useMemo(() => dashboardAdapter.getTenantAgentStatus(tenantId), [tenantId]);
+  const { data: agentStatus } = useAsyncData(
+    () => dashboardAdapter.getTenantAgentStatus(tenantId),
+    [tenantId],
+    null
+  );
   const { data: staffCounts } = useAsyncData(
     () => dashboardAdapter.getTenantStaffCounts(tenantId),
     [tenantId],
@@ -52,8 +64,16 @@ export function useDashboard(dateRange?: DateRangeFilter) {
     [tenantId],
     [],
   );
-  const recentCalls = useMemo(() => dashboardAdapter.getTenantRecentCalls(tenantId, 10, dateRange), [tenantId, dateRange]);
-  const roi = useMemo(() => dashboardAdapter.getRoiMetrics(tenantId, dateRange), [tenantId, dateRange]);
+  const { data: recentCalls } = useAsyncData(
+    () => dashboardAdapter.getTenantRecentCalls(tenantId, 10, dateRange),
+    [tenantId, dateRange],
+    []
+  );
+  const { data: roi } = useAsyncData(
+    () => dashboardAdapter.getRoiMetrics(tenantId, dateRange),
+    [tenantId, dateRange],
+    { revenue: 0, aiCost: 0, costSaved: 0, roiPercent: 0, totalMinutes: 0 }
+  );
 
   return {
     user,

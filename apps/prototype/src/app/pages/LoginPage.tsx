@@ -64,6 +64,7 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
           email: data.user.email,
           name: data.user.name,
           role: data.user.role,
+          avatarUrl: data.user.avatarUrl,
           tenantId: data.user.tenantId,
           tenantRole: data.user.tenantRole,
         });

@@ -24,6 +24,14 @@ export class RetellWebhookDto {
   @IsOptional()
   sentiment?: string;
 
+  @IsString()
+  @IsOptional()
+  transcript?: string;
+
+  @IsString()
+  @IsOptional()
+  event_id?: string;
+
   @IsObject()
   @IsOptional()
   metadata?: Record<string, unknown>;

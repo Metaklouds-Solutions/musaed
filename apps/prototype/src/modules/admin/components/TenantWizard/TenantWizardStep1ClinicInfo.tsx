@@ -55,10 +55,12 @@ interface TenantWizardStep1ClinicInfoProps {
 export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep1ClinicInfoProps) {
   const set = (key: keyof ClinicInfoData) => (value: string) =>
     onChange({ ...data, [key]: value });
+  const handleEmailChange = (value: string) => set('ownerEmail')(value.replace(/\s+/g, '').toLowerCase());
+  const handlePhoneChange = (value: string) => set('phone')(value.replace(/[^\d+\-\s()]/g, ''));
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-4">
+    <div className="space-y-4">
+      <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-3.5 space-y-3.5">
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">Business Profile</p>
           <p className="text-xs text-[var(--text-muted)]">Core tenant information and ownership details.</p>
@@ -75,7 +77,7 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
         />
         </FormField>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <FormField label="Owner name" id="owner-name">
             <input
               id="owner-name"
@@ -91,9 +93,14 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
               id="owner-email"
               type="email"
               value={data.ownerEmail}
-              onChange={(e) => set('ownerEmail')(e.target.value)}
+              onChange={(e) => handleEmailChange(e.target.value)}
               placeholder="owner@clinic.com"
               className={inputClass}
+              inputMode="email"
+              autoComplete="email"
+              pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+              title="Please enter a valid email address."
+              spellCheck={false}
               required
             />
           </FormField>
@@ -104,9 +111,11 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
             id="phone"
             type="tel"
             value={data.phone}
-            onChange={(e) => set('phone')(e.target.value)}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder="+1 555-0100"
             className={inputClass}
+            inputMode="tel"
+            autoComplete="tel"
           />
         </FormField>
 
@@ -122,12 +131,12 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
         </FormField>
       </section>
 
-      <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-4">
+      <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-3.5 space-y-3.5">
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">Regional Settings</p>
           <p className="text-xs text-[var(--text-muted)]">Default plan and locale configuration for onboarding.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>div]:min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 [&>div]:min-w-0">
           <FormField label="Plan" id="plan">
             <PopoverSelect
               value={data.plan}

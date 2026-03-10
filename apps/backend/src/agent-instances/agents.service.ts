@@ -9,12 +9,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
 import { AgentInstance, AgentInstanceDocument } from './schemas/agent-instance.schema';
 import { UpdatePromptsDto } from './dto/update-prompts.dto';
+import { UpdateAgentDto } from './dto/update-agent.dto';
 import { CreateAgentInstanceDto } from './dto/create-agent-instance.dto';
 import { AgentDeploymentService } from '../agent-deployments/agent-deployment.service';
 import { AgentDeploymentsService } from '../agent-deployments/agent-deployments.service';
 import { AgentTemplate, AgentTemplateDocument } from '../agent-templates/schemas/agent-template.schema';
 import { AgentRolloutService } from '../agent-deployments/agent-rollout.service';
 import { StartConversationDto } from './dto/start-conversation.dto';
+import { RetellClient } from '../retell/retell.client';
 
 @Injectable()
 export class AgentsService {
@@ -26,6 +28,7 @@ export class AgentsService {
     private readonly agentDeploymentService: AgentDeploymentService,
     private readonly agentDeploymentsService: AgentDeploymentsService,
     private readonly agentRolloutService: AgentRolloutService,
+    private readonly retellClient: RetellClient,
   ) {}
 
   async findAllForTenant(tenantId: string) {
@@ -73,6 +76,16 @@ export class AgentsService {
       .populate('templateId', 'name channel');
   }
 
+  async update(id: string, dto: UpdateAgentDto) {
+    const instance = await this.instanceModel.findById(id);
+    if (!instance) throw new NotFoundException('Agent instance not found');
+    if (dto.name != null && dto.name.trim().length > 0) {
+      instance.name = dto.name.trim();
+      await instance.save();
+    }
+    return instance;
+  }
+
   async updatePrompts(id: string, tenantId: string, dto: UpdatePromptsDto) {
     const instance = await this.instanceModel.findOneAndUpdate(
       { _id: id, tenantId: new Types.ObjectId(tenantId) },
@@ -90,7 +103,44 @@ export class AgentsService {
     });
     if (!instance) throw new NotFoundException('Agent instance not found');
 
-    // TODO: Call Retell API GET /get-agent/{retellAgentId} and update configSnapshot
+    if (instance.retellAgentId) {
+      try {
+        let retellData;
+        if (instance.channel === 'voice' || instance.channelsEnabled.includes('voice')) {
+          retellData = await this.retellClient.getAgent(instance.retellAgentId);
+        } else {
+          retellData = await this.retellClient.getChatAgent(instance.retellAgentId);
+        }
+        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as any;
+      } catch (err) {
+        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${err.message}`);
+      }
+    }
+
+    instance.lastSyncedAt = new Date();
+    await instance.save();
+
+    return instance;
+  }
+
+  async syncAgentAdmin(id: string) {
+    const instance = await this.instanceModel.findById(id);
+    if (!instance) throw new NotFoundException('Agent instance not found');
+
+    if (instance.retellAgentId) {
+      try {
+        let retellData;
+        if (instance.channel === 'voice' || instance.channelsEnabled.includes('voice')) {
+          retellData = await this.retellClient.getAgent(instance.retellAgentId);
+        } else {
+          retellData = await this.retellClient.getChatAgent(instance.retellAgentId);
+        }
+        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as any;
+      } catch (err) {
+        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${err.message}`);
+      }
+    }
+
     instance.lastSyncedAt = new Date();
     await instance.save();
 
@@ -101,14 +151,7 @@ export class AgentsService {
     tenantId: string,
     dto: CreateAgentInstanceDto,
   ) {
-    const template = await this.templateModel.findOne({
-      _id: dto.templateId,
-      deletedAt: null,
-    });
-    if (!template) {
-      throw new NotFoundException('Agent template not found');
-    }
-
+    const template = await this.getTemplateOrThrow(dto.templateId);
     const created = await this.instanceModel.create({
       tenantId: new Types.ObjectId(tenantId),
       templateId: new Types.ObjectId(dto.templateId),
@@ -127,6 +170,47 @@ export class AgentsService {
     return created;
   }
 
+  async createUnassigned(dto: CreateAgentInstanceDto) {
+    const template = await this.getTemplateOrThrow(dto.templateId);
+    return this.instanceModel.create({
+      tenantId: null,
+      templateId: new Types.ObjectId(dto.templateId),
+      name: dto.name ?? '',
+      channelsEnabled: dto.channelsEnabled,
+      channel: dto.channelsEnabled[0] ?? 'chat',
+      templateVersion: template.version ?? 1,
+      customConfig: {
+        ...(dto.capabilityLevel ? { capabilityLevel: dto.capabilityLevel } : {}),
+      },
+      status: 'paused',
+    });
+  }
+
+  async assignToTenant(id: string, tenantId: string) {
+    const instance = await this.instanceModel.findById(id);
+    if (!instance) throw new NotFoundException('Agent instance not found');
+    if (instance.status === 'deleted') {
+      throw new ConflictException('Cannot assign a deleted agent');
+    }
+    if (instance.tenantId && instance.tenantId.toString() !== tenantId) {
+      throw new ConflictException('Agent is already assigned to another tenant');
+    }
+    instance.tenantId = new Types.ObjectId(tenantId);
+    await instance.save();
+    return instance;
+  }
+
+  async unassignFromTenant(id: string) {
+    const instance = await this.instanceModel.findById(id);
+    if (!instance) throw new NotFoundException('Agent instance not found');
+    if (instance.status === 'deploying') {
+      throw new ConflictException('Cannot unassign an agent while deployment is in progress');
+    }
+    instance.tenantId = null;
+    await instance.save();
+    return instance;
+  }
+
   async findAllForAdminTenant(tenantId: string) {
     return this.instanceModel
       .find({ tenantId: new Types.ObjectId(tenantId), status: { $ne: 'deleted' } })
@@ -139,6 +223,9 @@ export class AgentsService {
       throw new ConflictException('Agent deployment v2 is disabled by feature flag');
     }
     const instance = await this.findById(id);
+    if (!instance.tenantId) {
+      throw new ConflictException('Assign this agent to a tenant before deployment');
+    }
     await this.agentDeploymentService.enqueueDeployment(
       instance._id.toString(),
       instance.tenantId.toString(),
@@ -180,14 +267,66 @@ export class AgentsService {
       );
     }
 
-    return {
-      agentInstanceId: instance._id.toString(),
-      channel: dto.channel,
-      retellAgentId: activeDeployment.retellAgentId,
-      retellConversationFlowId: activeDeployment.retellConversationFlowId,
-      metadata: this.sanitizeConversationMetadata(dto.metadata),
-      startedAt: new Date().toISOString(),
-    };
+    if (!activeDeployment.retellAgentId) {
+      throw new ConflictException('Agent is not fully deployed to Retell yet');
+    }
+
+    const metadata = this.sanitizeConversationMetadata(dto.metadata);
+    metadata['tenant_id'] = tenantId;
+    metadata['agent_instance_id'] = id;
+
+    if (dto.channel === 'voice') {
+      const response = await this.retellClient.createWebCall({
+        agent_id: activeDeployment.retellAgentId,
+        metadata,
+      });
+      return {
+        agentInstanceId: instance._id.toString(),
+        channel: dto.channel,
+        retellAgentId: activeDeployment.retellAgentId,
+        retellConversationFlowId: activeDeployment.retellConversationFlowId,
+        metadata,
+        startedAt: new Date().toISOString(),
+        accessToken: response.access_token,
+      };
+    }
+
+    if (dto.channel === 'chat') {
+      const response = await this.retellClient.createChat({
+        agent_id: activeDeployment.retellAgentId,
+        metadata,
+      });
+      return {
+        agentInstanceId: instance._id.toString(),
+        channel: dto.channel,
+        retellAgentId: activeDeployment.retellAgentId,
+        retellConversationFlowId: activeDeployment.retellConversationFlowId,
+        metadata,
+        startedAt: new Date().toISOString(),
+        chatId: response.chat_id,
+      };
+    }
+
+    throw new UnprocessableEntityException('Unsupported channel');
+  }
+
+  async getChat(chatId: string) {
+    return this.retellClient.getChat(chatId);
+  }
+
+  async sendChatMessage(chatId: string, messages: any[]) {
+    return this.retellClient.createChatCompletion(chatId, messages);
+  }
+
+  private async getTemplateOrThrow(templateId: string): Promise<AgentTemplateDocument> {
+    const template = await this.templateModel.findOne({
+      _id: templateId,
+      deletedAt: null,
+    });
+    if (!template) {
+      throw new NotFoundException('Agent template not found');
+    }
+    return template;
   }
 
   private triggerDeploymentAsync(agentInstanceId: string, tenantId: string): void {

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { tenantsAdapter, auditAdapter } from '../../../adapters';
+import { agentsAdapter, tenantsAdapter, auditAdapter } from '../../../adapters';
 import { useAsyncData } from '../../../shared/hooks/useAsyncData';
-import type { AgentTemplateOption } from '../../../shared/types';
+import type { AdminAgentRow } from '../../../shared/types';
 
 interface CreateTenantInput {
   name: string;
@@ -12,21 +12,22 @@ interface CreateTenantInput {
   address?: string;
   timezone: string;
   locale: string;
-  templateId?: string;
-  channelsEnabled?: Array<'voice' | 'chat' | 'email'>;
 }
 
 /** Tenant creation hook for template-first onboarding workflow. */
 export function useAdminTenantCreation() {
   const {
-    data: templates,
-    loading: templatesLoading,
-    error: templatesError,
-    refetch: refetchTemplates,
+    data: assignableAgents,
+    loading: assignableAgentsLoading,
+    error: assignableAgentsError,
+    refetch: refetchAssignableAgents,
   } = useAsyncData(
-    async () => tenantsAdapter.getPlatformAgents(),
+    async () => {
+      const allAgents = await Promise.resolve(agentsAdapter.list());
+      return allAgents.filter((agent) => !agent.tenantId);
+    },
     [],
-    [] as AgentTemplateOption[],
+    [] as AdminAgentRow[],
   );
 
   const createTenant = useCallback(async (input: CreateTenantInput) => {
@@ -35,11 +36,17 @@ export function useAdminTenantCreation() {
     return tenant;
   }, []);
 
+  const assignAgentToTenant = useCallback(async (agentId: string, tenantId: string) => {
+    await Promise.resolve(agentsAdapter.assign(agentId, tenantId));
+    auditAdapter.log('agent.assigned', { agentId, tenantId });
+  }, []);
+
   return {
-    templates,
-    templatesLoading,
-    templatesError,
-    refetchTemplates,
+    assignableAgents,
+    assignableAgentsLoading,
+    assignableAgentsError,
+    refetchAssignableAgents,
     createTenant,
+    assignAgentToTenant,
   };
 }

@@ -9,10 +9,12 @@ import {
 import { AgentsService } from './agents.service';
 import { AgentDeploymentsModule } from '../agent-deployments/agent-deployments.module';
 import { AgentTemplate, AgentTemplateSchema } from '../agent-templates/schemas/agent-template.schema';
+import { RetellModule } from '../retell/retell.module';
 
 @Module({
   imports: [
     AgentDeploymentsModule,
+    RetellModule,
     MongooseModule.forFeature([
       { name: AgentInstance.name, schema: AgentInstanceSchema },
       { name: AgentTemplate.name, schema: AgentTemplateSchema },
