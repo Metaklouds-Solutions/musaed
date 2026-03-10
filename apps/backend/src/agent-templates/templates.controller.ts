@@ -16,6 +16,7 @@ import { TemplatesService } from './templates.service';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { ImportTemplateDto } from './dto/import-template.dto';
 
 @Controller('admin/templates')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -38,6 +39,11 @@ export class TemplatesController {
   @Post()
   create(@Body() dto: CreateTemplateDto, @Request() req: AuthenticatedRequest) {
     return this.templatesService.create(dto, req.user._id.toString());
+  }
+
+  @Post('import')
+  importTemplate(@Body() dto: ImportTemplateDto, @Request() req: AuthenticatedRequest) {
+    return this.templatesService.importTemplate(dto, req.user._id.toString());
   }
 
   @Get(':id')

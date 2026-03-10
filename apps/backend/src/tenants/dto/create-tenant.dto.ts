@@ -1,4 +1,14 @@
-import { IsString, IsOptional, IsEmail, IsMongoId, Matches, MinLength } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsEmail,
+  IsIn,
+  IsMongoId,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class CreateTenantDto {
   @IsString()
@@ -23,4 +33,14 @@ export class CreateTenantDto {
   @IsString()
   @IsOptional()
   timezone?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  templateId?: string;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsIn(['voice', 'chat', 'email'], { each: true })
+  @IsOptional()
+  channelsEnabled?: string[];
 }

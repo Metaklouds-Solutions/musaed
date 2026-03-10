@@ -11,6 +11,21 @@ export class AgentInstance {
   @Prop({ type: Types.ObjectId, ref: 'AgentTemplate', default: null })
   templateId: Types.ObjectId | null;
 
+  @Prop({ type: String, default: '' })
+  name: string;
+
+  @Prop({ type: Number, default: 1 })
+  templateVersion: number;
+
+  @Prop({ type: [String], enum: ['voice', 'chat', 'email'], default: [] })
+  channelsEnabled: string[];
+
+  @Prop({ type: Object, default: {} })
+  customConfig: Record<string, unknown>;
+
+  @Prop({ type: [Types.ObjectId], ref: 'User', default: [] })
+  assignedToStaffIds: Types.ObjectId[];
+
   @Prop({ required: true, enum: ['voice', 'chat', 'email'] })
   channel: string;
 
@@ -26,7 +41,7 @@ export class AgentInstance {
   @Prop({ type: String, default: null })
   emailAddress: string | null;
 
-  @Prop({ required: true, enum: ['deploying', 'active', 'paused', 'failed', 'deleted'] })
+  @Prop({ required: true, enum: ['deploying', 'active', 'partially_deployed', 'paused', 'failed', 'deleted'] })
   status: string;
 
   @Prop({ type: Object, default: {} })

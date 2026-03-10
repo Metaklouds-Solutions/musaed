@@ -16,9 +16,26 @@ export class UpdateTemplateDto {
   @IsOptional()
   description?: string;
 
+  @IsString()
+  @IsOptional()
+  category?: string;
+
   @IsIn(['voice', 'chat', 'email'])
   @IsOptional()
   channel?: string;
+
+  @IsArray()
+  @IsIn(['voice', 'chat', 'email'], { each: true })
+  @IsOptional()
+  supportedChannels?: string[];
+
+  @IsString()
+  @IsOptional()
+  capabilityLevel?: string;
+
+  @IsObject()
+  @IsOptional()
+  flowTemplate?: Record<string, unknown>;
 
   @IsObject()
   @IsOptional()

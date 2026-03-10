@@ -17,6 +17,8 @@ import type {
   AdminAgentDetail,
   TenantAgentRow,
   AgentDetailFull,
+  ChannelDeploymentSummary,
+  AgentInstanceSummary,
 } from '../../shared/types';
 
 const tenantName = (id: string) => seedTenants.find((t) => t.id === id)?.name ?? id;
@@ -109,8 +111,17 @@ function buildAgentDetailFromRow(
   };
 }
 
-/** In-memory: platform agents assigned to tenants. */
-const assignedAgents: { id: string; platformAgentId: string; tenantId: string; voice: string; language: string }[] = [];
+/** In-memory: platform agents assigned/created for tenants. */
+const assignedAgents: {
+  id: string;
+  platformAgentId: string;
+  tenantId: string;
+  voice: string;
+  language: string;
+  name?: string;
+  status?: string;
+  channelsEnabled?: Array<'voice' | 'chat' | 'email'>;
+}[] = [];
 
 export const agentsAdapter = {
   /** List all agents for admin. */
@@ -142,13 +153,13 @@ export const agentsAdapter = {
       }));
     const fromAssigned = assignedAgents.map((a) => ({
       id: a.id,
-      name: a.voice,
+      name: a.name ?? a.voice,
       externalAgentId: a.id,
       voice: a.voice,
       language: a.language,
       tenantId: a.tenantId,
       tenantName: tenantName(a.tenantId),
-      status: 'active',
+      status: a.status ?? 'active',
       lastSyncedAt: new Date().toISOString(),
     }));
     return [...fromVoice, ...fromPlatform, ...fromAssigned];
@@ -160,23 +171,85 @@ export const agentsAdapter = {
   },
 
   /** Assign platform agent to tenant. */
-  assign(agentId: string, tenantId: string): void {
+  async assign(agentId: string, tenantId: string): Promise<void> {
     const pa = seedPlatformAgents.find((p) => p.id === agentId);
     if (pa) {
       assignedAgents.push({
         id: `va_${Date.now()}`,
         platformAgentId: pa.id,
         tenantId,
+        name: pa.name,
         voice: pa.voice,
         language: pa.language,
+        status: 'active',
+        channelsEnabled: [pa.channel === 'voice' || pa.channel === 'chat' || pa.channel === 'email' ? pa.channel : 'chat'],
       });
     }
   },
 
   /** Unassign agent. */
-  unassign(agentId: string): void {
+  async unassign(agentId: string): Promise<void> {
     const idx = assignedAgents.findIndex((a) => a.id === agentId);
     if (idx >= 0) assignedAgents.splice(idx, 1);
+  },
+
+  async deploy(_agentId: string): Promise<{ status: string; message: string }> {
+    return { status: 'queued', message: 'Deployment queued (local mode)' };
+  },
+
+  async createForTenant(
+    tenantId: string,
+    input: {
+      templateId: string;
+      name: string;
+      channelsEnabled: Array<'voice' | 'chat' | 'email'>;
+      capabilityLevel?: string;
+    },
+  ): Promise<AgentInstanceSummary> {
+    const template = seedPlatformAgents.find((item) => item.id === input.templateId);
+    const id = `ai_${Date.now()}`;
+    const primaryChannel = input.channelsEnabled[0] ?? 'chat';
+    assignedAgents.push({
+      id,
+      platformAgentId: input.templateId,
+      tenantId,
+      name: input.name,
+      voice: template?.voice ?? primaryChannel,
+      language: template?.language ?? input.capabilityLevel ?? 'en',
+      status: 'paused',
+      channelsEnabled: input.channelsEnabled,
+    });
+    return {
+      id,
+      tenantId,
+      tenantName: tenantName(tenantId),
+      name: input.name,
+      status: 'paused',
+      channel: primaryChannel,
+      channelsEnabled: input.channelsEnabled,
+      deployedAt: null,
+      lastSyncedAt: null,
+    };
+  },
+
+  async getDeployments(agentId: string): Promise<ChannelDeploymentSummary[]> {
+    return [
+      {
+        id: `dep_${agentId}_voice`,
+        channel: 'voice',
+        provider: 'retell',
+        status: 'active',
+        retellAgentId: `retell_${agentId}`,
+        retellConversationFlowId: `flow_${agentId}`,
+        error: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+  },
+
+  async getTenantDeployments(agentId: string): Promise<ChannelDeploymentSummary[]> {
+    return this.getDeployments(agentId);
   },
 
   /** Get full agent detail for admin. */

@@ -21,6 +21,10 @@ import type { AdminAgentRow } from '../../../../shared/types';
 interface AgentsTableProps {
   agents: AdminAgentRow[];
   onAssignClick?: (agent: AdminAgentRow) => void;
+  onDeployClick?: (agent: AdminAgentRow) => void;
+  onViewDeploymentsClick?: (agent: AdminAgentRow) => void;
+  deployingAgentId?: string | null;
+  selectedDeploymentsAgentId?: string | null;
 }
 
 function formatDate(iso: string): string {
@@ -29,8 +33,15 @@ function formatDate(iso: string): string {
   return parsed.toLocaleDateString();
 }
 
-/** Renders admin agents table with assignment action for unassigned rows. */
-export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
+/** Renders admin agents table with assignment and deployment actions. */
+export function AgentsTable({
+  agents,
+  onAssignClick,
+  onDeployClick,
+  onViewDeploymentsClick,
+  deployingAgentId = null,
+  selectedDeploymentsAgentId = null,
+}: AgentsTableProps) {
   if (agents.length === 0) {
     return (
       <p className="text-sm text-[var(--text-muted)] py-8 text-center">
@@ -96,7 +107,32 @@ export function AgentsTable({ agents, onAssignClick }: AgentsTableProps) {
               </TableCell>
               <TableCell>
                 {a.tenantId ? (
-                  <ViewButton to={`/admin/tenants/${a.tenantId}/agents/${a.id}`} aria-label="View agent" />
+                  <div className="flex items-center gap-2">
+                    {onDeployClick && (
+                      <button
+                        type="button"
+                        onClick={() => onDeployClick(a)}
+                        disabled={deployingAgentId === a.id}
+                        className="text-sm font-medium text-[var(--ds-primary)] hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {deployingAgentId === a.id ? 'Deploying...' : 'Deploy'}
+                      </button>
+                    )}
+                    {onViewDeploymentsClick && (
+                      <button
+                        type="button"
+                        onClick={() => onViewDeploymentsClick(a)}
+                        className={`text-sm font-medium hover:underline ${
+                          selectedDeploymentsAgentId === a.id
+                            ? 'text-[var(--text-primary)]'
+                            : 'text-[var(--text-muted)]'
+                        }`}
+                      >
+                        Deployments
+                      </button>
+                    )}
+                    <ViewButton to={`/admin/tenants/${a.tenantId}/agents/${a.id}`} aria-label="View agent" />
+                  </div>
                 ) : onAssignClick ? (
                   <button
                     type="button"

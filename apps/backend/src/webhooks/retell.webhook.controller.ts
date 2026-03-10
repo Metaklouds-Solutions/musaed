@@ -16,12 +16,20 @@ import { RetellWebhookDto } from './dto/retell-webhook.dto';
 export class RetellWebhookController {
   private readonly logger = new Logger(RetellWebhookController.name);
   private readonly webhookSecret: string;
+  private readonly requireSignature: boolean;
 
   constructor(
     private webhooksService: WebhooksService,
     config: ConfigService,
   ) {
-    this.webhookSecret = config.get<string>('RETELL_WEBHOOK_SECRET', '');
+    const nodeEnv = config.get<string>('NODE_ENV', 'development');
+    this.requireSignature = nodeEnv !== 'development';
+    this.webhookSecret = config.get<string>('RETELL_WEBHOOK_SECRET', '').trim();
+    if (this.requireSignature && this.webhookSecret.length === 0) {
+      throw new Error(
+        'RETELL_WEBHOOK_SECRET must be set when webhook signature verification is required',
+      );
+    }
   }
 
   @Post()
@@ -42,6 +50,8 @@ export class RetellWebhookController {
         this.logger.error('Retell webhook signature verification failed');
         throw new ForbiddenException('Invalid webhook signature');
       }
+    } else if (this.requireSignature) {
+      throw new ForbiddenException('Webhook signature secret is required');
     } else {
       this.logger.warn(
         'RETELL_WEBHOOK_SECRET not configured — skipping signature verification',

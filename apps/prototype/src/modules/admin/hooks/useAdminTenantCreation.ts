@@ -1,5 +1,7 @@
-import { useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import { tenantsAdapter, auditAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
+import type { AgentTemplateOption } from '../../../shared/types';
 
 interface CreateTenantInput {
   name: string;
@@ -10,12 +12,22 @@ interface CreateTenantInput {
   address?: string;
   timezone: string;
   locale: string;
-  agentId?: string;
+  templateId?: string;
+  channelsEnabled?: Array<'voice' | 'chat' | 'email'>;
 }
 
-/** Tenant creation hook for wizard platform-agent list and creation workflow. */
+/** Tenant creation hook for template-first onboarding workflow. */
 export function useAdminTenantCreation() {
-  const platformAgents = useMemo(() => tenantsAdapter.getPlatformAgents(), []);
+  const {
+    data: templates,
+    loading: templatesLoading,
+    error: templatesError,
+    refetch: refetchTemplates,
+  } = useAsyncData(
+    async () => tenantsAdapter.getPlatformAgents(),
+    [],
+    [] as AgentTemplateOption[],
+  );
 
   const createTenant = useCallback(async (input: CreateTenantInput) => {
     const tenant = await Promise.resolve(tenantsAdapter.createTenant(input));
@@ -23,5 +35,11 @@ export function useAdminTenantCreation() {
     return tenant;
   }, []);
 
-  return { platformAgents, createTenant };
+  return {
+    templates,
+    templatesLoading,
+    templatesError,
+    refetchTemplates,
+    createTenant,
+  };
 }

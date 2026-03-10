@@ -9,7 +9,7 @@ const TIMEZONE_OPTIONS = ['UTC', 'America/New_York', 'Europe/London', 'Asia/Kara
 const LOCALE_OPTIONS = ['en-US', 'en-GB', 'ar-SA'];
 
 const inputClass =
-  'w-full px-4 py-2.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)] focus:border-transparent text-sm';
+  'w-full px-4 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)] focus:border-transparent text-sm';
 
 function FormField({
   label,
@@ -57,8 +57,13 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
     onChange({ ...data, [key]: value });
 
   return (
-    <div className="space-y-4">
-      <FormField label="Clinic name" id="tenant-name" required>
+    <div className="space-y-5">
+      <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Business Profile</p>
+          <p className="text-xs text-[var(--text-muted)]">Core tenant information and ownership details.</p>
+        </div>
+        <FormField label="Clinic name" id="tenant-name" required>
         <input
           id="tenant-name"
           type="text"
@@ -68,80 +73,87 @@ export function TenantWizardStep1ClinicInfo({ data, onChange }: TenantWizardStep
           className={inputClass}
           required
         />
-      </FormField>
+        </FormField>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FormField label="Owner name" id="owner-name">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField label="Owner name" id="owner-name">
+            <input
+              id="owner-name"
+              type="text"
+              value={data.ownerName}
+              onChange={(e) => set('ownerName')(e.target.value)}
+              placeholder="John Doe"
+              className={inputClass}
+            />
+          </FormField>
+          <FormField label="Owner email" id="owner-email" required>
+            <input
+              id="owner-email"
+              type="email"
+              value={data.ownerEmail}
+              onChange={(e) => set('ownerEmail')(e.target.value)}
+              placeholder="owner@clinic.com"
+              className={inputClass}
+              required
+            />
+          </FormField>
+        </div>
+
+        <FormField label="Phone" id="phone">
           <input
-            id="owner-name"
+            id="phone"
+            type="tel"
+            value={data.phone}
+            onChange={(e) => set('phone')(e.target.value)}
+            placeholder="+1 555-0100"
+            className={inputClass}
+          />
+        </FormField>
+
+        <FormField label="Address" id="address">
+          <input
+            id="address"
             type="text"
-            value={data.ownerName}
-            onChange={(e) => set('ownerName')(e.target.value)}
-            placeholder="John Doe"
+            value={data.address}
+            onChange={(e) => set('address')(e.target.value)}
+            placeholder="123 Main St, City"
             className={inputClass}
           />
         </FormField>
-        <FormField label="Owner email" id="owner-email" required>
-          <input
-            id="owner-email"
-            type="email"
-            value={data.ownerEmail}
-            onChange={(e) => set('ownerEmail')(e.target.value)}
-            placeholder="owner@clinic.com"
-            className={inputClass}
-            required
-          />
-        </FormField>
-      </div>
+      </section>
 
-      <FormField label="Phone" id="phone">
-        <input
-          id="phone"
-          type="tel"
-          value={data.phone}
-          onChange={(e) => set('phone')(e.target.value)}
-          placeholder="+1 555-0100"
-          className={inputClass}
-        />
-      </FormField>
-
-      <FormField label="Address" id="address">
-        <input
-          id="address"
-          type="text"
-          value={data.address}
-          onChange={(e) => set('address')(e.target.value)}
-          placeholder="123 Main St, City"
-          className={inputClass}
-        />
-      </FormField>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>div]:min-w-0">
-        <FormField label="Plan" id="plan">
-          <PopoverSelect
-            value={data.plan}
-            onChange={(v) => set('plan')(v)}
-            options={PLAN_OPTIONS.map((p) => ({ value: p, label: p }))}
-            triggerClassName="w-full min-w-0"
-          />
-        </FormField>
-        <FormField label="Timezone" id="timezone">
-          <PopoverSelect
-            value={data.timezone}
-            onChange={(v) => set('timezone')(v)}
-            options={TIMEZONE_OPTIONS.map((tz) => ({ value: tz, label: tz }))}
-            triggerClassName="w-full min-w-0"
-          />
-        </FormField>
-        <FormField label="Locale" id="locale">
-          <PopoverSelect
-            value={data.locale}
-            onChange={(v) => set('locale')(v)}
-            options={LOCALE_OPTIONS.map((loc) => ({ value: loc, label: loc }))}
-            triggerClassName="w-full min-w-0"
-          />
-        </FormField>
-      </div>
+      <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Regional Settings</p>
+          <p className="text-xs text-[var(--text-muted)]">Default plan and locale configuration for onboarding.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>div]:min-w-0">
+          <FormField label="Plan" id="plan">
+            <PopoverSelect
+              value={data.plan}
+              onChange={(v) => set('plan')(v)}
+              options={PLAN_OPTIONS.map((p) => ({ value: p, label: p }))}
+              triggerClassName="w-full min-w-0 !rounded-xl"
+            />
+          </FormField>
+          <FormField label="Timezone" id="timezone">
+            <PopoverSelect
+              value={data.timezone}
+              onChange={(v) => set('timezone')(v)}
+              options={TIMEZONE_OPTIONS.map((tz) => ({ value: tz, label: tz }))}
+              triggerClassName="w-full min-w-0 !rounded-xl"
+            />
+          </FormField>
+          <FormField label="Locale" id="locale">
+            <PopoverSelect
+              value={data.locale}
+              onChange={(v) => set('locale')(v)}
+              options={LOCALE_OPTIONS.map((loc) => ({ value: loc, label: loc }))}
+              triggerClassName="w-full min-w-0 !rounded-xl"
+            />
+          </FormField>
+        </div>
+      </section>
     </div>
   );
 }

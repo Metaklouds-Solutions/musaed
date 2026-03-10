@@ -8,11 +8,26 @@ export class AgentTemplate {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ type: String, trim: true })
+  slug?: string;
+
   @Prop({ default: '' })
   description: string;
 
+  @Prop({ type: String, default: '' })
+  category: string;
+
   @Prop({ required: true, enum: ['voice', 'chat', 'email'] })
   channel: string;
+
+  @Prop({ type: [String], enum: ['voice', 'chat', 'email'], default: [] })
+  supportedChannels: string[];
+
+  @Prop({ type: String, default: 'L1' })
+  capabilityLevel: string;
+
+  @Prop({ type: Object, default: {} })
+  flowTemplate: Record<string, unknown>;
 
   @Prop({ type: Object, default: {} })
   voiceConfig: Record<string, unknown>;
@@ -59,3 +74,4 @@ export const AgentTemplateSchema = SchemaFactory.createForClass(AgentTemplate);
 AgentTemplateSchema.index({ channel: 1 });
 AgentTemplateSchema.index({ isDefault: 1 });
 AgentTemplateSchema.index({ name: 1 });
+AgentTemplateSchema.index({ slug: 1 }, { unique: true, sparse: true });

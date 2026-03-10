@@ -4,6 +4,9 @@
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+const BACKEND_RETRY_COOLDOWN_MS = 5000;
+
+let backendUnavailableUntil = 0;
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
@@ -91,6 +94,43 @@ export interface ApiError {
   message: string;
 }
 
+export class ApiClientError extends Error implements ApiError {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiClientError';
+    this.status = status;
+  }
+}
+
+function getBackendUnavailableError(): ApiClientError {
+  return new ApiClientError(
+    0,
+    `Cannot reach API server at ${BASE_URL}. Start backend or set VITE_DATA_MODE=\"local\".`,
+  );
+}
+
+function canRetryBackendRequest(): boolean {
+  return Date.now() >= backendUnavailableUntil;
+}
+
+async function guardedFetch(url: string, options: RequestInit): Promise<Response> {
+  if (!canRetryBackendRequest()) {
+    throw getBackendUnavailableError();
+  }
+  try {
+    return await fetch(url, options);
+  } catch (error) {
+    // Browser fetch network errors are surfaced as TypeError (e.g. connection refused).
+    if (error instanceof TypeError) {
+      backendUnavailableUntil = Date.now() + BACKEND_RETRY_COOLDOWN_MS;
+      throw getBackendUnavailableError();
+    }
+    throw error;
+  }
+}
+
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {},
@@ -105,22 +145,19 @@ export async function apiFetch<T = unknown>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  let res = await guardedFetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (res.status === 401 && token) {
     const refreshed = await tryRefresh();
     if (refreshed) {
       headers['Authorization'] = `Bearer ${getAccessToken()}`;
-      res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+      res = await guardedFetch(`${BASE_URL}${path}`, { ...options, headers });
     }
   }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    const err: ApiError = {
-      status: res.status,
-      message: body.message ?? res.statusText,
-    };
+    const err = new ApiClientError(res.status, body.message ?? res.statusText);
     throw err;
   }
 

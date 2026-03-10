@@ -84,12 +84,30 @@ const tenantStaffSchema = new mongoose.Schema(
   { timestamps: true, collection: 'tenant_staff' },
 );
 
+const agentTemplateSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    slug: { type: String, required: false },
+    description: { type: String, default: '' },
+    category: { type: String, default: '' },
+    channel: { type: String, enum: ['voice', 'chat', 'email'], required: true },
+    supportedChannels: [{ type: String, enum: ['voice', 'chat', 'email'] }],
+    capabilityLevel: { type: String, default: 'L1' },
+    flowTemplate: { type: Object, default: {} },
+    version: { type: Number, default: 1 },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    deletedAt: { type: Date, default: null },
+  },
+  { timestamps: true, collection: 'agent_templates' },
+);
+
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 const SubscriptionPlan = mongoose.model('SubscriptionPlan', subscriptionPlanSchema);
 const User = mongoose.model('User', userSchema);
 const Tenant = mongoose.model('Tenant', tenantSchema);
 const TenantStaff = mongoose.model('TenantStaff', tenantStaffSchema);
+const AgentTemplate = mongoose.model('AgentTemplate', agentTemplateSchema);
 
 // ─── Seed Data ───────────────────────────────────────────────────────────────
 
@@ -230,6 +248,50 @@ async function seed() {
       console.log('   ✅ Seeded tenant staff membership\n');
     } else {
       console.log('   ⏭️  Tenant staff membership already exists, skipping\n');
+    }
+
+    // ── Agent Template (seeded from external flow file) ──
+    console.log('🤖 Seeding default agent template...');
+    const existingTemplate = await AgentTemplate.findOne({
+      slug: 'default-chat-voice-template',
+      deletedAt: null,
+    });
+    if (!existingTemplate) {
+      const flowTemplatePath = path.resolve(process.cwd(), '../..', 'FLOWTEMPLATES.json');
+      let parsedTemplate: unknown = null;
+      try {
+        const raw = await import('node:fs/promises').then((fs) =>
+          fs.readFile(flowTemplatePath, 'utf8'),
+        );
+        parsedTemplate = JSON.parse(raw);
+      } catch {
+        parsedTemplate = null;
+      }
+
+      if (Array.isArray(parsedTemplate) && parsedTemplate.length > 0) {
+        const firstItem = parsedTemplate[0] as Record<string, unknown>;
+        const flow = firstItem.flow;
+        if (flow && typeof flow === 'object' && !Array.isArray(flow)) {
+          await AgentTemplate.create({
+            name: 'Default Chat Voice Template',
+            slug: 'default-chat-voice-template',
+            description: 'Seeded from FLOWTEMPLATES.json',
+            category: 'general',
+            channel: 'chat',
+            supportedChannels: ['chat', 'voice'],
+            capabilityLevel: 'L3',
+            flowTemplate: flow,
+            version: 1,
+          });
+          console.log('   ✅ Seeded default agent template\n');
+        } else {
+          console.log('   ⚠️  FLOWTEMPLATES.json exists but flow payload is invalid, skipping\n');
+        }
+      } else {
+        console.log('   ⚠️  FLOWTEMPLATES.json not found or invalid array, skipping\n');
+      }
+    } else {
+      console.log('   ⏭️  Default agent template already exists, skipping\n');
     }
 
     console.log('🎉 Seed complete!');

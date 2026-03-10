@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   ConflictException,
@@ -14,6 +15,10 @@ import { AuthService } from '../auth/auth.service';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
+import { AgentInstance, AgentInstanceDocument } from '../agent-instances/schemas/agent-instance.schema';
+import { AgentDeploymentService } from '../agent-deployments/agent-deployment.service';
+import { AgentTemplate, AgentTemplateDocument } from '../agent-templates/schemas/agent-template.schema';
+import { AgentRolloutService } from '../agent-deployments/agent-rollout.service';
 
 @Injectable()
 export class TenantsService {
@@ -21,10 +26,14 @@ export class TenantsService {
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
     @InjectModel(TenantStaff.name) private staffModel: Model<TenantStaffDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(AgentInstance.name) private agentInstanceModel: Model<AgentInstanceDocument>,
+    @InjectModel(AgentTemplate.name) private agentTemplateModel: Model<AgentTemplateDocument>,
     private authService: AuthService,
     private emailService: EmailService,
     private notificationsService: NotificationsService,
     private auditService: AuditService,
+    private agentDeploymentService: AgentDeploymentService,
+    private agentRolloutService: AgentRolloutService,
   ) {}
 
   async findAll(query: { status?: string; page?: number; limit?: number }) {
@@ -58,6 +67,29 @@ export class TenantsService {
   async create(dto: CreateTenantDto, adminUserId?: string) {
     const existing = await this.tenantModel.findOne({ slug: dto.slug, deletedAt: null });
     if (existing) throw new ConflictException('Slug already taken');
+
+    let selectedTemplate: AgentTemplateDocument | null = null;
+    if (dto.templateId) {
+      selectedTemplate = await this.agentTemplateModel.findOne({
+        _id: dto.templateId,
+        deletedAt: null,
+      });
+      if (!selectedTemplate) {
+        throw new NotFoundException('Agent template not found');
+      }
+      const supportedChannels = this.resolveSupportedChannels(selectedTemplate);
+      const requestedChannels = dto.channelsEnabled ?? [];
+      if (requestedChannels.length > 0) {
+        const hasUnsupported = requestedChannels.some(
+          (channel) => !supportedChannels.includes(channel),
+        );
+        if (hasUnsupported) {
+          throw new BadRequestException(
+            'channelsEnabled must be a subset of template supported channels',
+          );
+        }
+      }
+    }
 
     const ownerEmail = dto.ownerEmail.toLowerCase().trim();
     const existingOwner = await this.userModel.findOne({ email: ownerEmail, deletedAt: null });
@@ -125,6 +157,28 @@ export class TenantsService {
       );
     }
 
+    if (dto.templateId) {
+      if (!selectedTemplate) {
+        throw new NotFoundException('Agent template not found');
+      }
+      const createdInstance = await this.agentInstanceModel.create({
+        tenantId: tenant._id,
+        templateId: new Types.ObjectId(dto.templateId),
+        name: `${tenant.name} Assistant`,
+        channelsEnabled: this.resolveInitialChannels(dto.channelsEnabled, selectedTemplate),
+        channel: this.resolveInitialChannel(dto.channelsEnabled, selectedTemplate),
+        templateVersion: selectedTemplate.version ?? 1,
+        status: 'paused',
+        customConfig: {},
+      });
+      if (this.agentRolloutService.isAutoDeployOnCreateEnabled()) {
+        await this.agentDeploymentService.enqueueDeployment(
+          createdInstance._id.toString(),
+          tenant._id.toString(),
+        );
+      }
+    }
+
     return { tenant, owner, staff, inviteSetupUrl };
   }
 
@@ -187,6 +241,8 @@ export class TenantsService {
   }
 
   async remove(id: string, adminUserId?: string) {
+    await this.agentDeploymentService.cleanupDeploymentsForTenant(id);
+
     const tenant = await this.tenantModel.findOneAndUpdate(
       { _id: id, deletedAt: null },
       { $set: { deletedAt: new Date() } },
@@ -207,4 +263,38 @@ export class TenantsService {
     }
     return { message: 'Tenant deleted' };
   }
+
+  private resolveSupportedChannels(template: AgentTemplateDocument): string[] {
+    if (Array.isArray(template.supportedChannels) && template.supportedChannels.length > 0) {
+      return template.supportedChannels;
+    }
+    if (template.channel) {
+      return [template.channel];
+    }
+    return ['chat'];
+  }
+
+  private resolveInitialChannels(
+    requestedChannels: string[] | undefined,
+    template: AgentTemplateDocument,
+  ): string[] {
+    if (Array.isArray(requestedChannels) && requestedChannels.length > 0) {
+      return requestedChannels;
+    }
+    return this.resolveSupportedChannels(template);
+  }
+
+  private resolveInitialChannel(
+    requestedChannels: string[] | undefined,
+    template: AgentTemplateDocument,
+  ): string {
+    if (Array.isArray(requestedChannels) && requestedChannels.length > 0) {
+      return requestedChannels[0];
+    }
+    if (template.supportedChannels.includes('chat')) {
+      return 'chat';
+    }
+    return this.resolveSupportedChannels(template)[0] ?? 'chat';
+  }
+
 }

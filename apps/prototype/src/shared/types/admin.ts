@@ -71,6 +71,42 @@ export interface AdminTenantRow {
   plan: string;
 }
 
+/** Template option used by onboarding step for agent deployment. */
+export interface AgentTemplateOption {
+  id: string;
+  name: string;
+  voice: string;
+  language: string;
+  channels: Array<'voice' | 'chat' | 'email'>;
+  capabilityLevel: string;
+}
+
+/** Tenant/admin-facing summary of an agent instance. */
+export interface AgentInstanceSummary {
+  id: string;
+  tenantId: string | null;
+  tenantName: string | null;
+  name: string;
+  status: string;
+  channel: 'voice' | 'chat' | 'email';
+  channelsEnabled: Array<'voice' | 'chat' | 'email'>;
+  deployedAt: string | null;
+  lastSyncedAt: string | null;
+}
+
+/** Per-channel deployment row shown in deployment history views. */
+export interface ChannelDeploymentSummary {
+  id: string;
+  channel: 'voice' | 'chat' | 'email';
+  provider: string;
+  status: 'pending' | 'active' | 'failed';
+  retellAgentId: string | null;
+  retellConversationFlowId: string | null;
+  error: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 /** Tenant list row for AdminTenantsPage with extended metrics. */
 export interface TenantListRow {
   id: string;

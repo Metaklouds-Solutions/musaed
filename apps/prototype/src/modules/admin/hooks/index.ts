@@ -19,3 +19,4 @@ export { useAdminAgentRedirect } from './useAdminAgentRedirect';
 export { useAdminBilling } from './useAdminBilling';
 export { useAdminAgentSandbox } from './useAdminAgentSandbox';
 export { useAdminSystemMaintenance } from './useAdminSystemMaintenance';
+export { useAdminAgentCreation } from './useAdminAgentCreation';

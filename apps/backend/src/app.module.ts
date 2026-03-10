@@ -1,4 +1,4 @@
-import { Module, Logger, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module, Logger, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
@@ -32,6 +32,9 @@ import { AvailabilityModule } from './availability/availability.module';
 import { AdminSettingsModule } from './admin-settings/admin-settings.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { AgentDeploymentsModule } from './agent-deployments/agent-deployments.module';
+import { RetellModule } from './retell/retell.module';
+import { AgentToolsModule } from './agent-tools/agent-tools.module';
 
 @Module({
   imports: [
@@ -94,6 +97,9 @@ import { AlertsModule } from './alerts/alerts.module';
     AdminSettingsModule,
     MaintenanceModule,
     AlertsModule,
+    AgentDeploymentsModule,
+    RetellModule,
+    AgentToolsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -101,6 +107,8 @@ import { AlertsModule } from './alerts/alerts.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+    consumer
+      .apply(RequestLoggerMiddleware)
+      .forRoutes({ path: '*path', method: RequestMethod.ALL });
   }
 }
