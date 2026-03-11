@@ -90,7 +90,7 @@ export class BookingsService {
     });
 
     await this.customerModel.updateOne(
-      { _id: booking.customerId },
+      { _id: booking.customerId, tenantId: tid },
       { $inc: { totalBookings: 1 } },
     );
 
@@ -125,7 +125,7 @@ export class BookingsService {
 
     if (!wasCancelled && isCancelling) {
       await this.customerModel.updateOne(
-        { _id: oldBooking.customerId },
+        { _id: oldBooking.customerId, tenantId: new Types.ObjectId(tenantId) },
         { $inc: { totalBookings: -1 } },
       );
     }

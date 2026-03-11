@@ -225,11 +225,11 @@ export class AuthService {
       return { valid: false, reason: 'expired' };
     }
 
-    const user = record.userId as any;
+    const populatedUser = record.userId as unknown as { email: string; name: string };
     return {
       valid: true,
-      email: user.email,
-      name: user.name,
+      email: populatedUser.email,
+      name: populatedUser.name,
       type: record.type,
     };
   }
@@ -327,8 +327,33 @@ export class AuthService {
     return { message: 'Password updated' };
   }
 
+  /**
+   * Soft-delete a user account and revoke all refresh tokens.
+   */
+  async deleteAccount(userId: string) {
+    const user = await this.userModel.findOne({ _id: userId, deletedAt: null });
+    if (!user) throw new BadRequestException('User not found');
+
+    await this.userModel.updateOne(
+      { _id: userId },
+      { $set: { deletedAt: new Date(), status: 'disabled' } },
+    );
+
+    await this.refreshTokenModel.updateMany(
+      { userId: new Types.ObjectId(userId), revokedAt: null },
+      { $set: { revokedAt: new Date() } },
+    );
+
+    await this.tenantStaffModel.updateMany(
+      { userId: new Types.ObjectId(userId), status: 'active' },
+      { $set: { status: 'removed' } },
+    );
+
+    return { message: 'Account deleted' };
+  }
+
   async updateProfile(userId: string, dto: { name?: string; avatarUrl?: string }) {
-    const updateData: any = {};
+    const updateData: Partial<Pick<User, 'name' | 'avatarUrl'>> = {};
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
 

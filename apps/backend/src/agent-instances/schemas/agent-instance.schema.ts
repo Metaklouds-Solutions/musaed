@@ -63,5 +63,6 @@ export class AgentInstance {
 export const AgentInstanceSchema = SchemaFactory.createForClass(AgentInstance);
 
 AgentInstanceSchema.index({ tenantId: 1 });
+AgentInstanceSchema.index({ templateId: 1 });
 AgentInstanceSchema.index({ status: 1 });
 AgentInstanceSchema.index({ retellAgentId: 1 }, { sparse: true });

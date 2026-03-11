@@ -17,6 +17,7 @@ import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { parsePagination } from '../common/helpers/parse-pagination';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 
 @Controller('admin/tenants')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -26,12 +27,14 @@ export class TenantsController {
   @Get()
   findAll(
     @Query('status') status?: string,
+    @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pagination = parsePagination({ page, limit });
     return this.tenantsService.findAll({
       status,
+      search,
       ...pagination,
     });
   }
@@ -42,37 +45,37 @@ export class TenantsController {
   }
 
   @Get(':id')
-  findById(@Param('id') id: string) {
+  findById(@Param('id', ParseObjectIdPipe) id: string) {
     return this.tenantsService.findById(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTenantDto) {
+  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateTenantDto) {
     return this.tenantsService.update(id, dto);
   }
 
   @Post(':id/suspend')
-  suspend(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  suspend(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
     return this.tenantsService.suspend(id, req.user._id.toString());
   }
 
   @Post(':id/disable')
-  disable(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  disable(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
     return this.tenantsService.disable(id, req.user._id.toString());
   }
 
   @Post(':id/enable')
-  enable(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  enable(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
     return this.tenantsService.enable(id, req.user._id.toString());
   }
 
   @Post(':id/resend-invite')
-  resendInvite(@Param('id') id: string) {
+  resendInvite(@Param('id', ParseObjectIdPipe) id: string) {
     return this.tenantsService.resendInvite(id);
   }
 
   @Delete(':id')
-  remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  remove(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
     return this.tenantsService.remove(id, req.user._id.toString());
   }
 }

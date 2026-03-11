@@ -14,11 +14,13 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
 import { PERMISSIONS } from '../common/constants/permissions';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { parsePagination } from '../common/helpers/parse-pagination';
+import { requireTenantId } from '../common/helpers/require-tenant-id';
 
 @Controller('tenant/bookings')
 @UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
@@ -34,8 +36,9 @@ export class BookingsController {
     @Query('date') date?: string,
     @Query('status') status?: string,
   ) {
+    const tenantId = requireTenantId(req);
     const pagination = parsePagination({ page, limit });
-    return this.bookingsService.findAllForTenant(req.tenantId!, {
+    return this.bookingsService.findAllForTenant(tenantId, {
       ...pagination,
       date,
       status,
@@ -45,16 +48,18 @@ export class BookingsController {
   @Post()
   @RequirePermissions(PERMISSIONS.BOOKINGS_WRITE)
   create(@Request() req: AuthenticatedRequest, @Body() dto: CreateBookingDto) {
-    return this.bookingsService.create(req.tenantId!, dto);
+    const tenantId = requireTenantId(req);
+    return this.bookingsService.create(tenantId, dto);
   }
 
   @Patch(':id')
   @RequirePermissions(PERMISSIONS.BOOKINGS_WRITE)
   update(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateBookingDto,
   ) {
-    return this.bookingsService.update(id, req.tenantId!, dto);
+    const tenantId = requireTenantId(req);
+    return this.bookingsService.update(id, tenantId, dto);
   }
 }

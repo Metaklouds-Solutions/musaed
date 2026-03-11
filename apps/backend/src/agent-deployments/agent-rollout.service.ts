@@ -23,17 +23,12 @@ export class AgentRolloutService {
   }
 
   private readBoolean(key: string, fallback: boolean): boolean {
-    const value = this.configService.get<string>(key);
-    if (!value) {
-      return fallback;
-    }
-    const normalized = value.trim().toLowerCase();
-    if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
-      return true;
-    }
-    if (normalized === 'false' || normalized === '0' || normalized === 'no') {
-      return false;
-    }
+    const value = this.configService.get<string | boolean | undefined>(key);
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'boolean') return value;
+    const normalized = String(value).trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1' || normalized === 'yes') return true;
+    if (normalized === 'false' || normalized === '0' || normalized === 'no') return false;
     return fallback;
   }
 }

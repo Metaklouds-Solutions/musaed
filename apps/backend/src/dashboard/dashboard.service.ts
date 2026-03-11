@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, PipelineStage } from 'mongoose';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
@@ -42,6 +42,8 @@ export interface TenantRecentCallDto {
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
+
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(Customer.name) private customerModel: Model<CustomerDocument>,
@@ -159,81 +161,96 @@ export class DashboardService {
   }
 
   async getFunnel(tenantId: string, dateFrom?: string, dateTo?: string): Promise<FunnelStageDto[]> {
-    const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
-      const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
-      match.createdAt = dateFilter;
-    }
-    const pipeline: PipelineStage[] = [
-      { $match: match },
-      {
-        $facet: {
-          byStatus: [{ $group: { _id: '$status', count: { $sum: 1 } } }],
-          byOutcome: [{ $group: { _id: '$outcome', count: { $sum: 1 } } }],
+    try {
+      const tid = new Types.ObjectId(tenantId);
+      const match: Record<string, unknown> = { tenantId: tid };
+      if (dateFrom || dateTo) {
+        const dateFilter: Record<string, Date> = {};
+        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        match.createdAt = dateFilter;
+      }
+      const pipeline: PipelineStage[] = [
+        { $match: match },
+        {
+          $facet: {
+            byStatus: [{ $group: { _id: '$status', count: { $sum: 1 } } }],
+            byOutcome: [{ $group: { _id: '$outcome', count: { $sum: 1 } } }],
+          },
         },
-      },
-    ];
-    const [result] = await this.callSessionModel.aggregate<{
-      byStatus: { _id: string; count: number }[];
-      byOutcome: { _id: string; count: number }[];
-    }>(pipeline);
-    const statusCounts: Record<string, number> = {};
-    const outcomeCounts: Record<string, number> = {};
-    for (const r of result?.byStatus ?? []) statusCounts[r._id ?? 'started'] = r.count;
-    for (const r of result?.byOutcome ?? []) outcomeCounts[r._id ?? 'unknown'] = r.count;
-    return [
-      { stage: 'started', count: statusCounts.started ?? 0 },
-      { stage: 'ended', count: statusCounts.ended ?? 0 },
-      { stage: 'analyzed', count: statusCounts.analyzed ?? 0 },
-      { stage: 'booked', count: outcomeCounts.booked ?? 0 },
-      { stage: 'escalated', count: outcomeCounts.escalated ?? 0 },
-      { stage: 'failed', count: outcomeCounts.failed ?? 0 },
-    ].filter((s) => s.count > 0);
+      ];
+      const [result] = await this.callSessionModel.aggregate<{
+        byStatus: { _id: string; count: number }[];
+        byOutcome: { _id: string; count: number }[];
+      }>(pipeline);
+      const statusCounts: Record<string, number> = {};
+      const outcomeCounts: Record<string, number> = {};
+      for (const r of result?.byStatus ?? []) statusCounts[r._id ?? 'started'] = r.count;
+      for (const r of result?.byOutcome ?? []) outcomeCounts[r._id ?? 'unknown'] = r.count;
+      return [
+        { stage: 'started', count: statusCounts.started ?? 0 },
+        { stage: 'ended', count: statusCounts.ended ?? 0 },
+        { stage: 'analyzed', count: statusCounts.analyzed ?? 0 },
+        { stage: 'booked', count: outcomeCounts.booked ?? 0 },
+        { stage: 'escalated', count: outcomeCounts.escalated ?? 0 },
+        { stage: 'failed', count: outcomeCounts.failed ?? 0 },
+      ].filter((s) => s.count > 0);
+    } catch (error) {
+      this.logger.error('getFunnel aggregation failed', error);
+      throw new InternalServerErrorException('Failed to generate funnel data');
+    }
   }
 
   async getTrend(tenantId: string, dateFrom?: string, dateTo?: string): Promise<TrendPointDto[]> {
-    const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
-      const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
-      match.date = dateFilter;
+    try {
+      const tid = new Types.ObjectId(tenantId);
+      const match: Record<string, unknown> = { tenantId: tid };
+      if (dateFrom || dateTo) {
+        const dateFilter: Record<string, Date> = {};
+        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        match.date = dateFilter;
+      }
+      const pipeline: PipelineStage[] = [
+        { $match: match },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ];
+      const rows = await this.bookingModel.aggregate<{ _id: string; count: number }>(pipeline);
+      return rows.map((r) => ({ date: r._id, bookings: r.count }));
+    } catch (error) {
+      this.logger.error('getTrend aggregation failed', error);
+      throw new InternalServerErrorException('Failed to generate trend data');
     }
-    const pipeline: PipelineStage[] = [
-      { $match: match },
-      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } },
-    ];
-    const rows = await this.bookingModel.aggregate<{ _id: string; count: number }>(pipeline);
-    return rows.map((r) => ({ date: r._id, bookings: r.count }));
   }
 
   async getRoiMetrics(tenantId: string, dateFrom?: string, dateTo?: string): Promise<RoiMetricsDto> {
-    const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
-      const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
-      match.createdAt = dateFilter;
+    try {
+      const tid = new Types.ObjectId(tenantId);
+      const match: Record<string, unknown> = { tenantId: tid };
+      if (dateFrom || dateTo) {
+        const dateFilter: Record<string, Date> = {};
+        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        match.createdAt = dateFilter;
+      }
+      const [totalMinutes, bookedCount] = await Promise.all([
+        this.callSessionModel.aggregate<{ total: number }>([
+          { $match: { ...match, durationMs: { $ne: null } } },
+          { $group: { _id: null, total: { $sum: { $divide: ['$durationMs', 60_000] } } } },
+        ]),
+        this.callSessionModel.countDocuments({ ...match, outcome: 'booked' }),
+      ]);
+      const minutes = totalMinutes[0]?.total ?? 0;
+      const revenue = bookedCount * 50;
+      const aiCost = minutes * 0.05;
+      const costSaved = minutes * 2;
+      const roiPercent = aiCost > 0 ? ((revenue - aiCost) / aiCost) * 100 : 0;
+      return { revenue, aiCost, costSaved, roiPercent, totalMinutes: minutes };
+    } catch (error) {
+      this.logger.error('getRoiMetrics aggregation failed', error);
+      throw new InternalServerErrorException('Failed to generate ROI metrics');
     }
-    const [totalMinutes, bookedCount] = await Promise.all([
-      this.callSessionModel.aggregate<{ total: number }>([
-        { $match: { ...match, durationMs: { $ne: null } } },
-        { $group: { _id: null, total: { $sum: { $divide: ['$durationMs', 60_000] } } } },
-      ]),
-      this.callSessionModel.countDocuments({ ...match, outcome: 'booked' }),
-    ]);
-    const minutes = totalMinutes[0]?.total ?? 0;
-    const revenue = bookedCount * 50;
-    const aiCost = minutes * 0.05;
-    const costSaved = minutes * 2;
-    const roiPercent = aiCost > 0 ? ((revenue - aiCost) / aiCost) * 100 : 0;
-    return { revenue, aiCost, costSaved, roiPercent, totalMinutes: minutes };
   }
 
   async getTenantAgentStatus(tenantId: string): Promise<TenantAgentStatusDto | null> {

@@ -60,6 +60,16 @@ export class CallSession {
 
 export const CallSessionSchema = SchemaFactory.createForClass(CallSession);
 
+CallSessionSchema.set('toJSON', {
+  transform(_doc, ret) {
+    const obj = ret as unknown as Record<string, unknown>;
+    delete obj.recordingUrl;
+    delete obj.transcript;
+    delete obj.transcriptObject;
+    return obj;
+  },
+});
+
 CallSessionSchema.index({ callId: 1 }, { unique: true });
 CallSessionSchema.index({ tenantId: 1, createdAt: -1 });
 CallSessionSchema.index({ tenantId: 1, outcome: 1 });

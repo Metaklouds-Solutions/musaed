@@ -199,15 +199,15 @@ export class RetellClient {
   }
 
   /**
-   * Creates a chat completion (sends message).
+   * Creates a chat completion (sends user message to Retell chat).
+   * Retell API expects { chat_id, content }.
    */
-  async createChatCompletion(chatId: string, messages: any[]) {
-    // Note: Assuming createCompletion syntax, adjust if retell SDK differs
-    // Usually it's client.chat.createResponse or client.chat.create
-    // Let's assume standard client.chat.createMessage or similar
-    // We should be careful about SDK structure. But we can assume it's exposed if specified in the plan.
+  async createChatCompletion(chatId: string, content: string) {
     try {
-      return await (this.client.chat as any).createCompletion(chatId, { messages });
+      return await this.client.chat.createChatCompletion({
+        chat_id: chatId,
+        content,
+      });
     } catch (error) {
       throw this.handleError(error, 'createChatCompletion');
     }

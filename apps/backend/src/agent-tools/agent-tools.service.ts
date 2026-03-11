@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { safeEqual } from '../common/helpers/timing-safe-equal';
 import {
   AgentInstance,
   AgentInstanceDocument,
@@ -57,7 +58,7 @@ export class AgentToolsService {
     if (!configured || configured.trim().length === 0) {
       throw new UnauthorizedException('Tool API key is not configured');
     }
-    if (!rawApiKey || rawApiKey !== configured) {
+    if (!safeEqual(rawApiKey, configured)) {
       throw new UnauthorizedException('Invalid tool API key');
     }
   }

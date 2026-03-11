@@ -71,8 +71,9 @@ export const agentsAdapter = (isLocal ? localAgents.agentsAdapter : apiAgents.ag
 export const settingsAdapter = (isLocal ? localSettings.settingsAdapter : apiSettings.settingsAdapter) as typeof localSettings.settingsAdapter;
 export const notificationsAdapter = (isLocal ? localNotifications.notificationsAdapter : apiNotifications.notificationsAdapter) as typeof localNotifications.notificationsAdapter;
 
-// Adapters that remain local-only (no backend endpoints yet)
-export const runsAdapter = localRuns.runsAdapter;
+import * as apiRuns from './api/runs.adapter';
+
+export const runsAdapter = isLocal ? localRuns.runsAdapter : apiRuns.runsAdapter;
 export const exportAdapter = isLocal ? localExport.exportAdapter : apiExport.exportAdapter;
 export const auditAdapter = (isLocal ? localAudit.auditAdapter : apiAudit.auditAdapter) as typeof localAudit.auditAdapter;
 export const searchAdapter = (isLocal ? localSearch.searchAdapter : apiSearch.searchAdapter) as typeof localSearch.searchAdapter;

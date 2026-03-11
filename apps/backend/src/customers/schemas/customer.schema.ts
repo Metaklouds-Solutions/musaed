@@ -39,7 +39,7 @@ export class Customer {
 export const CustomerSchema = SchemaFactory.createForClass(Customer);
 
 CustomerSchema.index({ tenantId: 1 });
-CustomerSchema.index({ tenantId: 1, phone: 1 });
-CustomerSchema.index({ tenantId: 1, email: 1 });
+CustomerSchema.index({ tenantId: 1, email: 1 }, { unique: true, sparse: true });
+CustomerSchema.index({ tenantId: 1, phone: 1 }, { unique: true, sparse: true });
 CustomerSchema.index({ tenantId: 1, deletedAt: 1 });
 CustomerSchema.index({ tenantId: 1, createdAt: -1 });

@@ -399,7 +399,7 @@ export const agentsAdapter = {
   ): Promise<AgentDetailFull | null> {
     if (!agentId) return null;
     try {
-      let agent: any;
+      let agent: AgentInstanceApiResponse;
       if (tenantId) {
         // Tenant context: sync then get
         try { await api.post(`/tenant/agents/${agentId}/sync`); } catch {}

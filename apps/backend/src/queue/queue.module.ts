@@ -28,9 +28,18 @@ export class QueueModule {
                   'REDIS_URL must be set in production for BullMQ queues. Set REDIS_URL or disable queue features.',
                 );
               }
-              return { connection: { host: 'localhost', port: 6379 } };
+              return {
+                connection: {
+                  host: 'localhost',
+                  port: 6379,
+                  maxRetriesPerRequest: null,
+                  retryStrategy: (times: number) => (times > 1 ? null : 500),
+                  lazyConnect: true,
+                },
+              };
             }
-            return { connection: getRedisConnectionOptions(redisUrl) };
+            const limitRetries = nodeEnv !== 'production';
+            return { connection: getRedisConnectionOptions(redisUrl, limitRetries) };
           },
         }),
         BullModule.registerQueue(

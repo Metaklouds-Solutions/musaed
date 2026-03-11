@@ -36,10 +36,13 @@ export class TenantsService {
     private agentRolloutService: AgentRolloutService,
   ) {}
 
-  async findAll(query: { status?: string; page?: number; limit?: number }) {
-    const { status, page = 1, limit = 20 } = query;
+  async findAll(query: { status?: string; search?: string; page?: number; limit?: number }) {
+    const { status, search, page = 1, limit = 20 } = query;
     const filter: FilterQuery<TenantDocument> = { deletedAt: null };
     if (status) filter.status = status;
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' };
+    }
 
     const [data, total] = await Promise.all([
       this.tenantModel

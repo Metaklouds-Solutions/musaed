@@ -37,6 +37,7 @@ export class CallsService {
     const [data, total] = await Promise.all([
       this.callSessionModel
         .find(filter)
+        .select('-recordingUrl -transcript -transcriptObject')
         .populate('agentInstanceId', 'name tenantId')
         .populate('bookingId', 'serviceType date timeSlot status')
         .skip((page - 1) * limit)
@@ -60,6 +61,7 @@ export class CallsService {
     const [data, total] = await Promise.all([
       this.callSessionModel
         .find(filter)
+        .select('-recordingUrl -transcript -transcriptObject')
         .populate('tenantId', 'name slug')
         .populate('agentInstanceId', 'name')
         .populate('bookingId', 'serviceType date timeSlot status')
@@ -79,6 +81,7 @@ export class CallsService {
   async getByIdForTenant(id: string, tenantId: string, enrich: boolean = false) {
     const call = await this.callSessionModel
       .findOne({ _id: id, tenantId: new Types.ObjectId(tenantId) })
+      .select('-recordingUrl -transcript -transcriptObject')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
       .lean();
@@ -97,6 +100,7 @@ export class CallsService {
   async getByRetellIdForTenant(retellCallId: string, tenantId: string) {
     const call = await this.callSessionModel
       .findOne({ callId: retellCallId, tenantId: new Types.ObjectId(tenantId) })
+      .select('-recordingUrl -transcript -transcriptObject')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
       .lean();
@@ -115,6 +119,7 @@ export class CallsService {
   async getByIdForAdmin(id: string, enrich: boolean = false) {
     const call = await this.callSessionModel
       .findById(id)
+      .select('-recordingUrl -transcript -transcriptObject')
       .populate('tenantId', 'name slug')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
@@ -134,6 +139,7 @@ export class CallsService {
   async getByRetellIdForAdmin(retellCallId: string) {
     const call = await this.callSessionModel
       .findOne({ callId: retellCallId })
+      .select('-recordingUrl -transcript -transcriptObject')
       .populate('tenantId', 'name slug')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
@@ -340,7 +346,7 @@ export class CallsService {
               retellAgentId: agent.retellAgentId,
               recordingUrl: callData.recording_url || undefined,
               transcript: callData.transcript || undefined,
-              transcriptObject: callData.transcript_object ? (callData.transcript_object as any) : undefined,
+              transcriptObject: callData.transcript_object ? (callData.transcript_object as unknown as Record<string, unknown>) : undefined,
               status: callData.call_status === 'ended' ? 'analyzed' : 'started',
             };
 

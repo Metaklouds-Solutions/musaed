@@ -5,19 +5,27 @@ import {
   IsObject,
   IsArray,
   IsIn,
+  IsUrl,
+  MaxLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class UpdateTemplateDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   name?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(2000)
   description?: string;
 
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   category?: string;
 
   @IsIn(['voice', 'chat', 'email'])
@@ -31,6 +39,8 @@ export class UpdateTemplateDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(50)
+  @IsIn(['basic', 'standard', 'advanced', 'enterprise'])
   capabilityLevel?: string;
 
   @IsObject()
@@ -55,14 +65,17 @@ export class UpdateTemplateDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(10000)
   basePrompt?: string;
 
-  @IsString()
   @IsOptional()
+  @IsUrl({}, { message: 'webhookUrl must be a valid URL' })
+  @MaxLength(2000)
   webhookUrl?: string;
 
-  @IsString()
   @IsOptional()
+  @IsUrl({}, { message: 'mcpServerUrl must be a valid URL' })
+  @MaxLength(2000)
   mcpServerUrl?: string;
 
   @IsObject()

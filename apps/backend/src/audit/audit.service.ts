@@ -11,6 +11,11 @@ export class AuditService {
 
   /**
    * Log an audit action.
+   *
+   * @param action - The audit action identifier (e.g. 'tenant.created')
+   * @param userId - User ID as string; safely converted to ObjectId for storage
+   * @param meta - Optional metadata attached to the entry
+   * @param tenantId - Optional tenant context
    */
   async log(
     action: string,
@@ -20,7 +25,7 @@ export class AuditService {
   ): Promise<AuditEntryDocument> {
     const doc = await this.auditModel.create({
       action,
-      userId,
+      userId: Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : undefined,
       tenantId: tenantId ? new Types.ObjectId(tenantId) : null,
       meta: meta ?? {},
       timestamp: new Date(),
@@ -46,7 +51,7 @@ export class AuditService {
       return {
         id: r._id != null ? String(r._id) : undefined,
         action: r.action,
-        userId: r.userId,
+        userId: r.userId != null ? String(r.userId) : undefined,
         tenantId: r.tenantId != null ? String(r.tenantId) : undefined,
         meta: r.meta,
         timestamp: r.timestamp,

@@ -1,24 +1,31 @@
-import { IsString, IsOptional, IsObject, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsIn, IsMongoId, MaxLength } from 'class-validator';
 
+/**
+ * DTO for creating a notification for a specific user.
+ */
 export class CreateNotificationDto {
-  @IsString()
+  @IsMongoId()
   userId: string;
 
   @IsOptional()
-  @IsString()
-  tenantId?: string | null;
+  @IsMongoId()
+  tenantId?: string;
 
   @IsString()
+  @MaxLength(50)
   type: string;
 
   @IsString()
+  @MaxLength(200)
   title: string;
 
   @IsString()
+  @MaxLength(2000)
   message: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   link?: string;
 
   @IsOptional()
@@ -27,5 +34,5 @@ export class CreateNotificationDto {
 
   @IsOptional()
   @IsIn(['critical', 'high', 'normal', 'low'])
-  priority?: string;
+  priority?: 'critical' | 'high' | 'normal' | 'low';
 }

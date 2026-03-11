@@ -10,7 +10,13 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: {
+    origin: (process.env.ALLOWED_ORIGINS ?? process.env.CORS_ORIGIN ?? 'http://localhost:5173')
+      .split(',')
+      .map((o: string) => o.trim())
+      .filter(Boolean),
+    credentials: true,
+  },
   namespace: '/notifications',
 })
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {

@@ -15,6 +15,7 @@ import { BillingService } from './billing.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 
 @Controller('admin/billing')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -37,7 +38,7 @@ export class BillingAdminController {
   }
 
   @Patch('plans/:id')
-  updatePlan(@Param('id') id: string, @Body() dto: UpdatePlanDto) {
+  updatePlan(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdatePlanDto) {
     return this.billingService.updatePlan(id, dto);
   }
 }

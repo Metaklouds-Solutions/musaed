@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, PipelineStage } from 'mongoose';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
@@ -39,6 +39,8 @@ export interface IntentBucketDto {
 
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(Customer.name) private customerModel: Model<CustomerDocument>,
@@ -47,6 +49,7 @@ export class ReportsService {
   ) {}
 
   async getPerformance(tenantId: string, dateFrom?: string, dateTo?: string) {
+    try {
     const tid = new Types.ObjectId(tenantId);
     const match: Record<string, unknown> = { tenantId: tid };
 
@@ -127,6 +130,10 @@ export class ReportsService {
         avgDurationMs: avgCallDuration[0]?.value ?? 0,
       },
     };
+    } catch (error) {
+      this.logger.error('getPerformance aggregation failed', error);
+      throw new InternalServerErrorException('Failed to generate performance report');
+    }
   }
 
   async getOutcomesByDay(tenantId: string, dateFrom?: string, dateTo?: string) {
@@ -395,32 +402,37 @@ export class ReportsService {
     dateFrom?: string,
     dateTo?: string,
   ): Promise<SentimentBucketDto[]> {
-    const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid, sentiment: { $nin: [null, ''] } };
-    if (dateFrom || dateTo) {
-      const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
-      match.createdAt = dateFilter;
+    try {
+      const tid = new Types.ObjectId(tenantId);
+      const match: Record<string, unknown> = { tenantId: tid, sentiment: { $nin: [null, ''] } };
+      if (dateFrom || dateTo) {
+        const dateFilter: Record<string, Date> = {};
+        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        match.createdAt = dateFilter;
+      }
+      const rows = await this.callSessionModel.aggregate<{ _id: string; count: number }>([
+        { $match: match },
+        { $group: { _id: { $toLower: { $ifNull: ['$sentiment', 'unknown'] } }, count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]);
+      const total = rows.reduce((acc, r) => acc + r.count, 0);
+      const labels: Record<string, string> = {
+        positive: 'Positive',
+        negative: 'Negative',
+        neutral: 'Neutral',
+        mixed: 'Mixed',
+      };
+      return rows.map((r) => ({
+        label: labels[r._id] ?? r._id,
+        range: r._id,
+        count: r.count,
+        percentage: total > 0 ? (r.count / total) * 100 : 0,
+      }));
+    } catch (error) {
+      this.logger.error('getSentimentDistribution aggregation failed', error);
+      throw new InternalServerErrorException('Failed to generate sentiment distribution');
     }
-    const rows = await this.callSessionModel.aggregate<{ _id: string; count: number }>([
-      { $match: match },
-      { $group: { _id: { $toLower: { $ifNull: ['$sentiment', 'unknown'] } }, count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-    const total = rows.reduce((acc, r) => acc + r.count, 0);
-    const labels: Record<string, string> = {
-      positive: 'Positive',
-      negative: 'Negative',
-      neutral: 'Neutral',
-      mixed: 'Mixed',
-    };
-    return rows.map((r) => ({
-      label: labels[r._id] ?? r._id,
-      range: r._id,
-      count: r.count,
-      percentage: total > 0 ? (r.count / total) * 100 : 0,
-    }));
   }
 
   async getPeakHours(
@@ -428,26 +440,31 @@ export class ReportsService {
     dateFrom?: string,
     dateTo?: string,
   ): Promise<PeakHourPointDto[]> {
-    const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
-      const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
-      match.createdAt = dateFilter;
+    try {
+      const tid = new Types.ObjectId(tenantId);
+      const match: Record<string, unknown> = { tenantId: tid };
+      if (dateFrom || dateTo) {
+        const dateFilter: Record<string, Date> = {};
+        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        match.createdAt = dateFilter;
+      }
+      const rows = await this.callSessionModel.aggregate<{ _id: number; count: number }>([
+        { $match: match },
+        { $project: { hour: { $hour: '$createdAt' } } },
+        { $group: { _id: '$hour', count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]);
+      const byHour = new Map(rows.map((r) => [r._id, r.count]));
+      return Array.from({ length: 24 }, (_, h) => ({
+        hour: h,
+        label: `${h}:00`,
+        count: byHour.get(h) ?? 0,
+      }));
+    } catch (error) {
+      this.logger.error('getPeakHours aggregation failed', error);
+      throw new InternalServerErrorException('Failed to generate peak hours report');
     }
-    const rows = await this.callSessionModel.aggregate<{ _id: number; count: number }>([
-      { $match: match },
-      { $project: { hour: { $hour: '$createdAt' } } },
-      { $group: { _id: '$hour', count: { $sum: 1 } } },
-      { $sort: { _id: 1 } },
-    ]);
-    const byHour = new Map(rows.map((r) => [r._id, r.count]));
-    return Array.from({ length: 24 }, (_, h) => ({
-      hour: h,
-      label: `${h}:00`,
-      count: byHour.get(h) ?? 0,
-    }));
   }
 
   async getIntentDistribution(
@@ -455,27 +472,32 @@ export class ReportsService {
     dateFrom?: string,
     dateTo?: string,
   ): Promise<IntentBucketDto[]> {
-    const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = {
-      tenantId: tid,
-      'metadata.intent': { $exists: true, $nin: [null, ''] },
-    };
-    if (dateFrom || dateTo) {
-      const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
-      match.createdAt = dateFilter;
+    try {
+      const tid = new Types.ObjectId(tenantId);
+      const match: Record<string, unknown> = {
+        tenantId: tid,
+        'metadata.intent': { $exists: true, $nin: [null, ''] },
+      };
+      if (dateFrom || dateTo) {
+        const dateFilter: Record<string, Date> = {};
+        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        match.createdAt = dateFilter;
+      }
+      const rows = await this.callSessionModel.aggregate<{ _id: string; count: number }>([
+        { $match: match },
+        { $group: { _id: { $toString: '$metadata.intent' }, count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]);
+      const total = rows.reduce((acc, r) => acc + r.count, 0);
+      return rows.map((r) => ({
+        label: r._id,
+        count: r.count,
+        percentage: total > 0 ? (r.count / total) * 100 : 0,
+      }));
+    } catch (error) {
+      this.logger.error('getIntentDistribution aggregation failed', error);
+      throw new InternalServerErrorException('Failed to generate intent distribution');
     }
-    const rows = await this.callSessionModel.aggregate<{ _id: string; count: number }>([
-      { $match: match },
-      { $group: { _id: { $toString: '$metadata.intent' }, count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-    const total = rows.reduce((acc, r) => acc + r.count, 0);
-    return rows.map((r) => ({
-      label: r._id,
-      count: r.count,
-      percentage: total > 0 ? (r.count / total) * 100 : 0,
-    }));
   }
 }

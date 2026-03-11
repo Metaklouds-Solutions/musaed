@@ -31,6 +31,9 @@ pnpm-debug.log*
 .cursor/
 .agents/
 
+# Test artifacts with sensitive data
+api-test-results.json
+
 # Misc
 *.tsbuildinfo
 .cache/

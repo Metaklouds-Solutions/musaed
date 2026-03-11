@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { parsePagination } from '../common/helpers/parse-pagination';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
@@ -44,17 +45,20 @@ export class NotificationsController {
   async markAllAsRead(@Request() req: AuthenticatedRequest) {
     const userId = req.user._id.toString();
     await this.notificationsService.markAllAsRead(userId);
+    return { ok: true };
   }
 
   @Patch(':id/read')
-  async markAsRead(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  async markAsRead(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
     const userId = req.user._id.toString();
     await this.notificationsService.markAsRead(id, userId);
+    return { ok: true };
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  async delete(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
     const userId = req.user._id.toString();
     await this.notificationsService.delete(id, userId);
+    return { ok: true };
   }
 }

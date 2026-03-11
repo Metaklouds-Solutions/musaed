@@ -12,6 +12,12 @@ export type UserDocument = User & Document;
       return ret;
     },
   },
+  toObject: {
+    transform: (_doc: unknown, ret: Record<string, unknown>) => {
+      delete ret.passwordHash;
+      return ret;
+    },
+  },
 })
 export class User {
   @Prop({ required: true, lowercase: true })

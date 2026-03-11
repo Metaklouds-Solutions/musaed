@@ -624,7 +624,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-  private isTruthy(value: string): boolean {
-    return value.toLowerCase() === 'true' || value === '1';
+  private isTruthy(value: string | boolean | undefined): boolean {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true' || value === '1';
+    return false;
   }
 }

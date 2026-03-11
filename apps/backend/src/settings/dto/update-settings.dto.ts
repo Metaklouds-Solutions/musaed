@@ -1,4 +1,5 @@
-import { IsOptional, IsObject, IsString, IsArray, Allow } from 'class-validator';
+import { IsOptional, IsObject, IsString, IsArray, Allow, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class UpdateSettingsDto {
   @IsOptional()
@@ -21,11 +22,15 @@ export class UpdateSettingsDto {
   @IsOptional()
   appointmentReminders?: { advanceMinutes?: number; channel?: string };
 
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   timezone?: string;
 
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   locale?: string;
 }

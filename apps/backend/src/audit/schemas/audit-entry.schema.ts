@@ -8,8 +8,8 @@ export class AuditEntry {
   @Prop({ required: true })
   action: string;
 
-  @Prop({ required: true })
-  userId: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: false })
+  userId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Tenant', default: null })
   tenantId: Types.ObjectId | null;
@@ -25,3 +25,4 @@ export const AuditEntrySchema = SchemaFactory.createForClass(AuditEntry);
 
 AuditEntrySchema.index({ timestamp: -1 });
 AuditEntrySchema.index({ tenantId: 1, timestamp: -1 });
+AuditEntrySchema.index({ userId: 1 });

@@ -1,4 +1,5 @@
-import { ArrayNotEmpty, IsArray, IsIn, IsMongoId, IsOptional, IsString } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsIn, IsMongoId, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 /**
  * Creates a tenant-specific agent instance from a template.
@@ -7,8 +8,10 @@ export class CreateAgentInstanceDto {
   @IsMongoId()
   templateId: string;
 
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   name?: string;
 
   @IsArray()
@@ -18,5 +21,7 @@ export class CreateAgentInstanceDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(50)
+  @IsIn(['basic', 'standard', 'advanced', 'enterprise'])
   capabilityLevel?: string;
 }

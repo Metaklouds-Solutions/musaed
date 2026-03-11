@@ -6,6 +6,7 @@ import { Connection } from 'mongoose';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { envValidationSchema } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { EmailModule } from './email/email.module';
 import { AuthModule } from './auth/auth.module';
@@ -37,11 +38,16 @@ import { RetellModule } from './retell/retell.module';
 import { AgentToolsModule } from './agent-tools/agent-tools.module';
 import { CallsModule } from './calls/calls.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { RunsModule } from './runs/runs.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+      validationOptions: { abortEarly: false },
+    }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
@@ -108,6 +114,7 @@ import { MetricsModule } from './metrics/metrics.module';
     AgentToolsModule,
     CallsModule,
     MetricsModule,
+    RunsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

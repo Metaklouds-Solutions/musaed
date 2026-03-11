@@ -18,6 +18,7 @@ import { UpdateTemplateDto } from './dto/update-template.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { ImportTemplateDto } from './dto/import-template.dto';
 import { parsePagination } from '../common/helpers/parse-pagination';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 
 @Controller('admin/templates')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -48,17 +49,17 @@ export class TemplatesController {
   }
 
   @Get(':id')
-  findById(@Param('id') id: string) {
+  findById(@Param('id', ParseObjectIdPipe) id: string) {
     return this.templatesService.findById(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTemplateDto) {
+  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateTemplateDto) {
     return this.templatesService.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.templatesService.remove(id);
   }
 }

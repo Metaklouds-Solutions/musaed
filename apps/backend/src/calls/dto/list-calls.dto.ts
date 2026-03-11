@@ -1,16 +1,18 @@
-import { IsIn, IsMongoId, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsIn, IsMongoId, IsOptional, IsString, Matches } from 'class-validator';
 
+/**
+ * Query DTO for listing call sessions with pagination, date range, and filters.
+ */
 export class ListCallsDto {
   @IsOptional()
-  @IsString()
+  @IsDateString()
   from?: string;
 
   @IsOptional()
-  @IsString()
+  @IsDateString()
   to?: string;
 
   @IsOptional()
-  @IsString()
   @IsIn(['unknown', 'booked', 'escalated', 'failed', 'info_only'])
   outcome?: string;
 
@@ -23,10 +25,10 @@ export class ListCallsDto {
   tenantId?: string;
 
   @IsOptional()
-  @IsString()
+  @Matches(/^\d+$/, { message: 'page must be a numeric string' })
   page?: string;
 
   @IsOptional()
-  @IsString()
+  @Matches(/^\d+$/, { message: 'limit must be a numeric string' })
   limit?: string;
 }

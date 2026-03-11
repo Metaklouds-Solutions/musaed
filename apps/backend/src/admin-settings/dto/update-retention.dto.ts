@@ -1,6 +1,6 @@
 import {
   IsOptional, IsString, IsBoolean, IsNumber,
-  IsArray, ValidateNested, Min,
+  IsArray, ValidateNested, Min, MaxLength,
   ValidatorConstraint, ValidatorConstraintInterface, Validate,
   ValidationArguments,
 } from 'class-validator';
@@ -8,9 +8,11 @@ import { Type } from 'class-transformer';
 
 class RetentionPolicyDto {
   @IsString()
+  @MaxLength(100)
   id: string;
 
   @IsString()
+  @MaxLength(200)
   name: string;
 
   @IsNumber()
@@ -43,22 +45,23 @@ export class UpdateRetentionDto {
   @Validate(RequireIdOrPolicies)
   private readonly _validate?: undefined;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
+  @MaxLength(100)
   id?: string;
 
-  @IsOptional()
   @IsBoolean()
+  @IsOptional()
   enabled?: boolean;
 
-  @IsOptional()
   @IsNumber()
   @Min(1)
+  @IsOptional()
   days?: number;
 
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RetentionPolicyDto)
+  @IsOptional()
   policies?: RetentionPolicyDto[];
 }

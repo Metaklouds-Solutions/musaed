@@ -6,7 +6,9 @@ import {
   IsNumber,
   IsIn,
   Matches,
+  MaxLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateBookingDto {
   @IsMongoId()
@@ -20,7 +22,9 @@ export class CreateBookingDto {
   @IsOptional()
   locationId?: string;
 
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MaxLength(200)
   serviceType: string;
 
   @IsDateString()
@@ -39,5 +43,6 @@ export class CreateBookingDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(2000)
   notes?: string;
 }

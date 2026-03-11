@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Patch, Request, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Patch, Delete, Request, Query, BadRequestException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -22,6 +22,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async refresh(@Body() dto: RefreshDto) {
     return this.authService.refresh(dto.refreshToken);
   }
@@ -43,11 +44,13 @@ export class AuthController {
   }
 
   @Get('verify-token')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async verifyToken(@Query('token') token: string) {
     return this.authService.verifyToken(token);
   }
 
   @Post('setup-password')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async setupPassword(@Body() dto: SetupPasswordDto) {
     return this.authService.setupPassword(dto.token, dto.password);
   }
@@ -78,5 +81,16 @@ export class AuthController {
     const userId = req.user?._id;
     if (!userId) throw new BadRequestException('User ID not found');
     return this.authService.changePassword(userId, dto.currentPassword, dto.newPassword);
+  }
+
+  /**
+   * Soft-delete the authenticated user's account and revoke all sessions.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Delete('me')
+  async deleteAccount(@Request() req: AuthenticatedRequest) {
+    const userId = req.user?._id;
+    if (!userId) throw new BadRequestException('User ID not found');
+    return this.authService.deleteAccount(userId);
   }
 }

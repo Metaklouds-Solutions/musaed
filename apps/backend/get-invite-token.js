@@ -1,7 +1,16 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
+
 const email = process.argv[2];
+const uri = process.env.MONGODB_URI;
+
+if (!uri) {
+  console.error('MONGODB_URI env var is required. Set it in .env or export it.');
+  process.exit(1);
+}
+
 async function run() {
-  await mongoose.connect('mongodb://localhost:27017/musaed');
+  await mongoose.connect(uri);
   const users = mongoose.connection.db.collection('users');
   const user = await users.findOne({ email });
   if (!user) { console.log('NO_USER'); await mongoose.disconnect(); return; }
@@ -10,4 +19,7 @@ async function run() {
   if (t) { console.log(t.token); } else { console.log('NO_TOKEN'); }
   await mongoose.disconnect();
 }
-run();
+run().catch((err) => {
+  console.error('get-invite-token failed:', err.message ?? err);
+  process.exit(1);
+});

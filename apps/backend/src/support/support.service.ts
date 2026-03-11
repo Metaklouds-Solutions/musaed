@@ -98,6 +98,23 @@ export class SupportService {
     return ticket;
   }
 
+  /**
+   * Updates the status of a support ticket, scoped by optional tenantId.
+   */
+  async updateStatus(id: string, status: string, tenantId?: string) {
+    const filter: FilterQuery<SupportTicketDocument> = { _id: id };
+    if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
+
+    const update: Record<string, unknown> = { status };
+    if (status === 'closed' || status === 'resolved') {
+      update.closedAt = new Date();
+    }
+
+    const ticket = await this.ticketModel.findOneAndUpdate(filter, { $set: update }, { new: true });
+    if (!ticket) throw new NotFoundException('Ticket not found');
+    return ticket;
+  }
+
   async addMessage(id: string, userId: string, dto: AddMessageDto, tenantId?: string) {
     const filter: FilterQuery<SupportTicketDocument> = { _id: id };
     if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);

@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -15,7 +14,10 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { CallsService } from './calls.service';
 import { ListCallsDto } from './dto/list-calls.dto';
+import { CreateWebCallDto } from './dto/create-web-call.dto';
 import { parsePagination } from '../common/helpers/parse-pagination';
+import { requireTenantId } from '../common/helpers/require-tenant-id';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 
 @Controller('tenant/calls')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -24,7 +26,7 @@ export class TenantCallsController {
 
   @Get()
   list(@Request() req: AuthenticatedRequest, @Query() query: ListCallsDto) {
-    const tenantId = this.requireTenantId(req);
+    const tenantId = requireTenantId(req);
     const pagination = parsePagination({ page: query.page, limit: query.limit });
     return this.callsService.listForTenant(tenantId, {
       ...pagination,
@@ -38,33 +40,26 @@ export class TenantCallsController {
   @Post('web-call')
   createWebCall(
     @Request() req: AuthenticatedRequest,
-    @Body() body: { agentInstanceId: string },
+    @Body() dto: CreateWebCallDto,
   ) {
-    const tenantId = this.requireTenantId(req);
-    return this.callsService.createWebCall(body.agentInstanceId, tenantId);
+    const tenantId = requireTenantId(req);
+    return this.callsService.createWebCall(dto.agentInstanceId, tenantId);
   }
 
   @Get('by-retell/:callId')
   detailByRetell(@Request() req: AuthenticatedRequest, @Param('callId') callId: string) {
-    const tenantId = this.requireTenantId(req);
+    const tenantId = requireTenantId(req);
     return this.callsService.getByRetellIdForTenant(callId, tenantId);
   }
 
   @Get(':id')
   detail(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Query('enrich') enrich?: string,
   ) {
-    const tenantId = this.requireTenantId(req);
+    const tenantId = requireTenantId(req);
     return this.callsService.getByIdForTenant(id, tenantId, enrich === 'true');
-  }
-
-  private requireTenantId(req: AuthenticatedRequest): string {
-    if (!req.tenantId) {
-      throw new BadRequestException('Tenant context is required');
-    }
-    return req.tenantId;
   }
 }
 
@@ -97,7 +92,7 @@ export class AdminCallsController {
   }
 
   @Get(':id')
-  detail(@Param('id') id: string, @Query('enrich') enrich?: string) {
+  detail(@Param('id', ParseObjectIdPipe) id: string, @Query('enrich') enrich?: string) {
     return this.callsService.getByIdForAdmin(id, enrich === 'true');
   }
 }

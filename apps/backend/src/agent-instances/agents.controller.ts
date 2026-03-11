@@ -12,6 +12,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { Throttle } from '@nestjs/throttler';
 import { AgentsService } from './agents.service';
 import { AgentHealthService } from './agent-health.service';
@@ -21,6 +22,7 @@ import { AuthenticatedRequest } from '../common/interfaces/authenticated-request
 import { CreateAgentInstanceDto } from './dto/create-agent-instance.dto';
 import { StartConversationDto } from './dto/start-conversation.dto';
 import { AssignAgentDto } from './dto/assign-agent.dto';
+import { SendChatMessageDto } from './dto/send-chat-message.dto';
 import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('tenant/agents')
@@ -37,13 +39,13 @@ export class AgentsTenantController {
   }
 
   @Get(':id')
-  findById(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  findById(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.agentsService.findById(id, req.tenantId!);
   }
 
   @Patch(':id/prompts')
   updatePrompts(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Request() req: AuthenticatedRequest,
     @Body() dto: UpdatePromptsDto,
   ) {
@@ -51,18 +53,18 @@ export class AgentsTenantController {
   }
 
   @Post(':id/sync')
-  syncAgent(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  syncAgent(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.agentsService.syncAgent(id, req.tenantId!);
   }
 
   @Get(':id/deployments')
-  getDeployments(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  getDeployments(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.agentsService.getDeploymentsForTenant(id, req.tenantId!);
   }
 
   @Post(':id/conversations/start')
   startConversation(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Request() req: AuthenticatedRequest,
     @Body() dto: StartConversationDto,
   ) {
@@ -79,15 +81,15 @@ export class AgentsTenantController {
   @Post('chats/:chatId/messages')
   sendChatMessage(
     @Param('chatId') chatId: string,
-    @Body() dto: { messages: unknown[] },
+    @Body() dto: SendChatMessageDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.agentsService.sendChatMessageForTenant(chatId, dto.messages, req.tenantId!);
+    return this.agentsService.sendChatMessageForTenant(chatId, dto.content, req.tenantId!);
   }
 
   @Get(':id/analytics')
   getAnalytics(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Request() req: AuthenticatedRequest,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
@@ -101,7 +103,7 @@ export class AgentsTenantController {
   }
 
   @Get(':id/health')
-  getHealth(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  getHealth(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.agentHealthService.getHealth(id, req.tenantId!);
   }
 }
@@ -128,13 +130,13 @@ export class AgentsAdminController {
   }
 
   @Get('tenants/:tenantId')
-  findAllByTenant(@Param('tenantId') tenantId: string) {
+  findAllByTenant(@Param('tenantId', ParseObjectIdPipe) tenantId: string) {
     return this.agentsService.findAllForAdminTenant(tenantId);
   }
 
   @Post('tenants/:tenantId')
   createForTenant(
-    @Param('tenantId') tenantId: string,
+    @Param('tenantId', ParseObjectIdPipe) tenantId: string,
     @Body() dto: CreateAgentInstanceDto,
   ) {
     return this.agentsService.createForTenant(tenantId, dto);
@@ -146,44 +148,44 @@ export class AgentsAdminController {
   }
 
   @Post(':id/assign')
-  assign(@Param('id') id: string, @Body() dto: AssignAgentDto) {
+  assign(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: AssignAgentDto) {
     return this.agentsService.assignToTenant(id, dto.tenantId);
   }
 
   @Post(':id/unassign')
-  unassign(@Param('id') id: string) {
+  unassign(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.unassignFromTenant(id);
   }
 
   @Post(':id/deploy')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  deploy(@Param('id') id: string) {
+  deploy(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.deployForAdmin(id);
   }
 
   @Get(':id/deployments')
-  getDeployments(@Param('id') id: string) {
+  getDeployments(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.getDeploymentsForAdmin(id);
   }
 
   @Get(':id/retell-config')
-  getRetellConfig(@Param('id') id: string) {
+  getRetellConfig(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.syncAgentAdmin(id);
   }
 
   @Get(':id')
-  findById(@Param('id') id: string) {
+  findById(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.findById(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateAgentDto) {
+  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateAgentDto) {
     return this.agentsService.update(id, dto);
   }
 
   @Get(':id/analytics')
   getAnalytics(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
@@ -196,7 +198,7 @@ export class AgentsAdminController {
   }
 
   @Get(':id/health')
-  getHealth(@Param('id') id: string) {
+  getHealth(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentHealthService.getHealth(id);
   }
 }
@@ -208,7 +210,7 @@ export class AgentsAdminV1Controller {
 
   @Post(':id/deploy')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  deploy(@Param('id') id: string) {
+  deploy(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.deployForAdmin(id);
   }
 }

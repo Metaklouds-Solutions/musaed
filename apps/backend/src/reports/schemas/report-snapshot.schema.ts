@@ -68,7 +68,7 @@ export class ReportSnapshot {
   @Prop({ type: [PeakHourBucket], default: [] })
   peakHours: PeakHourBucket[];
 
-  @Prop({ default: null })
+  @Prop({ type: Number, default: null })
   avgDurationMs: number | null;
 }
 

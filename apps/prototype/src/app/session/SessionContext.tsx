@@ -65,6 +65,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [login]);
 
   const logout = useCallback(() => {
+    const rt = getRefreshToken();
+    if (rt) {
+      fetch(`${BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: rt }),
+      }).catch(() => {
+        /* best-effort server-side revocation */
+      });
+    }
     clearTokens();
     setSession(null);
     setSessionStartedAt(null);

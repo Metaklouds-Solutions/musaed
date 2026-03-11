@@ -115,9 +115,10 @@ export class AgentsService {
         } else {
           retellData = await this.retellClient.getChatAgent(instance.retellAgentId);
         }
-        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as any;
+        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as Record<string, unknown>;
       } catch (err) {
-        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${err.message}`);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${errMsg}`);
       }
     }
 
@@ -139,9 +140,10 @@ export class AgentsService {
         } else {
           retellData = await this.retellClient.getChatAgent(instance.retellAgentId);
         }
-        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as any;
+        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as Record<string, unknown>;
       } catch (err) {
-        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${err.message}`);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${errMsg}`);
       }
     }
 
@@ -328,17 +330,17 @@ export class AgentsService {
     return chat;
   }
 
-  async sendChatMessage(chatId: string, messages: unknown[]) {
-    return this.retellClient.createChatCompletion(chatId, messages);
+  async sendChatMessage(chatId: string, content: string) {
+    return this.retellClient.createChatCompletion(chatId, content);
   }
 
   /**
    * Sends a chat message after verifying the chat belongs to the tenant.
    */
-  async sendChatMessageForTenant(chatId: string, messages: unknown[], tenantId: string) {
+  async sendChatMessageForTenant(chatId: string, content: string, tenantId: string) {
     const chat = await this.retellClient.getChat(chatId);
     this.verifyChatTenantOwnership(chat, tenantId);
-    return this.retellClient.createChatCompletion(chatId, messages);
+    return this.retellClient.createChatCompletion(chatId, content);
   }
 
   /**

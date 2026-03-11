@@ -1,11 +1,16 @@
 import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
+import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
+import { PERMISSIONS } from '../common/constants/permissions';
 import { ReportsService } from './reports.service';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { requireTenantId } from '../common/helpers/require-tenant-id';
 
 @Controller('tenant/reports')
-@UseGuards(JwtAuthGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
+@RequirePermissions(PERMISSIONS.REPORTS_READ)
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
 
@@ -15,7 +20,8 @@ export class ReportsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return this.reportsService.getPerformance(req.tenantId!, dateFrom, dateTo);
+    const tenantId = requireTenantId(req);
+    return this.reportsService.getPerformance(tenantId, dateFrom, dateTo);
   }
 
   @Get('outcomes-by-day')
@@ -24,7 +30,8 @@ export class ReportsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return this.reportsService.getOutcomesByDay(req.tenantId!, dateFrom, dateTo);
+    const tenantId = requireTenantId(req);
+    return this.reportsService.getOutcomesByDay(tenantId, dateFrom, dateTo);
   }
 
   @Get('outcomes-by-version')
@@ -33,7 +40,8 @@ export class ReportsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return this.reportsService.getOutcomesByVersion(req.tenantId!, dateFrom, dateTo);
+    const tenantId = requireTenantId(req);
+    return this.reportsService.getOutcomesByVersion(tenantId, dateFrom, dateTo);
   }
 
   @Get('performance-for-period')
@@ -41,7 +49,8 @@ export class ReportsController {
     @Request() req: AuthenticatedRequest,
     @Query('period') period?: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth',
   ) {
-    return this.reportsService.getPerformanceForPeriod(req.tenantId!, period ?? 'thisWeek');
+    const tenantId = requireTenantId(req);
+    return this.reportsService.getPerformanceForPeriod(tenantId, period ?? 'thisWeek');
   }
 
   @Get('sentiment-distribution')
@@ -50,7 +59,8 @@ export class ReportsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return this.reportsService.getSentimentDistribution(req.tenantId!, dateFrom, dateTo);
+    const tenantId = requireTenantId(req);
+    return this.reportsService.getSentimentDistribution(tenantId, dateFrom, dateTo);
   }
 
   @Get('peak-hours')
@@ -59,7 +69,8 @@ export class ReportsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return this.reportsService.getPeakHours(req.tenantId!, dateFrom, dateTo);
+    const tenantId = requireTenantId(req);
+    return this.reportsService.getPeakHours(tenantId, dateFrom, dateTo);
   }
 
   @Get('intent-distribution')
@@ -68,6 +79,7 @@ export class ReportsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return this.reportsService.getIntentDistribution(req.tenantId!, dateFrom, dateTo);
+    const tenantId = requireTenantId(req);
+    return this.reportsService.getIntentDistribution(tenantId, dateFrom, dateTo);
   }
 }

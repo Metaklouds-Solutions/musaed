@@ -53,7 +53,7 @@ export class CustomersService {
     if (!customer) throw new NotFoundException('Customer not found');
 
     const bookings = await this.bookingModel
-      .find({ customerId: customer._id })
+      .find({ customerId: customer._id, tenantId: new Types.ObjectId(tenantId) })
       .sort({ date: -1 })
       .limit(10);
 
@@ -89,7 +89,10 @@ export class CustomersService {
     });
     if (!customer) throw new NotFoundException('Customer not found');
 
-    const bookings = await this.bookingModel.find({ customerId: customer._id });
+    const bookings = await this.bookingModel.find({
+      customerId: customer._id,
+      tenantId: new Types.ObjectId(tenantId),
+    });
 
     return {
       customer: customer.toObject(),
