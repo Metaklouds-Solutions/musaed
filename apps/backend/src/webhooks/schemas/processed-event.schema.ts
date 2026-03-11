@@ -5,7 +5,7 @@ export type ProcessedEventDocument = ProcessedEvent & Document;
 
 @Schema({ timestamps: true, collection: 'processed_events' })
 export class ProcessedEvent {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   eventId: string;
 
   @Prop({ required: true })
@@ -19,3 +19,5 @@ export class ProcessedEvent {
 }
 
 export const ProcessedEventSchema = SchemaFactory.createForClass(ProcessedEvent);
+
+ProcessedEventSchema.index({ eventId: 1, source: 1 }, { unique: true });

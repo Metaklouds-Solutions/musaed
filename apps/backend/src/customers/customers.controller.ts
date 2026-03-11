@@ -16,6 +16,7 @@ import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('tenant/customers')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -29,9 +30,9 @@ export class CustomersController {
     @Query('limit') limit?: string,
     @Query('search') search?: string,
   ) {
+    const pagination = parsePagination({ page, limit });
     return this.customersService.findAllForTenant(req.tenantId!, {
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
       search,
     });
   }

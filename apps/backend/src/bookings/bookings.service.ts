@@ -45,7 +45,8 @@ export class BookingsService {
         .populate('providerId')
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ date: -1, timeSlot: 1 }),
+        .sort({ date: -1, timeSlot: 1 })
+        .lean(),
       this.bookingModel.countDocuments(filter),
     ]);
 

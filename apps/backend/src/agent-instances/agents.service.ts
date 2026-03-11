@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -35,7 +36,8 @@ export class AgentsService {
     return this.instanceModel
       .find({ tenantId: new Types.ObjectId(tenantId), status: { $ne: 'deleted' } })
       .populate('templateId', 'name channel')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
   }
 
   async findAllAdmin(query: { status?: string; page?: number; limit?: number }) {
@@ -50,7 +52,8 @@ export class AgentsService {
         .populate('templateId', 'name channel')
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort({ createdAt: -1 })
+        .lean(),
       this.instanceModel.countDocuments(filter),
     ]);
 
@@ -73,7 +76,8 @@ export class AgentsService {
   async findByTenantId(tenantId: string) {
     return this.instanceModel
       .find({ tenantId: new Types.ObjectId(tenantId), status: { $ne: 'deleted' } })
-      .populate('templateId', 'name channel');
+      .populate('templateId', 'name channel')
+      .lean();
   }
 
   async update(id: string, dto: UpdateAgentDto) {
@@ -215,7 +219,8 @@ export class AgentsService {
     return this.instanceModel
       .find({ tenantId: new Types.ObjectId(tenantId), status: { $ne: 'deleted' } })
       .populate('templateId', 'name slug channel supportedChannels capabilityLevel')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
   }
 
   async deployForAdmin(id: string) {
@@ -314,8 +319,45 @@ export class AgentsService {
     return this.retellClient.getChat(chatId);
   }
 
-  async sendChatMessage(chatId: string, messages: any[]) {
+  /**
+   * Retrieves a chat, verifying it belongs to the given tenant via metadata.
+   */
+  async getChatForTenant(chatId: string, tenantId: string) {
+    const chat = await this.retellClient.getChat(chatId);
+    this.verifyChatTenantOwnership(chat, tenantId);
+    return chat;
+  }
+
+  async sendChatMessage(chatId: string, messages: unknown[]) {
     return this.retellClient.createChatCompletion(chatId, messages);
+  }
+
+  /**
+   * Sends a chat message after verifying the chat belongs to the tenant.
+   */
+  async sendChatMessageForTenant(chatId: string, messages: unknown[], tenantId: string) {
+    const chat = await this.retellClient.getChat(chatId);
+    this.verifyChatTenantOwnership(chat, tenantId);
+    return this.retellClient.createChatCompletion(chatId, messages);
+  }
+
+  /**
+   * Verifies the chat's metadata.tenant_id matches the requesting tenant.
+   */
+  private verifyChatTenantOwnership(chat: unknown, tenantId: string): void {
+    const metadata =
+      chat !== null && typeof chat === 'object' && 'metadata' in chat
+        ? (chat as Record<string, unknown>).metadata
+        : null;
+
+    const chatTenantId =
+      metadata !== null && typeof metadata === 'object'
+        ? (metadata as Record<string, unknown>)['tenant_id']
+        : undefined;
+
+    if (chatTenantId !== tenantId) {
+      throw new ForbiddenException('Chat does not belong to this tenant');
+    }
   }
 
   private async getTemplateOrThrow(templateId: string): Promise<AgentTemplateDocument> {

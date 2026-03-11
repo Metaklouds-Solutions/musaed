@@ -45,6 +45,7 @@ export class ReportAggregationService {
     const tenants = await this.tenantModel
       .find({ deletedAt: null })
       .select('_id')
+      .limit(10000)
       .lean();
 
     for (const t of tenants) {
@@ -72,6 +73,7 @@ export class ReportAggregationService {
         status: 'analyzed',
       })
       .select('outcome sentiment durationMs createdAt')
+      .limit(50000)
       .lean();
 
     const outcomes = {

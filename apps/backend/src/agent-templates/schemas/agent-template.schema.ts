@@ -75,3 +75,4 @@ AgentTemplateSchema.index({ channel: 1 });
 AgentTemplateSchema.index({ isDefault: 1 });
 AgentTemplateSchema.index({ name: 1 });
 AgentTemplateSchema.index({ slug: 1 }, { unique: true, sparse: true });
+AgentTemplateSchema.index({ deletedAt: 1 }, { sparse: true });

@@ -1,7 +1,10 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { AdminSettingsService } from './admin-settings.service';
+import { UpdateRetentionDto } from './dto/update-retention.dto';
+import { UpdateIntegrationsDto } from './dto/update-integrations.dto';
+import { UpdateScheduledReportsDto } from './dto/update-scheduled-reports.dto';
 
 @Controller('admin/settings')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -19,16 +22,16 @@ export class AdminSettingsController {
   }
 
   @Patch('retention')
-  async updateRetention(
-    @Body() body: { id?: string; enabled?: boolean; days?: number; policies?: { id: string; name: string; days: number; enabled: boolean }[] },
-  ) {
-    if (body.policies?.length) {
-      await this.adminSettingsService.setRetentionPolicies(body.policies);
-    } else if (body.id) {
-      await this.adminSettingsService.updateRetentionPolicy(body.id, {
-        enabled: body.enabled,
-        days: body.days,
+  async updateRetention(@Body() dto: UpdateRetentionDto) {
+    if (dto.policies?.length) {
+      await this.adminSettingsService.setRetentionPolicies(dto.policies);
+    } else if (dto.id) {
+      await this.adminSettingsService.updateRetentionPolicy(dto.id, {
+        enabled: dto.enabled,
+        days: dto.days,
       });
+    } else {
+      throw new BadRequestException('Either "id" or "policies" must be provided.');
     }
     return this.adminSettingsService.getRetentionPolicies();
   }
@@ -39,9 +42,9 @@ export class AdminSettingsController {
   }
 
   @Patch('integrations')
-  async updateIntegrations(@Body() body: { integrations: { id: string; name: string; status: string; config?: Record<string, string> }[] }) {
-    if (body.integrations) {
-      await this.adminSettingsService.updateIntegrations(body.integrations);
+  async updateIntegrations(@Body() dto: UpdateIntegrationsDto) {
+    if (dto.integrations) {
+      await this.adminSettingsService.updateIntegrations(dto.integrations);
     }
     return this.adminSettingsService.getIntegrations();
   }
@@ -52,10 +55,8 @@ export class AdminSettingsController {
   }
 
   @Patch('scheduled-reports')
-  async updateScheduledReports(
-    @Body() body: { enabled?: boolean; frequency?: string; recipients?: string[]; dayOfWeek?: number; dayOfMonth?: number },
-  ) {
-    await this.adminSettingsService.setScheduledReportConfig(body);
+  async updateScheduledReports(@Body() dto: UpdateScheduledReportsDto) {
+    await this.adminSettingsService.setScheduledReportConfig(dto);
     return this.adminSettingsService.getScheduledReportConfig();
   }
 }

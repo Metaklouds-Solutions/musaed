@@ -2,19 +2,31 @@
 
 ## Overview
 
-Improves scalability and reliability for high-traffic environments through async notification fanout, compound indexes, horizontal scaling preparation, optional report pre-aggregation, and queue depth logging.
+Phase 6 scalability preparation was largely implemented before this phase. This summary documents the existing setup and the enhancement added to complete the plan.
 
 ---
 
-## Files Created
+## Already Implemented (Pre-Phase 6)
 
-| File | Purpose |
-|------|---------|
-| `apps/backend/src/notifications/notifications.queue.service.ts` | Enqueues notification fanout jobs when `QUEUE_NOTIFICATIONS_ENABLED=true` |
-| `apps/backend/src/notifications/workers/notifications.worker.ts` | BullMQ processor: creates notifications, emits WebSocket events, retries on failure, captures errors in Sentry |
-| `apps/backend/src/reports/schemas/report-snapshot.schema.ts` | Schema for daily aggregated call outcomes, sentiment, peak hours |
-| `apps/backend/src/reports/report-aggregation.service.ts` | Daily cron (2 AM) to aggregate call data into report snapshots |
-| `apps/backend/src/queue/queue-depth.logger.ts` | Cron (every 5 min) to log queue depths when `QUEUE_DEPTH_LOGGING_ENABLED=true` |
+| Component | Status |
+|-----------|--------|
+| Call session state ordering | `RETELL_STATUS_ORDER` in webhooks.service.ts; `upsertCallSession` rejects downgrades (`incomingOrder <= currentOrder`) and uses timestamp fallback |
+| Notifications queue | `NotificationsQueueService`, `NotificationsProcessor`; `createForUsers` enqueues when `QUEUE_NOTIFICATIONS_ENABLED=true` |
+| createForAdmins / createForTenantStaff | Both delegate to `createForUsers`, so they use the queue when enabled |
+| Booking indexes | `{ tenantId: 1, date: 1 }`, `{ tenantId: 1, date: 1, status: 1 }`, `{ tenantId: 1, createdAt: -1 }` |
+| Customer indexes | `{ tenantId: 1, deletedAt: 1 }`, `{ tenantId: 1, createdAt: -1 }` |
+| CallSession indexes | `{ tenantId: 1, createdAt: -1 }`, `{ tenantId: 1, outcome: 1 }`, `{ tenantId: 1, 'metadata.intent': 1 }` |
+| MongoDB connection pool | `maxPoolSize` and `minPoolSize` from env in app.module.ts |
+
+---
+
+## Enhancement Added (Phase 6 Completion)
+
+### SupportTicket Compound Index
+
+**File:** `apps/backend/src/support/schemas/support-ticket.schema.ts`
+
+- Added index: `{ tenantId: 1, priority: 1 }` for priority-based queries (e.g. list high-priority tickets per tenant)
 
 ---
 
@@ -22,127 +34,55 @@ Improves scalability and reliability for high-traffic environments through async
 
 | File | Changes |
 |------|---------|
-| `apps/backend/src/queue/queue.constants.ts` | Added `NOTIFICATIONS` queue name |
-| `apps/backend/src/queue/queue.module.ts` | Registered notifications queue, `NotificationsQueueService`, `QueueDepthLogger` |
-| `apps/backend/src/notifications/notifications.service.ts` | Added `createFromQueue()`, `createForUsers()` now enqueues when queue enabled |
-| `apps/backend/src/notifications/notifications.module.ts` | Imports `QueueModule`, adds `NotificationsProcessor` |
-| `apps/backend/src/queue/webhook-queue.service.ts` | Added `getQueueDepth()` |
-| `apps/backend/src/email/email.queue.service.ts` | Added `getQueueDepth()` |
-| `apps/backend/src/queue/queue.module.ts` | Added `QueueDepthLogger` provider |
-| `apps/backend/src/app.module.ts` | Added optional `MONGODB_MAX_POOL_SIZE`, `MONGODB_MIN_POOL_SIZE` |
-| `apps/backend/src/support/schemas/support-ticket.schema.ts` | Added compound index |
-| `apps/backend/src/bookings/schemas/booking.schema.ts` | Added compound indexes |
-| `apps/backend/src/customers/schemas/customer.schema.ts` | Added compound indexes |
-| `apps/backend/src/reports/reports.module.ts` | Added `ReportSnapshot` schema, `ReportAggregationService` |
-| `apps/backend/.env.example` | Added env vars |
+| `apps/backend/src/support/schemas/support-ticket.schema.ts` | Added `{ tenantId: 1, priority: 1 }` index |
 
 ---
 
-## Indexes Added
+## Index Summary
 
-| Schema | Index |
-|--------|-------|
-| **SupportTicket** | `{ tenantId: 1, status: 1, createdAt: -1 }` |
-| **Booking** | `{ tenantId: 1, date: 1, status: 1 }` |
-| **Booking** | `{ tenantId: 1, createdAt: -1 }` |
-| **Customer** | `{ tenantId: 1, deletedAt: 1 }` |
-| **Customer** | `{ tenantId: 1, createdAt: -1 }` |
-| **CallSession** | *(already had)* `{ tenantId: 1, createdAt: -1 }`, `{ tenantId: 1, outcome: 1 }`, `{ callId: 1 }` unique |
-| **ReportSnapshot** | `{ tenantId: 1, snapshotDate: -1 }` unique, `{ snapshotDate: -1 }` |
+| Collection | Indexes |
+|------------|---------|
+| SupportTicket | `{ tenantId: 1 }`, `{ status: 1 }`, `{ createdBy: 1 }`, `{ tenantId: 1, status: 1, createdAt: -1 }`, `{ tenantId: 1, priority: 1 }` |
+| Booking | `{ tenantId: 1, date: 1 }`, `{ tenantId: 1, date: 1, status: 1 }`, `{ tenantId: 1, createdAt: -1 }`, `{ customerId: 1 }` |
+| Customer | `{ tenantId: 1 }`, `{ tenantId: 1, phone: 1 }`, `{ tenantId: 1, email: 1 }`, `{ tenantId: 1, deletedAt: 1 }`, `{ tenantId: 1, createdAt: -1 }` |
+| CallSession | `{ callId: 1 }` (unique), `{ tenantId: 1, createdAt: -1 }`, `{ tenantId: 1, outcome: 1 }`, `{ tenantId: 1, 'metadata.intent': 1 }`, `{ agentInstanceId: 1, createdAt: -1 }` |
 
 ---
 
-## Environment Variables Added
+## Call Session State Ordering
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `QUEUE_WEBHOOKS_ENABLED` | Enable webhook queue | `false` |
-| `QUEUE_NOTIFICATIONS_ENABLED` | Enable notification fanout queue | `false` |
-| `QUEUE_DEPTH_LOGGING_ENABLED` | Log queue depths every 5 min | `false` |
-| `MONGODB_MAX_POOL_SIZE` | MongoDB connection pool max | (unset) |
-| `MONGODB_MIN_POOL_SIZE` | MongoDB connection pool min | (unset) |
-| `REPORT_AGGREGATION_ENABLED` | Enable daily report pre-aggregation | `false` |
+**File:** `apps/backend/src/webhooks/webhooks.service.ts`
+
+- `RETELL_STATUS_ORDER`: `created: 0`, `started: 1`, `ended: 2`, `analyzed: 3`
+- In `upsertCallSession`: if `incomingOrder <= currentOrder`, update is skipped (prevents out-of-order downgrades)
+- Timestamp fallback used when status order is equal
 
 ---
 
-## New Logic
+## Notifications Async Fanout
 
-### 1. Async Notification Fanout
+**Files:** `notifications.service.ts`, `notifications.queue.service.ts`, `workers/notifications.worker.ts`
 
-- `createForUsers()`, `createForAdmins()`, `createForTenantStaff()` enqueue when `QUEUE_NOTIFICATIONS_ENABLED=true` and `REDIS_URL` set
-- Worker processes fanout jobs: creates notifications for each user, emits via WebSocket
-- Logs: `notification_fanout_queued`, `notification_fanout_completed`, `notification_fanout_failed`
-- Sentry captures notification job failures
+- `createForUsers` checks `notificationsQueue?.isEnabled()`; if true, enqueues via `enqueueFanout`
+- `NotificationsProcessor` processes fanout jobs; calls `createFromQueue` per user
+- `createForAdmins` and `createForTenantStaff` both call `createForUsers`, so they use the queue when enabled
+- Env: `QUEUE_NOTIFICATIONS_ENABLED=true` and `REDIS_URL` required for queue
 
-### 2. Horizontal Scaling Preparation
+---
 
-- **No in-memory state for queues**: All jobs in Redis
-- **MongoDB**: Optional `maxPoolSize` / `minPoolSize` via env
-- **Workers**: BullMQ processors run in multiple instances; Redis distributes jobs
+## Horizontal Scaling Notes
 
-### 3. Report Pre-Aggregation
-
-- Daily cron at 2 AM aggregates previous day’s call data per tenant
-- Stores: `totalCalls`, `outcomes`, `sentiment`, `peakHours`, `avgDurationMs`
-- Collection: `report_snapshots`
-
-### 4. Queue Depth Logging
-
-- `QueueDepthLogger` logs `webhooks`, `email`, `notifications` every 5 min when enabled
-- `getQueueDepth()` on WebhookQueueService, EmailQueueService, NotificationsQueueService
+- **MongoDB**: `MONGODB_MAX_POOL_SIZE` and `MONGODB_MIN_POOL_SIZE` in `.env.example`; tune per instance count
+- **Redis**: Required for queues; ensure Redis is shared across backend instances
+- **Pre-aggregation**: Deferred per plan; add if report queries become slow at scale
 
 ---
 
 ## Verification Steps
 
-1. **Build and test**
+1. **Build**
    ```bash
-   cd apps/backend && npm run build && npm test
+   cd apps/backend && npm run build
    ```
 
-2. **Index creation**
-   - MongoDB creates indexes on first collection access; or run `db.collection.createIndex()` manually
-
-3. **Notification queue**
-   - Set `REDIS_URL`, `QUEUE_NOTIFICATIONS_ENABLED=true`
-   - Trigger `createForTenantStaff()` or `createForAdmins()` → verify job enqueued
-
-4. **Report aggregation**
-   - Set `REPORT_AGGREGATION_ENABLED=true`
-   - Wait for 2 AM cron or trigger manually for testing
-
-5. **Queue depth logging**
-   - Set `QUEUE_DEPTH_LOGGING_ENABLED=true` → verify logs every 5 min
-
----
-
-## Rollback Instructions
-
-1. **Revert notifications**
-   - Remove `notifications.queue.service.ts`, `workers/notifications.worker.ts`
-   - Restore `notifications.service.ts` (remove `createFromQueue`, queue logic in `createForUsers`)
-   - Revert `notifications.module.ts`
-
-2. **Revert queue**
-   - Remove `NOTIFICATIONS` from queue.constants
-   - Remove notifications queue from QueueModule
-   - Remove NotificationsQueueService, QueueDepthLogger
-
-3. **Revert indexes**
-   - Remove new indexes from SupportTicket, Booking, Customer schemas
-   - Drop `report_snapshots` collection if created
-
-4. **Revert reports**
-   - Remove `report-snapshot.schema.ts`, `report-aggregation.service.ts`
-   - Revert reports.module.ts
-
-5. **Revert app.module**
-   - Remove MongoDB pool size options
-
-6. **Revert .env.example**
-   - Remove new env vars
-
-7. **Verify**
-   ```bash
-   cd apps/backend && npm test && npm run build
-   ```
+2. **Index creation**: Indexes are created on app startup via Mongoose schema; use `background: true` (default) to avoid blocking

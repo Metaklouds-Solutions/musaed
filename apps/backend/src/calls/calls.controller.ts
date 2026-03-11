@@ -15,6 +15,7 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { CallsService } from './calls.service';
 import { ListCallsDto } from './dto/list-calls.dto';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('tenant/calls')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -24,9 +25,9 @@ export class TenantCallsController {
   @Get()
   list(@Request() req: AuthenticatedRequest, @Query() query: ListCallsDto) {
     const tenantId = this.requireTenantId(req);
+    const pagination = parsePagination({ page: query.page, limit: query.limit });
     return this.callsService.listForTenant(tenantId, {
-      page: query.page ? parseInt(query.page, 10) : undefined,
-      limit: query.limit ? parseInt(query.limit, 10) : undefined,
+      ...pagination,
       from: query.from,
       to: query.to,
       outcome: query.outcome,
@@ -74,10 +75,10 @@ export class AdminCallsController {
 
   @Get()
   list(@Query() query: ListCallsDto) {
+    const pagination = parsePagination({ page: query.page, limit: query.limit });
     return this.callsService.listForAdmin({
       tenantId: query.tenantId,
-      page: query.page ? parseInt(query.page, 10) : undefined,
-      limit: query.limit ? parseInt(query.limit, 10) : undefined,
+      ...pagination,
       from: query.from,
       to: query.to,
       outcome: query.outcome,

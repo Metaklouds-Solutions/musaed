@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
+import * as crypto from 'crypto';
 import { QUEUE_NAMES, DEFAULT_JOB_OPTIONS } from '../queue/queue.constants';
 import { getRedisConnectionOptions } from '../queue/queue.config';
 
@@ -75,7 +76,12 @@ export class EmailQueueService {
   ): Promise<string | null> {
     if (!this.queue) return null;
     const jobPayload = { type, payload } as EmailJobPayload;
-    const jobId = `${type}:${payload.to}:${Date.now()}`;
+    const contentHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(payload))
+      .digest('hex')
+      .slice(0, 12);
+    const jobId = `email:${type}:${payload.to}:${contentHash}`;
     try {
       const job = await this.queue.add(type, jobPayload, {
         jobId,

@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { MaintenanceService } from './maintenance.service';
+import { UpdateMaintenanceDto } from './dto/update-maintenance.dto';
 
 @Controller()
 export class MaintenanceController {
@@ -14,10 +15,10 @@ export class MaintenanceController {
 
   @Patch('admin/maintenance')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  async setStatus(@Body() body: { enabled?: boolean; message?: string }) {
+  async setStatus(@Body() dto: UpdateMaintenanceDto) {
     const current = await this.maintenanceService.getStatus();
-    const enabled = body.enabled ?? current.enabled;
-    const message = body.message ?? current.message;
+    const enabled = dto.enabled ?? current.enabled;
+    const message = dto.message ?? current.message;
     return this.maintenanceService.setStatus(enabled, message);
   }
 }

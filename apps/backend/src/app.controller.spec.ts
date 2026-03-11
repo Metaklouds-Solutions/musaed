@@ -1,8 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from './health/health.controller';
 import { getConnectionToken } from '@nestjs/mongoose';
+import { getQueueToken } from '@nestjs/bullmq';
 import { RetellClient } from './retell/retell.client';
 import { AgentDeploymentMetricsService } from './agent-deployments/agent-deployment-metrics.service';
+import { QUEUE_NAMES } from './queue/queue.constants';
+
+const mockRedisClient = { ping: jest.fn().mockResolvedValue('PONG') };
 
 describe('HealthController', () => {
   let healthController: HealthController;
@@ -14,6 +18,10 @@ describe('HealthController', () => {
         {
           provide: getConnectionToken(),
           useValue: { readyState: 1 },
+        },
+        {
+          provide: getQueueToken(QUEUE_NAMES.WEBHOOKS),
+          useValue: { client: Promise.resolve(mockRedisClient) },
         },
         {
           provide: RetellClient,
@@ -50,6 +58,9 @@ describe('HealthController', () => {
           status: 'ok',
           timestamp: expect.any(String),
         }),
+      );
+      expect(result.checks.redis).toEqual(
+        expect.objectContaining({ status: 'up' }),
       );
     });
   });

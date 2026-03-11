@@ -16,6 +16,7 @@ import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('admin/tenants')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -28,10 +29,10 @@ export class TenantsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    const pagination = parsePagination({ page, limit });
     return this.tenantsService.findAll({
       status,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
     });
   }
 

@@ -32,4 +32,25 @@ export class AlertsService {
     );
     return result.modifiedCount > 0;
   }
+
+  /**
+   * Creates a new alert for a tenant.
+   *
+   * @param tenantId - The tenant's MongoDB ID
+   * @param data - Alert payload (type, title, message, severity)
+   * @returns The created alert document
+   */
+  async createAlert(
+    tenantId: string,
+    data: { type: string; title: string; message: string; severity?: string },
+  ): Promise<AlertDocument> {
+    return this.alertModel.create({
+      tenantId: new Types.ObjectId(tenantId),
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      severity: data.severity ?? 'medium',
+      resolved: false,
+    });
+  }
 }

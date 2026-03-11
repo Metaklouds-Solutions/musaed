@@ -16,3 +16,5 @@ export class Maintenance {
 }
 
 export const MaintenanceSchema = SchemaFactory.createForClass(Maintenance);
+
+MaintenanceSchema.index({ key: 1 }, { unique: true });

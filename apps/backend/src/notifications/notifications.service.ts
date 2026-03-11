@@ -117,6 +117,46 @@ export class NotificationsService {
   }
 
   /**
+   * Batch-create notifications for multiple users via insertMany.
+   * Emits WebSocket events for each created notification.
+   */
+  async createBatchFromQueue(
+    userIds: string[],
+    data: {
+      tenantId: string | null;
+      type: string;
+      title: string;
+      message: string;
+      link?: string;
+      meta?: Record<string, unknown>;
+      priority?: string;
+    },
+  ): Promise<number> {
+    if (userIds.length === 0) return 0;
+
+    const docs = userIds.map((userId) => ({
+      userId: new Types.ObjectId(userId),
+      tenantId: data.tenantId ? new Types.ObjectId(data.tenantId) : null,
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      link: data.link ?? '',
+      meta: data.meta ?? {},
+      read: false,
+      priority: data.priority ?? 'normal',
+    }));
+
+    const inserted = await this.notificationModel.insertMany(docs, { ordered: false });
+
+    for (const doc of inserted) {
+      const payload = this.toPayload(doc);
+      this.gateway.emitToUser(doc.userId.toString(), 'notification', payload);
+    }
+
+    return inserted.length;
+  }
+
+  /**
    * Notify all admin users (platform-wide).
    */
   async createForAdmins(data: Omit<CreateNotificationInput, 'userId' | 'tenantId'>): Promise<void> {

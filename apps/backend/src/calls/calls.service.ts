@@ -41,7 +41,8 @@ export class CallsService {
         .populate('bookingId', 'serviceType date timeSlot status')
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort({ createdAt: -1 })
+        .lean(),
       this.callSessionModel.countDocuments(filter),
     ]);
 
@@ -64,7 +65,8 @@ export class CallsService {
         .populate('bookingId', 'serviceType date timeSlot status')
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort({ createdAt: -1 })
+        .lean(),
       this.callSessionModel.countDocuments(filter),
     ]);
 
@@ -78,7 +80,8 @@ export class CallsService {
     const call = await this.callSessionModel
       .findOne({ _id: id, tenantId: new Types.ObjectId(tenantId) })
       .populate('agentInstanceId', 'name')
-      .populate('bookingId', 'serviceType date timeSlot status');
+      .populate('bookingId', 'serviceType date timeSlot status')
+      .lean();
     if (!call) {
       throw new NotFoundException('Call session not found');
     }
@@ -95,7 +98,8 @@ export class CallsService {
     const call = await this.callSessionModel
       .findOne({ callId: retellCallId, tenantId: new Types.ObjectId(tenantId) })
       .populate('agentInstanceId', 'name')
-      .populate('bookingId', 'serviceType date timeSlot status');
+      .populate('bookingId', 'serviceType date timeSlot status')
+      .lean();
 
     if (call) {
       return call;
@@ -113,7 +117,8 @@ export class CallsService {
       .findById(id)
       .populate('tenantId', 'name slug')
       .populate('agentInstanceId', 'name')
-      .populate('bookingId', 'serviceType date timeSlot status');
+      .populate('bookingId', 'serviceType date timeSlot status')
+      .lean();
     if (!call) {
       throw new NotFoundException('Call session not found');
     }
@@ -131,7 +136,8 @@ export class CallsService {
       .findOne({ callId: retellCallId })
       .populate('tenantId', 'name slug')
       .populate('agentInstanceId', 'name')
-      .populate('bookingId', 'serviceType date timeSlot status');
+      .populate('bookingId', 'serviceType date timeSlot status')
+      .lean();
 
     if (call) {
       return call;
@@ -309,10 +315,14 @@ export class CallsService {
    * Synchronizes all calls from Retell for all active agents.
    */
   async syncAllFromRetell() {
-    const agents = await this.callSessionModel.db.model('AgentInstance').find({
+    const agents = (await this.callSessionModel.db.model('AgentInstance').find({
       retellAgentId: { $ne: null },
       status: { $ne: 'deleted' },
-    });
+    }).select('_id retellAgentId tenantId').limit(1000).lean()) as unknown as Array<{
+      _id: Types.ObjectId;
+      retellAgentId: string;
+      tenantId: Types.ObjectId;
+    }>;
 
     let totalSynced = 0;
 

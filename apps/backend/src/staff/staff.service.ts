@@ -32,7 +32,9 @@ export class StaffService {
       .find(filter)
       .populate('userId', 'email name avatarUrl role')
       .populate('tenantId', 'name')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .lean();
   }
 
   async invite(tenantId: string, dto: InviteStaffDto) {

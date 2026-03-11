@@ -11,6 +11,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
@@ -25,9 +26,9 @@ export class NotificationsController {
     @Query('read') read?: string,
   ) {
     const userId = req.user._id.toString();
+    const pagination = parsePagination({ page, limit });
     return this.notificationsService.findAllForUser(userId, {
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
       read: read === 'true' ? true : read === 'false' ? false : undefined,
     });
   }

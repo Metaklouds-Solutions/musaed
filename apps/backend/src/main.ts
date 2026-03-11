@@ -19,14 +19,11 @@ if (sentryDsn) {
 }
 
 async function bootstrap() {
-  // #region agent log
-  fetch('http://127.0.0.1:7773/ingest/7bea03d1-de1e-4b1a-8b63-40189ee31214',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'bd9a7b'},body:JSON.stringify({sessionId:'bd9a7b',runId:'pre-fix',hypothesisId:'H1',location:'main.ts:bootstrap:start',message:'Bootstrap start',data:{pid:process.pid,nodeEnv:process.env.NODE_ENV ?? null,portEnv:process.env.PORT ?? null},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
-  app.use('/api/webhooks/retell', express.raw({ type: 'application/json' }));
+  app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
+  app.use('/webhooks/retell', express.raw({ type: 'application/json' }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
@@ -64,22 +61,10 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+  app.enableShutdownHooks();
+
   const port = process.env.PORT ?? 3001;
-  // #region agent log
-  fetch('http://127.0.0.1:7773/ingest/7bea03d1-de1e-4b1a-8b63-40189ee31214',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'bd9a7b'},body:JSON.stringify({sessionId:'bd9a7b',runId:'pre-fix',hypothesisId:'H2',location:'main.ts:bootstrap:before_listen',message:'About to listen',data:{port},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-  try {
-    await app.listen(port);
-    new Logger('Bootstrap').log(`MUSAED API running at http://localhost:${port}`);
-    // #region agent log
-    fetch('http://127.0.0.1:7773/ingest/7bea03d1-de1e-4b1a-8b63-40189ee31214',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'bd9a7b'},body:JSON.stringify({sessionId:'bd9a7b',runId:'pre-fix',hypothesisId:'H3',location:'main.ts:bootstrap:listen_success',message:'Listen succeeded',data:{port},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-  } catch (error: unknown) {
-    const err = error as NodeJS.ErrnoException;
-    // #region agent log
-    fetch('http://127.0.0.1:7773/ingest/7bea03d1-de1e-4b1a-8b63-40189ee31214',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'bd9a7b'},body:JSON.stringify({sessionId:'bd9a7b',runId:'pre-fix',hypothesisId:'H4',location:'main.ts:bootstrap:listen_error',message:'Listen failed',data:{code:err?.code ?? null,errno:err?.errno ?? null,syscall:err?.syscall ?? null,address:(err as NodeJS.ErrnoException & { address?: string })?.address ?? null,port:(err as NodeJS.ErrnoException & { port?: number })?.port ?? null,message:err?.message ?? 'unknown'},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    throw error;
-  }
+  await app.listen(port);
+  new Logger('Bootstrap').log(`MUSAED API running at http://localhost:${port}`);
 }
 bootstrap();

@@ -155,7 +155,16 @@ function BillingSkeleton() {
 
 /** Renders tenant billing overview with usage, credits, and recent activity. */
 export function BillingPage() {
-  const { overview, buyCredits } = useBilling();
+  const { overview, loading, buyCredits } = useBilling();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Billing" description="Plan, credits, and usage" />
+        <BillingSkeleton />
+      </div>
+    );
+  }
 
   if (overview == null) {
     return (

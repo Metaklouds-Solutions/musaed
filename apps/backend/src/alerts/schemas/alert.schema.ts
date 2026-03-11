@@ -31,3 +31,4 @@ export const AlertSchema = SchemaFactory.createForClass(Alert);
 
 AlertSchema.index({ tenantId: 1 });
 AlertSchema.index({ resolved: 1 });
+AlertSchema.index({ tenantId: 1, createdAt: -1 });

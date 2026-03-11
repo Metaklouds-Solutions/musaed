@@ -47,7 +47,8 @@ export class TenantsService {
         .populate('ownerId', 'email name')
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort({ createdAt: -1 })
+        .lean(),
       this.tenantModel.countDocuments(filter),
     ]);
 
@@ -58,7 +59,8 @@ export class TenantsService {
     const tenant = await this.tenantModel
       .findOne({ _id: id, deletedAt: null })
       .populate('ownerId', 'email name')
-      .populate('planId');
+      .populate('planId')
+      .lean();
 
     if (!tenant) throw new NotFoundException('Tenant not found');
     return tenant;

@@ -45,6 +45,7 @@ describe('RetellWebhookController', () => {
       providers: [
         { provide: WebhooksService, useValue: mockWebhooksService },
         { provide: WebhookQueueService, useValue: mockWebhookQueue },
+        { provide: MetricsService, useValue: mockMetrics },
         {
           provide: ConfigService,
           useValue: {
@@ -104,6 +105,7 @@ describe('RetellWebhookController', () => {
       providers: [
         { provide: WebhooksService, useValue: mockWebhooksService },
         { provide: WebhookQueueService, useValue: mockWebhookQueue },
+        { provide: MetricsService, useValue: mockMetrics },
         {
           provide: ConfigService,
           useValue: {

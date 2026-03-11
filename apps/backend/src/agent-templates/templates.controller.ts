@@ -17,6 +17,7 @@ import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { ImportTemplateDto } from './dto/import-template.dto';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('admin/templates')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -29,10 +30,10 @@ export class TemplatesController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    const pagination = parsePagination({ page, limit });
     return this.templatesService.findAll({
       channel,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
     });
   }
 

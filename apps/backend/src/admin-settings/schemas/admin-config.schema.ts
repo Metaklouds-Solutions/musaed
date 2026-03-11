@@ -67,3 +67,5 @@ export class AdminConfig {
 }
 
 export const AdminConfigSchema = SchemaFactory.createForClass(AdminConfig);
+
+AdminConfigSchema.index({ key: 1 }, { unique: true });

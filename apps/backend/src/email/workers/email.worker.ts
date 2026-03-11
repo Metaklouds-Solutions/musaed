@@ -54,5 +54,8 @@ export class EmailProcessor extends WorkerHost {
     const type = job?.data?.type ?? 'unknown';
     const to = job?.data?.payload?.to ?? 'unknown';
     this.logger.error(`Email job failed (DLQ): ${type} to ${to} — ${error.message}`);
+    Sentry.captureException(error, {
+      extra: { jobId: job?.id, type, to, queue: QUEUE_NAMES.EMAIL },
+    });
   }
 }

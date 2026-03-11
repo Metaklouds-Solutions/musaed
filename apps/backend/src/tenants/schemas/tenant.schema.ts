@@ -77,3 +77,4 @@ export const TenantSchema = SchemaFactory.createForClass(Tenant);
 TenantSchema.index({ slug: 1 }, { unique: true });
 TenantSchema.index({ ownerId: 1 });
 TenantSchema.index({ status: 1 });
+TenantSchema.index({ stripeCustomerId: 1 }, { sparse: true });

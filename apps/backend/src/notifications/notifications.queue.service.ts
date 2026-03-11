@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
+import * as crypto from 'crypto';
 import { QUEUE_NAMES, DEFAULT_JOB_OPTIONS } from '../queue/queue.constants';
 import { getRedisConnectionOptions } from '../queue/queue.config';
 
@@ -49,7 +50,13 @@ export class NotificationsQueueService {
    */
   async enqueueFanout(payload: NotificationFanoutPayload): Promise<string | null> {
     if (!this.queue) return null;
-    const jobId = `fanout:${payload.type}:${Date.now()}:${payload.userIds.length}`;
+    const sortedIds = [...payload.userIds].sort().join(',');
+    const contentHash = crypto
+      .createHash('sha256')
+      .update(`${payload.type}:${payload.title}:${sortedIds}`)
+      .digest('hex')
+      .slice(0, 12);
+    const jobId = `fanout:${payload.type}:${contentHash}`;
     try {
       const job = await this.queue.add('fanout', payload, {
         jobId,

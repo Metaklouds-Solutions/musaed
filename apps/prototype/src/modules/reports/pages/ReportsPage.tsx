@@ -4,7 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import { BarChart3 } from 'lucide-react';
-import { PageHeader, EmptyState } from '../../../shared/ui';
+import { PageHeader, EmptyState, TableSkeleton } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { OutcomeBreakdown } from '../components/OutcomeBreakdown';
 import { PerformanceMetrics } from '../components/PerformanceMetrics';
@@ -31,6 +31,7 @@ export function ReportsPage() {
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const {
+    loading,
     outcomes,
     performance,
     outcomesByVersion,
@@ -55,6 +56,15 @@ export function ReportsPage() {
             description="Select a tenant role on the login page to view your reports."
           />
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Reports" description="Call outcomes and agent performance" />
+        <TableSkeleton rows={6} cols={4} />
       </div>
     );
   }

@@ -16,7 +16,6 @@
     "@fullcalendar/list": "^6.1.20",
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
-    "@google/genai": "^1.29.0",
     "@radix-ui/react-popover": "^1.1.15",
     "@tailwindcss/vite": "^4.1.14",
     "@tanstack/react-virtual": "^3.13.19",

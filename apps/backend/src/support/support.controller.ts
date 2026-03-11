@@ -15,6 +15,7 @@ import { SupportService } from './support.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { AddMessageDto } from './dto/add-message.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('tenant/support/tickets')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -28,10 +29,10 @@ export class SupportTenantController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    const pagination = parsePagination({ page, limit });
     return this.supportService.findAllForTenant(req.tenantId!, {
       status,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
     });
   }
 
@@ -66,10 +67,10 @@ export class SupportAdminController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    const pagination = parsePagination({ page, limit });
     return this.supportService.findAllAdmin({
       status,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
     });
   }
 

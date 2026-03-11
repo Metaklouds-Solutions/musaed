@@ -45,7 +45,7 @@ export class AgentDeploymentsService {
     if (tenantId) {
       filter.tenantId = new Types.ObjectId(tenantId);
     }
-    const query = this.deploymentModel.find(filter).sort({ createdAt: -1 });
+    const query = this.deploymentModel.find(filter).sort({ createdAt: -1 }).limit(100);
     if (!options?.includeFlowSnapshot) {
       query.select('-flowSnapshot');
     }
@@ -100,7 +100,8 @@ export class AgentDeploymentsService {
         tenantId: new Types.ObjectId(tenantId),
         deletedAt: null,
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(500);
   }
 
   async softDeleteByTenant(tenantId: string) {

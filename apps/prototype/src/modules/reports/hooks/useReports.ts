@@ -18,13 +18,13 @@ const defaultPerformance: PerformanceMetrics = {
 };
 
 export function useReports(tenantId: string | undefined, dateRange?: DateRangeFilter) {
-  const { data: outcomes } = useAsyncData(
+  const { data: outcomes, loading: outcomesLoading } = useAsyncData(
     () => reportsAdapter.getOutcomes(tenantId, dateRange),
     [tenantId, dateRange],
     []
   );
 
-  const { data: performance } = useAsyncData(
+  const { data: performance, loading: perfLoading } = useAsyncData(
     () => reportsAdapter.getPerformance(tenantId, dateRange),
     [tenantId, dateRange],
     defaultPerformance,
@@ -71,7 +71,10 @@ export function useReports(tenantId: string | undefined, dateRange?: DateRangeFi
     []
   );
 
+  const loading = outcomesLoading || perfLoading;
+
   return {
+    loading,
     outcomes,
     performance,
     outcomesByVersion,

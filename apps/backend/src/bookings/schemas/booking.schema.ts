@@ -48,3 +48,4 @@ BookingSchema.index({ tenantId: 1, date: 1 });
 BookingSchema.index({ tenantId: 1, date: 1, status: 1 });
 BookingSchema.index({ tenantId: 1, createdAt: -1 });
 BookingSchema.index({ customerId: 1 });
+BookingSchema.index({ tenantId: 1, status: 1, reminderSent: 1, date: 1 });

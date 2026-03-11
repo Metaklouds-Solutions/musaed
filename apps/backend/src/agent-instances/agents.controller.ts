@@ -14,17 +14,22 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { Throttle } from '@nestjs/throttler';
 import { AgentsService } from './agents.service';
+import { AgentHealthService } from './agent-health.service';
 import { UpdatePromptsDto } from './dto/update-prompts.dto';
 import { UpdateAgentDto } from './dto/update-agent.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { CreateAgentInstanceDto } from './dto/create-agent-instance.dto';
 import { StartConversationDto } from './dto/start-conversation.dto';
 import { AssignAgentDto } from './dto/assign-agent.dto';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('tenant/agents')
 @UseGuards(JwtAuthGuard, TenantGuard)
 export class AgentsTenantController {
-  constructor(private agentsService: AgentsService) {}
+  constructor(
+    private agentsService: AgentsService,
+    private agentHealthService: AgentHealthService,
+  ) {}
 
   @Get()
   findAll(@Request() req: AuthenticatedRequest) {
@@ -64,23 +69,50 @@ export class AgentsTenantController {
     return this.agentsService.startConversationForTenant(id, req.tenantId!, dto);
   }
   @Get('chats/:chatId')
-  getChat(@Param('chatId') chatId: string) {
-    return this.agentsService.getChat(chatId);
+  getChat(
+    @Param('chatId') chatId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.agentsService.getChatForTenant(chatId, req.tenantId!);
   }
 
   @Post('chats/:chatId/messages')
   sendChatMessage(
     @Param('chatId') chatId: string,
-    @Body() dto: { messages: any[] },
+    @Body() dto: { messages: unknown[] },
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.agentsService.sendChatMessage(chatId, dto.messages);
+    return this.agentsService.sendChatMessageForTenant(chatId, dto.messages, req.tenantId!);
+  }
+
+  @Get(':id/analytics')
+  getAnalytics(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.agentHealthService.getAnalytics(
+      id,
+      req.tenantId!,
+      dateFrom ? new Date(dateFrom) : undefined,
+      dateTo ? new Date(dateTo) : undefined,
+    );
+  }
+
+  @Get(':id/health')
+  getHealth(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.agentHealthService.getHealth(id, req.tenantId!);
   }
 }
 
 @Controller('admin/agents')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class AgentsAdminController {
-  constructor(private agentsService: AgentsService) {}
+  constructor(
+    private agentsService: AgentsService,
+    private agentHealthService: AgentHealthService,
+  ) {}
 
   @Get()
   findAll(
@@ -88,10 +120,10 @@ export class AgentsAdminController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    const pagination = parsePagination({ page, limit });
     return this.agentsService.findAllAdmin({
       status,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
     });
   }
 
@@ -147,6 +179,25 @@ export class AgentsAdminController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateAgentDto) {
     return this.agentsService.update(id, dto);
+  }
+
+  @Get(':id/analytics')
+  getAnalytics(
+    @Param('id') id: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.agentHealthService.getAnalytics(
+      id,
+      undefined,
+      dateFrom ? new Date(dateFrom) : undefined,
+      dateTo ? new Date(dateTo) : undefined,
+    );
+  }
+
+  @Get(':id/health')
+  getHealth(@Param('id') id: string) {
+    return this.agentHealthService.getHealth(id);
   }
 }
 

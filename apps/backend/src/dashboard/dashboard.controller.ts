@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { DashboardService } from './dashboard.service';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('tenant/dashboard')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -53,10 +54,10 @@ export class DashboardController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const { limit: limitNum } = parsePagination({ limit }, { limit: 10 });
     return this.dashboardService.getTenantRecentCalls(
       req.tenantId!,
-      Number.isFinite(limitNum) ? limitNum : 10,
+      limitNum,
       dateFrom,
       dateTo,
     );

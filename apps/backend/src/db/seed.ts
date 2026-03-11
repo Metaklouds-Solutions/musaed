@@ -17,6 +17,19 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
+// Validate seed passwords — never fall back to weak defaults
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`❌ ${name} environment variable is required for seeding.`);
+    process.exit(1);
+  }
+  return value;
+}
+
+const ADMIN_SEED_PASSWORD: string = requireEnv('ADMIN_SEED_PASSWORD');
+const OWNER_SEED_PASSWORD: string = requireEnv('OWNER_SEED_PASSWORD');
+
 // Ensure DB name is present (MongoDB URIs with multiple hosts fail new URL() parsing)
 const dbPathMatch = MONGODB_URI.match(/\/[a-zA-Z0-9_-]+(\?|$)/);
 if (!dbPathMatch || dbPathMatch[0] === '/?' || dbPathMatch[0] === '/') {
@@ -181,7 +194,7 @@ async function seed() {
     const adminEmail = 'admin@musaed.com';
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
-      const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'Admin123!';
+      const adminPassword = ADMIN_SEED_PASSWORD;
       const passwordHash = await bcrypt.hash(adminPassword, 10);
       await User.create({
         email: adminEmail,
@@ -200,7 +213,7 @@ async function seed() {
     const tenantOwnerEmail = 'owner@democlinic.com';
     let tenantOwner = await User.findOne({ email: tenantOwnerEmail });
     if (!tenantOwner) {
-      const ownerPassword = process.env.OWNER_SEED_PASSWORD || 'Owner123!';
+      const ownerPassword = OWNER_SEED_PASSWORD;
       const passwordHash = await bcrypt.hash(ownerPassword, 10);
       tenantOwner = await User.create({
         email: tenantOwnerEmail,

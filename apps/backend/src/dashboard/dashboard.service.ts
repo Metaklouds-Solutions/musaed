@@ -84,7 +84,8 @@ export class DashboardService {
         .find({ tenantId: tid })
         .sort({ createdAt: -1 })
         .limit(5)
-        .populate('customerId', 'name'),
+        .populate('customerId', 'name')
+        .lean(),
       this.ticketModel
         .find({ tenantId: tid, status: { $in: ['open', 'in_progress'] } })
         .sort({ createdAt: -1 })

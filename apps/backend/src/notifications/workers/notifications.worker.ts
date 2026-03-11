@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import * as Sentry from '@sentry/node';
@@ -26,22 +26,15 @@ export class NotificationsProcessor extends WorkerHost {
 
     try {
       const uniqueIds = [...new Set(userIds)];
-      for (const userId of uniqueIds) {
-        await this.notificationsService.createFromQueue({
-          userId,
-          tenantId,
-          type,
-          title,
-          message,
-          link,
-          meta,
-          priority,
-        });
-      }
+      const insertedCount = await this.notificationsService.createBatchFromQueue(
+        uniqueIds,
+        { tenantId, type, title, message, link, meta, priority },
+      );
       this.logger.debug({
         event: 'notification_fanout_completed',
         type,
         userCount: uniqueIds.length,
+        insertedCount,
       });
     } catch (err) {
       this.logger.error({
@@ -65,5 +58,17 @@ export class NotificationsProcessor extends WorkerHost {
 
       throw err;
     }
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job<NotificationFanoutPayload> | undefined, error: Error): void {
+    const type = job?.data?.type ?? 'unknown';
+    const userCount = job?.data?.userIds?.length ?? 0;
+    this.logger.error(
+      `Notification fanout job failed (DLQ): type=${type} users=${userCount} — ${error.message}`,
+    );
+    Sentry.captureException(error, {
+      extra: { jobId: job?.id, type, userCount, queue: QUEUE_NAMES.NOTIFICATIONS },
+    });
   }
 }

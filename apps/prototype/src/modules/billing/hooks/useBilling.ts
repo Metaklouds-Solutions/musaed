@@ -13,7 +13,7 @@ export function useBilling() {
   const tenantId = user?.tenantId;
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { data: overview, refetch } = useAsyncData(
+  const { data: overview, loading, refetch } = useAsyncData(
     () => (tenantId ? billingAdapter.getBillingOverview(tenantId) : undefined),
     [tenantId, refreshKey],
     undefined as BillingOverview | undefined
@@ -31,7 +31,7 @@ export function useBilling() {
   }, [tenantId, refresh]);
 
   return useMemo(
-    () => ({ overview, buyCredits, refresh, tenantId }),
-    [overview, buyCredits, refresh, tenantId]
+    () => ({ overview, loading, buyCredits, refresh, tenantId }),
+    [overview, loading, buyCredits, refresh, tenantId]
   );
 }

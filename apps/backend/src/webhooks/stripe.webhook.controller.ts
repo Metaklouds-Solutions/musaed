@@ -25,6 +25,7 @@ export class StripeWebhookController {
   constructor(
     private webhooksService: WebhooksService,
     private webhookQueue: WebhookQueueService,
+    private metrics: MetricsService,
     config: ConfigService,
   ) {
     const secretKey = config.get<string>('STRIPE_SECRET_KEY', '');

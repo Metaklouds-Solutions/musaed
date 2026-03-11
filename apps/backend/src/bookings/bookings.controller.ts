@@ -18,6 +18,7 @@ import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { parsePagination } from '../common/helpers/parse-pagination';
 
 @Controller('tenant/bookings')
 @UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard)
@@ -33,9 +34,9 @@ export class BookingsController {
     @Query('date') date?: string,
     @Query('status') status?: string,
   ) {
+    const pagination = parsePagination({ page, limit });
     return this.bookingsService.findAllForTenant(req.tenantId!, {
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      ...pagination,
       date,
       status,
     });

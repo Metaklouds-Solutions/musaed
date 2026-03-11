@@ -30,7 +30,8 @@ export class SupportService {
         .populate('assignedTo', 'name email')
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort({ createdAt: -1 })
+        .lean(),
       this.ticketModel.countDocuments(filter),
     ]);
 
@@ -50,7 +51,8 @@ export class SupportService {
         .populate('assignedTo', 'name email')
         .skip((page - 1) * limit)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort({ createdAt: -1 })
+        .lean(),
       this.ticketModel.countDocuments(filter),
     ]);
 
