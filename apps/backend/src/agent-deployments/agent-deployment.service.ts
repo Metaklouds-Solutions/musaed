@@ -162,7 +162,11 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     for (const deployment of deployments) {
       if (deployment.retellAgentId) {
         try {
-          await this.retellClient.deleteAgent(deployment.retellAgentId);
+          if (deployment.channel === 'chat') {
+            await this.retellClient.deleteChatAgent(deployment.retellAgentId);
+          } else {
+            await this.retellClient.deleteAgent(deployment.retellAgentId);
+          }
         } catch (error: unknown) {
           const message = error instanceof Error ? error.message : 'Unknown error';
           this.logger.warn(
@@ -370,10 +374,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         await this.retellClient.createConversationFlow(conversationFlowPayload);
       createdConversationFlowId = conversationFlowResponse.conversation_flow_id;
 
-      const responseEngine = {
+      const responseEngine: Record<string, unknown> = {
         type: 'conversation-flow',
         conversation_flow_id: conversationFlowResponse.conversation_flow_id,
-        version: flowVersion,
       };
 
       let agentResponse: { agent_id: string };

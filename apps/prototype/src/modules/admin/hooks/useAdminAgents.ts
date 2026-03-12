@@ -4,6 +4,8 @@ import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 import type { AdminAgentRow, ChannelDeploymentSummary } from '../../../shared/types';
 import { ApiClientError } from '../../../lib/apiClient';
 
+const DEFAULT_PAGE_SIZE = 20;
+
 function mapApiErrorMessage(error: unknown): string {
   if (error instanceof ApiClientError) {
     if (error.status === 0) {
@@ -23,12 +25,14 @@ function mapApiErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Request failed';
 }
 
-/** Admin agents data hook with filtering and tenant assignment actions. */
+/** Admin agents data hook with filtering, pagination, and tenant assignment actions. */
 export function useAdminAgents() {
   const [tenantFilter, setTenantFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const [refreshKey, setRefreshKey] = useState(0);
   const [deployingAgentId, setDeployingAgentId] = useState<string | null>(null);
+  const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null);
   const [deploymentsLoadingFor, setDeploymentsLoadingFor] = useState<string | null>(null);
   const [deploymentsError, setDeploymentsError] = useState<string | null>(null);
   const [selectedDeploymentsAgentId, setSelectedDeploymentsAgentId] = useState<string | null>(null);
@@ -36,20 +40,39 @@ export function useAdminAgents() {
     Record<string, ChannelDeploymentSummary[]>
   >({});
 
-  const { data: agents, loading, refetch } = useAsyncData(
-    () => agentsAdapter.list(),
-    [refreshKey],
-    [] as AdminAgentRow[],
+  const fetchAgents = useCallback(
+    () =>
+      agentsAdapter.list({
+        page,
+        limit: DEFAULT_PAGE_SIZE,
+        status: statusFilter ?? undefined,
+        tenantId: tenantFilter ?? undefined,
+      }),
+    [page, statusFilter, tenantFilter, refreshKey],
   );
+
+  const { data: listResult, loading, error: agentsError, refetch } = useAsyncData(
+    fetchAgents,
+    [page, statusFilter, tenantFilter, refreshKey],
+    { data: [] as AdminAgentRow[], total: 0, page: 1, limit: DEFAULT_PAGE_SIZE },
+  );
+
+  const filteredAgents = listResult.data;
+  const total = listResult.total;
+  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
+  const agentsErrorMessage = agentsError ? mapApiErrorMessage(agentsError) : null;
 
   const { data: tenants } = useAsyncData(() => adminAdapter.getTenants(), [], []);
 
-  const filteredAgents = useMemo(() => {
-    let list = agents;
-    if (tenantFilter) list = list.filter((a) => a.tenantId === tenantFilter);
-    if (statusFilter) list = list.filter((a) => a.status === statusFilter);
-    return list;
-  }, [agents, tenantFilter, statusFilter]);
+  const setTenantFilterAndResetPage = useCallback((value: string | null) => {
+    setTenantFilter(value);
+    setPage(1);
+  }, []);
+
+  const setStatusFilterAndResetPage = useCallback((value: string | null) => {
+    setStatusFilter(value);
+    setPage(1);
+  }, []);
 
   const assignAgent = useCallback(
     async (agent: AdminAgentRow, tenantId: string) => {
@@ -103,14 +126,61 @@ export function useAdminAgents() {
     }
   }, [deployingAgentId, loadDeployments]);
 
+  const deleteAgent = useCallback(async (agent: AdminAgentRow) => {
+    if (deletingAgentId === agent.id) {
+      throw new Error('Delete already in progress for this agent');
+    }
+    setDeletingAgentId(agent.id);
+    try {
+      await agentsAdapter.delete(agent.id);
+      auditAdapter.log('agent.deleted', {
+        agentId: agent.id,
+        agentName: agent.name,
+        tenantId: agent.tenantId,
+      });
+      setRefreshKey((k) => k + 1);
+    } catch (error: unknown) {
+      throw new Error(mapApiErrorMessage(error));
+    } finally {
+      setDeletingAgentId(null);
+    }
+  }, [deletingAgentId]);
+
+  const [syncingAgentId, setSyncingAgentId] = useState<string | null>(null);
+
+  const syncAgent = useCallback(async (agent: AdminAgentRow) => {
+    if (syncingAgentId === agent.id) {
+      throw new Error('Sync already in progress for this agent');
+    }
+    setSyncingAgentId(agent.id);
+    try {
+      await agentsAdapter.syncFromRetell(agent.id);
+      auditAdapter.log('agent.synced', {
+        agentId: agent.id,
+        agentName: agent.name,
+      });
+      setRefreshKey((k) => k + 1);
+    } catch (error: unknown) {
+      throw new Error(mapApiErrorMessage(error));
+    } finally {
+      setSyncingAgentId(null);
+    }
+  }, [syncingAgentId]);
+
   return {
     tenants,
     filteredAgents,
     loading,
+    agentsError: agentsErrorMessage,
+    total,
+    totalPages,
+    page,
+    setPage,
+    pageSize: DEFAULT_PAGE_SIZE,
     tenantFilter,
-    setTenantFilter,
+    setTenantFilter: setTenantFilterAndResetPage,
     statusFilter,
-    setStatusFilter,
+    setStatusFilter: setStatusFilterAndResetPage,
     assignAgent,
     deployAgent,
     loadDeployments,
@@ -120,6 +190,10 @@ export function useAdminAgents() {
     setSelectedDeploymentsAgentId,
     deploymentsLoadingFor,
     deployingAgentId,
+    deleteAgent,
+    deletingAgentId,
+    syncAgent,
+    syncingAgentId,
     refetch,
   };
 }

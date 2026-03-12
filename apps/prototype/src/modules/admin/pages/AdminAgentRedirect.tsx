@@ -1,6 +1,6 @@
 /**
  * Redirects /admin/agents/:id to /admin/tenants/:tenantId/agents/:id when agent is assigned.
- * For unassigned agents, redirects to agents list.
+ * For unassigned agents or on 401, redirects to agents list.
  */
 
 import { useEffect } from 'react';
@@ -11,15 +11,16 @@ import { useAdminAgentRedirect } from '../hooks';
 export function AdminAgentRedirect() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const targetPath = useAdminAgentRedirect(id);
+  const { targetPath, loading } = useAdminAgentRedirect(id);
 
   useEffect(() => {
+    if (loading || targetPath === null) return;
     navigate(targetPath, { replace: true });
-  }, [navigate, targetPath]);
+  }, [navigate, targetPath, loading]);
 
   return (
     <div className="flex items-center justify-center p-8 text-[var(--text-muted)] text-sm">
-      Redirecting…
+      {loading ? 'Redirecting…' : 'Redirecting…'}
     </div>
   );
 }

@@ -4,7 +4,6 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import {
@@ -15,9 +14,12 @@ import {
   Unlink,
   Layers,
   Pencil,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
 import { Modal, ModalHeader, Button, PopoverSelect } from '../../../../shared/ui';
 import { agentsAdapter } from '../../../../adapters';
+import { getRetellAgentUrl } from '../../../../lib/retell';
 import type { AdminAgentRow } from '../../../../shared/types';
 import type { AdminTenantRow } from '../../../../shared/types';
 
@@ -29,10 +31,14 @@ interface AgentActionsModalProps {
   onSuccess: () => void;
   onDeploy: (agent: AdminAgentRow) => Promise<void>;
   onViewDeployments: (agent: AdminAgentRow) => void;
+  onDelete?: (agent: AdminAgentRow) => Promise<void>;
+  onSync?: (agent: AdminAgentRow) => Promise<void>;
   deployingAgentId: string | null;
+  deletingAgentId?: string | null;
+  syncingAgentId?: string | null;
 }
 
-type Step = 'menu' | 'assign' | 'unassign' | 'edit';
+type Step = 'menu' | 'assign' | 'unassign' | 'edit' | 'delete';
 
 /** Renders agent actions modal with CreateAgentModal-style UI. */
 export function AgentActionsModal({
@@ -43,15 +49,19 @@ export function AgentActionsModal({
   onSuccess,
   onDeploy,
   onViewDeployments,
+  onDelete,
+  onSync,
   deployingAgentId,
+  deletingAgentId,
+  syncingAgentId,
 }: AgentActionsModalProps) {
-  const navigate = useNavigate();
   const [step, setStep] = useState<Step>('menu');
   const [selectedTenantId, setSelectedTenantId] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [unassigning, setUnassigning] = useState(false);
   const [editName, setEditName] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const reset = useCallback(() => {
     setStep('menu');
@@ -59,13 +69,14 @@ export function AgentActionsModal({
     setAssigning(false);
     setUnassigning(false);
     setSavingEdit(false);
+    setDeleting(false);
   }, []);
 
   const handleClose = useCallback(() => {
-    if (assigning || unassigning || savingEdit) return;
+    if (assigning || unassigning || savingEdit || deleting) return;
     reset();
     onClose();
-  }, [assigning, unassigning, savingEdit, reset, onClose]);
+  }, [assigning, unassigning, savingEdit, deleting, reset, onClose]);
 
   useEffect(() => {
     if (agent) setEditName(agent.name);
@@ -119,6 +130,23 @@ export function AgentActionsModal({
     }
   }, [agent, onSuccess, reset, onClose]);
 
+  const handleDelete = useCallback(async () => {
+    if (!agent || !onDelete) return;
+    setDeleting(true);
+    try {
+      await onDelete(agent);
+      toast.success('Agent deleted');
+      onSuccess();
+      reset();
+      onClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete agent';
+      toast.error(message);
+    } finally {
+      setDeleting(false);
+    }
+  }, [agent, onDelete, onSuccess, reset, onClose]);
+
   const handleDeploy = useCallback(async () => {
     if (!agent) return;
     try {
@@ -130,19 +158,16 @@ export function AgentActionsModal({
     }
   }, [agent, onDeploy, onSuccess, handleClose]);
 
-  const goToAgent = useCallback(() => {
-    if (agent?.tenantId) {
-      navigate(`/admin/tenants/${agent.tenantId}/agents/${agent.id}`);
+  const handleSync = useCallback(async () => {
+    if (!agent || !onSync) return;
+    try {
+      await onSync(agent);
+      toast.success('Agent synced from Retell');
+      onSuccess();
+    } catch {
+      toast.error('Failed to sync agent from Retell');
     }
-    handleClose();
-  }, [agent, navigate, handleClose]);
-
-  const goToTenant = useCallback(() => {
-    if (agent?.tenantId) {
-      navigate(`/admin/tenants/${agent.tenantId}`);
-    }
-    handleClose();
-  }, [agent, navigate, handleClose]);
+  }, [agent, onSync, onSuccess]);
 
   if (!agent) return null;
 
@@ -154,7 +179,9 @@ export function AgentActionsModal({
         ? 'Assign to tenant'
         : step === 'edit'
           ? 'Edit agent'
-          : 'Unassign agent';
+          : step === 'delete'
+            ? 'Delete agent'
+            : 'Unassign agent';
 
   return (
     <Modal open={open} onClose={handleClose} title={title} maxWidthRem={28}>
@@ -251,6 +278,48 @@ export function AgentActionsModal({
                   <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--ds-primary)] transition-colors" aria-hidden />
                 </button>
 
+                {agent.retellAgentId && (
+                  <a
+                    href={getRetellAgentUrl(agent.retellAgentId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group no-underline"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600">
+                        <ExternalLink className="w-5 h-5" aria-hidden />
+                      </div>
+                      <div>
+                        <p className="font-medium text-[var(--text-primary)]">Open in Retell</p>
+                        <p className="text-xs text-[var(--text-muted)]">Edit agent directly in Retell dashboard</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--ds-primary)] transition-colors" aria-hidden />
+                  </a>
+                )}
+
+                {agent.retellAgentId && onSync && (
+                  <button
+                    type="button"
+                    onClick={() => { handleSync().catch(() => {}); }}
+                    disabled={syncingAgentId === agent.id}
+                    className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group disabled:opacity-60"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600">
+                        <RefreshCw className={`w-5 h-5 ${syncingAgentId === agent.id ? 'animate-spin' : ''}`} aria-hidden />
+                      </div>
+                      <div>
+                        <p className="font-medium text-[var(--text-primary)]">
+                          {syncingAgentId === agent.id ? 'Syncing...' : 'Sync from Retell'}
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)]">Pull latest config changes from Retell</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--ds-primary)] transition-colors" aria-hidden />
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setStep('unassign')}
@@ -270,43 +339,28 @@ export function AgentActionsModal({
               </>
             )}
 
-            {isAssigned && (
-              <>
-                <button
-                  type="button"
-                  onClick={goToAgent}
-                  className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600">
-                      <ExternalLink className="w-5 h-5" aria-hidden />
-                    </div>
-                    <div>
-                      <p className="font-medium text-[var(--text-primary)]">View agent</p>
-                      <p className="text-xs text-[var(--text-muted)]">Open agent detail page</p>
-                    </div>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => setStep('delete')}
+                disabled={deletingAgentId === agent.id}
+                className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 transition-colors text-left group disabled:opacity-60"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-500/10 text-red-600">
+                    <Trash2 className="w-5 h-5" aria-hidden />
                   </div>
-                  <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--ds-primary)] transition-colors" aria-hidden />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={goToTenant}
-                  className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600">
-                      <ExternalLink className="w-5 h-5" aria-hidden />
-                    </div>
-                    <div>
-                      <p className="font-medium text-[var(--text-primary)]">View tenant</p>
-                      <p className="text-xs text-[var(--text-muted)]">Open tenant detail page</p>
-                    </div>
+                  <div>
+                    <p className="font-medium text-[var(--text-primary)]">
+                      {deletingAgentId === agent.id ? 'Deleting...' : 'Delete agent'}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)]">Permanently remove from Retell and system</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--ds-primary)] transition-colors" aria-hidden />
-                </button>
-              </>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-red-500 transition-colors" aria-hidden />
+              </button>
             )}
+
           </motion.div>
         )}
 
@@ -396,6 +450,31 @@ export function AgentActionsModal({
                 className="rounded-xl"
               >
                 Unassign
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 'delete' && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <p className="text-sm text-[var(--text-muted)]">
+              Permanently delete <strong>{agent.name}</strong>? This will remove the agent from Retell (voice/chat) and mark it as deleted. This action cannot be undone.
+            </p>
+            <div className="flex justify-between gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setStep('menu')} className="rounded-xl">
+                Back
+              </Button>
+              <Button
+                onClick={handleDelete}
+                loading={deleting}
+                variant="danger"
+                className="rounded-xl"
+              >
+                Delete
               </Button>
             </div>
           </motion.div>

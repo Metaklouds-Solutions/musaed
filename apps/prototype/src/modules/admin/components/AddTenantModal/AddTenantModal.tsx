@@ -74,39 +74,48 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
   }, [open, refetchAssignableAgents, step]);
 
   const handleComplete = useCallback(async () => {
-      setIsSubmitting(true);
-      try {
-        const result = await createTenant({
-          name: clinicData.name.trim(),
-          plan: clinicData.plan,
-          ownerEmail: normalizedOwnerEmail,
-          ownerName: clinicData.ownerName.trim() || undefined,
-          phone: clinicData.phone.trim() || undefined,
-          address: clinicData.address.trim() || undefined,
-          timezone: clinicData.timezone,
-          locale: clinicData.locale,
-        });
-        if (selectedAgentId) {
+    setIsSubmitting(true);
+    try {
+      const result = await createTenant({
+        name: clinicData.name.trim(),
+        plan: clinicData.plan,
+        ownerEmail: normalizedOwnerEmail,
+        ownerName: clinicData.ownerName.trim() || undefined,
+        phone: clinicData.phone.trim() || undefined,
+        address: clinicData.address.trim() || undefined,
+        timezone: clinicData.timezone,
+        locale: clinicData.locale,
+      });
+      if (selectedAgentId) {
+        try {
           await assignAgentToTenant(selectedAgentId, result.id);
           refetchAssignableAgents();
+        } catch (assignErr: unknown) {
+          const msg = assignErr instanceof Error ? assignErr.message : String(assignErr);
+          if (msg.includes('already assigned') || msg.includes('409')) {
+            toast.warning('Tenant created. Agent is already assigned to another tenant — assign from Agents later.');
+          } else {
+            toast.error(msg);
+          }
         }
-        reset();
-        onClose();
-        onSuccess?.({ id: result.id, name: result.name, plan: result.plan });
-        toast.success('Tenant created successfully');
-        if (result.inviteSetupUrl) {
-          navigator.clipboard.writeText(result.inviteSetupUrl).catch(() => {});
-          toast.info('Invite link copied to clipboard. Paste it in your browser (e.g. for TempMail).', {
-            duration: 8000,
-          });
-        }
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Failed to create tenant';
-        toast.error(message);
-      } finally {
-        setIsSubmitting(false);
       }
-    }, [assignAgentToTenant, clinicData, createTenant, normalizedOwnerEmail, onClose, onSuccess, refetchAssignableAgents, reset, selectedAgentId]);
+      reset();
+      onClose();
+      onSuccess?.({ id: result.id, name: result.name, plan: result.plan });
+      toast.success('Tenant created successfully');
+      if (result.inviteSetupUrl) {
+        navigator.clipboard.writeText(result.inviteSetupUrl).catch(() => {});
+        toast.info('Invite link copied to clipboard. Check your email (and spam) or paste the link in your browser.', {
+          duration: 8000,
+        });
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to create tenant';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [assignAgentToTenant, clinicData, createTenant, normalizedOwnerEmail, onClose, onSuccess, refetchAssignableAgents, reset, selectedAgentId]);
 
   return (
     <Modal open={open} onClose={handleClose} title="Onboard Tenant" maxWidthRem={42}>

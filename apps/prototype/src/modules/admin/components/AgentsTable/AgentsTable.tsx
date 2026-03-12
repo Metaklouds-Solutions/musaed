@@ -24,6 +24,10 @@ import type { AdminAgentRow } from '../../../../shared/types';
 interface AgentsTableProps {
   agents: AdminAgentRow[];
   onActionsClick?: (agent: AdminAgentRow) => void;
+  /** Called when user clicks Deploy for an assigned but not-yet-deployed agent. */
+  onDeployClick?: (agent: AdminAgentRow) => void;
+  /** When true, deploy is in progress for this agent id. */
+  deployingAgentId?: string | null;
   /** When true, table has no card styling (used inside a card container). */
   embedded?: boolean;
 }
@@ -38,6 +42,8 @@ function formatDate(iso: string): string {
 export function AgentsTable({
   agents,
   onActionsClick,
+  onDeployClick,
+  deployingAgentId,
   embedded = false,
 }: AgentsTableProps) {
   if (agents.length === 0) {
@@ -82,18 +88,6 @@ export function AgentsTable({
                 <span title={a.id} className="truncate max-w-[100px] inline-block">
                   {a.id}
                 </span>
-                {a.retellAgentId && (
-                  <a
-                    href={getRetellAgentUrl(a.retellAgentId)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1.5 inline-flex items-center gap-0.5 text-[var(--ds-primary)] hover:underline"
-                    aria-label={`Open ${a.name} in Retell`}
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" aria-hidden />
-                    Retell
-                  </a>
-                )}
               </TableCell>
               <TableCell>{a.voice}</TableCell>
               <TableCell>{a.language}</TableCell>
@@ -121,7 +115,31 @@ export function AgentsTable({
                 {a.lastSyncedAt === '—' ? '—' : formatDate(a.lastSyncedAt)}
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {a.tenantId && a.status !== 'active' && onDeployClick && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onDeployClick(a)}
+                      disabled={deployingAgentId === a.id}
+                      className="rounded-md px-2 py-1 text-xs"
+                      aria-label={`Deploy ${a.name} to Retell`}
+                    >
+                      {deployingAgentId === a.id ? 'Deploying…' : 'Deploy'}
+                    </Button>
+                  )}
+                  {a.retellAgentId && (
+                    <a
+                      href={getRetellAgentUrl(a.retellAgentId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[var(--ds-primary)] hover:bg-[var(--ds-primary)]/10 transition-colors"
+                      aria-label={`Open ${a.name} in Retell`}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" aria-hidden />
+                      Open in Retell
+                    </a>
+                  )}
                   {a.tenantId && (
                     <ViewButton to={`/admin/tenants/${a.tenantId}/agents/${a.id}`} aria-label="View agent" />
                   )}

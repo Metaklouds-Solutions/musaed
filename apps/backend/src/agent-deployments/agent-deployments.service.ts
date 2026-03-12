@@ -33,6 +33,23 @@ export class AgentDeploymentsService {
     });
   }
 
+  async findByAgentInstanceIds(agentInstanceIds: string[]) {
+    if (agentInstanceIds.length === 0) return [];
+    const objectIds = agentInstanceIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+    if (objectIds.length === 0) return [];
+    return this.deploymentModel
+      .find({
+        agentInstanceId: { $in: objectIds },
+        deletedAt: null,
+        status: 'active',
+        retellAgentId: { $ne: null, $exists: true },
+      })
+      .select('agentInstanceId retellAgentId')
+      .lean();
+  }
+
   async findByAgentInstance(
     agentInstanceId: string,
     tenantId?: string,
@@ -78,7 +95,6 @@ export class AgentDeploymentsService {
           tenantId: new Types.ObjectId(data.tenantId),
           agentInstanceId: new Types.ObjectId(data.agentInstanceId),
           channel: data.channel,
-          provider,
         },
         $set: {
           provider,
@@ -108,6 +124,18 @@ export class AgentDeploymentsService {
     return this.deploymentModel.updateMany(
       {
         tenantId: new Types.ObjectId(tenantId),
+        deletedAt: null,
+      },
+      {
+        $set: { deletedAt: new Date() },
+      },
+    );
+  }
+
+  async softDeleteByAgentInstanceId(agentInstanceId: string) {
+    return this.deploymentModel.updateMany(
+      {
+        agentInstanceId: new Types.ObjectId(agentInstanceId),
         deletedAt: null,
       },
       {

@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { PageHeader, TableFilters, Button } from '../../../shared/ui';
+import { PageHeader, TableFilters, Button, Pagination, TableSkeleton } from '../../../shared/ui';
 import { AgentsTable } from '../components/AgentsTable';
 import { AgentActionsModal } from '../components/AgentActionsModal';
 import { CreateAgentModal } from '../components/CreateAgentModal';
@@ -18,17 +18,27 @@ export function AdminAgentsPage() {
   const {
     tenants,
     filteredAgents,
+    loading: agentsLoading,
+    agentsError,
+    total,
+    totalPages,
+    page,
+    setPage,
     tenantFilter,
     setTenantFilter,
     statusFilter,
     setStatusFilter,
     deployAgent,
+    deleteAgent,
     loadDeployments,
     deploymentsByAgentId,
     deploymentsError,
     selectedDeploymentsAgentId,
     deploymentsLoadingFor,
     deployingAgentId,
+    deletingAgentId,
+    syncAgent,
+    syncingAgentId,
     refetch,
   } = useAdminAgents();
 
@@ -86,13 +96,38 @@ export function AdminAgentsPage() {
           />
         </div>
 
-        <div className="overflow-x-auto overscroll-contain scroll-smooth">
-          <AgentsTable
-            agents={filteredAgents}
-            onActionsClick={handleActionsClick}
-            embedded
-          />
+        <div className="overflow-x-auto overscroll-contain scroll-smooth min-h-[200px]">
+          {agentsLoading ? (
+            <div className="p-4 sm:p-5" aria-busy="true" aria-live="polite">
+              <TableSkeleton rows={6} cols={8} />
+            </div>
+          ) : agentsError ? (
+            <div className="py-12 px-4 text-center space-y-3">
+              <p className="text-sm text-[var(--error)]">{agentsError}</p>
+              <Button type="button" variant="secondary" size="sm" onClick={() => refetch()}>
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <AgentsTable
+              agents={filteredAgents}
+              onActionsClick={handleActionsClick}
+              onDeployClick={handleDeployClick}
+              deployingAgentId={deployingAgentId}
+              embedded
+            />
+          )}
         </div>
+        {totalPages > 1 && (
+          <div className="flex justify-center py-4 border-t border-[var(--border-subtle)]/50">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={total}
+            />
+          </div>
+        )}
       </div>
 
       {selectedDeploymentsAgentId && (
@@ -163,11 +198,15 @@ export function AdminAgentsPage() {
         tenants={tenants}
         onSuccess={() => refetch()}
         onDeploy={handleDeployClick}
+        onDelete={deleteAgent}
+        onSync={syncAgent}
         onViewDeployments={async (a) => {
           const deployments = await loadDeployments(a.id);
           if (deployments.length === 0) toast.info('No deployments found for this agent yet');
         }}
         deployingAgentId={deployingAgentId}
+        deletingAgentId={deletingAgentId}
+        syncingAgentId={syncingAgentId}
       />
       <CreateAgentModal
         open={createModalOpen}
@@ -176,6 +215,7 @@ export function AdminAgentsPage() {
           refetch();
           setCreateModalOpen(false);
         }}
+        tenants={tenants}
       />
 
     </div>

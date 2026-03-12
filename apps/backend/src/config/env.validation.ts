@@ -1,18 +1,36 @@
 import * as Joi from 'joi';
 
+/** Accepts decimal env value (e.g. 0.3) as string or number. */
+const decimalString = () =>
+  Joi.alternatives().try(
+    Joi.number().min(0).max(1),
+    Joi.string().pattern(/^\d*(\.\d+)?$/),
+  );
+
+/** Boolean-like env: code compares with === 'true', so keep as string. */
+const booleanString = (defaultValue: 'true' | 'false') =>
+  Joi.string()
+    .valid('true', 'false', '1', '0', 'yes', 'no')
+    .allow('')
+    .optional()
+    .default(defaultValue);
+
 /**
  * Joi validation schema for environment variables.
- * Enforces that all required secrets are present at startup so the app
- * fails fast instead of crashing at runtime on a missing key.
+ * Enforces that required secrets are present at startup so the app
+ * fails fast with a clear error instead of crashing later.
+ * All process.env values are strings; schema accepts string form for numbers/booleans.
  */
 export const envValidationSchema = Joi.object({
   // ── MongoDB ───────────────────────────────────────────────────────────
-  MONGODB_URI: Joi.string().pattern(/^mongodb(\+srv)?:\/\//).required(),
-  MONGODB_MAX_POOL_SIZE: Joi.number().integer().min(1).optional(),
-  MONGODB_MIN_POOL_SIZE: Joi.number().integer().min(0).optional(),
+  MONGODB_URI: Joi.string().pattern(/^mongodb(\+srv)?:\/\//).required().messages({
+    'string.pattern.base': 'MONGODB_URI must be a valid MongoDB connection string (mongodb:// or mongodb+srv://)',
+  }),
+  MONGODB_MAX_POOL_SIZE: Joi.alternatives().try(Joi.number().integer().min(1), Joi.string().pattern(/^\d+$/)).optional().allow(''),
+  MONGODB_MIN_POOL_SIZE: Joi.alternatives().try(Joi.number().integer().min(0), Joi.string().pattern(/^\d+$/)).optional().allow(''),
 
   // ── Server ────────────────────────────────────────────────────────────
-  PORT: Joi.number().integer().default(3001),
+  PORT: Joi.alternatives().try(Joi.number().integer().min(1), Joi.string().pattern(/^\d+$/)).default(3001),
   NODE_ENV: Joi.string()
     .valid('development', 'production', 'test')
     .default('development'),
@@ -22,17 +40,19 @@ export const envValidationSchema = Joi.object({
   CORS_ORIGIN: Joi.string().optional().default('http://localhost:5173'),
 
   // ── JWT ───────────────────────────────────────────────────────────────
-  JWT_SECRET: Joi.string().min(16).required(),
+  JWT_SECRET: Joi.string().min(16).required().messages({
+    'string.min': 'JWT_SECRET must be at least 16 characters (use e.g. openssl rand -base64 32)',
+  }),
   JWT_EXPIRES_IN: Joi.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
 
   // ── Redis ─────────────────────────────────────────────────────────────
   REDIS_URL: Joi.string().optional().allow(''),
-  AGENT_DEPLOYMENT_QUEUE_ENABLED: Joi.boolean().default(false),
-  QUEUE_WEBHOOKS_ENABLED: Joi.boolean().default(false),
-  QUEUE_EMAIL_ENABLED: Joi.boolean().default(false),
-  QUEUE_NOTIFICATIONS_ENABLED: Joi.boolean().default(false),
-  QUEUE_DEPTH_LOGGING_ENABLED: Joi.boolean().default(false),
+  AGENT_DEPLOYMENT_QUEUE_ENABLED: booleanString('false'),
+  QUEUE_WEBHOOKS_ENABLED: booleanString('false'),
+  QUEUE_EMAIL_ENABLED: booleanString('false'),
+  QUEUE_NOTIFICATIONS_ENABLED: booleanString('false'),
+  QUEUE_DEPTH_LOGGING_ENABLED: booleanString('false'),
 
   // ── Stripe ────────────────────────────────────────────────────────────
   STRIPE_SECRET_KEY: Joi.string().optional().allow(''),
@@ -47,7 +67,10 @@ export const envValidationSchema = Joi.object({
   SMTP_PRIMARY_PASS: Joi.string().optional().allow(''),
   SMTP_FALLBACK_USER: Joi.string().optional().allow(''),
   SMTP_FALLBACK_PASS: Joi.string().optional().allow(''),
-  EMAIL_RATE_LIMIT_PER_RECIPIENT: Joi.number().integer().min(0).default(10),
+  EMAIL_RATE_LIMIT_PER_RECIPIENT: Joi.alternatives()
+    .try(Joi.number().integer().min(0), Joi.string().pattern(/^\d+$/))
+    .optional()
+    .default(10),
 
   // ── Frontend URL ─────────────────────────────────────────────────────
   FRONTEND_URL: Joi.string().optional().default('http://localhost:5173'),
@@ -56,23 +79,23 @@ export const envValidationSchema = Joi.object({
   RETELL_API_KEY: Joi.string().optional().allow(''),
   RETELL_WEBHOOK_SECRET: Joi.string().optional().allow(''),
   RETELL_WEBHOOK_SECRET_LEGACY: Joi.string().optional().allow(''),
-  WEBHOOK_TIMESTAMP_MAX_AGE_SEC: Joi.number().integer().min(0).default(0),
+  WEBHOOK_TIMESTAMP_MAX_AGE_SEC: Joi.alternatives()
+    .try(Joi.number().integer().min(0), Joi.string().pattern(/^\d+$/))
+    .optional()
+    .default(0),
   API_BASE_URL: Joi.string().optional().default('http://localhost:3001'),
   RETELL_TOOL_API_KEY: Joi.string().optional().allow(''),
-  AGENT_DEPLOYMENT_V2_ENABLED: Joi.boolean().default(true),
-  AGENT_AUTO_DEPLOY_ON_CREATE: Joi.boolean().default(true),
-  AGENT_DEPLOYMENT_FAILURE_ALERT_THRESHOLD: Joi.number()
-    .min(0)
-    .max(1)
-    .default(0.3),
-  CALL_SESSION_INGEST_ENABLED: Joi.boolean().default(true),
+  AGENT_DEPLOYMENT_V2_ENABLED: booleanString('true'),
+  AGENT_AUTO_DEPLOY_ON_CREATE: booleanString('true'),
+  AGENT_DEPLOYMENT_FAILURE_ALERT_THRESHOLD: decimalString().optional().default(0.3),
+  CALL_SESSION_INGEST_ENABLED: booleanString('true'),
 
   // ── Seed ──────────────────────────────────────────────────────────────
   ADMIN_SEED_PASSWORD: Joi.string().optional().allow(''),
   OWNER_SEED_PASSWORD: Joi.string().optional().allow(''),
 
   // ── Reports ───────────────────────────────────────────────────────────
-  REPORT_AGGREGATION_ENABLED: Joi.boolean().default(false),
+  REPORT_AGGREGATION_ENABLED: booleanString('false'),
 
   // ── Observability ─────────────────────────────────────────────────────
   SENTRY_DSN: Joi.string().optional().allow(''),

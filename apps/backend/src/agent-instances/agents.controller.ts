@@ -1,6 +1,10 @@
 import {
+  BadRequestException,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Patch,
   Post,
   Param,
@@ -54,7 +58,11 @@ export class AgentsTenantController {
 
   @Post(':id/sync')
   syncAgent(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
-    return this.agentsService.syncAgent(id, req.tenantId!);
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      throw new BadRequestException('tenantId query parameter is required for sync');
+    }
+    return this.agentsService.syncAgent(id, tenantId);
   }
 
   @Get(':id/deployments')
@@ -119,12 +127,14 @@ export class AgentsAdminController {
   @Get()
   findAll(
     @Query('status') status?: string,
+    @Query('tenantId') tenantId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pagination = parsePagination({ page, limit });
     return this.agentsService.findAllAdmin({
       status,
+      tenantId,
       ...pagination,
     });
   }
@@ -168,6 +178,11 @@ export class AgentsAdminController {
     return this.agentsService.getDeploymentsForAdmin(id);
   }
 
+  @Get(':id/tenant-links')
+  getTenantLinks(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.agentsService.getTenantLinksForAdmin(id);
+  }
+
   @Get(':id/retell-config')
   getRetellConfig(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.syncAgentAdmin(id);
@@ -176,6 +191,12 @@ export class AgentsAdminController {
   @Get(':id')
   findById(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.findById(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  delete(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.agentsService.deleteForAdmin(id);
   }
 
   @Patch(':id')

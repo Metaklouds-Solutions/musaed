@@ -76,7 +76,7 @@ export class RetellClient {
   }
 
   /**
-   * Deletes a Retell agent if provider cleanup is required.
+   * Deletes a Retell voice agent if provider cleanup is required.
    */
   async deleteAgent(agentId: string): Promise<RetellDeleteResponse> {
     try {
@@ -84,6 +84,18 @@ export class RetellClient {
       return { success: true };
     } catch (error) {
       throw this.handleError(error, 'deleteAgent');
+    }
+  }
+
+  /**
+   * Deletes a Retell chat agent if provider cleanup is required.
+   */
+  async deleteChatAgent(agentId: string): Promise<RetellDeleteResponse> {
+    try {
+      await this.client.chatAgent.delete(agentId);
+      return { success: true };
+    } catch (error) {
+      throw this.handleError(error, 'deleteChatAgent');
     }
   }
 

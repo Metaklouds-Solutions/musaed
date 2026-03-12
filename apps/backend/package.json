@@ -9,6 +9,8 @@
     "start:dev": "nest start --watch",
     "start:dev:clean": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-dev-clean.ps1",
     "seed": "ts-node src/db/seed.ts",
+    "test:email-flow": "ts-node test-tenant-invite-flow.ts",
+    "clear-db": "node clear-db.js",
     "migrate:agent-deployment-v2": "ts-node src/db/migrate-agent-deployment-v2.ts",
     "rollback:agent-deployment-v2": "ts-node src/db/migrate-agent-deployment-v2.ts rollback",
     "start:debug": "nest start --debug --watch",

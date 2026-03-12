@@ -20,6 +20,15 @@ interface TenantListApiResponse {
   total?: number;
 }
 
+interface AdminAgentsListApiResponse {
+  data?: Array<Record<string, unknown>>;
+}
+
+interface AdminCallsListApiResponse {
+  data?: Array<Record<string, unknown>>;
+  total?: number;
+}
+
 interface TenantApiResponse extends Record<string, unknown> {
   _id?: string;
   name?: string;
@@ -58,6 +67,10 @@ const templateChannelsCache = new Map<string, AgentChannel[]>();
 
 function readString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function readNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function normalizeChannels(rawChannels: unknown, fallbackChannel: unknown): AgentChannel[] {
@@ -135,24 +148,45 @@ export const tenantsAdapter = {
       if (filters?.status) params.status = filters.status;
       if (filters?.search) params.search = filters.search;
       const qs = new URLSearchParams(params).toString();
-      const resp = await api.get<TenantListApiResponse>(`/admin/tenants?${qs}`);
-      return (resp.data ?? []).map((tenant) => ({
-        id: readString(tenant._id) ?? '',
-        name: readString(tenant.name) ?? '',
-        plan:
-          tenant.planId && typeof tenant.planId === 'object'
-            ? readString((tenant.planId as Record<string, unknown>).name) ?? '—'
-            : '—',
-        status: toTenantStatus(tenant.status),
-        agentCount: 0,
-        mrr: 0,
-        callsThisMonth: 0,
-        onboardingStatus:
-          tenant.onboardingComplete === true
-            ? 'Complete'
-            : `Step ${typeof tenant.onboardingStep === 'number' ? tenant.onboardingStep : 0}/4`,
-        createdAt: readString(tenant.createdAt) ?? '',
-      }));
+      const [resp, agentsResp] = await Promise.all([
+        api.get<TenantListApiResponse>(`/admin/tenants?${qs}`),
+        api
+          .get<AdminAgentsListApiResponse>('/admin/agents?page=1&limit=500')
+          .catch(() => ({ data: [] } as AdminAgentsListApiResponse)),
+      ]);
+
+      const counts = new Map<string, number>();
+      for (const agent of agentsResp.data ?? []) {
+        const rawTenantId =
+          typeof agent.tenantId === 'string'
+            ? agent.tenantId
+            : agent.tenantId && typeof agent.tenantId === 'object'
+              ? readString((agent.tenantId as Record<string, unknown>)._id)
+              : null;
+        if (!rawTenantId) continue;
+        counts.set(rawTenantId, (counts.get(rawTenantId) ?? 0) + 1);
+      }
+
+      return (resp.data ?? []).map((tenant) => {
+        const id = readString(tenant._id) ?? '';
+        return {
+          id: readString(tenant._id) ?? '',
+          name: readString(tenant.name) ?? '',
+          plan:
+            tenant.planId && typeof tenant.planId === 'object'
+              ? readString((tenant.planId as Record<string, unknown>).name) ?? '—'
+              : '—',
+          status: toTenantStatus(tenant.status),
+          agentCount: counts.get(id) ?? readNumber(tenant.agentCount) ?? 0,
+          mrr: 0,
+          callsThisMonth: 0,
+          onboardingStatus:
+            tenant.onboardingComplete === true
+              ? 'Complete'
+              : `Step ${typeof tenant.onboardingStep === 'number' ? tenant.onboardingStep : 0}/4`,
+          createdAt: readString(tenant.createdAt) ?? '',
+        };
+      });
     } catch (err) {
       if (!(err && typeof err === 'object' && 'status' in err && (err as { status?: number }).status === 0)) {
         console.warn('[tenants] getTenantListRows failed:', err);
@@ -166,10 +200,33 @@ export const tenantsAdapter = {
       const t = await api.get<TenantApiResponse>(`/admin/tenants/${id}`);
       if (!t) return null;
       const owner = t.ownerId && typeof t.ownerId === 'object' ? t.ownerId : {};
-      const agents = await api
-        .get<TenantAgentApiResponse[]>(`/admin/agents/tenants/${id}`)
-        .catch(() => [] as TenantAgentApiResponse[]);
+      const [agents, calls] = await Promise.all([
+        api
+          .get<TenantAgentApiResponse[]>(`/admin/agents/tenants/${id}`)
+          .catch(() => [] as TenantAgentApiResponse[]),
+        api
+          .get<AdminCallsListApiResponse>(`/admin/calls?tenantId=${encodeURIComponent(id)}&page=1&limit=1`)
+          .catch(() => ({ total: 0, data: [] } as AdminCallsListApiResponse)),
+      ]);
       const summaries = agents.map((agent) => toAgentInstanceSummary(agent, id));
+
+      const hasAssignedAgent = summaries.length > 0;
+      const hasDeployedAgent = summaries.some((summary) => {
+        if (summary.deployedAt) return true;
+        if (summary.status === 'active' || summary.status === 'partially_deployed') return true;
+        const source = agents.find((a) => readString(a._id) === summary.id);
+        return Boolean(source && typeof source.retellAgentId === 'string' && source.retellAgentId.trim().length > 0);
+      });
+      const hasFirstCall = (calls.total ?? 0) > 0 || (calls.data?.length ?? 0) > 0;
+      const ownerStatus = readString((owner as Record<string, unknown>).status);
+      const ownerLastLoginAt = readString((owner as Record<string, unknown>).lastLoginAt);
+      const hasOwnerLogin = ownerStatus === 'active' && Boolean(ownerLastLoginAt);
+      const status = toTenantStatus(t.status);
+      const hasBillingActivated =
+        status === 'ACTIVE' ||
+        t.onboardingComplete === true ||
+        (t.planId && typeof t.planId === 'object' && Boolean(readString((t.planId as Record<string, unknown>)._id)));
+
       return {
         id: readString(t._id) ?? id,
         profile: {
@@ -193,18 +250,18 @@ export const tenantsAdapter = {
           { step: 1, title: 'Clinic Info Submitted', done: true },
           {
             step: 2,
-            title: 'Agent Deployed',
-            done: (typeof t.onboardingStep === 'number' ? t.onboardingStep : 0) >= 2,
+            title: 'Agent Assigned',
+            done: hasAssignedAgent,
           },
           {
             step: 3,
-            title: 'First Call Received',
-            done: (typeof t.onboardingStep === 'number' ? t.onboardingStep : 0) >= 3,
+            title: 'Owner Login Completed',
+            done: hasOwnerLogin || hasFirstCall,
           },
-          { step: 4, title: 'Billing Activated', done: t.onboardingComplete === true },
+          { step: 4, title: 'Billing Activated', done: hasBillingActivated },
         ],
         quickStats: {
-          totalCalls: 0,
+          totalCalls: calls.total ?? 0,
           bookingsCreated: 0,
           escalations: 0,
           conversionRate: 0,

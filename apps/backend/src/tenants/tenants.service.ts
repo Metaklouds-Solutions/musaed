@@ -36,7 +36,14 @@ export class TenantsService {
     private agentRolloutService: AgentRolloutService,
   ) {}
 
-  async findAll(query: { status?: string; search?: string; page?: number; limit?: number }) {
+  async findAll(
+    query: { status?: string; search?: string; page?: number; limit?: number },
+  ): Promise<{
+    data: Array<Record<string, unknown>>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const { status, search, page = 1, limit = 20 } = query;
     const filter: FilterQuery<TenantDocument> = { deletedAt: null };
     if (status) filter.status = status;
@@ -44,24 +51,76 @@ export class TenantsService {
       filter.name = { $regex: search, $options: 'i' };
     }
 
-    const [data, total] = await Promise.all([
+    const [data, total, agentCounts] = await Promise.all([
       this.tenantModel
         .find(filter)
-        .populate('ownerId', 'email name')
+        .populate('ownerId', 'email name status lastLoginAt')
         .skip((page - 1) * limit)
         .limit(limit)
         .sort({ createdAt: -1 })
         .lean(),
       this.tenantModel.countDocuments(filter),
+      this.agentInstanceModel.aggregate<{ _id: Types.ObjectId; count: number }>([
+        {
+          $match: {
+            status: { $ne: 'deleted' },
+            tenantId: { $ne: null },
+          },
+        },
+        {
+          $group: {
+            _id: '$tenantId',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
 
-    return { data, total, page, limit };
+    const counts = new Map(agentCounts.map((row) => [row._id.toString(), row.count]));
+    const dataWithCounts = data.map((tenant) => {
+      const tenantId = (tenant as { _id?: Types.ObjectId })._id?.toString?.() ?? '';
+      const ownerCandidate = (tenant as unknown as { ownerId?: unknown }).ownerId;
+      const owner =
+        ownerCandidate && typeof ownerCandidate === 'object' && !('_bsontype' in (ownerCandidate as object))
+          ? (ownerCandidate as Record<string, unknown>)
+          : null;
+      const ownerStatus =
+        owner && typeof owner.status === 'string' ? owner.status : null;
+      const ownerLastLoginAt =
+        owner && owner.lastLoginAt ? String(owner.lastLoginAt) : null;
+      const agentCount = counts.get(tenantId) ?? 0;
+
+      let dynamicStep = 1;
+      if (agentCount > 0) dynamicStep = 2;
+      if (dynamicStep >= 2 && ownerStatus === 'active' && ownerLastLoginAt) dynamicStep = 3;
+      if (
+        dynamicStep >= 3 &&
+        ((tenant as { status?: string }).status === 'ACTIVE' ||
+          Boolean((tenant as { planId?: Types.ObjectId | null }).planId))
+      ) {
+        dynamicStep = 4;
+      }
+
+      return {
+        ...tenant,
+        agentCount,
+        onboardingStep: dynamicStep,
+        onboardingComplete: dynamicStep >= 4,
+      };
+    });
+
+    return { data: dataWithCounts, total, page, limit } as {
+      data: Array<Record<string, unknown>>;
+      total: number;
+      page: number;
+      limit: number;
+    };
   }
 
   async findById(id: string) {
     const tenant = await this.tenantModel
       .findOne({ _id: id, deletedAt: null })
-      .populate('ownerId', 'email name')
+      .populate('ownerId', 'email name status lastLoginAt')
       .populate('planId')
       .lean();
 

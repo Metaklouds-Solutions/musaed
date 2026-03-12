@@ -40,6 +40,8 @@ export interface ChurnRisk {
 /** Admin agent row for agents table. */
 export interface AdminAgentRow {
   id: string;
+  baseAgentInstanceId?: string | null;
+  linkedTenantCount?: number;
   name: string;
   externalAgentId: string;
   voice: string;

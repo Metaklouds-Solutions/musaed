@@ -75,7 +75,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     []
   );
   const { data: agents } = useAsyncData(
-    () => (open ? agentsAdapter.list() : []),
+    async () => {
+      if (!open) return [];
+      const result = await agentsAdapter.list({ page: 1, limit: 50 });
+      return result.data;
+    },
     [open],
     []
   );

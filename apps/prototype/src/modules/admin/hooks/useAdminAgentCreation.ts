@@ -11,6 +11,7 @@ interface CreateAdminAgentInput {
   name: string;
   channelsEnabled: AgentChannel[];
   capabilityLevel?: string;
+  tenantId?: string;
 }
 
 function mapApiError(error: unknown): string {
@@ -24,7 +25,11 @@ function mapApiError(error: unknown): string {
   return error instanceof Error ? error.message : 'Failed to create agent';
 }
 
-/** Provides admin agent-creation actions and template catalog state for the wizard UI. */
+/**
+ * Provides admin agent-creation actions and template catalog state for the wizard UI.
+ * Supports creating agents with or without tenant assignment.
+ * When a tenantId is provided, the backend auto-deploys to Retell.
+ */
 export function useAdminAgentCreation() {
   const {
     data: templates,
@@ -39,18 +44,25 @@ export function useAdminAgentCreation() {
 
   const createAgent = useCallback(async (input: CreateAdminAgentInput) => {
     try {
-      const created = await agentsAdapter.createUnassigned({
+      const payload = {
         templateId: input.templateId,
         name: input.name,
         channelsEnabled: input.channelsEnabled,
         capabilityLevel: input.capabilityLevel,
-      });
+      };
+
+      const created = input.tenantId
+        ? await agentsAdapter.createForTenant(input.tenantId, payload)
+        : await agentsAdapter.createUnassigned(payload);
+
       auditAdapter.log('agent.created', {
         agentId: created.id,
         templateId: input.templateId,
         channelsEnabled: input.channelsEnabled,
+        tenantId: input.tenantId ?? null,
+        autoDeployed: Boolean(input.tenantId),
       });
-      return created;
+      return { ...created, autoDeployed: Boolean(input.tenantId) };
     } catch (error: unknown) {
       throw new Error(mapApiError(error));
     }

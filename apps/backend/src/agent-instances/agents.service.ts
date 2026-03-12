@@ -40,12 +40,20 @@ export class AgentsService {
       .lean();
   }
 
-  async findAllAdmin(query: { status?: string; page?: number; limit?: number }) {
-    const { status, page = 1, limit = 20 } = query;
-    const filter: FilterQuery<AgentInstanceDocument> = {};
+  async findAllAdmin(query: {
+    status?: string;
+    tenantId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { status, tenantId, page = 1, limit = 20 } = query;
+    const filter: FilterQuery<AgentInstanceDocument> = { status: { $ne: 'deleted' } };
     if (status) filter.status = status;
+    if (tenantId && Types.ObjectId.isValid(tenantId)) {
+      filter.tenantId = new Types.ObjectId(tenantId);
+    }
 
-    const [data, total] = await Promise.all([
+    const [rawData, total] = await Promise.all([
       this.instanceModel
         .find(filter)
         .populate('tenantId', 'name slug')
@@ -57,7 +65,119 @@ export class AgentsService {
       this.instanceModel.countDocuments(filter),
     ]);
 
+    const enriched = await this.enrichWithRetellIds(rawData);
+    const data = await this.attachLinkingMetadata(enriched);
     return { data, total, page, limit };
+  }
+
+  private async attachLinkingMetadata(
+    instances: Array<Record<string, unknown> & { _id?: unknown; sourceAgentInstanceId?: unknown }>,
+  ): Promise<Array<Record<string, unknown>>> {
+    if (instances.length === 0) return instances;
+
+    const baseIds = Array.from(
+      new Set(
+        instances
+          .map((instance) => {
+            const source =
+              typeof instance.sourceAgentInstanceId === 'object' &&
+              instance.sourceAgentInstanceId &&
+              'toString' in instance.sourceAgentInstanceId
+                ? (instance.sourceAgentInstanceId as { toString: () => string }).toString()
+                : null;
+            if (source) return source;
+            if (typeof instance._id === 'object' && instance._id && 'toString' in instance._id) {
+              return (instance._id as { toString: () => string }).toString();
+            }
+            if (typeof instance._id === 'string') return instance._id;
+            return null;
+          })
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    const objectIds = baseIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    const grouped = await this.instanceModel.aggregate<{ _id: Types.ObjectId; linkedTenantCount: number }>([
+      {
+        $match: {
+          status: { $ne: 'deleted' },
+          tenantId: { $ne: null },
+          $or: [
+            { _id: { $in: objectIds } },
+            { sourceAgentInstanceId: { $in: objectIds } },
+          ],
+        },
+      },
+      {
+        $project: {
+          baseId: { $ifNull: ['$sourceAgentInstanceId', '$_id'] },
+        },
+      },
+      {
+        $group: {
+          _id: '$baseId',
+          linkedTenantCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const countMap = new Map<string, number>(
+      grouped.map((row) => [row._id.toString(), row.linkedTenantCount]),
+    );
+
+    return instances.map((instance) => {
+      const source =
+        typeof instance.sourceAgentInstanceId === 'object' &&
+        instance.sourceAgentInstanceId &&
+        'toString' in instance.sourceAgentInstanceId
+          ? (instance.sourceAgentInstanceId as { toString: () => string }).toString()
+          : null;
+      const selfId =
+        typeof instance._id === 'object' && instance._id && 'toString' in instance._id
+          ? (instance._id as { toString: () => string }).toString()
+          : typeof instance._id === 'string'
+            ? instance._id
+            : null;
+      const baseAgentInstanceId = source ?? selfId;
+
+      return {
+        ...instance,
+        baseAgentInstanceId,
+        linkedTenantCount: baseAgentInstanceId ? (countMap.get(baseAgentInstanceId) ?? 0) : 0,
+      };
+    });
+  }
+
+  private async enrichWithRetellIds(
+    instances: Array<Record<string, unknown> & { _id?: unknown; retellAgentId?: string | null }>,
+  ): Promise<typeof instances> {
+    const needsEnrichment = instances.filter((i) => !i.retellAgentId);
+    if (needsEnrichment.length === 0) return instances;
+
+    const ids = needsEnrichment
+      .map((i) => (typeof i._id === 'object' && i._id && 'toString' in i._id ? (i._id as { toString: () => string }).toString() : String(i._id)))
+      .filter(Boolean);
+    const deployments = await this.agentDeploymentsService.findByAgentInstanceIds(ids);
+    const map = new Map<string, string>();
+    for (const d of deployments) {
+      const key =
+        typeof d.agentInstanceId === 'object' && d.agentInstanceId && 'toString' in d.agentInstanceId
+          ? (d.agentInstanceId as { toString: () => string }).toString()
+          : String(d.agentInstanceId);
+      if (d.retellAgentId && !map.has(key)) map.set(key, d.retellAgentId);
+    }
+
+    return instances.map((i) => {
+      const id = typeof i._id === 'object' && i._id && 'toString' in i._id ? (i._id as { toString: () => string }).toString() : String(i._id);
+      const fromDeployment = map.get(id);
+      if (!i.retellAgentId && fromDeployment) {
+        return { ...i, retellAgentId: fromDeployment };
+      }
+      return i;
+    });
   }
 
   async findById(id: string, tenantId?: string) {
@@ -159,6 +279,7 @@ export class AgentsService {
   ) {
     const template = await this.getTemplateOrThrow(dto.templateId);
     const created = await this.instanceModel.create({
+      sourceAgentInstanceId: null,
       tenantId: new Types.ObjectId(tenantId),
       templateId: new Types.ObjectId(dto.templateId),
       name: dto.name ?? '',
@@ -179,6 +300,7 @@ export class AgentsService {
   async createUnassigned(dto: CreateAgentInstanceDto) {
     const template = await this.getTemplateOrThrow(dto.templateId);
     return this.instanceModel.create({
+      sourceAgentInstanceId: null,
       tenantId: null,
       templateId: new Types.ObjectId(dto.templateId),
       name: dto.name ?? '',
@@ -199,10 +321,66 @@ export class AgentsService {
       throw new ConflictException('Cannot assign a deleted agent');
     }
     if (instance.tenantId && instance.tenantId.toString() !== tenantId) {
-      throw new ConflictException('Agent is already assigned to another tenant');
+      const sourceId = instance.sourceAgentInstanceId
+        ? instance.sourceAgentInstanceId.toString()
+        : instance._id.toString();
+
+      const existingForTenant = await this.instanceModel.findOne({
+        tenantId: new Types.ObjectId(tenantId),
+        status: { $ne: 'deleted' },
+        $or: [
+          { _id: new Types.ObjectId(sourceId) },
+          { sourceAgentInstanceId: new Types.ObjectId(sourceId) },
+        ],
+      });
+
+      if (existingForTenant) {
+        return existingForTenant;
+      }
+
+      const cloned = await this.instanceModel.create({
+        sourceAgentInstanceId: new Types.ObjectId(sourceId),
+        tenantId: new Types.ObjectId(tenantId),
+        templateId: instance.templateId,
+        name: instance.name,
+        templateVersion: instance.templateVersion,
+        channelsEnabled: instance.channelsEnabled,
+        channel: instance.channel,
+        customConfig: instance.customConfig ?? {},
+        assignedToStaffIds: [],
+        status: 'paused',
+        configSnapshot: {},
+        customPrompts: instance.customPrompts ?? {},
+        resolvedVariables: instance.resolvedVariables ?? {},
+        retellAgentId: null,
+        retellLlmId: null,
+        retellAgentVersion: null,
+        emailAddress: null,
+        lastSyncedAt: null,
+        deployedAt: null,
+      });
+
+      if (cloned.templateId && this.agentRolloutService.isDeploymentV2Enabled()) {
+        this.triggerDeploymentAsync(cloned._id.toString(), tenantId);
+      }
+
+      return cloned;
     }
+
     instance.tenantId = new Types.ObjectId(tenantId);
+    if (!instance.sourceAgentInstanceId) {
+      instance.sourceAgentInstanceId = instance._id as Types.ObjectId;
+    }
     await instance.save();
+
+    if (
+      instance.templateId &&
+      !instance.retellAgentId &&
+      this.agentRolloutService.isDeploymentV2Enabled()
+    ) {
+      this.triggerDeploymentAsync(instance._id.toString(), tenantId);
+    }
+
     return instance;
   }
 
@@ -227,11 +405,16 @@ export class AgentsService {
 
   async deployForAdmin(id: string) {
     if (!this.agentRolloutService.isDeploymentV2Enabled()) {
-      throw new ConflictException('Agent deployment v2 is disabled by feature flag');
+      throw new ConflictException(
+        'Agent deployment v2 is disabled. Set AGENT_DEPLOYMENT_V2_ENABLED=true in .env',
+      );
     }
     const instance = await this.findById(id);
     if (!instance.tenantId) {
       throw new ConflictException('Assign this agent to a tenant before deployment');
+    }
+    if (!instance.templateId) {
+      throw new ConflictException('Agent has no template assigned');
     }
     await this.agentDeploymentService.enqueueDeployment(
       instance._id.toString(),
@@ -248,6 +431,78 @@ export class AgentsService {
   async getDeploymentsForAdmin(id: string) {
     await this.findById(id);
     return this.agentDeploymentsService.findByAgentInstance(id);
+  }
+
+  async getTenantLinksForAdmin(id: string) {
+    const instance = await this.findById(id);
+    const baseId = instance.sourceAgentInstanceId
+      ? instance.sourceAgentInstanceId.toString()
+      : instance._id.toString();
+
+    const links = await this.instanceModel
+      .find({
+        status: { $ne: 'deleted' },
+        $or: [
+          { _id: new Types.ObjectId(baseId) },
+          { sourceAgentInstanceId: new Types.ObjectId(baseId) },
+        ],
+      })
+      .populate('tenantId', 'name slug')
+      .select('_id tenantId status name sourceAgentInstanceId')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return {
+      baseAgentInstanceId: baseId,
+      links,
+    };
+  }
+
+  /**
+   * Deletes an agent instance: cleans up Retell resources (voice/chat agents and flows),
+   * soft-deletes deployments, and marks the instance as deleted.
+   * Idempotent: if already deleted, returns successfully (no-op).
+   */
+  async deleteForAdmin(id: string): Promise<void> {
+    const instance = await this.instanceModel.findById(id);
+    if (!instance) throw new NotFoundException('Agent instance not found');
+    if (instance.status === 'deleted') {
+      return;
+    }
+
+    const deployments = await this.agentDeploymentsService.findByAgentInstance(id);
+    for (const deployment of deployments) {
+      if (deployment.retellAgentId) {
+        try {
+          if (deployment.channel === 'chat') {
+            await this.retellClient.deleteChatAgent(deployment.retellAgentId);
+          } else {
+            await this.retellClient.deleteAgent(deployment.retellAgentId);
+          }
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          this.logger.warn(
+            `Retell agent delete failed agentInstanceId=${id} retellAgentId=${deployment.retellAgentId} error=${message}`,
+          );
+        }
+      }
+      if (deployment.retellConversationFlowId) {
+        try {
+          await this.retellClient.deleteConversationFlow(
+            deployment.retellConversationFlowId,
+          );
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          this.logger.warn(
+            `Retell flow delete failed agentInstanceId=${id} flowId=${deployment.retellConversationFlowId} error=${message}`,
+          );
+        }
+      }
+    }
+
+    await this.agentDeploymentsService.softDeleteByAgentInstanceId(id);
+    instance.status = 'deleted';
+    await instance.save();
   }
 
   async getDeploymentsForTenant(id: string, tenantId: string) {

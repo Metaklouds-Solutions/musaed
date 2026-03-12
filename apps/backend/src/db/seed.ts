@@ -307,6 +307,50 @@ async function seed() {
       console.log('   ⏭️  Default agent template already exists, skipping\n');
     }
 
+    // ── Clinics Voice Template (Arabic clinic reception) ──
+    console.log('🤖 Seeding Clinics Voice Template...');
+    const existingClinicsTemplate = await AgentTemplate.findOne({
+      slug: 'clinics-voice-template',
+      deletedAt: null,
+    });
+    if (!existingClinicsTemplate) {
+      const clinicsTemplatePath = path.resolve(
+        process.cwd(),
+        'templates',
+        'clinics-voice-template.json',
+      );
+      let clinicsFlow: Record<string, unknown> | null = null;
+      try {
+        const raw = await import('node:fs/promises').then((fs) =>
+          fs.readFile(clinicsTemplatePath, 'utf8'),
+        );
+        clinicsFlow = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        clinicsFlow = null;
+      }
+
+      if (clinicsFlow && clinicsFlow.conversationFlow && clinicsFlow.voice_id) {
+        await AgentTemplate.create({
+          name: 'Clinics Voice Template',
+          slug: 'clinics-voice-template',
+          description: 'Arabic clinic reception voice agent: booking, patient info, knowledge base Q&A',
+          category: 'clinics',
+          channel: 'voice',
+          supportedChannels: ['voice'],
+          capabilityLevel: 'L3',
+          flowTemplate: clinicsFlow,
+          version: 1,
+        });
+        console.log('   ✅ Seeded Clinics Voice Template\n');
+      } else {
+        console.log(
+          '   ⚠️  templates/clinics-voice-template.json not found or invalid, skipping\n',
+        );
+      }
+    } else {
+      console.log('   ⏭️  Clinics Voice Template already exists, skipping\n');
+    }
+
     console.log('🎉 Seed complete!');
   } catch (err) {
     console.error('\n❌ Seed failed:', err);

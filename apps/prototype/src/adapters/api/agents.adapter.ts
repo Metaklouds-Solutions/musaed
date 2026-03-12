@@ -25,10 +25,29 @@ import type {
 
 interface AdminAgentsListResponse {
   data?: AgentInstanceApiResponse[];
+  total?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminAgentsListParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  tenantId?: string | null;
+}
+
+export interface AdminAgentsListResult {
+  data: AdminAgentRow[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 interface AgentInstanceApiResponse extends Record<string, unknown> {
   _id?: string;
+  baseAgentInstanceId?: string | null;
+  linkedTenantCount?: number;
   tenantId?: string | Record<string, unknown>;
   name?: string;
   status?: string;
@@ -222,64 +241,82 @@ function toAgentInstanceSummary(agent: AgentInstanceApiResponse): AgentInstanceS
   };
 }
 
+function mapAgentToRow(agent: AgentInstanceApiResponse): AdminAgentRow {
+  const summary = toAgentInstanceSummary(agent);
+  const retellAgentId =
+    typeof agent.retellAgentId === 'string' && agent.retellAgentId.trim().length > 0
+      ? agent.retellAgentId
+      : null;
+  return {
+    id: summary.id,
+    baseAgentInstanceId:
+      typeof agent.baseAgentInstanceId === 'string' ? agent.baseAgentInstanceId : null,
+    linkedTenantCount:
+      typeof agent.linkedTenantCount === 'number' ? agent.linkedTenantCount : 0,
+    name: summary.name,
+    externalAgentId: summary.id,
+    voice: summary.channelsEnabled.join(' + '),
+    language: 'en',
+    status: summary.status,
+    tenantId: summary.tenantId,
+    tenantName: summary.tenantName,
+    lastSyncedAt: summary.lastSyncedAt ?? '',
+    retellAgentId,
+  };
+}
+
 export const agentsAdapter = {
-  async list(): Promise<AdminAgentRow[]> {
+  async list(params?: AdminAgentsListParams): Promise<AdminAgentsListResult> {
+    const page = params?.page ?? 1;
+    const limit = params?.limit ?? 20;
+    const status = params?.status;
+    const tenantId = params?.tenantId;
+    const query = new URLSearchParams();
+    query.set('page', String(page));
+    query.set('limit', String(limit));
+    if (status) query.set('status', status);
+    if (tenantId) query.set('tenantId', tenantId);
     try {
-      const resp = await api.get<AdminAgentsListResponse>('/admin/agents?page=1&limit=100');
+      const resp = await api.get<AdminAgentsListResponse>(`/admin/agents?${query.toString()}`);
       const items = resp?.data ?? [];
-      return items.map((agent) => {
-        const summary = toAgentInstanceSummary(agent);
-        const retellAgentId =
-          typeof agent.retellAgentId === 'string' && agent.retellAgentId.trim().length > 0
-            ? agent.retellAgentId
-            : null;
-        return {
-          id: summary.id,
-          name: summary.name,
-          externalAgentId: summary.id,
-          voice: summary.channelsEnabled.join(' + '),
-          language: 'en',
-          status: summary.status,
-          tenantId: summary.tenantId,
-          tenantName: summary.tenantName,
-          lastSyncedAt: summary.lastSyncedAt ?? '',
-          retellAgentId,
-        };
-      });
+      return {
+        data: items.map(mapAgentToRow),
+        total: resp?.total ?? items.length,
+        page: resp?.page ?? page,
+        limit: resp?.limit ?? limit,
+      };
     } catch (error: unknown) {
-      // Browser-level conditional cache can surface as 304 with empty body in fetch clients.
       if (error instanceof ApiClientError && error.status === 304) {
-        const resp = await api.get<AdminAgentsListResponse>(
-          `/admin/agents?page=1&limit=100&_=${Date.now()}`,
-        );
+        query.set('_', String(Date.now()));
+        const resp = await api.get<AdminAgentsListResponse>(`/admin/agents?${query.toString()}`);
         const items = resp?.data ?? [];
-        return items.map((agent) => {
-          const summary = toAgentInstanceSummary(agent);
-          const retellAgentId =
-            typeof agent.retellAgentId === 'string' && agent.retellAgentId.trim().length > 0
-              ? agent.retellAgentId
-              : null;
-          return {
-            id: summary.id,
-            name: summary.name,
-            externalAgentId: summary.id,
-            voice: summary.channelsEnabled.join(' + '),
-            language: 'en',
-            status: summary.status,
-            tenantId: summary.tenantId,
-            tenantName: summary.tenantName,
-            lastSyncedAt: summary.lastSyncedAt ?? '',
-            retellAgentId,
-          };
-        });
+        return {
+          data: items.map(mapAgentToRow),
+          total: resp?.total ?? items.length,
+          page: resp?.page ?? page,
+          limit: resp?.limit ?? limit,
+        };
       }
-      return [];
+      return { data: [], total: 0, page: 1, limit };
     }
   },
 
+  async getTenantLinks(agentId: string): Promise<{
+    baseAgentInstanceId: string;
+    links: Array<{
+      _id: string;
+      tenantId: { _id: string; name?: string; slug?: string } | null;
+      status: string;
+      name: string;
+      sourceAgentInstanceId?: string | null;
+    }>;
+  }> {
+    return api.get(`/admin/agents/${agentId}/tenant-links`);
+  },
+
   async listVoiceAgents(): Promise<AdminAgentRow[]> {
-    const all = await this.list();
-    return all.filter((a) => a.tenantId != null && a.status !== 'available');
+    const result = await this.list({ page: 1, limit: 200 });
+    return result.data.filter((a) => a.tenantId != null && a.status !== 'available');
   },
 
   async assign(agentId: string, tenantId: string): Promise<void> {
@@ -290,12 +327,24 @@ export const agentsAdapter = {
     await api.post(`/admin/agents/${agentId}/unassign`);
   },
 
+  async delete(agentId: string): Promise<void> {
+    await api.delete(`/admin/agents/${agentId}`);
+  },
+
   async updateAgent(agentId: string, data: { name?: string }): Promise<void> {
     await api.patch(`/admin/agents/${agentId}`, data);
   },
 
   async deploy(agentId: string): Promise<DeployAgentResponse> {
-    return api.post<DeployAgentResponse>(`/v1/admin/agents/${agentId}/deploy`);
+    return api.post<DeployAgentResponse>(`/admin/agents/${agentId}/deploy`);
+  },
+
+  /**
+   * Syncs the agent config from Retell back to the platform.
+   * Fetches the latest config from Retell and stores it in configSnapshot.
+   */
+  async syncFromRetell(agentId: string): Promise<void> {
+    await api.get(`/admin/agents/${agentId}/retell-config`);
   },
 
   async createForTenant(
@@ -356,6 +405,24 @@ export const agentsAdapter = {
     return null;
   },
 
+  /**
+   * Fetches minimal agent data for redirect. Returns null on 401 or error.
+   */
+  async getAgentForRedirect(agentId: string): Promise<{ tenantId: string } | null> {
+    try {
+      const agent = await api.get<AgentInstanceApiResponse>(`/admin/agents/${agentId}`);
+      const tenantId =
+        typeof agent.tenantId === 'string'
+          ? agent.tenantId
+          : agent.tenantId && typeof agent.tenantId === 'object' && agent.tenantId !== null && '_id' in agent.tenantId
+            ? String((agent.tenantId as Record<string, unknown>)._id)
+            : null;
+      return tenantId ? { tenantId } : null;
+    } catch {
+      return null;
+    }
+  },
+
   async getAgentsForTenant(tenantId: string | undefined): Promise<TenantAgentRow[]> {
     if (!tenantId) return [];
     try {
@@ -401,8 +468,14 @@ export const agentsAdapter = {
     try {
       let agent: AgentInstanceApiResponse;
       if (tenantId) {
-        // Tenant context: sync then get
-        try { await api.post(`/tenant/agents/${agentId}/sync`); } catch {}
+        // Tenant context: sync then get (pass tenantId for TenantGuard when admin views tenant agent)
+        try {
+          await api.post(
+            `/tenant/agents/${agentId}/sync?tenantId=${encodeURIComponent(tenantId)}`,
+          );
+        } catch {
+          /* sync best-effort */
+        }
         agent = await api.get<AgentInstanceApiResponse>(`/tenant/agents/${agentId}`);
       } else {
         // Admin context: sync via retell-config (which returns the agent)

@@ -5,6 +5,9 @@ export type AgentInstanceDocument = AgentInstance & Document;
 
 @Schema({ timestamps: true, collection: 'agent_instances' })
 export class AgentInstance {
+  @Prop({ type: Types.ObjectId, ref: 'AgentInstance', default: null })
+  sourceAgentInstanceId: Types.ObjectId | null;
+
   @Prop({ type: Types.ObjectId, ref: 'Tenant', default: null })
   tenantId: Types.ObjectId | null;
 
@@ -63,6 +66,7 @@ export class AgentInstance {
 export const AgentInstanceSchema = SchemaFactory.createForClass(AgentInstance);
 
 AgentInstanceSchema.index({ tenantId: 1 });
+AgentInstanceSchema.index({ sourceAgentInstanceId: 1, tenantId: 1 });
 AgentInstanceSchema.index({ templateId: 1 });
 AgentInstanceSchema.index({ status: 1 });
 AgentInstanceSchema.index({ retellAgentId: 1 }, { sparse: true });

@@ -49,7 +49,10 @@ export class EmailService {
       });
       this.logger.log(`Email primary transport ready (Gmail SMTP via ${primaryUser})`);
     } else {
-      this.logger.warn('SMTP_PRIMARY_* / SMTP_USER not set — emails will be logged but not sent');
+      this.logger.warn(
+        'SMTP not configured: invite and password-reset emails will NOT be sent. ' +
+          'Set SMTP_USER and SMTP_PASS in .env (use a Gmail App Password, not your normal password).',
+      );
     }
 
     const fallbackUser = this.config.get<string>('SMTP_FALLBACK_USER');
@@ -263,7 +266,7 @@ export class EmailService {
     return {
       to,
       from: this.fromEmail,
-      subject: 'You have been invited to MUSAED',
+      subject: "You're invited to the Clinic CRM platform",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Welcome to MUSAED, ${safeName}!</h2>

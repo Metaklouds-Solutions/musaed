@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Bot, CircleCheck, Cog, KeyRound, Rocket } from 'lucide-react';
-import { Button, Modal, ModalHeader } from '../../../../shared/ui';
+import { Button, Modal, ModalHeader, PopoverSelect } from '../../../../shared/ui';
 import { useAdminAgentCreation } from '../../hooks';
+import type { AdminTenantRow } from '../../../../shared/types';
 
 type AgentChannel = 'voice' | 'chat' | 'email';
 type AgentType = 'product' | 'custom';
@@ -11,6 +12,7 @@ interface CreateAgentModalProps {
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
+  tenants?: AdminTenantRow[];
 }
 
 const STEPS = [
@@ -24,13 +26,14 @@ const inputClass =
   'w-full px-4 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)] text-sm';
 
 /** Renders step-based agent creation modal for admin page with tenant assignment. */
-export function CreateAgentModal({ open, onClose, onCreated }: CreateAgentModalProps) {
+export function CreateAgentModal({ open, onClose, onCreated, tenants = [] }: CreateAgentModalProps) {
   const [step, setStep] = useState(1);
   const [agentType, setAgentType] = useState<AgentType>('product');
   const [templateId, setTemplateId] = useState<string>('');
   const [name, setName] = useState('');
   const [channelsEnabled, setChannelsEnabled] = useState<AgentChannel[]>(['voice']);
   const [capabilityLevel, setCapabilityLevel] = useState('L1');
+  const [selectedTenantId, setSelectedTenantId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { templates, templatesLoading, templatesError, refetchTemplates, createAgent } =
     useAdminAgentCreation();
@@ -53,6 +56,7 @@ export function CreateAgentModal({ open, onClose, onCreated }: CreateAgentModalP
     setName('');
     setChannelsEnabled(['voice']);
     setCapabilityLevel('L1');
+    setSelectedTenantId('');
     setIsSubmitting(false);
   }
 
@@ -92,17 +96,35 @@ export function CreateAgentModal({ open, onClose, onCreated }: CreateAgentModalP
     handleTemplateSelect(firstTemplate.id);
   }, [handleTemplateSelect, open, step, templateId, templates, templatesLoading]);
 
+  const hasSetDefaultTenantForOpen = useRef(false);
+  // Default to first tenant when modal opens so new agents deploy to Retell (only once per open)
+  useEffect(() => {
+    if (!open) {
+      hasSetDefaultTenantForOpen.current = false;
+      return;
+    }
+    if (tenants.length > 0 && !hasSetDefaultTenantForOpen.current) {
+      setSelectedTenantId(tenants[0].id);
+      hasSetDefaultTenantForOpen.current = true;
+    }
+  }, [open, tenants]);
+
   async function handleSubmit(): Promise<void> {
     if (!selectedTemplate || !canContinue) return;
     setIsSubmitting(true);
     try {
-      await createAgent({
+      const result = await createAgent({
         templateId: selectedTemplate.id,
         name: name.trim(),
         channelsEnabled,
         capabilityLevel: capabilityLevel.trim() || undefined,
+        tenantId: selectedTenantId || undefined,
       });
-      toast.success('Agent created. Assign it to a tenant during onboarding to deploy.');
+      if (result.autoDeployed) {
+        toast.success('Agent created and deployment to Retell queued.');
+      } else {
+        toast.success('Agent created. Assign it to a tenant to deploy.');
+      }
       resetState();
       onClose();
       onCreated?.();
@@ -232,6 +254,24 @@ export function CreateAgentModal({ open, onClose, onCreated }: CreateAgentModalP
               />
             </div>
             <div>
+              <label className="block text-xs text-[var(--text-muted)] mb-1.5">Assign to Tenant</label>
+              <PopoverSelect
+                value={selectedTenantId}
+                onChange={setSelectedTenantId}
+                options={[
+                  { value: '', label: 'No tenant (create unassigned)' },
+                  ...tenants.map((t) => ({ value: t.id, label: t.name })),
+                ]}
+                placeholder="Select tenant to deploy immediately"
+                aria-label="Select tenant"
+              />
+              <p className="mt-1.5 text-xs text-[var(--text-muted)]">
+                {selectedTenantId
+                  ? 'Agent will be auto-deployed to Retell after creation.'
+                  : 'Unassigned agents must be assigned to a tenant before deployment.'}
+              </p>
+            </div>
+            <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1.5">Capability Level</label>
               <input
                 className={inputClass}
@@ -283,14 +323,24 @@ export function CreateAgentModal({ open, onClose, onCreated }: CreateAgentModalP
           <section className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-4 space-y-3">
             <p className="text-sm font-semibold text-[var(--text-primary)]">Review & Create</p>
             <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-base)] p-3 text-sm space-y-1">
-              <p className="text-[var(--text-primary)]">Tenant: Unassigned</p>
+              <p className="text-[var(--text-primary)]">
+                Tenant: {selectedTenantId ? (tenants.find((t) => t.id === selectedTenantId)?.name ?? selectedTenantId) : 'Unassigned'}
+              </p>
               <p className="text-[var(--text-muted)]">Template: {selectedTemplate?.name ?? '—'}</p>
               <p className="text-[var(--text-muted)]">Agent name: {name || '—'}</p>
               <p className="text-[var(--text-muted)]">Channels: {channelsEnabled.join(', ')}</p>
             </div>
-            <p className="text-xs text-[var(--text-muted)]">
-              Assign this agent to a tenant during onboarding, then deploy from the tenant or agent page.
-            </p>
+            {selectedTenantId ? (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+                <p className="text-xs font-medium text-emerald-700">
+                  Auto-deploy enabled — the agent will be deployed to Retell immediately after creation.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-[var(--text-muted)]">
+                Assign this agent to a tenant later, then deploy from the agents page.
+              </p>
+            )}
           </section>
         )}
 

@@ -30,7 +30,12 @@ export class TenantsController {
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-  ) {
+  ): Promise<{
+    data: Array<Record<string, unknown>>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const pagination = parsePagination({ page, limit });
     return this.tenantsService.findAll({
       status,

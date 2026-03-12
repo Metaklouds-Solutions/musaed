@@ -162,7 +162,13 @@ export async function apiFetch<T = unknown>(
   }
 
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const text = await res.text();
+  if (text.trim() === '') return undefined as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return undefined as T;
+  }
 }
 
 export const api = {

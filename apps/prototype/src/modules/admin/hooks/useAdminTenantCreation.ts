@@ -23,8 +23,8 @@ export function useAdminTenantCreation() {
     refetch: refetchAssignableAgents,
   } = useAsyncData(
     async () => {
-      const allAgents = await Promise.resolve(agentsAdapter.list());
-      return allAgents.filter((agent) => !agent.tenantId);
+      const result = await agentsAdapter.list({ page: 1, limit: 200 });
+      return result.data;
     },
     [],
     [] as AdminAgentRow[],
