@@ -27,29 +27,22 @@ interface NotificationDrawerProps {
   onClose: () => void;
   items: NotificationItem[];
   onMarkAsRead?: (id: string) => void;
-  onMarkAllAsRead?: () => void;
   onClearAll?: () => void;
-  hasUnread?: boolean;
 }
 
 type Filter = 'all' | 'unread';
-type SeverityFilter = 'all' | 'critical' | 'important' | 'normal' | 'info';
 
 export function NotificationDrawer({
   open,
   onClose,
   items,
   onMarkAsRead,
-  onMarkAllAsRead,
   onClearAll,
-  hasUnread = items.some((n) => n.unread),
 }: NotificationDrawerProps) {
   const [filter, setFilter] = useState<Filter>('all');
-  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const navigate = useNavigate();
   const filtered = items.filter((n) => {
     if (filter === 'unread' && !n.unread) return false;
-    if (severityFilter !== 'all' && (n.severity ?? 'normal') !== severityFilter) return false;
     return true;
   });
   const isEmpty = filtered.length === 0;
@@ -80,22 +73,24 @@ export function NotificationDrawer({
         >
           All
         </button>
-        {onMarkAllAsRead && hasUnread && (
+        {onClearAll && items.length > 0 && (
           <button
             type="button"
-            onClick={onMarkAllAsRead}
+            onClick={onClearAll}
             className="text-sm text-[var(--primary)] hover:underline"
           >
             Mark all read
           </button>
         )}
-        {onClearAll && (
+        {onClearAll && items.length > 0 && (
           <button
             type="button"
             onClick={onClearAll}
-            className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0"
+            title="Clear all notifications from database"
+            aria-label="Clear all notifications"
           >
-            Clear
+            Clear all
           </button>
         )}
         <button
@@ -114,21 +109,7 @@ export function NotificationDrawer({
           Unread
         </button>
       </div>
-      <div className="px-4 sm:px-5 py-2 border-b border-[var(--separator)]">
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
-          className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)]"
-          aria-label="Filter by severity"
-        >
-          <option value="all">All severities</option>
-          <option value="critical">Critical</option>
-          <option value="important">Important</option>
-          <option value="normal">Normal</option>
-          <option value="info">Info</option>
-        </select>
-      </div>
-      <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+      <div className="notification-scroll-area flex-1 overflow-y-auto overscroll-contain min-h-0">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center py-16 sm:py-12 px-6 text-center">
             <div

@@ -66,6 +66,17 @@ describe('AuthService', () => {
       sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
     };
 
+    tenantStaffModel.findOne.mockResolvedValue({
+      tenantId: new Types.ObjectId(MOCK_TENANT_ID),
+      roleSlug: 'clinic_admin',
+      status: 'active',
+    });
+    tenantModel.findOne.mockResolvedValue({
+      _id: new Types.ObjectId(MOCK_TENANT_ID),
+      status: 'ACTIVE',
+      deletedAt: null,
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -92,11 +103,12 @@ describe('AuthService', () => {
         status: 'active',
       };
       userModel.findOne.mockResolvedValue(user);
-      // Called first in login() for suspension check, then in issueTokens() for token claims
-      tenantStaffModel.findOne
-        .mockResolvedValueOnce(membership)
-        .mockResolvedValueOnce(membership);
-      tenantModel.findOne.mockResolvedValue({ status: 'ACTIVE' });
+      tenantStaffModel.findOne.mockResolvedValue(membership);
+      tenantModel.findOne.mockResolvedValue({
+        _id: new Types.ObjectId(MOCK_TENANT_ID),
+        status: 'ACTIVE',
+        deletedAt: null,
+      });
 
       const result = await service.login('test@example.com', 'ValidPass1!');
 
@@ -167,6 +179,16 @@ describe('AuthService', () => {
       });
       const user = mockUser();
       userModel.findOne.mockResolvedValue(user);
+      tenantStaffModel.findOne.mockResolvedValue({
+        tenantId: new Types.ObjectId(MOCK_TENANT_ID),
+        roleSlug: 'clinic_admin',
+        status: 'active',
+      });
+      tenantModel.findOne.mockResolvedValue({
+        _id: new Types.ObjectId(MOCK_TENANT_ID),
+        status: 'ACTIVE',
+        deletedAt: null,
+      });
 
       const result = await service.refresh('valid-refresh');
 

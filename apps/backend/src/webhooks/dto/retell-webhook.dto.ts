@@ -35,4 +35,12 @@ export class RetellWebhookDto {
   @IsObject()
   @IsOptional()
   metadata?: Record<string, unknown>;
+
+  @IsObject()
+  @IsOptional()
+  call?: Record<string, unknown>;
+
+  @IsNumber()
+  @IsOptional()
+  event_timestamp?: number;
 }

@@ -35,7 +35,7 @@ function toNotificationItem(p: Record<string, unknown>): NotificationItem {
           ? 'info'
           : 'normal');
   return {
-    id: (p.id as string) ?? '',
+    id: (p.id as string) ?? (p._id as string) ?? '',
     title: (p.title as string) ?? '',
     message: (p.message as string) ?? '',
     time: formatTime(createdAt),
@@ -46,6 +46,18 @@ function toNotificationItem(p: Record<string, unknown>): NotificationItem {
     unread: !(p.read as boolean),
     link: p.link as string | undefined,
   };
+}
+
+function dedupeById(items: NotificationItem[]): NotificationItem[] {
+  const seen = new Set<string>();
+  const out: NotificationItem[] = [];
+  for (const item of items) {
+    if (!item.id) continue;
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    out.push(item);
+  }
+  return out;
 }
 
 export function useNotifications() {
@@ -68,7 +80,7 @@ export function useNotifications() {
         notificationsAdapter.getList({ limit: 50 }),
         notificationsAdapter.getUnreadCount(),
       ]);
-      setItems(list);
+      setItems((prev) => dedupeById([...list, ...prev]));
       setUnreadCount(count);
     } catch {
       setItems([]);
@@ -90,9 +102,15 @@ export function useNotifications() {
 
     const onNotification = (payload: Record<string, unknown>) => {
       const item = toNotificationItem(payload);
-      setItems((prev) => [item, ...prev]);
-      setUnreadCount((c) => c + 1);
-      setBellPulse((p) => p + 1);
+      setItems((prev) => {
+        const exists = prev.some((n) => n.id === item.id);
+        if (exists) {
+          return prev.map((n) => (n.id === item.id ? { ...n, ...item } : n));
+        }
+        setUnreadCount((c) => c + (item.unread ? 1 : 0));
+        setBellPulse((p) => p + 1);
+        return [item, ...prev];
+      });
 
       const severity = (payload.severity as string) ?? ((payload.priority as string) ?? 'normal');
       if (severity === 'critical' || severity === 'important' || severity === 'high') {
@@ -109,6 +127,7 @@ export function useNotifications() {
   }, [session?.user]);
 
   const markAsRead = useCallback(async (id: string) => {
+    if (!id) return;
     await notificationsAdapter.markAsRead(id);
     setItems((prev) =>
       prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),

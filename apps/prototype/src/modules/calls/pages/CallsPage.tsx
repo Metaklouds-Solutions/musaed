@@ -8,9 +8,11 @@ import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown, Tab
 import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useCallsList, useCallsExport } from '../hooks';
+import { useCallsList, useCallsExport, useCallAnalytics } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
 import { OutcomeBreakdown } from '../../reports/components/OutcomeBreakdown';
+import { SentimentChart } from '../../reports/components/SentimentChart/SentimentChart';
+import { Skeleton } from '../../../shared/ui';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
 
@@ -27,12 +29,21 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
-/** Tenant calls list: filters, stats, export. Data from useCallsList hook. */
+/** Formats avg duration in seconds to display: 44 → "44s", 90 → "1:30". */
+function formatAvgDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/** Tenant calls list: filters, stats, export. Data from useCallsList and useCallAnalytics hooks. */
 export function CallsPage() {
   const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
+  const { analytics, isLoading: analyticsLoading } = useCallAnalytics(dateRangeFilter);
   const { exportCallsCsv } = useCallsExport();
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
 
@@ -70,21 +81,28 @@ export function CallsPage() {
     return calls.filter((c) => getOutcome(c) === outcomeFilter);
   }, [calls, outcomeFilter]);
 
-  const callSummary = useMemo(() => {
-    const total = calls.length;
-    const booked = calls.filter((c) => c.bookingCreated).length;
-    const escalated = calls.filter((c) => c.escalationFlag && !c.bookingCreated).length;
-    const failed = total - booked - escalated;
-    const totalDuration = calls.reduce((s, c) => s + c.duration, 0);
-    const avgDurationSec = total > 0 ? Math.round(totalDuration / total) : 0;
-    const conversionRate = total > 0 ? Math.round((booked / total) * 100) : 0;
-    const outcomes = [
-      { outcome: 'booked' as const, count: booked, percentage: total > 0 ? Math.round((booked / total) * 100) : 0 },
-      { outcome: 'escalated' as const, count: escalated, percentage: total > 0 ? Math.round((escalated / total) * 100) : 0 },
-      { outcome: 'failed' as const, count: failed, percentage: total > 0 ? Math.round((failed / total) * 100) : 0 },
+  const outcomesForChart = useMemo(() => {
+    const { outcomes } = analytics;
+    const total = analytics.totalCalls;
+    const toPct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+    return [
+      { outcome: 'booked' as const, count: outcomes.booked, percentage: toPct(outcomes.booked) },
+      { outcome: 'escalated' as const, count: outcomes.escalated, percentage: toPct(outcomes.escalated) },
+      { outcome: 'failed' as const, count: outcomes.failed, percentage: toPct(outcomes.failed) },
+      { outcome: 'info_only' as const, count: outcomes.info_only, percentage: toPct(outcomes.info_only) },
     ];
-    return { total, conversionRate, avgDurationSec, outcomes };
-  }, [calls]);
+  }, [analytics]);
+
+  const sentimentBuckets = useMemo(() => {
+    const { sentiment } = analytics;
+    const total = analytics.totalCalls;
+    const toPct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+    return [
+      { label: 'Positive', range: '0.6–1', count: sentiment.positive, percentage: toPct(sentiment.positive) },
+      { label: 'Neutral', range: '0.4–0.6', count: sentiment.neutral, percentage: toPct(sentiment.neutral) },
+      { label: 'Negative', range: '0–0.4', count: sentiment.negative, percentage: toPct(sentiment.negative) },
+    ];
+  }, [analytics]);
 
   const handleExport = useCallback(() => {
     exportCallsCsv(
@@ -132,15 +150,39 @@ export function CallsPage() {
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total calls" value={callSummary.total} />
-        <StatCard label="Conversion rate" value={`${callSummary.conversionRate}%`} />
-        <StatCard
-          label="Avg duration"
-          value={`${Math.floor(callSummary.avgDurationSec / 60)}:${(callSummary.avgDurationSec % 60).toString().padStart(2, '0')}`}
-        />
+        {analyticsLoading ? (
+          <>
+            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
+            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
+            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
+          </>
+        ) : (
+          <>
+            <StatCard label="Total calls" value={analytics.totalCalls} />
+            <StatCard
+              label="Conversation rate"
+              value={`${Math.round(analytics.conversationRate * 100)}%`}
+            />
+            <StatCard
+              label="Avg duration"
+              value={formatAvgDuration(analytics.avgDuration)}
+            />
+          </>
+        )}
         <div className="sm:col-span-2 lg:col-span-1">
-          <OutcomeBreakdown outcomes={callSummary.outcomes} />
+          {analyticsLoading ? (
+            <Skeleton className="h-32 rounded-[var(--radius-card)]" />
+          ) : (
+            <OutcomeBreakdown outcomes={outcomesForChart} />
+          )}
         </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {analyticsLoading ? (
+          <Skeleton className="h-48 rounded-[var(--radius-card)]" />
+        ) : (
+          <SentimentChart buckets={sentimentBuckets} />
+        )}
       </div>
       {calls.length === 0 ? (
         <div className="rounded-[var(--radius-card)] card-glass p-8">

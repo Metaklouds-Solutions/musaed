@@ -38,6 +38,8 @@ import * as localSkills from './local/skills.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
 import * as apiCalls from './api/calls.adapter';
+import * as apiAnalytics from './api/analytics.adapter';
+import * as localAnalytics from './local/analytics.adapter';
 import * as apiBookings from './api/bookings.adapter';
 import * as apiCustomers from './api/customers.adapter';
 import * as apiAlerts from './api/alerts.adapter';
@@ -58,6 +60,15 @@ const isLocal = dataMode !== 'api';
 
 export const dashboardAdapter = (isLocal ? localDashboard.dashboardAdapter : apiDashboard.dashboardAdapter) as typeof localDashboard.dashboardAdapter;
 export const callsAdapter = (isLocal ? localCalls.callsAdapter : apiCalls.callsAdapter) as typeof localCalls.callsAdapter;
+
+export const analyticsAdapter = {
+  getTenantCallAnalytics: isLocal
+    ? localAnalytics.getTenantCallAnalytics
+    : (tid: string, q?: apiAnalytics.AnalyticsQuery) => apiAnalytics.getTenantCallAnalytics(tid, q),
+  getAdminCallAnalytics: isLocal
+    ? localAnalytics.getAdminCallAnalytics
+    : apiAnalytics.getAdminCallAnalytics,
+};
 export const bookingsAdapter = (isLocal ? localBookings.bookingsAdapter : apiBookings.bookingsAdapter) as typeof localBookings.bookingsAdapter;
 export const customersAdapter = (isLocal ? localCustomers.customersAdapter : apiCustomers.customersAdapter) as typeof localCustomers.customersAdapter;
 export const alertsAdapter = (isLocal ? localAlerts.alertsAdapter : apiAlerts.alertsAdapter) as typeof localAlerts.alertsAdapter;

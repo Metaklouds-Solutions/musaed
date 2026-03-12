@@ -34,6 +34,9 @@ pnpm-debug.log*
 # Test artifacts with sensitive data
 api-test-results.json
 
+# Temporary debugging scripts (MongoDB, env access)
+tmp-*.js
+
 # Misc
 *.tsbuildinfo
 .cache/

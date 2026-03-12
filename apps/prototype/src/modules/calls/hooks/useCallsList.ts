@@ -16,7 +16,7 @@ export function useCallsList(dateRange?: DateRangeFilter) {
     return user.tenantId;
   }, [user]);
 
-  const { data: calls, isLoading, error, refresh } = useAsyncData(
+  const { data: calls, loading, error, refetch } = useAsyncData(
     () => callsAdapter.getCalls(tenantId, dateRange),
     [tenantId, dateRange],
     [] as Call[],
@@ -34,5 +34,5 @@ export function useCallsList(dateRange?: DateRangeFilter) {
     return m;
   }, [customers]);
 
-  return { user, calls, customerMap, isLoading, error, refresh };
+  return { user, calls, customerMap, isLoading: loading, error, refresh: refetch };
 }

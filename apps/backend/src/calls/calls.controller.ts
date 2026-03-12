@@ -14,6 +14,7 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { CallsService } from './calls.service';
 import { ListCallsDto } from './dto/list-calls.dto';
+import { AnalyticsCallsDto } from './dto/analytics-calls.dto';
 import { CreateWebCallDto } from './dto/create-web-call.dto';
 import { parsePagination } from '../common/helpers/parse-pagination';
 import { requireTenantId } from '../common/helpers/require-tenant-id';
@@ -33,6 +34,19 @@ export class TenantCallsController {
       from: query.from,
       to: query.to,
       outcome: query.outcome,
+      agentId: query.agentId,
+    });
+  }
+
+  @Get('analytics')
+  analytics(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: AnalyticsCallsDto,
+  ) {
+    const tenantId = requireTenantId(req);
+    return this.callsService.getAnalyticsForTenant(tenantId, {
+      from: query.from,
+      to: query.to,
       agentId: query.agentId,
     });
   }
@@ -78,6 +92,16 @@ export class AdminCallsController {
       to: query.to,
       outcome: query.outcome,
       agentId: query.agentId,
+    });
+  }
+
+  @Get('analytics')
+  analytics(@Query() query: AnalyticsCallsDto) {
+    return this.callsService.getAnalyticsForAdmin({
+      from: query.from,
+      to: query.to,
+      agentId: query.agentId,
+      tenantId: query.tenantId,
     });
   }
 

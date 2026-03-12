@@ -71,21 +71,7 @@ export class AuthService {
     }
 
     if (user.role !== 'ADMIN') {
-      const membership = await this.tenantStaffModel.findOne({
-        userId: user._id,
-        status: 'active',
-      });
-      if (membership) {
-        const tenant = await this.tenantModel.findOne({
-          _id: membership.tenantId,
-          deletedAt: null,
-        });
-        if (tenant?.status === 'SUSPENDED') {
-          throw new ForbiddenException(
-            'Your account has been disabled. Please contact your administrator.',
-          );
-        }
-      }
+      await this.ensureUserCanAccessTenant(user._id);
     }
 
     if (!user.passwordHash) {
@@ -134,18 +120,16 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    if (user.role !== 'ADMIN' && payload.tenantId) {
-      const tenant = await this.tenantModel.findOne({
-        _id: payload.tenantId,
-        deletedAt: null,
-      });
-      if (tenant?.status === 'SUSPENDED') {
+    if (user.role !== 'ADMIN') {
+      try {
+        await this.ensureUserCanAccessTenant(user._id, payload.tenantId);
+      } catch {
         await this.refreshTokenModel.updateOne(
           { token: refreshToken },
           { $set: { revokedAt: new Date() } },
         );
         throw new ForbiddenException(
-          'Your account has been disabled. Please contact your administrator.',
+          'Your tenant access is disabled. Please contact your administrator.',
         );
       }
     }
@@ -179,6 +163,9 @@ export class AuthService {
     const user = await this.userModel.findOne({ _id: payload.sub, deletedAt: null });
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+    if (user.role !== 'ADMIN') {
+      await this.ensureUserCanAccessTenant(user._id, payload.tenantId);
     }
     return user;
   }
@@ -373,33 +360,9 @@ export class AuthService {
     let tenantRole: string | undefined;
 
     if (user.role !== 'ADMIN') {
-      const membership = await this.tenantStaffModel.findOne({
-        userId: user._id,
-        status: 'active',
-      });
-      if (membership) {
-        tenantId = membership.tenantId.toString();
-        tenantRole = membership.roleSlug;
-      } else {
-        const fallbackMembership = await this.tenantStaffModel.findOne({
-          userId: user._id,
-        });
-        if (fallbackMembership) {
-          tenantId = fallbackMembership.tenantId.toString();
-          tenantRole = fallbackMembership.roleSlug;
-        }
-      }
-      if (!tenantId && user.role === 'TENANT_OWNER') {
-        // Fallback for legacy owner records that may exist without tenant_staff links.
-        const ownedTenant = await this.tenantModel.findOne({
-          ownerId: user._id,
-          deletedAt: null,
-        });
-        if (ownedTenant) {
-          tenantId = ownedTenant._id.toString();
-          tenantRole = 'clinic_admin';
-        }
-      }
+      const tenantAccess = await this.ensureUserCanAccessTenant(user._id);
+      tenantId = tenantAccess.tenantId;
+      tenantRole = tenantAccess.tenantRole;
     }
 
     const baseClaims = {
@@ -436,6 +399,42 @@ export class AuthService {
         ...(tenantId && { tenantId }),
         ...(tenantRole && { tenantRole }),
       },
+    };
+  }
+
+  private async ensureUserCanAccessTenant(
+    userId: Types.ObjectId | string,
+    preferredTenantId?: string,
+  ): Promise<{ tenantId: string; tenantRole: string }> {
+    const userObjectId = new Types.ObjectId(userId);
+    const membershipFilter: Record<string, unknown> = {
+      userId: userObjectId,
+      status: 'active',
+    };
+    if (preferredTenantId && Types.ObjectId.isValid(preferredTenantId)) {
+      membershipFilter.tenantId = new Types.ObjectId(preferredTenantId);
+    }
+
+    const membership = await this.tenantStaffModel.findOne(membershipFilter);
+    if (!membership || !membership.tenantId) {
+      throw new ForbiddenException(
+        'Your tenant access is disabled. Please contact your administrator.',
+      );
+    }
+
+    const tenant = await this.tenantModel.findOne({
+      _id: membership.tenantId,
+      deletedAt: null,
+    });
+    if (!tenant || tenant.status === 'SUSPENDED' || tenant.status === 'CHURNED') {
+      throw new ForbiddenException(
+        'Your tenant access is disabled. Please contact your administrator.',
+      );
+    }
+
+    return {
+      tenantId: membership.tenantId.toString(),
+      tenantRole: membership.roleSlug ?? 'tenant_staff',
     };
   }
 }

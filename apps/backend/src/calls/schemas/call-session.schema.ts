@@ -60,18 +60,15 @@ export class CallSession {
 
 export const CallSessionSchema = SchemaFactory.createForClass(CallSession);
 
-CallSessionSchema.set('toJSON', {
-  transform(_doc, ret) {
-    const obj = ret as unknown as Record<string, unknown>;
-    delete obj.recordingUrl;
-    delete obj.transcript;
-    delete obj.transcriptObject;
-    return obj;
-  },
-});
-
+/**
+ * toJSON: List responses exclude transcript via .select() in the service.
+ * Detail responses include transcript, transcriptObject, recordingUrl, summary, sentiment.
+ */
 CallSessionSchema.index({ callId: 1 }, { unique: true });
 CallSessionSchema.index({ tenantId: 1, createdAt: -1 });
+CallSessionSchema.index({ tenantId: 1, startedAt: -1 });
+CallSessionSchema.index({ tenantId: 1, agentInstanceId: 1 });
 CallSessionSchema.index({ tenantId: 1, outcome: 1 });
+CallSessionSchema.index({ tenantId: 1, sentiment: 1 });
 CallSessionSchema.index({ tenantId: 1, 'metadata.intent': 1 });
 CallSessionSchema.index({ agentInstanceId: 1, createdAt: -1 });

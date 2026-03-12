@@ -77,11 +77,11 @@ export class CallsService {
 
   /**
    * Retrieves a tenant-scoped call session by identifier.
+   * Detail view includes transcript, transcriptObject, recordingUrl, summary, sentiment.
    */
   async getByIdForTenant(id: string, tenantId: string, enrich: boolean = false) {
     const call = await this.callSessionModel
       .findOne({ _id: id, tenantId: new Types.ObjectId(tenantId) })
-      .select('-recordingUrl -transcript -transcriptObject')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
       .lean();
@@ -96,11 +96,11 @@ export class CallsService {
 
   /**
    * Retrieves a call session by Retell ID for tenant.
+   * Detail view includes transcript, transcriptObject, recordingUrl, summary, sentiment.
    */
   async getByRetellIdForTenant(retellCallId: string, tenantId: string) {
     const call = await this.callSessionModel
       .findOne({ callId: retellCallId, tenantId: new Types.ObjectId(tenantId) })
-      .select('-recordingUrl -transcript -transcriptObject')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
       .lean();
@@ -115,11 +115,11 @@ export class CallsService {
 
   /**
    * Retrieves a call session by identifier for admin users.
+   * Detail view includes transcript, transcriptObject, recordingUrl, summary, sentiment.
    */
   async getByIdForAdmin(id: string, enrich: boolean = false) {
     const call = await this.callSessionModel
       .findById(id)
-      .select('-recordingUrl -transcript -transcriptObject')
       .populate('tenantId', 'name slug')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
@@ -135,11 +135,11 @@ export class CallsService {
 
   /**
    * Retrieves a call session by Retell ID for admin.
+   * Detail view includes transcript, transcriptObject, recordingUrl, summary, sentiment.
    */
   async getByRetellIdForAdmin(retellCallId: string) {
     const call = await this.callSessionModel
       .findOne({ callId: retellCallId })
-      .select('-recordingUrl -transcript -transcriptObject')
       .populate('tenantId', 'name slug')
       .populate('agentInstanceId', 'name')
       .populate('bookingId', 'serviceType date timeSlot status')
@@ -168,10 +168,181 @@ export class CallsService {
     return this.retellClient.createWebCall({
       agent_id: instance.retellAgentId,
       metadata: {
-        tenant_id: tenantId,
-        agent_instance_id: agentInstanceId,
+        tenant_id: (instance.tenantId ?? new Types.ObjectId(tenantId)).toString(),
+        agent_instance_id: instance._id.toString(),
       },
     });
+  }
+
+  /**
+   * Returns analytics for a tenant (total calls, conversation rate, avg duration, outcomes, sentiment).
+   * Uses a single MongoDB aggregation pipeline.
+   */
+  async getAnalyticsForTenant(
+    tenantId: string,
+    query: { from?: string; to?: string; agentId?: string },
+  ) {
+    const filter = this.buildFilter(
+      { from: query.from, to: query.to, agentId: query.agentId },
+      tenantId,
+      { dateField: 'startedAt', defaultLast7Days: true },
+    );
+    return this.runAnalyticsAggregation(filter);
+  }
+
+  /**
+   * Returns analytics for admin (all tenants or filtered by tenantId).
+   * Uses a single MongoDB aggregation pipeline.
+   */
+  async getAnalyticsForAdmin(query: {
+    from?: string;
+    to?: string;
+    agentId?: string;
+    tenantId?: string;
+  }) {
+    const filter = this.buildFilter(
+      {
+        from: query.from,
+        to: query.to,
+        agentId: query.agentId,
+        tenantId: query.tenantId ?? null,
+      },
+      null,
+      { dateField: 'startedAt', defaultLast7Days: true },
+    );
+    return this.runAnalyticsAggregation(filter);
+  }
+
+  /**
+   * Runs a single aggregation pipeline to compute all analytics.
+   */
+  private async runAnalyticsAggregation(
+    filter: FilterQuery<CallSessionDocument>,
+  ): Promise<{
+    totalCalls: number;
+    conversationRate: number;
+    avgDuration: number;
+    outcomes: {
+      booked: number;
+      escalated: number;
+      failed: number;
+      info_only: number;
+      unknown: number;
+    };
+    sentiment: {
+      positive: number;
+      neutral: number;
+      negative: number;
+    };
+  }> {
+    const OUTCOMES = ['booked', 'escalated', 'failed', 'info_only', 'unknown'];
+    const SENTIMENTS = ['positive', 'neutral', 'negative'];
+
+    interface FacetResult {
+      main?: {
+        totalCalls: number;
+        bookedCount: number;
+        sumDurationMs: number;
+        durationCount: number;
+      };
+      outcomes: { _id: string; count: number }[];
+      sentiments: { _id: string; count: number }[];
+    }
+
+    const result = await this.callSessionModel.aggregate<FacetResult>([
+      { $match: filter },
+      {
+        $facet: {
+          main: [
+            {
+              $group: {
+                _id: null,
+                totalCalls: { $sum: 1 },
+                bookedCount: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } },
+                sumDurationMs: { $sum: { $ifNull: ['$durationMs', 0] } },
+                durationCount: { $sum: { $cond: [{ $ne: ['$durationMs', null] }, 1, 0] } },
+              },
+            },
+          ],
+          outcomes: [{ $group: { _id: '$outcome', count: { $sum: 1 } } }],
+          sentiments: [
+            {
+              $group: {
+                _id: {
+                  $toLower: { $ifNull: ['$sentiment', 'neutral'] },
+                },
+                count: { $sum: 1 },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          main: { $arrayElemAt: ['$main', 0] },
+          outcomes: 1,
+          sentiments: 1,
+        },
+      },
+    ]);
+
+    const main = result[0]?.main ?? {
+      totalCalls: 0,
+      bookedCount: 0,
+      sumDurationMs: 0,
+      durationCount: 0,
+    };
+    const outcomesArr = result[0]?.outcomes ?? [];
+    const sentimentsArr = result[0]?.sentiments ?? [];
+
+    const totalCalls = main.totalCalls ?? 0;
+    const bookedCount = main.bookedCount ?? 0;
+    const sumDurationMs = main.sumDurationMs ?? 0;
+    const durationCount = main.durationCount ?? 0;
+
+    const outcomes: Record<string, number> = Object.fromEntries(
+      OUTCOMES.map((o) => [o, 0]),
+    );
+    for (const row of outcomesArr) {
+      const key = OUTCOMES.includes(row._id) ? row._id : 'unknown';
+      outcomes[key] = (outcomes[key] ?? 0) + row.count;
+    }
+
+    const sentiment: Record<string, number> = Object.fromEntries(
+      SENTIMENTS.map((s) => [s, 0]),
+    );
+    for (const row of sentimentsArr) {
+      const normalized =
+        row._id === 'positive'
+          ? 'positive'
+          : row._id === 'negative'
+            ? 'negative'
+            : 'neutral';
+      sentiment[normalized] = (sentiment[normalized] ?? 0) + row.count;
+    }
+
+    const conversationRate =
+      totalCalls > 0 ? bookedCount / totalCalls : 0;
+    const avgDurationSec =
+      durationCount > 0 ? Math.round(sumDurationMs / durationCount / 1000) : 0;
+
+    return {
+      totalCalls,
+      conversationRate,
+      avgDuration: avgDurationSec,
+      outcomes: {
+        booked: outcomes.booked,
+        escalated: outcomes.escalated,
+        failed: outcomes.failed,
+        info_only: outcomes.info_only,
+        unknown: outcomes.unknown,
+      },
+      sentiment: {
+        positive: sentiment.positive,
+        neutral: sentiment.neutral,
+        negative: sentiment.negative,
+      },
+    };
   }
 
   /**
@@ -290,8 +461,10 @@ export class CallsService {
   private buildFilter(
     query: ListCallsQuery & { tenantId?: string | null },
     tenantId: string | null,
+    options?: { dateField?: 'createdAt' | 'startedAt'; defaultLast7Days?: boolean },
   ): FilterQuery<CallSessionDocument> {
     const filter: FilterQuery<CallSessionDocument> = {};
+    const dateField = options?.dateField ?? 'createdAt';
 
     if (tenantId) {
       filter.tenantId = new Types.ObjectId(tenantId);
@@ -303,15 +476,25 @@ export class CallsService {
       filter.agentInstanceId = new Types.ObjectId(query.agentId);
     }
 
-    if (query.from || query.to) {
-      const createdAt: Record<string, Date> = {};
-      if (query.from) {
-        createdAt.$gte = new Date(query.from);
+    const parsedFrom = query.from ? new Date(query.from) : null;
+    const parsedTo = query.to ? new Date(query.to) : null;
+    const hasValidFrom = parsedFrom !== null && !isNaN(parsedFrom.getTime());
+    const hasValidTo = parsedTo !== null && !isNaN(parsedTo.getTime());
+
+    if (hasValidFrom || hasValidTo) {
+      const dateFilter: Record<string, Date> = {};
+      if (hasValidFrom && parsedFrom) {
+        dateFilter.$gte = parsedFrom;
       }
-      if (query.to) {
-        createdAt.$lte = new Date(query.to);
+      if (hasValidTo && parsedTo) {
+        dateFilter.$lte = parsedTo;
       }
-      filter.createdAt = createdAt;
+      filter[dateField] = dateFilter;
+    } else if (options?.defaultLast7Days) {
+      const now = new Date();
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(now.getDate() - 7);
+      filter[dateField] = { $gte: sevenDaysAgo, $lte: now };
     }
 
     return filter;

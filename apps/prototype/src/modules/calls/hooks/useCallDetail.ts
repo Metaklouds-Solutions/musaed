@@ -16,7 +16,7 @@ export function useCallDetail(callId: string | undefined) {
     return user.tenantId;
   }, [user]);
 
-  const { data: call, isLoading } = useAsyncData(
+  const { data: call, loading } = useAsyncData(
     () => (callId ? callsAdapter.getCallById(callId, tenantId) : Promise.resolve(undefined)),
     [callId, tenantId],
     undefined as Call | undefined,
@@ -31,5 +31,5 @@ export function useCallDetail(callId: string | undefined) {
     undefined as Booking | undefined,
   );
 
-  return { user, call, linkedBooking, isLoading };
+  return { user, call, linkedBooking, isLoading: loading };
 }

@@ -41,7 +41,6 @@ export class RetellWebhookController {
   private readonly logger = new Logger(RetellWebhookController.name);
   private readonly webhookSecret: string;
   private readonly webhookSecretLegacy: string;
-  private readonly requireSignature: boolean;
   private readonly timestampMaxAgeSec: number;
 
   constructor(
@@ -50,19 +49,12 @@ export class RetellWebhookController {
     private metrics: MetricsService,
     config: ConfigService,
   ) {
-    const nodeEnv = config.get<string>('NODE_ENV', 'development');
-    this.requireSignature = nodeEnv !== 'development';
     this.webhookSecret = config.get<string>('RETELL_WEBHOOK_SECRET', '').trim();
     this.webhookSecretLegacy = config.get<string>('RETELL_WEBHOOK_SECRET_LEGACY', '').trim();
     const tsMax = config.get<string>('WEBHOOK_TIMESTAMP_MAX_AGE_SEC');
     this.timestampMaxAgeSec = tsMax ? parseInt(tsMax, 10) : DEFAULT_TIMESTAMP_MAX_AGE_SEC;
     if (!Number.isFinite(this.timestampMaxAgeSec) || this.timestampMaxAgeSec < 0) {
       this.timestampMaxAgeSec = DEFAULT_TIMESTAMP_MAX_AGE_SEC;
-    }
-    if (this.requireSignature && this.webhookSecret.length === 0) {
-      throw new Error(
-        'RETELL_WEBHOOK_SECRET must be set when webhook signature verification is required',
-      );
     }
   }
 
@@ -112,8 +104,6 @@ export class RetellWebhookController {
         this.logger.error('Retell webhook signature verification failed');
         throw new ForbiddenException('Invalid webhook signature');
       }
-    } else if (this.requireSignature) {
-      throw new ForbiddenException('Webhook signature secret is required');
     } else {
       this.logger.warn(
         'RETELL_WEBHOOK_SECRET not configured — skipping signature verification',
@@ -126,6 +116,10 @@ export class RetellWebhookController {
     } catch (error) {
       throw new BadRequestException('Invalid JSON payload');
     }
+
+    console.log('RETELL EVENT:', body.event);
+    console.log('RETELL METADATA:', body.metadata);
+    console.log('RETELL CALL METADATA:', body.call?.metadata);
 
     const eventType = body.event;
     this.metrics.recordWebhookReceived('retell');

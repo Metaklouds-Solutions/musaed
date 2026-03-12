@@ -35,6 +35,7 @@ export function StaffPage() {
         await refetch();
         if (added) {
           toast.success('Staff added');
+          setAddModalOpen(false);
           setPage(1);
         } else {
           toast.error('Failed to add staff');
@@ -46,19 +47,18 @@ export function StaffPage() {
     [refetch]
   );
 
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; tenantId: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const handleDeleteClick = useCallback((s: StaffRow) => {
-    setDeleteTarget({ id: s.userId, name: s.name });
+    setDeleteTarget({ id: s.userId, name: s.name, tenantId: s.tenantId });
   }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const result = staffAdapter.deleteStaff(deleteTarget.id);
-      if (result instanceof Promise) await result;
+      await Promise.resolve(staffAdapter.deleteStaff(deleteTarget.id, deleteTarget.tenantId));
       await refetch();
       toast.success(`${deleteTarget.name} removed`);
       setDeleteTarget(null);

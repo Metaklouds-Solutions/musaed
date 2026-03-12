@@ -16,6 +16,7 @@ function mapCustomer(c: any): Customer {
 
 export const customersAdapter = {
   async getCustomers(tenantId: string | undefined, filters?: { search?: string }): Promise<Customer[]> {
+    if (!tenantId) return [];
     try {
       const params: Record<string, string> = { page: '1', limit: '100' };
       if (filters?.search) params.search = filters.search;

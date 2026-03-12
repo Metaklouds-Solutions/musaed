@@ -48,8 +48,9 @@ export const staffAdapter = {
     return mapStaffRow(created);
   },
 
-  async deleteStaff(id: string): Promise<void> {
-    await api.delete(`/tenant/staff/${id}`);
+  async deleteStaff(id: string, tenantId?: string): Promise<void> {
+    const qs = tenantId ? `?tenantId=${tenantId}` : '';
+    await api.delete(`/tenant/staff/${id}${qs}`);
   },
 
   importCsv(_csv: string, _tenantId: string): number {

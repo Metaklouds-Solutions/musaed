@@ -34,6 +34,15 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   );
   const theme = themeProp ?? localTheme;
   const isDark = theme === 'dark';
+  const isTenantAccessBlocked =
+    error.toLowerCase().includes('tenant access is disabled') ||
+    (error.toLowerCase().includes('disabled') && error.toLowerCase().includes('contact'));
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL ?? 'support@example.com';
+  const contactLink = `mailto:${supportEmail}?subject=${encodeURIComponent(
+    'Tenant Access Request',
+  )}&body=${encodeURIComponent(
+    `Name: \nEmail: ${email}\nTenant: \nIssue: Access blocked after disable/delete`,
+  )}`;
 
   useEffect(() => {
     if (themeProp == null) {
@@ -148,13 +157,18 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
           {error && (
             <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm space-y-2">
               <p>{error}</p>
-              {error.toLowerCase().includes('disabled') && error.toLowerCase().includes('contact') && (
-                <a
-                  href={`mailto:${import.meta.env.VITE_SUPPORT_EMAIL ?? 'support@example.com'}?subject=Account%20Disabled%20-%20Access%20Request`}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                >
-                  Contact administrator
-                </a>
+              {isTenantAccessBlocked && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    If this tenant was disabled or deleted, access remains blocked until an admin re-enables your tenant account.
+                  </p>
+                  <a
+                    href={contactLink}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    Contact administrator
+                  </a>
+                </div>
               )}
             </div>
           )}

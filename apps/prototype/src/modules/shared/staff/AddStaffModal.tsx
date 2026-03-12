@@ -27,19 +27,24 @@ export function AddStaffModal({
   onSubmit,
 }: AddStaffModalProps) {
   const [selectedTenantId, setSelectedTenantId] = useState(tenantId);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) setSelectedTenantId(tenantId);
   }, [open, tenantId]);
 
   const handleSubmit = useCallback(
-    (data: { name: string; email: string; roleSlug: string }) => {
+    async (data: { name: string; email: string; roleSlug: string }) => {
       const tid = showTenantSelect ? selectedTenantId : tenantId;
       if (!tid) return;
-      onSubmit({ ...data, tenantId: tid });
-      onClose();
+      setSubmitting(true);
+      try {
+        await Promise.resolve(onSubmit({ ...data, tenantId: tid }));
+      } finally {
+        setSubmitting(false);
+      }
     },
-    [selectedTenantId, tenantId, showTenantSelect, onSubmit, onClose]
+    [selectedTenantId, tenantId, showTenantSelect, onSubmit]
   );
 
   return (
@@ -62,6 +67,7 @@ export function AddStaffModal({
           tenantId={showTenantSelect ? selectedTenantId : tenantId}
           onSubmit={handleSubmit}
           onCancel={onClose}
+          submitting={submitting}
         />
       </div>
     </Modal>

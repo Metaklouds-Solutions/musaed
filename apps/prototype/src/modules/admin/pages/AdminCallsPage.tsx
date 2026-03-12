@@ -3,10 +3,12 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button } from '../../../shared/ui';
+import { PageHeader, EmptyState, TableFilters, Button, StatCard, Skeleton } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useCallsList } from '../../calls/hooks';
+import { useCallsList, useCallAnalytics } from '../../calls/hooks';
 import { CallsTable } from '../../calls/components/CallsTable';
+import { OutcomeBreakdown } from '../../reports/components/OutcomeBreakdown';
+import { SentimentChart } from '../../reports/components/SentimentChart/SentimentChart';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
 import { useAdminCalls } from '../hooks';
@@ -30,14 +32,46 @@ function formatDate(iso: string): string {
   return parsed.toLocaleDateString();
 }
 
-/** Renders cross-tenant admin calls list with export and outcome filters. */
+/** Formats avg duration in seconds: 44 → "44s", 90 → "1:30". */
+function formatAvgDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/** Renders cross-tenant admin calls list with analytics, export, and outcome filters. */
 export function AdminCallsPage() {
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
 
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
+  const { analytics, isLoading: analyticsLoading } = useCallAnalytics(dateRangeFilter);
   const { tenantMap, exportCallsCsv } = useAdminCalls();
+
+  const outcomesForChart = useMemo(() => {
+    const { outcomes } = analytics;
+    const total = analytics.totalCalls;
+    const toPct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+    return [
+      { outcome: 'booked' as const, count: outcomes.booked, percentage: toPct(outcomes.booked) },
+      { outcome: 'escalated' as const, count: outcomes.escalated, percentage: toPct(outcomes.escalated) },
+      { outcome: 'failed' as const, count: outcomes.failed, percentage: toPct(outcomes.failed) },
+      { outcome: 'info_only' as const, count: outcomes.info_only, percentage: toPct(outcomes.info_only) },
+    ];
+  }, [analytics]);
+
+  const sentimentBuckets = useMemo(() => {
+    const { sentiment } = analytics;
+    const total = analytics.totalCalls;
+    const toPct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+    return [
+      { label: 'Positive', range: '0.6–1', count: sentiment.positive, percentage: toPct(sentiment.positive) },
+      { label: 'Neutral', range: '0.4–0.6', count: sentiment.neutral, percentage: toPct(sentiment.neutral) },
+      { label: 'Negative', range: '0–0.4', count: sentiment.negative, percentage: toPct(sentiment.negative) },
+    ];
+  }, [analytics]);
 
   const filteredCalls = useMemo(() => {
     if (!outcomeFilter) return calls;
@@ -81,6 +115,42 @@ export function AdminCallsPage() {
             Export CSV
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {analyticsLoading ? (
+          <>
+            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
+            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
+            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
+          </>
+        ) : (
+          <>
+            <StatCard label="Total calls" value={analytics.totalCalls} />
+            <StatCard
+              label="Conversation rate"
+              value={`${Math.round(analytics.conversationRate * 100)}%`}
+            />
+            <StatCard
+              label="Avg duration"
+              value={formatAvgDuration(analytics.avgDuration)}
+            />
+          </>
+        )}
+        <div className="sm:col-span-2 lg:col-span-1">
+          {analyticsLoading ? (
+            <Skeleton className="h-32 rounded-[var(--radius-card)]" />
+          ) : (
+            <OutcomeBreakdown outcomes={outcomesForChart} />
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {analyticsLoading ? (
+          <Skeleton className="h-48 rounded-[var(--radius-card)]" />
+        ) : (
+          <SentimentChart buckets={sentimentBuckets} />
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

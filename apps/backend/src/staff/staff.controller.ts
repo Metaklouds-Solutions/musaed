@@ -29,7 +29,8 @@ export class StaffController {
   @Get()
   @RequirePermissions(PERMISSIONS.STAFF_READ)
   findAll(@Request() req: AuthenticatedRequest) {
-    const tenantId = requireTenantId(req);
+    // Admin can list cross-tenant staff (tenantId may be null). Tenant users are scoped by TenantGuard.
+    const tenantId = req.tenantId ?? null;
     return this.staffService.findAllForTenant(tenantId);
   }
 

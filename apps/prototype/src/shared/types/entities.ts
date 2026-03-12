@@ -41,6 +41,10 @@ export interface Call {
   agentVersion?: string;
   recordingUrl?: string;
   summary?: string;
+  /** Backend outcome: booked | escalated | failed | info_only | unknown. Set by API adapter. */
+  outcome?: string;
+  /** Agent instance ID. Set by API adapter for filtering. */
+  agentId?: string;
 }
 
 export interface Booking {

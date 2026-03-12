@@ -56,7 +56,8 @@ export function AdminStaffPage() {
         const added = await addStaff(data);
         if (added) {
           toast.success('Staff added');
-          refetch();
+          setAddModalOpen(false);
+          await refetch();
         } else {
           toast.error('Failed to add staff');
         }
@@ -71,12 +72,12 @@ export function AdminStaffPage() {
     toast.info('CSV import coming soon. Use Add Staff for now.');
   }, []);
 
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; tenantId?: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const handleDeleteClick = useCallback(
     (s: StaffRow) => {
-      setDeleteTarget({ id: s.userId, name: s.name });
+      setDeleteTarget({ id: s.userId, name: s.name, tenantId: s.tenantId });
     },
     [],
   );
@@ -85,10 +86,10 @@ export function AdminStaffPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await staffAdapter.deleteStaff(deleteTarget.id);
+      await staffAdapter.deleteStaff(deleteTarget.id, deleteTarget.tenantId);
       toast.success('Staff member deleted');
       setDeleteTarget(null);
-      refetch();
+      await refetch();
     } catch {
       toast.error('Failed to delete staff member');
     } finally {
@@ -114,7 +115,7 @@ export function AdminStaffPage() {
     let failed = 0;
     for (const s of selectedStaff) {
       try {
-        await staffAdapter.deleteStaff(s.userId);
+        await staffAdapter.deleteStaff(s.userId, s.tenantId);
       } catch {
         failed++;
       }
@@ -122,7 +123,7 @@ export function AdminStaffPage() {
     selection.clear();
     setDeleteTarget(null);
     setDeleting(false);
-    refetch();
+    await refetch();
     if (failed > 0) toast.error(`Failed to delete ${failed} staff member(s)`);
     else toast.success(`Deleted ${selectedStaff.length} staff member(s)`);
   }, [selectedStaff, selection, refetch]);

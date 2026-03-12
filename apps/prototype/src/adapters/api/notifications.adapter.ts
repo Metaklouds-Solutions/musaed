@@ -7,6 +7,7 @@ import type { NotificationItem } from '../../app/layout/Header/NotificationDrawe
 
 export interface NotificationPayload {
   id: string;
+  _id?: string;
   title: string;
   message: string;
   type?: string;
@@ -29,7 +30,7 @@ function toNotificationItem(p: NotificationPayload): NotificationItem {
       : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return {
-    id: p.id,
+    id: p.id ?? p._id ?? '',
     title: p.title,
     message: p.message,
     type: p.type ?? 'system',
@@ -80,6 +81,7 @@ export const notificationsAdapter = {
   },
 
   async markAsRead(id: string): Promise<void> {
+    if (!id) return;
     await api.patch(`/notifications/${id}/read`);
   },
 

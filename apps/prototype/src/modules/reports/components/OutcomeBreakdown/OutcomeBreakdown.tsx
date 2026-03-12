@@ -13,6 +13,7 @@ const outcomeConfig: Record<OutcomeBreakdownType['outcome'], { label: string; co
   booked: { label: 'Booked', color: 'var(--success)' },
   escalated: { label: 'Escalated', color: 'var(--warning)' },
   failed: { label: 'Failed', color: 'var(--error)' },
+  info_only: { label: 'Info Only', color: 'var(--text-muted)' },
 };
 
 /** Renders booked/escalated/failed outcome distribution bars and totals. */
