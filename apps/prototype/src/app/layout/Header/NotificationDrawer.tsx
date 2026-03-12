@@ -15,6 +15,10 @@ export interface NotificationItem {
   message: string;
   time: string;
   unread: boolean;
+  severity?: 'critical' | 'important' | 'normal' | 'info';
+  source?: string;
+  type?: string;
+  metadata?: Record<string, unknown>;
   link?: string;
 }
 
@@ -24,10 +28,12 @@ interface NotificationDrawerProps {
   items: NotificationItem[];
   onMarkAsRead?: (id: string) => void;
   onMarkAllAsRead?: () => void;
+  onClearAll?: () => void;
   hasUnread?: boolean;
 }
 
 type Filter = 'all' | 'unread';
+type SeverityFilter = 'all' | 'critical' | 'important' | 'normal' | 'info';
 
 export function NotificationDrawer({
   open,
@@ -35,13 +41,25 @@ export function NotificationDrawer({
   items,
   onMarkAsRead,
   onMarkAllAsRead,
+  onClearAll,
   hasUnread = items.some((n) => n.unread),
 }: NotificationDrawerProps) {
   const [filter, setFilter] = useState<Filter>('all');
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const navigate = useNavigate();
-  const filtered =
-    filter === 'unread' ? items.filter((n) => n.unread) : items;
+  const filtered = items.filter((n) => {
+    if (filter === 'unread' && !n.unread) return false;
+    if (severityFilter !== 'all' && (n.severity ?? 'normal') !== severityFilter) return false;
+    return true;
+  });
   const isEmpty = filtered.length === 0;
+
+  const severityDotClass = (severity?: string): string => {
+    if (severity === 'critical') return 'bg-red-500';
+    if (severity === 'important') return 'bg-orange-500';
+    if (severity === 'info') return 'bg-gray-400';
+    return 'bg-blue-500';
+  };
 
   return (
     <Drawer open={open} onClose={onClose} title="Notifications" widthRem={24} side="right">
@@ -71,6 +89,15 @@ export function NotificationDrawer({
             Mark all read
           </button>
         )}
+        {onClearAll && (
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          >
+            Clear
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setFilter('unread')}
@@ -86,6 +113,20 @@ export function NotificationDrawer({
         >
           Unread
         </button>
+      </div>
+      <div className="px-4 sm:px-5 py-2 border-b border-[var(--separator)]">
+        <select
+          value={severityFilter}
+          onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
+          className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)]"
+          aria-label="Filter by severity"
+        >
+          <option value="all">All severities</option>
+          <option value="critical">Critical</option>
+          <option value="important">Important</option>
+          <option value="normal">Normal</option>
+          <option value="info">Info</option>
+        </select>
       </div>
       <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
         {isEmpty ? (
@@ -137,6 +178,12 @@ export function NotificationDrawer({
                     />
                   )}
                   <div className={cn('min-w-0 flex-1', item.unread && 'pl-2')}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn('w-2 h-2 rounded-full', severityDotClass(item.severity))} />
+                      <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+                        {item.source ?? 'system'}
+                      </span>
+                    </div>
                     <p
                       className={cn(
                         'text-sm',

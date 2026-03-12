@@ -25,11 +25,24 @@ function formatTime(createdAt: string): string {
 
 function toNotificationItem(p: Record<string, unknown>): NotificationItem {
   const createdAt = (p.createdAt ?? p.time ?? new Date().toISOString()) as string;
+  const severity =
+    (p.severity as NotificationItem['severity']) ??
+    ((p.priority as string) === 'critical'
+      ? 'critical'
+      : (p.priority as string) === 'high'
+        ? 'important'
+        : (p.priority as string) === 'low'
+          ? 'info'
+          : 'normal');
   return {
     id: (p.id as string) ?? '',
     title: (p.title as string) ?? '',
     message: (p.message as string) ?? '',
     time: formatTime(createdAt),
+    severity,
+    source: (p.source as string) ?? 'system',
+    type: (p.type as string) ?? 'system',
+    metadata: (p.metadata as Record<string, unknown>) ?? (p.meta as Record<string, unknown>) ?? {},
     unread: !(p.read as boolean),
     link: p.link as string | undefined,
   };
@@ -40,6 +53,7 @@ export function useNotifications() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [bellPulse, setBellPulse] = useState(0);
 
   const refresh = useCallback(async () => {
     if (!session?.user) {
@@ -78,15 +92,18 @@ export function useNotifications() {
       const item = toNotificationItem(payload);
       setItems((prev) => [item, ...prev]);
       setUnreadCount((c) => c + 1);
+      setBellPulse((p) => p + 1);
 
-      const priority = (payload.priority as string) ?? 'normal';
-      if (priority === 'critical' || priority === 'high') {
+      const severity = (payload.severity as string) ?? ((payload.priority as string) ?? 'normal');
+      if (severity === 'critical' || severity === 'important' || severity === 'high') {
         toast.info(item.title, { description: item.message });
       }
     };
 
+    socket.on('notification:new', onNotification);
     socket.on('notification', onNotification);
     return () => {
+      socket.off('notification:new', onNotification);
       socket.off('notification', onNotification);
     };
   }, [session?.user]);
@@ -105,12 +122,20 @@ export function useNotifications() {
     setUnreadCount(0);
   }, []);
 
+  const clearNotifications = useCallback(async () => {
+    await notificationsAdapter.clear();
+    setItems([]);
+    setUnreadCount(0);
+  }, []);
+
   return {
     items,
     unreadCount,
     loading,
+    bellPulse,
     refresh,
     markAsRead,
     markAllAsRead,
+    clearNotifications,
   };
 }

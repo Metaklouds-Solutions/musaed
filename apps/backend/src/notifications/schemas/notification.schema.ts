@@ -14,6 +14,12 @@ export class Notification {
   @Prop({ required: true })
   type: string;
 
+  @Prop({ default: 'system' })
+  source: string;
+
+  @Prop({ default: 'info' })
+  severity: 'critical' | 'important' | 'normal' | 'info';
+
   @Prop({ required: true })
   title: string;
 
@@ -25,6 +31,9 @@ export class Notification {
 
   @Prop({ type: Object, default: {} })
   meta: Record<string, unknown>;
+
+  @Prop({ type: Object, default: {} })
+  metadata: Record<string, unknown>;
 
   @Prop({ default: false })
   read: boolean;
@@ -44,3 +53,6 @@ export const NotificationSchema = SchemaFactory.createForClass(Notification);
 NotificationSchema.index({ userId: 1, createdAt: -1 });
 NotificationSchema.index({ userId: 1, read: 1 });
 NotificationSchema.index({ tenantId: 1 });
+NotificationSchema.index({ tenantId: 1, read: 1, createdAt: -1 });
+NotificationSchema.index({ severity: 1, createdAt: -1 });
+NotificationSchema.index({ source: 1, createdAt: -1 });

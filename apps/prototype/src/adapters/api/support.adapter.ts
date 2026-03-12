@@ -45,9 +45,10 @@ export const supportAdapter = {
     }
   },
 
-  async getTicket(id: string): Promise<TicketWithDetails | null> {
+  async getTicket(id: string, options?: { isAdmin?: boolean }): Promise<TicketWithDetails | null> {
     try {
-      const t = await api.get<any>(`/tenant/support/tickets/${id}`);
+      const base = options?.isAdmin ? '/admin/support' : '/tenant/support/tickets';
+      const t = await api.get<any>(`${base}/${id}`);
       if (!t) return null;
       const createdBy = t.createdBy ?? {};
       return {

@@ -2,7 +2,7 @@
  * Top bar: neomorphic search bar (icon animates left→right on focus), theme, notifications, user.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Bell, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../session/SessionContext';
@@ -27,8 +27,9 @@ const THEME_STORAGE_KEY = 'clinic-crm-theme';
 export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShortcutsHelp }: HeaderProps) {
   const { t } = useTranslation();
   useSession(); // SessionProvider required for UserMenu
-  const { items: notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { items: notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications, bellPulse } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [isBellAnimating, setIsBellAnimating] = useState(false);
   const openNotifications = useCallback(() => setNotificationsOpen(true), []);
   const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
 
@@ -38,6 +39,13 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
     },
     [onThemeToggle]
   );
+
+  useEffect(() => {
+    if (bellPulse <= 0) return;
+    setIsBellAnimating(true);
+    const id = window.setTimeout(() => setIsBellAnimating(false), 700);
+    return () => window.clearTimeout(id);
+  }, [bellPulse]);
 
   return (
     <div
@@ -72,13 +80,18 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
         <button
           type="button"
           onClick={openNotifications}
-          className="p-2 rounded-(var(--radius-nav)) relative hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-(var(--text-muted))"
+          className={`p-2 rounded-(var(--radius-nav)) relative hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-(var(--text-muted)) ${isBellAnimating ? 'animate-pulse' : ''}`}
           aria-label={t('common.notifications')}
           aria-expanded={notificationsOpen}
         >
           <Bell size={20} aria-hidden />
-          {notifications.some((n) => n.unread) && (
-                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-(var(--primary))" aria-hidden />
+          {unreadCount > 0 && (
+            <span
+              className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-[var(--ds-primary)] text-white text-[10px] leading-5 text-center font-semibold"
+              aria-hidden
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
           )}
         </button>
         <NotificationDrawer
@@ -87,6 +100,7 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
           items={notifications}
           onMarkAsRead={markAsRead}
           onMarkAllAsRead={markAllAsRead}
+          onClearAll={clearNotifications}
           hasUnread={unreadCount > 0}
         />
         <UserMenu

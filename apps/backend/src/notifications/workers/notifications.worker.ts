@@ -17,7 +17,7 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   async process(job: Job<NotificationFanoutPayload>): Promise<void> {
-    const { userIds, tenantId, type, title, message, link, meta, priority } =
+    const { userIds, tenantId, type, source, severity, title, message, link, meta, metadata, priority } =
       job.data;
 
     this.logger.log(
@@ -28,7 +28,7 @@ export class NotificationsProcessor extends WorkerHost {
       const uniqueIds = [...new Set(userIds)];
       const insertedCount = await this.notificationsService.createBatchFromQueue(
         uniqueIds,
-        { tenantId, type, title, message, link, meta, priority },
+        { tenantId, type, source, severity, title, message, link, meta, metadata, priority },
       );
       this.logger.debug({
         event: 'notification_fanout_completed',

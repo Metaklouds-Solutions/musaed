@@ -25,6 +25,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   private readonly logger = new Logger(NotificationsGateway.name);
   private readonly userSockets = new Map<string, Set<string>>();
+  private static readonly ADMIN_ROOM = 'admin';
 
   constructor(
     private jwtService: JwtService,
@@ -46,7 +47,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
     try {
       const secret = this.configService.getOrThrow<string>('JWT_SECRET');
-      const payload = this.jwtService.verify<{ sub: string }>(token, { secret });
+      const payload = this.jwtService.verify<{ sub: string; role?: string; tenantId?: string }>(token, { secret });
       const userId = payload.sub;
       if (!userId) {
         client.disconnect();
@@ -55,6 +56,12 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
       const room = `user:${userId}`;
       client.join(room);
+      if (payload.role === 'ADMIN') {
+        client.join(NotificationsGateway.ADMIN_ROOM);
+      }
+      if (payload.tenantId) {
+        client.join(`tenant:${payload.tenantId}`);
+      }
 
       let sockets = this.userSockets.get(userId);
       if (!sockets) {
@@ -81,5 +88,13 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   emitToUser(userId: string, event: string, payload: unknown): void {
     this.server.to(`user:${userId}`).emit(event, payload);
+  }
+
+  emitToAdmins(event: string, payload: unknown): void {
+    this.server.to(NotificationsGateway.ADMIN_ROOM).emit(event, payload);
+  }
+
+  emitToTenant(tenantId: string, event: string, payload: unknown): void {
+    this.server.to(`tenant:${tenantId}`).emit(event, payload);
   }
 }

@@ -3,7 +3,7 @@
  * Saved filters: save/apply view presets.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown, TableSkeleton, EmptyState } from '../../../shared/ui';
@@ -13,6 +13,7 @@ import { Download, MessageCircle } from 'lucide-react';
 import { TicketList, TicketChatThread } from '../../shared/support';
 import { useAdminSupport } from '../hooks/useAdminSupport';
 import type { SupportTicket } from '../../../shared/types/entities';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 
 const STATUS_OPTIONS: { value: SupportTicket['status']; label: string }[] = [
   { value: 'open', label: 'Open' },
@@ -71,11 +72,35 @@ export function AdminSupportPage() {
     setStatusFilter,
     setPriorityFilter,
   } = useAdminSupport();
-  const ticket = id ? getTicket(id) : null;
+  const { data: ticket, loading: ticketLoading, refetch: refetchTicket } = useAsyncData(
+    () => (id ? getTicket(id) : null),
+    [id, getTicket],
+    null,
+  );
+  const statusLabel = typeof ticket?.status === 'string' ? ticket.status.replace('_', ' ') : 'open';
+  const autoPromotedRef = useRef<string | null>(null);
+  const latestMessage = ticket?.messages?.[ticket.messages.length - 1];
+  const hasNewTenantMessage =
+    Boolean(latestMessage) &&
+    latestMessage?.authorId !== 'admin' &&
+    latestMessage?.authorName !== 'Support';
+
+  useEffect(() => {
+    if (!id || !ticket) return;
+    if (ticket.status !== 'open') return;
+    if (autoPromotedRef.current === ticket.id) return;
+    autoPromotedRef.current = ticket.id;
+
+    updateStatus(ticket.id, 'in_progress')
+      .then(() => refetchTicket())
+      .catch(() => {
+        autoPromotedRef.current = null;
+      });
+  }, [id, ticket, updateStatus, refetchTicket]);
 
   const handleAssign = useCallback(
-    (ticketId: string) => {
-      const ticket = getTicket(ticketId);
+    async (ticketId: string) => {
+      const ticket = await getTicket(ticketId);
       assignTicket(ticketId, 'admin');
       logTicketAssigned(ticketId, ticket?.tenantId);
       toast.success('Ticket assigned');
@@ -127,6 +152,17 @@ export function AdminSupportPage() {
     toast.success('Tickets exported');
   }, [tickets, getTenantName, exportTicketsCsv]);
 
+  if (id && ticketLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Support Inbox" description="Loading ticket…" />
+        <div className="rounded-[var(--radius-card)] card-glass p-8 text-center">
+          <p className="text-[var(--text-muted)] text-sm">Loading ticket…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (id && !ticket) {
     return (
       <div className="space-y-6">
@@ -150,13 +186,26 @@ export function AdminSupportPage() {
           title={ticket.title}
           description={`${ticket.tenantName} · ${ticket.priority}`}
         />
+        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/60 p-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[var(--text-muted)]">{ticket.id}</span>
+          <Badge status={ticket.priority === 'critical' ? 'error' : ticket.priority === 'high' ? 'warning' : 'pending'}>
+            {ticket.priority}
+          </Badge>
+          <Badge status={ticket.status === 'resolved' ? 'active' : ticket.status === 'in_progress' ? 'pending' : 'warning'}>
+            {statusLabel}
+          </Badge>
+          {hasNewTenantMessage && (
+            <Badge status="warning">New message</Badge>
+          )}
+          <span className="text-xs text-[var(--text-muted)]">{formatDate(ticket.createdAt)}</span>
+        </div>
         <div className="rounded-[var(--radius-card)] card-glass overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
           <div className="p-4 border-b border-[var(--border-subtle)] flex flex-wrap items-center gap-3">
             <Badge status={ticket.priority === 'critical' ? 'error' : ticket.priority === 'high' ? 'warning' : 'pending'}>
               {ticket.priority}
             </Badge>
             <Badge status={ticket.status === 'resolved' ? 'active' : ticket.status === 'in_progress' ? 'pending' : 'warning'}>
-              {ticket.status.replace('_', ' ')}
+              {statusLabel}
             </Badge>
             <PopoverSelect
               value={ticket.status}
@@ -171,7 +220,7 @@ export function AdminSupportPage() {
               </Button>
             )}
             <Button variant="ghost" className="h-8 px-3 text-sm" onClick={() => navigate('/admin/support')}>
-              Back to list
+              Back to Tickets
             </Button>
           </div>
           <div className="flex-1 min-h-[300px]">

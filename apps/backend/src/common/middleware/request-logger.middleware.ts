@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { MetricsService } from '../../metrics/metrics.service';
 import type { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
+import { ErrorRateMonitorService } from '../../notifications/error-rate-monitor.service';
 
 const CORRELATION_HEADER = 'x-correlation-id';
 const REQUEST_ID_HEADER = 'x-request-id';
@@ -15,6 +16,9 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     @Optional()
     @Inject(MetricsService)
     private readonly metricsService?: MetricsService,
+    @Optional()
+    @Inject(ErrorRateMonitorService)
+    private readonly errorRateMonitor?: ErrorRateMonitorService,
   ) {}
 
   /**
@@ -40,6 +44,9 @@ export class RequestLoggerMiddleware implements NestMiddleware {
       const duration = Date.now() - start;
       const { statusCode } = res;
       const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'log';
+      if (statusCode >= 500) {
+        this.errorRateMonitor?.recordServerError();
+      }
 
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.tenantId ?? undefined;

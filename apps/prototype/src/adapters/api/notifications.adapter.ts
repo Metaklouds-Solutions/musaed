@@ -9,6 +9,10 @@ export interface NotificationPayload {
   id: string;
   title: string;
   message: string;
+  type?: string;
+  severity?: 'critical' | 'important' | 'normal' | 'info';
+  source?: string;
+  metadata?: Record<string, unknown>;
   link?: string;
   read: boolean;
   time?: string;
@@ -28,6 +32,10 @@ function toNotificationItem(p: NotificationPayload): NotificationItem {
     id: p.id,
     title: p.title,
     message: p.message,
+    type: p.type ?? 'system',
+    severity: p.severity ?? (p.priority === 'critical' ? 'critical' : p.priority === 'high' ? 'important' : p.priority === 'low' ? 'info' : 'normal'),
+    source: p.source ?? 'system',
+    metadata: p.metadata ?? {},
     time: timeStr,
     unread: !p.read,
     link: p.link,
@@ -35,12 +43,26 @@ function toNotificationItem(p: NotificationPayload): NotificationItem {
 }
 
 export const notificationsAdapter = {
-  async getList(params?: { page?: number; limit?: number; read?: boolean }): Promise<NotificationItem[]> {
+  async getList(params?: {
+    page?: number;
+    limit?: number;
+    read?: boolean;
+    severity?: string;
+    source?: string;
+    tenantId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<NotificationItem[]> {
     try {
       const qs = new URLSearchParams();
       if (params?.page) qs.set('page', String(params.page));
       if (params?.limit) qs.set('limit', String(params.limit));
       if (params?.read !== undefined) qs.set('read', String(params.read));
+      if (params?.severity) qs.set('severity', params.severity);
+      if (params?.source) qs.set('source', params.source);
+      if (params?.tenantId) qs.set('tenantId', params.tenantId);
+      if (params?.dateFrom) qs.set('dateFrom', params.dateFrom);
+      if (params?.dateTo) qs.set('dateTo', params.dateTo);
       const resp = await api.get<{ data: NotificationPayload[] }>(`/notifications?${qs.toString()}`);
       return (resp.data ?? []).map(toNotificationItem);
     } catch {
@@ -67,5 +89,23 @@ export const notificationsAdapter = {
 
   async delete(id: string): Promise<void> {
     await api.delete(`/notifications/${id}`);
+  },
+
+  async clear(params?: {
+    read?: boolean;
+    severity?: string;
+    source?: string;
+    tenantId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<void> {
+    const qs = new URLSearchParams();
+    if (params?.read !== undefined) qs.set('read', String(params.read));
+    if (params?.severity) qs.set('severity', params.severity);
+    if (params?.source) qs.set('source', params.source);
+    if (params?.tenantId) qs.set('tenantId', params.tenantId);
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (params?.dateTo) qs.set('dateTo', params.dateTo);
+    await api.delete(`/notifications/clear${qs.toString() ? `?${qs.toString()}` : ''}`);
   },
 };

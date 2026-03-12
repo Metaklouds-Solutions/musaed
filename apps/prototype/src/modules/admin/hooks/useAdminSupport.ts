@@ -32,7 +32,7 @@ export function useAdminSupport() {
     [],
   );
 
-  const getTicket = useCallback((id: string) => supportAdapter.getTicket(id), []);
+  const getTicket = useCallback((id: string) => supportAdapter.getTicket(id, { isAdmin: true }), []);
 
   const updateStatus = useCallback(async (id: string, status: SupportTicket['status']) => {
     await Promise.resolve(supportAdapter.updateStatus(id, status));

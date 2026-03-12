@@ -9,10 +9,13 @@ export interface NotificationFanoutPayload {
   userIds: string[];
   tenantId: string | null;
   type: string;
+  source?: string;
+  severity?: 'critical' | 'important' | 'normal' | 'info';
   title: string;
   message: string;
   link?: string;
   meta?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   priority?: string;
 }
 

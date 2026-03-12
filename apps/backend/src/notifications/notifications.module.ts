@@ -10,6 +10,8 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { TenantStaff, TenantStaffSchema } from '../tenants/schemas/tenant-staff.schema';
 import { QueueModule } from '../queue/queue.module';
 import { NotificationsProcessor } from './workers/notifications.worker';
+import { ErrorRateMonitorService } from './error-rate-monitor.service';
+import { NotificationRetentionService } from './notification-retention.service';
 
 @Module({
   imports: [
@@ -29,7 +31,13 @@ import { NotificationsProcessor } from './workers/notifications.worker';
     }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationsGateway, NotificationsProcessor],
-  exports: [NotificationsService],
+  providers: [
+    NotificationsService,
+    NotificationsGateway,
+    NotificationsProcessor,
+    ErrorRateMonitorService,
+    NotificationRetentionService,
+  ],
+  exports: [NotificationsService, ErrorRateMonitorService],
 })
 export class NotificationsModule {}

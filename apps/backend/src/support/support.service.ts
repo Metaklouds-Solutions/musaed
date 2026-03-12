@@ -88,11 +88,29 @@ export class SupportService {
 
     await this.notificationsService.createForTenantStaff(tenantId, {
       type: 'ticket_new',
+      source: 'tenant',
+      severity: 'normal',
       title: 'New support ticket',
       message: dto.title,
       link: `/help/tickets/${ticket._id}`,
       meta: { ticketId: ticket._id.toString() },
       priority: dto.priority === 'high' || dto.priority === 'critical' ? 'high' : 'normal',
+    });
+
+    await this.notificationsService.createForAdmins({
+      type: 'tenant_ticket_submitted',
+      source: 'tenant',
+      severity: dto.priority === 'critical' ? 'critical' : 'important',
+      title: 'Tenant submitted a support ticket',
+      message: dto.title,
+      link: `/admin/support/${ticket._id}`,
+      metadata: {
+        ticketId: ticket._id.toString(),
+        tenantId,
+        priority: dto.priority ?? 'medium',
+        category: dto.category,
+      },
+      priority: dto.priority === 'critical' ? 'critical' : 'high',
     });
 
     return ticket;
@@ -142,6 +160,8 @@ export class SupportService {
     if (updated && tid) {
       await this.notificationsService.createForTenantStaff(tid, {
         type: 'ticket_updated',
+        source: 'tenant',
+        severity: 'info',
         title: 'Ticket updated',
         message: `New reply on: ${ticket.title}`,
         link: `/help/tickets/${ticket._id}`,

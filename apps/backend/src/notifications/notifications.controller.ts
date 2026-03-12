@@ -25,12 +25,22 @@ export class NotificationsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('read') read?: string,
+    @Query('severity') severity?: string,
+    @Query('source') source?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
   ) {
     const userId = req.user._id.toString();
     const pagination = parsePagination({ page, limit });
     return this.notificationsService.findAllForUser(userId, {
       ...pagination,
       read: read === 'true' ? true : read === 'false' ? false : undefined,
+      severity,
+      source,
+      tenantId,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
     });
   }
 
@@ -53,6 +63,28 @@ export class NotificationsController {
     const userId = req.user._id.toString();
     await this.notificationsService.markAsRead(id, userId);
     return { ok: true };
+  }
+
+  @Delete('clear')
+  async clear(
+    @Request() req: AuthenticatedRequest,
+    @Query('read') read?: string,
+    @Query('severity') severity?: string,
+    @Query('source') source?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    const userId = req.user._id.toString();
+    const deleted = await this.notificationsService.clearForUser(userId, {
+      read: read === 'true' ? true : read === 'false' ? false : undefined,
+      severity,
+      source,
+      tenantId,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
+    });
+    return { ok: true, deleted };
   }
 
   @Delete(':id')

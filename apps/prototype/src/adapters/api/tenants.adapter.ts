@@ -63,6 +63,38 @@ interface TenantAgentApiResponse extends Record<string, unknown> {
   retellAgentId?: string | null;
 }
 
+interface TenantStaffApiResponse extends Record<string, unknown> {
+  _id?: string;
+  roleSlug?: string;
+  status?: string;
+  joinedAt?: string;
+  invitedAt?: string;
+  userId?: Record<string, unknown>;
+}
+
+interface TenantSupportApiResponse {
+  data?: Array<Record<string, unknown>>;
+}
+
+interface TenantCallsApiResponse {
+  data?: Array<Record<string, unknown>>;
+  total?: number;
+}
+
+interface TenantBookingsApiResponse {
+  data?: Array<Record<string, unknown>>;
+  total?: number;
+}
+
+function isForbiddenError(error: unknown): boolean {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'status' in error &&
+      (error as { status?: number }).status === 403,
+  );
+}
+
 const templateChannelsCache = new Map<string, AgentChannel[]>();
 
 function readString(value: unknown): string | null {
@@ -141,6 +173,21 @@ function toAgentInstanceSummary(
   };
 }
 
+function roleLabel(roleSlug: string | null): string {
+  switch (roleSlug) {
+    case 'tenant_owner':
+      return 'Tenant Owner';
+    case 'clinic_admin':
+      return 'Clinic Admin';
+    case 'doctor':
+      return 'Doctor';
+    case 'receptionist':
+      return 'Receptionist';
+    default:
+      return roleSlug ?? 'Staff';
+  }
+}
+
 export const tenantsAdapter = {
   async getTenantListRows(filters?: { status?: string; plan?: string; search?: string }): Promise<TenantListRow[]> {
     try {
@@ -169,21 +216,38 @@ export const tenantsAdapter = {
 
       return (resp.data ?? []).map((tenant) => {
         const id = readString(tenant._id) ?? '';
+        const agentCount = counts.get(id) ?? readNumber(tenant.agentCount) ?? 0;
+        const owner =
+          tenant.ownerId && typeof tenant.ownerId === 'object'
+            ? (tenant.ownerId as Record<string, unknown>)
+            : null;
+        const ownerStatus = owner ? readString(owner.status) : null;
+        const ownerLastLoginAt = owner ? readString(owner.lastLoginAt) : null;
+        const hasPlan =
+          Boolean(
+            tenant.planId &&
+              typeof tenant.planId === 'object' &&
+              readString((tenant.planId as Record<string, unknown>)._id),
+          );
+        const isActive = readString(tenant.status) === 'ACTIVE';
+
+        let dynamicStep = 1;
+        if (agentCount > 0) dynamicStep = 2;
+        if (dynamicStep >= 2 && ownerStatus === 'active' && ownerLastLoginAt) dynamicStep = 3;
+        if (dynamicStep >= 3 && (isActive || hasPlan)) dynamicStep = 4;
+
         return {
           id: readString(tenant._id) ?? '',
           name: readString(tenant.name) ?? '',
           plan:
-            tenant.planId && typeof tenant.planId === 'object'
+          tenant.planId && typeof tenant.planId === 'object'
               ? readString((tenant.planId as Record<string, unknown>).name) ?? '—'
               : '—',
           status: toTenantStatus(tenant.status),
-          agentCount: counts.get(id) ?? readNumber(tenant.agentCount) ?? 0,
+          agentCount,
           mrr: 0,
           callsThisMonth: 0,
-          onboardingStatus:
-            tenant.onboardingComplete === true
-              ? 'Complete'
-              : `Step ${typeof tenant.onboardingStep === 'number' ? tenant.onboardingStep : 0}/4`,
+          onboardingStatus: dynamicStep >= 4 ? 'Complete' : `Step ${dynamicStep}/4`,
           createdAt: readString(tenant.createdAt) ?? '',
         };
       });
@@ -197,16 +261,79 @@ export const tenantsAdapter = {
 
   async getTenantDetailFull(id: string): Promise<TenantDetailFull | null> {
     try {
-      const t = await api.get<TenantApiResponse>(`/admin/tenants/${id}`);
-      if (!t) return null;
-      const owner = t.ownerId && typeof t.ownerId === 'object' ? t.ownerId : {};
-      const [agents, calls] = await Promise.all([
+      const me = await api.get<Record<string, unknown>>('/auth/me').catch(() => null);
+      const role = (readString(me?.role) ?? '').toUpperCase();
+      let isAdmin = role === 'ADMIN';
+
+      let t: TenantApiResponse | null = null;
+      if (isAdmin) {
+        try {
+          t = await api.get<TenantApiResponse>(`/admin/tenants/${id}`);
+        } catch (error) {
+          if (isForbiddenError(error)) {
+            isAdmin = false;
+            t = await api.get<TenantApiResponse>('/tenant/settings').catch(() => null);
+          } else {
+            t = null;
+          }
+        }
+      } else {
+        t = await api.get<TenantApiResponse>('/tenant/settings').catch(() => null);
+      }
+      const owner = t && t.ownerId && typeof t.ownerId === 'object' ? t.ownerId : {};
+      const settingsRes = await api
+        .get<{
+          timezone?: string;
+          locale?: string;
+          settings?: Record<string, unknown>;
+        }>('/tenant/settings')
+        .catch(() => null);
+
+      const agentsPromise = isAdmin
+        ? api
+            .get<TenantAgentApiResponse[]>(`/admin/agents/tenants/${id}`)
+            .catch(async (error) => {
+              if (isForbiddenError(error)) {
+                isAdmin = false;
+                return api.get<TenantAgentApiResponse[]>('/tenant/agents').catch(() => [] as TenantAgentApiResponse[]);
+              }
+              return [] as TenantAgentApiResponse[];
+            })
+        : api.get<TenantAgentApiResponse[]>('/tenant/agents').catch(() => [] as TenantAgentApiResponse[]);
+
+      const callsPromise = isAdmin
+        ? api
+            .get<AdminCallsListApiResponse>(
+              `/admin/calls?tenantId=${encodeURIComponent(id)}&page=1&limit=1`,
+            )
+            .catch(async (error) => {
+              if (isForbiddenError(error)) {
+                isAdmin = false;
+                return api
+                  .get<TenantCallsApiResponse>('/tenant/calls?page=1&limit=1')
+                  .catch(() => ({ total: 0, data: [] }));
+              }
+              return { total: 0, data: [] } as AdminCallsListApiResponse;
+            })
+        : api
+            .get<TenantCallsApiResponse>('/tenant/calls?page=1&limit=1')
+            .catch(() => ({ total: 0, data: [] }));
+
+      const [agents, calls, bookings, staff, support, billing] = await Promise.all([
+        agentsPromise,
+        callsPromise,
         api
-          .get<TenantAgentApiResponse[]>(`/admin/agents/tenants/${id}`)
-          .catch(() => [] as TenantAgentApiResponse[]),
+          .get<TenantBookingsApiResponse>('/tenant/bookings?page=1&limit=1')
+          .catch(() => ({ total: 0, data: [] })),
         api
-          .get<AdminCallsListApiResponse>(`/admin/calls?tenantId=${encodeURIComponent(id)}&page=1&limit=1`)
-          .catch(() => ({ total: 0, data: [] } as AdminCallsListApiResponse)),
+          .get<TenantStaffApiResponse[]>('/tenant/staff')
+          .catch(() => [] as TenantStaffApiResponse[]),
+        api
+          .get<TenantSupportApiResponse>('/tenant/support/tickets?page=1&limit=20')
+          .catch(() => ({ data: [] })),
+        api
+          .get<Record<string, unknown>>('/tenant/billing')
+          .catch(() => ({})),
       ]);
       const summaries = agents.map((agent) => toAgentInstanceSummary(agent, id));
 
@@ -220,31 +347,64 @@ export const tenantsAdapter = {
       const hasFirstCall = (calls.total ?? 0) > 0 || (calls.data?.length ?? 0) > 0;
       const ownerStatus = readString((owner as Record<string, unknown>).status);
       const ownerLastLoginAt = readString((owner as Record<string, unknown>).lastLoginAt);
-      const hasOwnerLogin = ownerStatus === 'active' && Boolean(ownerLastLoginAt);
-      const status = toTenantStatus(t.status);
+      const meLastLoginAt = readString(me?.lastLoginAt);
+      // In tenant portal, trust the active authenticated session as login completion.
+      const hasTenantSession = !isAdmin && Boolean(readString(me?._id) ?? readString(me?.id) ?? readString(me?.email));
+      const hasOwnerLogin =
+        (ownerStatus === 'active' && Boolean(ownerLastLoginAt)) ||
+        Boolean(meLastLoginAt) ||
+        hasTenantSession;
+      const status = toTenantStatus(t?.status ?? 'TRIAL');
       const hasBillingActivated =
         status === 'ACTIVE' ||
-        t.onboardingComplete === true ||
-        (t.planId && typeof t.planId === 'object' && Boolean(readString((t.planId as Record<string, unknown>)._id)));
+        t?.onboardingComplete === true ||
+        Boolean(
+          t?.planId &&
+            typeof t.planId === 'object' &&
+            readString((t.planId as Record<string, unknown>)._id),
+        );
+
+      const tickets = (support.data ?? []).map((ticket) => ({
+        id: readString(ticket._id) ?? '',
+        title: readString(ticket.title) ?? 'Ticket',
+        priority: readString(ticket.priority) ?? 'normal',
+        status: readString(ticket.status) ?? 'open',
+        createdAt: readString(ticket.createdAt) ?? '',
+      }));
+
+      const members = staff.map((m) => {
+        const user = m.userId && typeof m.userId === 'object' ? m.userId : {};
+        const statusRaw = readString(m.status) ?? 'invited';
+        return {
+          name: readString((user as Record<string, unknown>).name) ?? 'User',
+          role: roleLabel(readString(m.roleSlug)),
+          status: statusRaw === 'active' ? 'active' : 'invited',
+          joined: readString(m.joinedAt) ?? readString(m.invitedAt) ?? '',
+        } as TenantMemberRow;
+      });
 
       return {
-        id: readString(t._id) ?? id,
+        id: readString(t?._id) ?? readString(me?.tenantId) ?? id,
         profile: {
-          clinicName: readString(t.name) ?? '',
-          owner: readString(owner.name) ?? '',
-          email: readString(owner.email) ?? '',
+          clinicName:
+            readString(t?.name) ??
+            readString(me?.tenantName) ??
+            readString(me?.name) ??
+            'Tenant',
+          owner: readString(owner.name) ?? readString(me?.name) ?? '',
+          email: readString(owner.email) ?? readString(me?.email) ?? '',
           phone: '',
           address: '',
-          timezone: readString(t.timezone) ?? 'Asia/Riyadh',
-          locale: readString(t.locale) ?? 'ar',
+          timezone: readString(t?.timezone) ?? readString(settingsRes?.timezone) ?? 'Asia/Riyadh',
+          locale: readString(t?.locale) ?? readString(settingsRes?.locale) ?? 'ar',
           plan:
-            t.planId && typeof t.planId === 'object'
+            t?.planId && typeof t.planId === 'object'
               ? readString((t.planId as Record<string, unknown>).name) ?? '—'
-              : '—',
-          status: toTenantStatus(t.status),
+              : (readString(billing.plan) ?? '—'),
+          status,
           mrr: 0,
-          createdAt: readString(t.createdAt) ?? '',
-          lastActive: '',
+          createdAt: readString(t?.createdAt) ?? '',
+          lastActive: readString(owner.lastLoginAt) ?? readString(me?.lastLoginAt) ?? '',
         },
         onboarding: [
           { step: 1, title: 'Clinic Info Submitted', done: true },
@@ -262,14 +422,14 @@ export const tenantsAdapter = {
         ],
         quickStats: {
           totalCalls: calls.total ?? 0,
-          bookingsCreated: 0,
+          bookingsCreated: bookings.total ?? 0,
           escalations: 0,
           conversionRate: 0,
           avgCallDuration: '0s',
-          creditsUsed: 0,
-          creditsRemaining: 0,
+          creditsUsed: Number((billing.minutesUsed as number | undefined) ?? 0),
+          creditsRemaining: Number((billing.creditBalance as number | undefined) ?? 0),
         },
-        members: [],
+        members,
         agents: agents.map((agent) => {
           const summary = toAgentInstanceSummary(agent, id);
           const retellAgentId =
@@ -287,26 +447,31 @@ export const tenantsAdapter = {
             retellAgentId,
           };
         }),
-        tickets: [],
+        tickets,
         billing: {
           currentPlan:
-            t.planId && typeof t.planId === 'object'
-              ? readString((t.planId as Record<string, unknown>).name) ?? '—'
-              : '—',
+            (t?.planId && typeof t.planId === 'object'
+              ? readString((t.planId as Record<string, unknown>).name)
+              : null) ??
+            readString(billing.plan) ??
+            '—',
           nextBillingDate: '',
           lastPayment: '',
           paymentMethod: '',
-          creditsBalance: 0,
+          creditsBalance: Number((billing.creditBalance as number | undefined) ?? 0),
           overageRate: '$0.08/min',
         },
         settings: {
           businessHours:
-            t.settings && typeof t.settings === 'object'
-              ? readString((t.settings as Record<string, unknown>).businessHours) ?? '—'
+            settingsRes?.settings && typeof settingsRes.settings === 'object'
+              ? readString((settingsRes.settings as Record<string, unknown>).businessHours) ?? '—'
               : '—',
           afterHoursBehavior: 'Voicemail + Callback',
           notifications: 'Email + SMS',
-          featureFlags: {},
+          featureFlags:
+            settingsRes?.settings && typeof settingsRes.settings === 'object'
+              ? ((settingsRes.settings as Record<string, unknown>).featureFlags as Record<string, boolean> | undefined) ?? {}
+              : {},
           pmsIntegration: '—',
         },
       };
