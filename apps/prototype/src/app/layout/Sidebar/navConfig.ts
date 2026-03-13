@@ -7,32 +7,21 @@ import {
   Users,
   UserPlus,
   Bot,
-  Headphones,
   Phone,
-  FileText,
-  BookOpen,
+  Headphones,
   CreditCard,
   Settings,
-  Activity,
   BarChart3,
   HelpCircle,
   CalendarDays,
-  FlaskConical,
 } from 'lucide-react';
 import type { NavItem } from './types';
 
 export const ADMIN_NAV: NavItem[] = [
   { to: '/admin/overview', label: 'common.dashboard', icon: LayoutDashboard },
   { to: '/admin/tenants', label: 'common.tenants', icon: Users },
-  { to: '/admin/agents', label: 'common.agent', icon: Bot },
-  { to: '/admin/sandbox', label: 'common.agentSandbox', icon: FlaskConical },
-  { to: '/admin/staff', label: 'common.staff', icon: UserPlus },
   { to: '/admin/support', label: 'common.supportInbox', icon: Headphones },
-  { to: '/admin/calls', label: 'common.calls', icon: Phone },
-  { to: '/admin/runs', label: 'common.runsLogs', icon: FileText },
-  { to: '/admin/skills', label: 'common.skillsCatalog', icon: BookOpen },
   { to: '/admin/billing', label: 'common.billing', icon: CreditCard },
-  { to: '/admin/system', label: 'common.systemHealth', icon: Activity },
   { to: '/admin/settings', label: 'common.settings', icon: Settings },
 ];
 

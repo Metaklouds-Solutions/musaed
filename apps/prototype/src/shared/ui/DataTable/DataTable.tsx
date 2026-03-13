@@ -10,15 +10,22 @@ interface DataTableProps {
   /** Min width for table (enables horizontal scroll when needed) */
   minWidth?: string;
   className?: string;
+  /** When "plain", omit card styling (use when table is inside another card) */
+  variant?: 'card' | 'plain';
 }
 
-export function DataTable({ children, minWidth = 'min-w-[480px] sm:min-w-[640px]', className }: DataTableProps) {
+export function DataTable({
+  children,
+  minWidth = 'min-w-[480px] sm:min-w-[640px]',
+  className,
+  variant = 'card',
+}: DataTableProps) {
   return (
     <div
       className={cn(
         'w-full min-w-0',
         'overflow-x-auto overscroll-contain scroll-smooth',
-        'rounded-[var(--radius-card)] card-glass',
+        variant === 'card' && 'rounded-[var(--radius-card)] card-glass',
         className
       )}
       style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}

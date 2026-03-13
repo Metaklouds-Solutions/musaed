@@ -238,6 +238,10 @@ export class CallsService {
     totalCalls: number;
     conversationRate: number;
     avgDuration: number;
+    successRate: number;
+    avgCost: number | null;
+    avgLatency: number | null;
+    disconnectionReasons: Record<string, number>;
     outcomes: {
       booked: number;
       escalated: number;
@@ -260,9 +264,16 @@ export class CallsService {
         bookedCount: number;
         sumDurationMs: number;
         durationCount: number;
+        successRateSum: number;
+        successRateCount: number;
+        sumCost: number;
+        costCount: number;
+        sumLatency: number;
+        latencyCount: number;
       };
       outcomes: { _id: string; count: number }[];
       sentiments: { _id: string; count: number }[];
+      disconnectionReasons: { _id: string | null; count: number }[];
     }
 
     const result = await this.callSessionModel.aggregate<FacetResult>([
@@ -281,6 +292,38 @@ export class CallsService {
                 durationCount: {
                   $sum: { $cond: [{ $ne: ['$durationMs', null] }, 1, 0] },
                 },
+                successRateSum: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ['$callSuccessful', true] },
+                      1,
+                      {
+                        $cond: [
+                          { $eq: ['$callSuccessful', false] },
+                          0,
+                          null,
+                        ],
+                      },
+                    ],
+                  },
+                },
+                successRateCount: {
+                  $sum: {
+                    $cond: [
+                      { $in: ['$callSuccessful', [true, false]] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                sumCost: { $sum: { $ifNull: ['$callCost', 0] } },
+                costCount: {
+                  $sum: { $cond: [{ $ne: ['$callCost', null] }, 1, 0] },
+                },
+                sumLatency: { $sum: { $ifNull: ['$latencyE2e', 0] } },
+                latencyCount: {
+                  $sum: { $cond: [{ $ne: ['$latencyE2e', null] }, 1, 0] },
+                },
               },
             },
           ],
@@ -295,6 +338,14 @@ export class CallsService {
               },
             },
           ],
+          disconnectionReasons: [
+            {
+              $group: {
+                _id: { $ifNull: ['$disconnectionReason', null] },
+                count: { $sum: 1 },
+              },
+            },
+          ],
         },
       },
       {
@@ -302,6 +353,7 @@ export class CallsService {
           main: { $arrayElemAt: ['$main', 0] },
           outcomes: 1,
           sentiments: 1,
+          disconnectionReasons: 1,
         },
       },
     ]);
@@ -311,14 +363,27 @@ export class CallsService {
       bookedCount: 0,
       sumDurationMs: 0,
       durationCount: 0,
+      successRateSum: 0,
+      successRateCount: 0,
+      sumCost: 0,
+      costCount: 0,
+      sumLatency: 0,
+      latencyCount: 0,
     };
     const outcomesArr = result[0]?.outcomes ?? [];
     const sentimentsArr = result[0]?.sentiments ?? [];
+    const disconnectionReasonsArr = result[0]?.disconnectionReasons ?? [];
 
     const totalCalls = main.totalCalls ?? 0;
     const bookedCount = main.bookedCount ?? 0;
     const sumDurationMs = main.sumDurationMs ?? 0;
     const durationCount = main.durationCount ?? 0;
+    const successRateCount = main.successRateCount ?? 0;
+    const successRateSum = main.successRateSum ?? 0;
+    const costCount = main.costCount ?? 0;
+    const sumCost = main.sumCost ?? 0;
+    const latencyCount = main.latencyCount ?? 0;
+    const sumLatency = main.sumLatency ?? 0;
 
     const outcomes: Record<string, number> = Object.fromEntries(
       OUTCOMES.map((o) => [o, 0]),
@@ -341,14 +406,31 @@ export class CallsService {
       sentiment[normalized] = (sentiment[normalized] ?? 0) + row.count;
     }
 
+    const disconnectionReasons: Record<string, number> = {};
+    for (const row of disconnectionReasonsArr) {
+      const key =
+        row._id == null || row._id === ''
+          ? 'unknown'
+          : String(row._id);
+      disconnectionReasons[key] = (disconnectionReasons[key] ?? 0) + row.count;
+    }
+
     const conversationRate = totalCalls > 0 ? bookedCount / totalCalls : 0;
     const avgDurationSec =
       durationCount > 0 ? Math.round(sumDurationMs / durationCount / 1000) : 0;
+    const successRate =
+      successRateCount > 0 ? successRateSum / successRateCount : 0;
+    const avgCost = costCount > 0 ? sumCost / costCount : null;
+    const avgLatency = latencyCount > 0 ? sumLatency / latencyCount : null;
 
     return {
       totalCalls,
       conversationRate,
       avgDuration: avgDurationSec,
+      successRate,
+      avgCost,
+      avgLatency,
+      disconnectionReasons,
       outcomes: {
         booked: outcomes.booked,
         escalated: outcomes.escalated,
@@ -411,6 +493,10 @@ export class CallsService {
       const callDataRecord = this.isRecord(callData) ? callData : {};
 
       const transcriptObject = callDataRecord['transcript_object'];
+      const callAnalysis = this.isRecord(callDataRecord['call_analysis'])
+        ? (callDataRecord['call_analysis'] as JsonRecord)
+        : null;
+
       const updateData: Partial<CallSession> = {
         recordingUrl:
           this.readString(callDataRecord['recording_url']) ?? undefined,
@@ -424,6 +510,37 @@ export class CallsService {
       const startTimestamp = this.readNumber(callDataRecord['start_timestamp']);
       if (endTimestamp !== null && startTimestamp !== null) {
         updateData.durationMs = endTimestamp - startTimestamp;
+      }
+
+      updateData.disconnectionReason =
+        this.readString(callDataRecord['disconnection_reason']) ?? undefined;
+
+      const costVal = this.extractCallCost(callDataRecord['call_cost']);
+      if (costVal !== null) {
+        updateData.callCost = costVal;
+      }
+
+      const latency = this.isRecord(callDataRecord['latency'])
+        ? (callDataRecord['latency'] as JsonRecord)
+        : null;
+      const e2e = this.isRecord(latency?.['e2e']) ? latency!['e2e'] : null;
+      const p50 = this.readNumber(this.isRecord(e2e) ? (e2e as JsonRecord)['p50'] : undefined);
+      if (p50 !== null) {
+        updateData.latencyE2e = p50;
+      }
+
+      updateData.callType =
+        this.readString(callDataRecord['call_type']) ?? undefined;
+
+      if (callAnalysis) {
+        const callSuccessfulVal = this.readBoolean(callAnalysis['call_successful']);
+        if (callSuccessfulVal !== null) {
+          updateData.callSuccessful = callSuccessfulVal;
+        }
+        const customData = callAnalysis['custom_analysis_data'];
+        if (this.isRecord(customData)) {
+          updateData.customAnalysisData = customData;
+        }
       }
 
       const updatedCall = await this.callSessionModel.findOneAndUpdate(
@@ -484,6 +601,29 @@ export class CallsService {
 
   private readNumber(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  private readBoolean(value: unknown): boolean | null {
+    return typeof value === 'boolean' ? value : null;
+  }
+
+  /**
+   * Extracts combined/total cost from Retell call_cost object.
+   * Supports combined_cost, total, or direct number.
+   */
+  private extractCallCost(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (!this.isRecord(value)) {
+      return null;
+    }
+    const record = value as JsonRecord;
+    return (
+      this.readNumber(record['combined_cost']) ??
+      this.readNumber(record['total']) ??
+      null
+    );
   }
 
   private buildFilter(
@@ -559,33 +699,46 @@ export class CallsService {
 
         if (calls && Array.isArray(calls)) {
           for (const callData of calls) {
+            const callRecord = this.isRecord(callData) ? callData : {};
+            const callAnalysis = this.isRecord(callRecord['call_analysis'])
+              ? (callRecord['call_analysis'] as JsonRecord)
+              : null;
+            const transcriptObj = callRecord['transcript_object'];
+
             const updateData: Partial<CallSession> = {
               tenantId: agent.tenantId,
               agentInstanceId: agent._id,
               retellAgentId: agent.retellAgentId,
-              recordingUrl: callData.recording_url || undefined,
-              transcript: callData.transcript || undefined,
-              transcriptObject: callData.transcript_object
-                ? (callData.transcript_object as unknown as Record<
-                    string,
-                    unknown
-                  >)
+              recordingUrl:
+                this.readString(callRecord['recording_url']) ?? undefined,
+              transcript:
+                this.readString(callRecord['transcript']) ?? undefined,
+              transcriptObject: this.isTranscriptObject(transcriptObj)
+                ? transcriptObj
                 : undefined,
-              status: callData.call_status === 'ended' ? 'analyzed' : 'started',
+              status:
+                callRecord['call_status'] === 'ended' ? 'analyzed' : 'started',
             };
 
-            if (callData.end_timestamp && callData.start_timestamp) {
-              updateData.durationMs =
-                callData.end_timestamp - callData.start_timestamp;
-              updateData.startedAt = new Date(callData.start_timestamp);
-              updateData.endedAt = new Date(callData.end_timestamp);
+            const endTs = this.readNumber(callRecord['end_timestamp']);
+            const startTs = this.readNumber(callRecord['start_timestamp']);
+            if (endTs !== null && startTs !== null) {
+              updateData.durationMs = endTs - startTs;
+              updateData.startedAt = new Date(startTs);
+              updateData.endedAt = new Date(endTs);
             }
 
-            if (callData.call_analysis) {
+            if (callAnalysis) {
               updateData.summary =
-                callData.call_analysis.call_summary || undefined;
+                this.readString(callAnalysis['call_summary']) ?? undefined;
               updateData.sentiment =
-                callData.call_analysis.user_sentiment || undefined;
+                this.readString(callAnalysis['user_sentiment']) ?? undefined;
+              updateData.callSuccessful =
+                this.readBoolean(callAnalysis['call_successful']) ?? undefined;
+              const customData = callAnalysis['custom_analysis_data'];
+              updateData.customAnalysisData = this.isRecord(customData)
+                ? customData
+                : undefined;
 
               const summaryLower = (updateData.summary || '').toLowerCase();
               if (
@@ -605,12 +758,37 @@ export class CallsService {
               }
             }
 
-            await this.callSessionModel.updateOne(
-              { callId: callData.call_id },
-              { $setOnInsert: updateData },
-              { upsert: true },
+            updateData.disconnectionReason =
+              this.readString(callRecord['disconnection_reason']) ?? undefined;
+
+            const costVal = this.extractCallCost(callRecord['call_cost']);
+            if (costVal !== null) {
+              updateData.callCost = costVal;
+            }
+
+            const latency = this.isRecord(callRecord['latency'])
+              ? (callRecord['latency'] as JsonRecord)
+              : null;
+            const e2e = this.isRecord(latency?.['e2e']) ? latency!['e2e'] : null;
+            const p50 = this.readNumber(
+              this.isRecord(e2e) ? e2e['p50'] : undefined,
             );
-            totalSynced++;
+            if (p50 !== null) {
+              updateData.latencyE2e = p50;
+            }
+
+            updateData.callType =
+              this.readString(callRecord['call_type']) ?? undefined;
+
+            const callId = this.readString(callRecord['call_id']);
+            if (callId) {
+              await this.callSessionModel.updateOne(
+                { callId },
+                { $set: updateData },
+                { upsert: true },
+              );
+              totalSynced++;
+            }
           }
         }
       } catch (err) {

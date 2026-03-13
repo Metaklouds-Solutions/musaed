@@ -129,5 +129,9 @@ function computeAnalytics(
     avgDuration,
     outcomes,
     sentiment,
+    successRate: undefined,
+    avgCost: undefined,
+    avgLatency: undefined,
+    disconnectionReasons: {},
   };
 }

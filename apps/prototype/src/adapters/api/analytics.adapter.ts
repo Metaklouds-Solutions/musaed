@@ -30,6 +30,14 @@ export interface CallAnalyticsResponse {
     neutral: number;
     negative: number;
   };
+  /** Success rate (0–1). Optional until backend is deployed. */
+  successRate?: number;
+  /** Average cost per call. Optional until backend is deployed. */
+  avgCost?: number;
+  /** Average latency in ms. Optional until backend is deployed. */
+  avgLatency?: number;
+  /** Disconnection reason -> count. Optional until backend is deployed. */
+  disconnectionReasons?: Record<string, number>;
 }
 
 /**

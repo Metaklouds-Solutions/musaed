@@ -1,14 +1,5 @@
 export { AdminOverviewPage } from './pages/AdminOverviewPage';
-export { AdminCallsPage } from './pages/AdminCallsPage';
 export { AdminTenantsPage } from './pages/AdminTenantsPage';
-export { AdminStaffPage } from './pages/AdminStaffPage';
-export { AdminAgentsPage } from './pages/AdminAgentsPage';
-export { AdminAgentRedirect } from './pages/AdminAgentRedirect';
-export { AdminAgentSandboxPage } from './pages/AdminAgentSandboxPage';
 export { AdminSupportPage } from './pages/AdminSupportPage';
-export { AdminRunsPage } from './pages/AdminRunsPage';
-export { AdminRunDetailPage } from './pages/AdminRunDetailPage';
-export { AdminSkillsPage } from './pages/AdminSkillsPage';
 export { AdminSettingsPage } from './pages/AdminSettingsPage';
 export { AdminBillingPage } from './pages/AdminBillingPage';
-export { AdminSystemPage } from './pages/AdminSystemPage';

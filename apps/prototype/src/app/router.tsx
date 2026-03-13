@@ -38,19 +38,10 @@ const ReportsPage = lazy(() => import('../modules/reports').then(m => ({ default
 const BillingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.BillingPage })));
 const SettingsPage = lazy(() => import('../modules/settings').then(m => ({ default: m.SettingsPage })));
 const AdminOverviewPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminOverviewPage })));
-const AdminCallsPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminCallsPage })));
 const AdminTenantsPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminTenantsPage })));
-const AdminStaffPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminStaffPage })));
-const AdminAgentsPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminAgentsPage })));
-const AdminAgentRedirect = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminAgentRedirect })));
-const AdminAgentSandboxPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminAgentSandboxPage })));
 const AdminSupportPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminSupportPage })));
-const AdminRunsPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminRunsPage })));
-const AdminRunDetailPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminRunDetailPage })));
-const AdminSkillsPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminSkillsPage })));
 const AdminBillingPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminBillingPage })));
 const AdminSettingsPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminSettingsPage })));
-const AdminSystemPage = lazy(() => import('../modules/admin').then(m => ({ default: m.AdminSystemPage })));
 
 const TenantDetailPage = lazy(() => import('../modules/tenant').then(m => ({ default: m.TenantDetailPage })));
 const AgentDetailPage = lazy(() => import('../modules/tenant').then(m => ({ default: m.AgentDetailPage })));
@@ -159,20 +150,12 @@ const router = createBrowserRouter([
                   { path: 'tenants', element: <PageSuspense><AdminTenantsPage /></PageSuspense> },
                   { path: 'tenants/:id', element: <PageSuspense><TenantDetailPage /></PageSuspense> },
                   { path: 'tenants/:id/agents/:agentId', element: <PageSuspense><AgentDetailPage /></PageSuspense> },
-                  { path: 'agents', element: <PageSuspense><AdminAgentsPage /></PageSuspense> },
-                  { path: 'agents/:id', element: <PageSuspense><AdminAgentRedirect /></PageSuspense> },
-                  { path: 'sandbox', element: <PageSuspense><AdminAgentSandboxPage /></PageSuspense> },
-                  { path: 'staff', element: <PageSuspense><AdminStaffPage /></PageSuspense> },
+                  { path: 'tenants/:id/calls/:callId', element: <PageSuspense><CallDetailPage /></PageSuspense> },
                   { path: 'support', element: <PageSuspense><AdminSupportPage /></PageSuspense> },
                   { path: 'support/:id', element: <PageSuspense><AdminSupportPage /></PageSuspense> },
-                  { path: 'calls', element: <PageSuspense><AdminCallsPage /></PageSuspense> },
-                  { path: 'calls/:id', element: <PageSuspense><CallDetailPage /></PageSuspense> },
-                  { path: 'runs', element: <PageSuspense><AdminRunsPage /></PageSuspense> },
-                  { path: 'runs/:id', element: <PageSuspense><AdminRunDetailPage /></PageSuspense> },
-                  { path: 'skills', element: <PageSuspense><AdminSkillsPage /></PageSuspense> },
                   { path: 'billing', element: <PageSuspense><AdminBillingPage /></PageSuspense> },
                   { path: 'settings', element: <PageSuspense><AdminSettingsPage /></PageSuspense> },
-                  { path: 'system', element: <PageSuspense><AdminSystemPage /></PageSuspense> },
+                  { path: '*', element: <Navigate to="/admin/overview" replace /> },
                 ],
               },
             ],

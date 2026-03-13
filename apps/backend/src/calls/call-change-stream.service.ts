@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ChangeStream } from 'mongodb';
+// Mongoose watch() returns a compatible stream; use any to avoid mongodb@7 ChangeStream type mismatch
 import {
   CallSession,
   CallSessionDocument,
@@ -16,7 +16,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 @Injectable()
 export class CallChangeStreamService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CallChangeStreamService.name);
-  private stream: ChangeStream | null = null;
+  private stream: { on: (event: string, fn: (...args: unknown[]) => void) => void; close: () => Promise<void> } | null = null;
   private restarting = false;
 
   constructor(
@@ -36,23 +36,24 @@ export class CallChangeStreamService implements OnModuleInit, OnModuleDestroy {
   private startStream(): void {
     if (this.stream) return;
 
-    this.stream = this.callSessionModel.watch(
+    const stream = this.callSessionModel.watch(
       [{ $match: { operationType: 'insert' } }],
       { fullDocument: 'default' },
-    );
+    ) as { on: (event: string, fn: (...args: unknown[]) => void) => void; close: () => Promise<void> };
+    this.stream = stream;
 
-    this.stream.on('change', (change: Record<string, unknown>) => {
+    stream.on('change', (change: Record<string, unknown>) => {
       void this.handleInsertChange(change);
     });
 
-    this.stream.on('error', (err: unknown) => {
+    stream.on('error', (err: unknown) => {
       this.logger.error(
         `Call change stream error: ${err instanceof Error ? err.message : String(err)}`,
       );
       void this.restartStreamWithDelay();
     });
 
-    this.stream.on('end', () => {
+    stream.on('end', () => {
       this.logger.warn('Call change stream ended; restarting');
       void this.restartStreamWithDelay();
     });

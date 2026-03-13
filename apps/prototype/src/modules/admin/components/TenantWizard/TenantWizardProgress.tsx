@@ -2,7 +2,7 @@
  * Wizard progress indicator. Steps 1 and 2.
  */
 
-const STEPS = ['Tenant details', 'Assign agent'];
+const STEPS = ['Tenant details', 'Select template'];
 
 interface TenantWizardProgressProps {
   currentStep: number;

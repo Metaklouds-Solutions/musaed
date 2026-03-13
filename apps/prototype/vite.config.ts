@@ -55,6 +55,9 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
+    optimizeDeps: {
+      include: ['socket.io-client'],
+    },
     server: {
       port: Number(env.VITE_PORT) || 3002,
       strictPort: false,

@@ -1,2 +1,0 @@
-export { CreateAgentModal } from './CreateAgentModal';
-

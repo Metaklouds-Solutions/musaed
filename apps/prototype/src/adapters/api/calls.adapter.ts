@@ -92,6 +92,9 @@ export const callsAdapter = {
   async getCalls(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<Call[]> {
     const endpoint = tenantId ? '/tenant/calls' : '/admin/calls';
     const params = new URLSearchParams();
+    if (tenantId) {
+      params.append('tenantId', tenantId);
+    }
     if (dateRange) {
       params.append('from', dateRange.start.toISOString());
       params.append('to', dateRange.end.toISOString());

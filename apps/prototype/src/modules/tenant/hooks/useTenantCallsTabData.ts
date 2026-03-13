@@ -1,8 +1,8 @@
-import { useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { callsAdapter, customersAdapter } from '../../../adapters';
 import { useAsyncData } from '../../../shared/hooks/useAsyncData';
-import type { Customer } from '../../../shared/types';
+import type { Customer, Call } from '../../../shared/types';
 
 const DEFAULT_RANGE = (() => {
   const end = new Date();
@@ -14,11 +14,16 @@ const DEFAULT_RANGE = (() => {
 /** Tenant calls tab data hook. Keeps adapter access outside the view component. */
 export function useTenantCallsTabData() {
   const { id } = useParams<{ id: string }>();
+  const tenantId = id ?? undefined;
 
-  const calls = useMemo(() => callsAdapter.getCalls(id ?? undefined, DEFAULT_RANGE), [id]);
+  const { data: calls } = useAsyncData(
+    () => callsAdapter.getCalls(tenantId, DEFAULT_RANGE),
+    [tenantId],
+    [] as Call[],
+  );
   const { data: customers } = useAsyncData(
-    () => customersAdapter.getCustomers(id ?? undefined),
-    [id],
+    () => customersAdapter.getCustomers(tenantId),
+    [tenantId],
     [] as Customer[],
   );
   const getCustomerName = useCallback(

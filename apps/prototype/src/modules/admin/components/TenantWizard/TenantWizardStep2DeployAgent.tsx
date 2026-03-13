@@ -1,58 +1,58 @@
 /**
- * Step 2: Assign an existing agent to the tenant (shows all agents; only unassigned can be assigned).
+ * Step 2: Select an agent template for the tenant (shows platform templates).
  */
 
 import { Bot } from 'lucide-react';
 import { Button } from '../../../../shared/ui';
-import type { AdminAgentRow } from '../../../../shared/types';
+import type { AgentTemplateOption } from '../../../../shared/types';
 
 interface TenantWizardStep2DeployAgentProps {
-  agents: AdminAgentRow[];
-  selectedAgentId: string | null;
-  onSelectAgent: (id: string) => void;
+  templates: AgentTemplateOption[];
+  selectedTemplateId: string | null;
+  onSelectTemplate: (id: string) => void;
   onContinue: () => void;
   onSkip: () => void;
   isSubmitting?: boolean;
-  isLoading?: boolean;
-  loadError?: string | null;
-  onRetryLoad?: () => void;
+  templatesLoading?: boolean;
+  templatesError?: string | null;
+  refetchTemplates?: () => void;
 }
 
-/** Renders agent list for wizard step two; allows optional assignment. */
+/** Renders template list for wizard step two; allows optional template selection. */
 export function TenantWizardStep2DeployAgent({
-  agents,
-  selectedAgentId,
-  onSelectAgent,
+  templates,
+  selectedTemplateId,
+  onSelectTemplate,
   onContinue,
   onSkip,
   isSubmitting = false,
-  isLoading = false,
-  loadError = null,
-  onRetryLoad,
+  templatesLoading = false,
+  templatesError = null,
+  refetchTemplates,
 }: TenantWizardStep2DeployAgentProps) {
-  const showEmpty = !isLoading && !loadError && agents.length === 0;
-  const canContinue = !isSubmitting && !isLoading && !loadError;
+  const showEmpty = !templatesLoading && !templatesError && templates.length === 0;
+  const canContinue = !isSubmitting && !templatesLoading && !templatesError;
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-3.5">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">Assign Agent</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)]">Select Template</p>
         <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Pick one agent to connect with this tenant. Only unassigned agents can be assigned; you can skip and assign later.
+          Pick one template to deploy an agent for this tenant. You can skip and deploy later.
         </p>
       </div>
       <div className="space-y-2">
-        {isLoading && (
+        {templatesLoading && (
           <p className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 p-4 text-sm text-[var(--text-muted)]">
-            Loading agents...
+            Loading templates...
           </p>
         )}
-        {loadError && (
+        {templatesError && (
           <div className="rounded-xl border border-[var(--error)]/40 bg-[rgba(239,68,68,0.08)] p-4 text-sm text-[var(--text-primary)]">
-            <p className="text-[var(--text-primary)]">Failed to load agents.</p>
-            {onRetryLoad && (
+            <p className="text-[var(--text-primary)]">Failed to load templates.</p>
+            {refetchTemplates && (
               <div className="mt-3">
-                <Button variant="secondary" onClick={onRetryLoad} disabled={isSubmitting}>
+                <Button variant="secondary" onClick={refetchTemplates} disabled={isSubmitting}>
                   Retry
                 </Button>
               </div>
@@ -61,19 +61,21 @@ export function TenantWizardStep2DeployAgent({
         )}
         {showEmpty && (
           <p className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 p-4 text-sm text-[var(--text-muted)]">
-            No agents yet. Create an agent from Admin → Agents first, or continue to create tenant only.
+            No templates available. Run the seed script to add templates.
           </p>
         )}
-        {agents.length > 0 && (
+        {templates.length > 0 && (
           <div className="max-h-[min(40vh,16rem)] overflow-y-auto space-y-2 pr-1">
-            {agents.map((agent) => {
-              const selected = selectedAgentId === agent.id;
-              const isAssigned = Boolean(agent.tenantId ?? agent.tenantName);
+            {templates.map((template) => {
+              const selected = selectedTemplateId === template.id;
+              const channelsLabel = template.channels?.length
+                ? template.channels.join(', ')
+                : template.voice;
               return (
                 <button
-                  key={agent.id}
+                  key={template.id}
                   type="button"
-                  onClick={() => onSelectAgent(agent.id)}
+                  onClick={() => onSelectTemplate(template.id)}
                   className={`w-full flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-colors ${
                     selected
                       ? 'border-[var(--ds-primary)] bg-[rgba(99,102,241,0.12)] shadow-[0_0_0_1px_rgba(124,92,255,0.2),0_12px_26px_rgba(124,92,255,0.14)]'
@@ -84,16 +86,11 @@ export function TenantWizardStep2DeployAgent({
                     <Bot className="w-5 h-5 text-[var(--text-muted)]" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-[var(--text-primary)]">{agent.name}</p>
+                    <p className="font-semibold text-[var(--text-primary)]">{template.name}</p>
                     <p className="text-xs text-[var(--text-muted)]">
-                      {agent.voice} · {agent.language}
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)] mt-1">
-                      Status: {agent.status}
-                      {isAssigned && (
-                        <span className="ml-1 text-[var(--text-muted)]">
-                          · Assigned to {agent.tenantName ?? 'another tenant'}
-                        </span>
+                      {channelsLabel}
+                      {template.capabilityLevel && (
+                        <span className="ml-1">· {template.capabilityLevel}</span>
                       )}
                     </p>
                   </div>
@@ -115,10 +112,10 @@ export function TenantWizardStep2DeployAgent({
           loading={isSubmitting}
           className="rounded-xl px-5"
         >
-          {selectedAgentId ? 'Create Tenant + Assign Agent' : 'Create Tenant'}
+          {selectedTemplateId ? 'Create Tenant + Deploy Agent' : 'Create Tenant'}
         </Button>
         <Button variant="secondary" onClick={onSkip} disabled={isSubmitting} className="rounded-xl px-5">
-          Continue without assignment
+          Continue without template
         </Button>
       </div>
     </div>

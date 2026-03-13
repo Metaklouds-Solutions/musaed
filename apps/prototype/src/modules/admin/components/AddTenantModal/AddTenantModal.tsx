@@ -1,5 +1,5 @@
 /**
- * Add Tenant wizard modal. Step 1: Tenant details. Step 2: Assign existing agent.
+ * Add Tenant wizard modal. Step 1: Tenant details. Step 2: Select template.
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -36,21 +36,20 @@ interface AddTenantModalProps {
 export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps) {
   const [step, setStep] = useState(1);
   const [clinicData, setClinicData] = useState<ClinicInfoData>(INITIAL_CLINIC);
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
-    assignableAgents,
-    assignableAgentsLoading,
-    assignableAgentsError,
-    refetchAssignableAgents,
+    templates,
+    templatesLoading,
+    templatesError,
+    refetchTemplates,
     createTenant,
-    assignAgentToTenant,
   } = useAdminTenantCreation();
 
   const reset = useCallback(() => {
     setStep(1);
     setClinicData(INITIAL_CLINIC);
-    setSelectedAgentId(null);
+    setSelectedTemplateId(null);
     setIsSubmitting(false);
   }, []);
 
@@ -70,12 +69,13 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
 
   useEffect(() => {
     if (!open || step !== 2) return;
-    refetchAssignableAgents();
-  }, [open, refetchAssignableAgents, step]);
+    refetchTemplates();
+  }, [open, refetchTemplates, step]);
 
   const handleComplete = useCallback(async () => {
     setIsSubmitting(true);
     try {
+      const selectedTemplate = selectedTemplateId ? templates.find((t) => t.id === selectedTemplateId) : undefined;
       const result = await createTenant({
         name: clinicData.name.trim(),
         plan: clinicData.plan,
@@ -85,20 +85,11 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         address: clinicData.address.trim() || undefined,
         timezone: clinicData.timezone,
         locale: clinicData.locale,
+        ...(selectedTemplateId && {
+          templateId: selectedTemplateId,
+          channelsEnabled: selectedTemplate?.channels ?? ['voice'],
+        }),
       });
-      if (selectedAgentId) {
-        try {
-          await assignAgentToTenant(selectedAgentId, result.id);
-          refetchAssignableAgents();
-        } catch (assignErr: unknown) {
-          const msg = assignErr instanceof Error ? assignErr.message : String(assignErr);
-          if (msg.includes('already assigned') || msg.includes('409')) {
-            toast.warning('Tenant created. Agent is already assigned to another tenant — assign from Agents later.');
-          } else {
-            toast.error(msg);
-          }
-        }
-      }
       reset();
       onClose();
       onSuccess?.({ id: result.id, name: result.name, plan: result.plan });
@@ -115,7 +106,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
     } finally {
       setIsSubmitting(false);
     }
-  }, [assignAgentToTenant, clinicData, createTenant, normalizedOwnerEmail, onClose, onSuccess, refetchAssignableAgents, reset, selectedAgentId]);
+  }, [clinicData, createTenant, normalizedOwnerEmail, onClose, onSuccess, reset, selectedTemplateId, templates]);
 
   return (
     <Modal open={open} onClose={handleClose} title="Onboard Tenant" maxWidthRem={42}>
@@ -124,7 +115,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         <div className="rounded-2xl border border-[var(--border-subtle)]/80 bg-[linear-gradient(180deg,rgba(124,92,255,0.12),rgba(16,185,129,0.05))] p-3.5">
           <h3 className="text-base font-semibold text-[var(--text-primary)]">Create Tenant Workspace</h3>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Complete tenant profile and optionally assign an existing agent.
+            Complete tenant profile and optionally select a template to deploy an agent.
           </p>
         </div>
         <TenantWizardProgress currentStep={step} />
@@ -137,7 +128,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
                 Cancel
               </Button>
               <Button onClick={handleStep1Next} disabled={!canProceedStep1} className="rounded-xl px-5">
-                Next: Assign Agent
+                Next: Select Template
               </Button>
             </div>
           </>
@@ -146,15 +137,15 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         {step === 2 && (
           <>
             <TenantWizardStep2DeployAgent
-              agents={assignableAgents}
-              selectedAgentId={selectedAgentId}
-              onSelectAgent={setSelectedAgentId}
+              templates={templates}
+              selectedTemplateId={selectedTemplateId}
+              onSelectTemplate={setSelectedTemplateId}
               onContinue={handleComplete}
               onSkip={handleComplete}
-              isSubmitting={isSubmitting || assignableAgentsLoading}
-              isLoading={assignableAgentsLoading}
-              loadError={assignableAgentsError?.message ?? null}
-              onRetryLoad={refetchAssignableAgents}
+              isSubmitting={isSubmitting || templatesLoading}
+              templatesLoading={templatesLoading}
+              templatesError={templatesError?.message ?? null}
+              refetchTemplates={refetchTemplates}
             />
             <div className="flex justify-between pt-3 border-t border-[var(--separator)]">
               <Button type="button" variant="secondary" onClick={() => setStep(1)} className="rounded-xl px-5">

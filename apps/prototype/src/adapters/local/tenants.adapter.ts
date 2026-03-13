@@ -235,6 +235,8 @@ export const tenantsAdapter = {
     timezone?: string;
     locale?: string;
     agentId?: string;
+    templateId?: string;
+    channelsEnabled?: Array<'voice' | 'chat' | 'email'>;
   }): AdminTenantRow {
     const id = `t_${Date.now()}`;
     const row: AdminTenantRow = { id, name: data.name, plan: data.plan };

@@ -1,5 +1,5 @@
 /**
- * Tenant detail page with 7 tabs. Shared by admin and tenant context.
+ * Tenant detail page with 4 tabs. Shared by admin and tenant context.
  */
 
 import { useState, type KeyboardEvent } from 'react';
@@ -8,36 +8,24 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   LayoutDashboard,
-  Bot,
   Users,
-  Phone,
-  CreditCard,
-  Headphones,
-  Settings,
+  Activity,
 } from 'lucide-react';
 import { PageHeader } from '../../../shared/ui';
 import { useTenantDetail } from '../hooks/useTenantDetail';
 import {
   TenantOverviewTab,
-  TenantAgentsTab,
-  TenantMembersTab,
-  TenantCallsTab,
-  TenantBillingTab,
-  TenantSupportTab,
-  TenantSettingsTab,
+  TenantTeamTab,
+  TenantActivityTab,
 } from '../components/TenantDetailTabs';
 import { cn } from '@/lib/utils';
 
-type TenantTab = 'overview' | 'agents' | 'members' | 'calls' | 'billing' | 'support' | 'settings';
+type TenantTab = 'overview' | 'team' | 'activity';
 
 const TABS: { id: TenantTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'agents', label: 'Agents', icon: Bot },
-  { id: 'members', label: 'Members', icon: Users },
-  { id: 'calls', label: 'Calls', icon: Phone },
-  { id: 'billing', label: 'Billing', icon: CreditCard },
-  { id: 'support', label: 'Support', icon: Headphones },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'team', label: 'Team', icon: Users },
+  { id: 'activity', label: 'Activity', icon: Activity },
 ];
 
 function getTabId(tab: TenantTab): string {
@@ -132,37 +120,17 @@ export function TenantDetailPage() {
       <AnimatePresence mode="wait">
         {activeTab === 'overview' && (
           <motion.div key="overview" id={getPanelId('overview')} role="tabpanel" aria-labelledby={getTabId('overview')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantOverviewTab tenant={tenant} />
+            <TenantOverviewTab tenant={tenant} agents={tenant.agents} />
           </motion.div>
         )}
-        {activeTab === 'agents' && (
-          <motion.div key="agents" id={getPanelId('agents')} role="tabpanel" aria-labelledby={getTabId('agents')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantAgentsTab agents={tenant.agents} />
+        {activeTab === 'team' && (
+          <motion.div key="team" id={getPanelId('team')} role="tabpanel" aria-labelledby={getTabId('team')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <TenantTeamTab members={tenant.members} />
           </motion.div>
         )}
-        {activeTab === 'members' && (
-          <motion.div key="members" id={getPanelId('members')} role="tabpanel" aria-labelledby={getTabId('members')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantMembersTab members={tenant.members} />
-          </motion.div>
-        )}
-        {activeTab === 'calls' && (
-          <motion.div key="calls" id={getPanelId('calls')} role="tabpanel" aria-labelledby={getTabId('calls')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantCallsTab />
-          </motion.div>
-        )}
-        {activeTab === 'billing' && (
-          <motion.div key="billing" id={getPanelId('billing')} role="tabpanel" aria-labelledby={getTabId('billing')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantBillingTab billing={tenant.billing} />
-          </motion.div>
-        )}
-        {activeTab === 'support' && (
-          <motion.div key="support" id={getPanelId('support')} role="tabpanel" aria-labelledby={getTabId('support')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantSupportTab tickets={tenant.tickets} />
-          </motion.div>
-        )}
-        {activeTab === 'settings' && (
-          <motion.div key="settings" id={getPanelId('settings')} role="tabpanel" aria-labelledby={getTabId('settings')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantSettingsTab settings={tenant.settings} />
+        {activeTab === 'activity' && (
+          <motion.div key="activity" id={getPanelId('activity')} role="tabpanel" aria-labelledby={getTabId('activity')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <TenantActivityTab tickets={tenant.tickets} />
           </motion.div>
         )}
       </AnimatePresence>

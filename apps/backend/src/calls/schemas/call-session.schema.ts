@@ -55,6 +55,24 @@ export class CallSession {
   })
   outcome: string;
 
+  @Prop({ type: Boolean, default: null })
+  callSuccessful: boolean | null;
+
+  @Prop({ type: String, default: null })
+  disconnectionReason: string | null;
+
+  @Prop({ type: Number, default: null })
+  callCost: number | null;
+
+  @Prop({ type: Number, default: null })
+  latencyE2e: number | null;
+
+  @Prop({ type: Object, default: null })
+  customAnalysisData: Record<string, unknown> | null;
+
+  @Prop({ type: String, default: null })
+  callType: string | null;
+
   @Prop({ type: Types.ObjectId, ref: 'Booking', default: null })
   bookingId: Types.ObjectId | null;
 

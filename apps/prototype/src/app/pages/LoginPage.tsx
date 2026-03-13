@@ -24,8 +24,8 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   const { isAuthenticated, user, loginWithTokens, logout, restoring } = useSession();
   const location = useLocation();
   const stateMessage = (location.state as { message?: string } | null)?.message;
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@musaed.com');
+  const [password, setPassword] = useState('Admin123!');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

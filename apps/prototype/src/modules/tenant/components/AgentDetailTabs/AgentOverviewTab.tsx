@@ -1,118 +1,83 @@
 /**
- * Agent detail Overview tab: identity, channels, sync status.
+ * Agent detail Overview tab: identity, sync status, voice, and language in a compact grid.
  */
 
-import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Bot, Phone, MessageSquare, Mail, RefreshCw } from 'lucide-react';
-import { Card, CardHeader, CardBody, Badge } from '../../../../shared/ui';
+import { Badge } from '../../../../shared/ui';
+import { getRetellAgentUrl } from '../../../../lib/retell';
 import type { AgentDetailFull } from '../../../../shared/types';
-
-const channelIcons: Record<string, typeof Phone> = { voice: Phone, chat: MessageSquare, email: Mail };
 
 interface AgentOverviewTabProps {
   agent: AgentDetailFull;
 }
 
-/** Renders core agent identity, sync state, and channel configuration details. */
+function CompactDl({
+  items,
+  cols = 3,
+}: {
+  items: { label: string; value: React.ReactNode }[];
+  cols?: 2 | 3;
+}) {
+  return (
+    <dl
+      className="grid gap-x-4 gap-y-1.5 text-xs"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {items.map(({ label, value }) => (
+        <div key={label} className="flex gap-2 min-w-0">
+          <dt className="text-[var(--text-muted)] shrink-0">{label}</dt>
+          <dd className="font-medium text-[var(--text-primary)] truncate min-w-0">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Renders core agent identity, sync state, voice, and language in a compact definition list. */
 export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
-  const Icon = channelIcons[agent.channel] ?? Bot;
+  const language =
+    agent.chatConfig.status !== 'Not Configured' && agent.chatConfig.languages?.length
+      ? agent.chatConfig.languages.join(', ')
+      : '—';
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
-      <Card variant="glass">
-        <CardHeader className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <Icon className="w-5 h-5" aria-hidden />
-          Identity
-        </CardHeader>
-        <CardBody>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt className="text-[var(--text-muted)]">Name</dt>
-              <dd className="font-medium text-[var(--text-primary)] mt-1">{agent.name}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Retell Agent ID</dt>
-              <dd className="font-mono text-xs text-[var(--text-secondary)] mt-1">{agent.retellAgentId}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Channel</dt>
-              <dd className="font-medium text-[var(--text-primary)] mt-1 capitalize">{agent.channel}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Tenant</dt>
-              <dd className="mt-1">
-                <Link to={`/tenants/${agent.tenantId}`} className="font-medium text-[var(--ds-primary)] hover:underline">
-                  {agent.tenantName}
-                </Link>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Created</dt>
-              <dd className="font-medium text-[var(--text-primary)] mt-1">{agent.createdAt}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Sync status</dt>
-              <dd className="mt-1">
-                <Badge status={agent.syncStatus === 'In Sync' ? 'active' : 'pending'}>{agent.syncStatus}</Badge>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Last synced</dt>
-              <dd className="font-medium text-[var(--text-primary)] mt-1">{agent.lastSynced}</dd>
-            </div>
-          </dl>
-        </CardBody>
-      </Card>
-
-      <Card variant="glass">
-        <CardHeader className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <RefreshCw className="w-5 h-5" aria-hidden />
-          Voice config
-        </CardHeader>
-        <CardBody>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div>
-              <dt className="text-[var(--text-muted)]">Voice</dt>
-              <dd className="font-medium text-[var(--text-primary)]">{agent.voiceConfig.voiceName}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Gender</dt>
-              <dd className="font-medium text-[var(--text-primary)]">{agent.voiceConfig.gender || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Accent</dt>
-              <dd className="font-medium text-[var(--text-primary)]">{agent.voiceConfig.accent || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--text-muted)]">Interruption sensitivity</dt>
-              <dd className="font-medium text-[var(--text-primary)]">{agent.voiceConfig.interruptionSensitivity}</dd>
-            </div>
-          </dl>
-        </CardBody>
-      </Card>
-
-      {agent.chatConfig.status !== 'Not Configured' && (
-        <Card variant="glass">
-          <CardHeader className="text-base font-semibold text-[var(--text-primary)]">Chat config</CardHeader>
-          <CardBody>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div>
-                <dt className="text-[var(--text-muted)]">Status</dt>
-                <dd className="font-medium text-[var(--text-primary)]">{agent.chatConfig.status}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--text-muted)]">Channel</dt>
-                <dd className="font-medium text-[var(--text-primary)]">{agent.chatConfig.channel}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--text-muted)]">Languages</dt>
-                <dd className="font-medium text-[var(--text-primary)]">{agent.chatConfig.languages?.join(', ') || '—'}</dd>
-              </div>
-            </dl>
-          </CardBody>
-        </Card>
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <CompactDl
+        cols={3}
+        items={[
+          { label: 'Name', value: agent.name },
+          { label: 'Channel', value: agent.channel },
+          {
+            label: 'Retell Agent ID',
+            value: agent.retellAgentId ? (
+              <a
+                href={getRetellAgentUrl(agent.retellAgentId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[var(--ds-primary)] hover:underline truncate block"
+              >
+                {agent.retellAgentId}
+              </a>
+            ) : (
+              '—'
+            ),
+          },
+          {
+            label: 'Sync status',
+            value: (
+              <Badge status={agent.syncStatus === 'In Sync' ? 'active' : 'pending'}>
+                {agent.syncStatus}
+              </Badge>
+            ),
+          },
+          { label: 'Voice', value: agent.voiceConfig.voiceName },
+          { label: 'Language', value: language },
+        ]}
+      />
     </motion.div>
   );
 }

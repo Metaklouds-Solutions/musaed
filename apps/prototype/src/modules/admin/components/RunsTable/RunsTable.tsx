@@ -18,6 +18,10 @@ import type { AdminRunRow } from '../../../../adapters/local/runs.adapter';
 
 interface RunsTableProps {
   runs: AdminRunRow[];
+  /** When provided, View button and run ID click open modal instead of linking to admin run page. */
+  onViewRun?: (run: AdminRunRow) => void;
+  /** When "plain", omit card styling (use when table is inside another card) */
+  variant?: 'card' | 'plain';
 }
 
 function formatDate(iso: string): string {
@@ -36,7 +40,7 @@ function formatCost(cost: number): string {
 }
 
 /** Renders admin runs table with tenant/call linkage and usage columns. */
-export function RunsTable({ runs }: RunsTableProps) {
+export function RunsTable({ runs, onViewRun, variant = 'card' }: RunsTableProps) {
   if (runs.length === 0) {
     return (
       <p className="text-sm text-[var(--text-muted)] py-8 text-center">
@@ -46,7 +50,7 @@ export function RunsTable({ runs }: RunsTableProps) {
   }
 
   return (
-    <DataTable minWidth="min-w-[640px]">
+    <DataTable minWidth="min-w-[640px]" variant={variant}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -63,9 +67,19 @@ export function RunsTable({ runs }: RunsTableProps) {
           {runs.map((r) => (
             <TableRow key={r.id}>
               <TableCell className="font-mono text-sm text-[var(--text-primary)]">
-                <Link to={`/admin/runs/${r.id}`} className="hover:underline">
-                  {r.id}
-                </Link>
+                {onViewRun ? (
+                  <button
+                    type="button"
+                    onClick={() => onViewRun(r)}
+                    className="hover:underline text-left"
+                  >
+                    {r.id}
+                  </button>
+                ) : (
+                  <Link to={`/admin/runs/${r.id}`} className="hover:underline">
+                    {r.id}
+                  </Link>
+                )}
               </TableCell>
               <TableCell>
                 <Link to={`/admin/calls/${r.callId}`} className="text-[var(--ds-primary)] hover:underline font-mono text-sm">
@@ -87,7 +101,11 @@ export function RunsTable({ runs }: RunsTableProps) {
                 {formatDate(r.startedAt)}
               </TableCell>
               <TableCell>
-                <ViewButton to={`/admin/runs/${r.id}`} aria-label="View run events" />
+                {onViewRun ? (
+                  <ViewButton onClick={() => onViewRun(r)} aria-label="View run events" />
+                ) : (
+                  <ViewButton to={`/admin/runs/${r.id}`} aria-label="View run events" />
+                )}
               </TableCell>
             </TableRow>
           ))}
