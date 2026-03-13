@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsObject, IsIn, IsMongoId, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsObject,
+  IsIn,
+  IsMongoId,
+  MaxLength,
+} from 'class-validator';
 
 /**
  * DTO for creating a notification for a specific user.

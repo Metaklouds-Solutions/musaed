@@ -18,6 +18,7 @@ export class ProcessedEvent {
   processedAt: Date;
 }
 
-export const ProcessedEventSchema = SchemaFactory.createForClass(ProcessedEvent);
+export const ProcessedEventSchema =
+  SchemaFactory.createForClass(ProcessedEvent);
 
 ProcessedEventSchema.index({ eventId: 1, source: 1 }, { unique: true });

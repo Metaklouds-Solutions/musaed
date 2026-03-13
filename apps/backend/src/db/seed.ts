@@ -6,14 +6,18 @@ import * as path from 'path';
 // Load .env file
 const result = dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 if (result.error) {
-  console.warn('⚠️  Warning: .env file not found, falling back to system environment variables');
+  console.warn(
+    '⚠️  Warning: .env file not found, falling back to system environment variables',
+  );
 }
 
 // Validate MONGODB_URI
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   console.error('❌ MONGODB_URI is not defined. Add it to your .env file.');
-  console.error('   Example: MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/musaed?retryWrites=true&w=majority&appName=mosaed');
+  console.error(
+    '   Example: MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/musaed?retryWrites=true&w=majority&appName=mosaed',
+  );
   process.exit(1);
 }
 
@@ -60,8 +64,16 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     passwordHash: { type: String, default: null },
     name: { type: String, required: true },
-    role: { type: String, required: true, enum: ['ADMIN', 'TENANT_OWNER', 'STAFF'] },
-    status: { type: String, default: 'active', enum: ['pending', 'active', 'disabled'] },
+    role: {
+      type: String,
+      required: true,
+      enum: ['ADMIN', 'TENANT_OWNER', 'STAFF'],
+    },
+    status: {
+      type: String,
+      default: 'active',
+      enum: ['pending', 'active', 'disabled'],
+    },
     avatarUrl: String,
     lastLoginAt: Date,
     deletedAt: Date,
@@ -74,7 +86,11 @@ const tenantSchema = new mongoose.Schema(
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
     status: { type: String, default: 'ACTIVE' },
-    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
     timezone: { type: String, default: 'Asia/Riyadh' },
     locale: { type: String, default: 'ar' },
     onboardingStep: { type: Number, default: 4 },
@@ -87,8 +103,16 @@ const tenantSchema = new mongoose.Schema(
 
 const tenantStaffSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+    },
     roleSlug: { type: String, required: true },
     status: { type: String, required: true },
     invitedAt: { type: Date, default: null },
@@ -108,7 +132,11 @@ const agentTemplateSchema = new mongoose.Schema(
     capabilityLevel: { type: String, default: 'L1' },
     flowTemplate: { type: Object, default: {} },
     version: { type: Number, default: 1 },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true, collection: 'agent_templates' },
@@ -116,7 +144,10 @@ const agentTemplateSchema = new mongoose.Schema(
 
 // ─── Models ─────────────────────────────────────────────────────────────────
 
-const SubscriptionPlan = mongoose.model('SubscriptionPlan', subscriptionPlanSchema);
+const SubscriptionPlan = mongoose.model(
+  'SubscriptionPlan',
+  subscriptionPlanSchema,
+);
 const User = mongoose.model('User', userSchema);
 const Tenant = mongoose.model('Tenant', tenantSchema);
 const TenantStaff = mongoose.model('TenantStaff', tenantStaffSchema);
@@ -270,7 +301,11 @@ async function seed() {
       deletedAt: null,
     });
     if (!existingTemplate) {
-      const flowTemplatePath = path.resolve(process.cwd(), '../..', 'FLOWTEMPLATES.json');
+      const flowTemplatePath = path.resolve(
+        process.cwd(),
+        '../..',
+        'FLOWTEMPLATES.json',
+      );
       let parsedTemplate: unknown = null;
       try {
         const raw = await import('node:fs/promises').then((fs) =>
@@ -298,10 +333,14 @@ async function seed() {
           });
           console.log('   ✅ Seeded default agent template\n');
         } else {
-          console.log('   ⚠️  FLOWTEMPLATES.json exists but flow payload is invalid, skipping\n');
+          console.log(
+            '   ⚠️  FLOWTEMPLATES.json exists but flow payload is invalid, skipping\n',
+          );
         }
       } else {
-        console.log('   ⚠️  FLOWTEMPLATES.json not found or invalid array, skipping\n');
+        console.log(
+          '   ⚠️  FLOWTEMPLATES.json not found or invalid array, skipping\n',
+        );
       }
     } else {
       console.log('   ⏭️  Default agent template already exists, skipping\n');
@@ -333,7 +372,8 @@ async function seed() {
         await AgentTemplate.create({
           name: 'Clinics Voice Template',
           slug: 'clinics-voice-template',
-          description: 'Arabic clinic reception voice agent: booking, patient info, knowledge base Q&A',
+          description:
+            'Arabic clinic reception voice agent: booking, patient info, knowledge base Q&A',
           category: 'clinics',
           channel: 'voice',
           supportedChannels: ['voice'],
@@ -349,6 +389,57 @@ async function seed() {
       }
     } else {
       console.log('   ⏭️  Clinics Voice Template already exists, skipping\n');
+    }
+
+    // ── Single-Prompt Agent Template (Iron & Blade barber booking) ──
+    console.log('🤖 Seeding Single-Prompt Agent Template...');
+    const existingSinglePromptTemplate = await AgentTemplate.findOne({
+      slug: 'single-prompt-agent',
+      deletedAt: null,
+    });
+    if (!existingSinglePromptTemplate) {
+      const singlePromptPath = path.resolve(
+        process.cwd(),
+        'templates',
+        'single-prompt-agent.json',
+      );
+      let singlePromptFlow: Record<string, unknown> | null = null;
+      try {
+        const raw = await import('node:fs/promises').then((fs) =>
+          fs.readFile(singlePromptPath, 'utf8'),
+        );
+        singlePromptFlow = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        singlePromptFlow = null;
+      }
+
+      if (
+        singlePromptFlow &&
+        singlePromptFlow.response_engine &&
+        singlePromptFlow.retellLlmData
+      ) {
+        await AgentTemplate.create({
+          name: 'Single-Prompt Agent',
+          slug: 'single-prompt-agent',
+          description:
+            'Iron & Blade barber shop booking assistant: appointments, reschedule, cancel, FAQ',
+          category: 'booking',
+          channel: 'voice',
+          supportedChannels: ['voice'],
+          capabilityLevel: 'L3',
+          flowTemplate: singlePromptFlow,
+          version: 1,
+        });
+        console.log('   ✅ Seeded Single-Prompt Agent Template\n');
+      } else {
+        console.log(
+          '   ⚠️  templates/single-prompt-agent.json not found or invalid, skipping\n',
+        );
+      }
+    } else {
+      console.log(
+        '   ⏭️  Single-Prompt Agent Template already exists, skipping\n',
+      );
     }
 
     console.log('🎉 Seed complete!');

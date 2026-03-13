@@ -36,18 +36,29 @@ export class EmailService {
     @Optional() private metrics: MetricsService | null,
   ) {
     this.fromEmail = this.config.get<string>('SMTP_FROM', 'noreply@musaed.app');
-    this.frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:5173');
+    this.frontendUrl = this.config.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:5173',
+    );
     const limit = this.config.get<string>('EMAIL_RATE_LIMIT_PER_RECIPIENT');
-    this.rateLimitPerRecipient = limit ? parseInt(limit, 10) : DEFAULT_RATE_LIMIT_PER_RECIPIENT;
+    this.rateLimitPerRecipient = limit
+      ? parseInt(limit, 10)
+      : DEFAULT_RATE_LIMIT_PER_RECIPIENT;
 
-    const primaryUser = this.config.get<string>('SMTP_PRIMARY_USER') ?? this.config.get<string>('SMTP_USER');
-    const primaryPass = this.config.get<string>('SMTP_PRIMARY_PASS') ?? this.config.get<string>('SMTP_PASS');
+    const primaryUser =
+      this.config.get<string>('SMTP_PRIMARY_USER') ??
+      this.config.get<string>('SMTP_USER');
+    const primaryPass =
+      this.config.get<string>('SMTP_PRIMARY_PASS') ??
+      this.config.get<string>('SMTP_PASS');
     if (primaryUser && primaryPass) {
       this.primaryTransporter = nodemailer.createTransport({
         service: 'gmail',
         auth: { user: primaryUser, pass: primaryPass },
       });
-      this.logger.log(`Email primary transport ready (Gmail SMTP via ${primaryUser})`);
+      this.logger.log(
+        `Email primary transport ready (Gmail SMTP via ${primaryUser})`,
+      );
     } else {
       this.logger.warn(
         'SMTP not configured: invite and password-reset emails will NOT be sent. ' +
@@ -57,12 +68,18 @@ export class EmailService {
 
     const fallbackUser = this.config.get<string>('SMTP_FALLBACK_USER');
     const fallbackPass = this.config.get<string>('SMTP_FALLBACK_PASS');
-    if (fallbackUser && fallbackPass && (fallbackUser !== primaryUser || fallbackPass !== primaryPass)) {
+    if (
+      fallbackUser &&
+      fallbackPass &&
+      (fallbackUser !== primaryUser || fallbackPass !== primaryPass)
+    ) {
       this.fallbackTransporter = nodemailer.createTransport({
         service: 'gmail',
         auth: { user: fallbackUser, pass: fallbackPass },
       });
-      this.logger.log(`Email fallback transport ready (Gmail SMTP via ${fallbackUser})`);
+      this.logger.log(
+        `Email fallback transport ready (Gmail SMTP via ${fallbackUser})`,
+      );
       this.verifyFallbackTransport();
     }
   }
@@ -84,14 +101,22 @@ export class EmailService {
    * Sends email via queue when enabled, otherwise sends directly.
    * Callers use this method.
    */
-  async sendInviteEmail(to: string, name: string, token: string): Promise<string> {
+  async sendInviteEmail(
+    to: string,
+    name: string,
+    token: string,
+  ): Promise<string> {
     const setupUrl = `${this.frontendUrl}/auth/setup-password?token=${token}`;
     const msg = this.buildInviteMessage(to, name, token);
     await this.enqueueOrSend('invite', { to, name, token }, msg);
     return setupUrl;
   }
 
-  async sendPasswordResetEmail(to: string, name: string, token: string): Promise<void> {
+  async sendPasswordResetEmail(
+    to: string,
+    name: string,
+    token: string,
+  ): Promise<void> {
     const msg = this.buildPasswordResetMessage(to, name, token);
     await this.enqueueOrSend('password_reset', { to, name, token }, msg);
   }
@@ -103,7 +128,12 @@ export class EmailService {
     timeSlot: string,
   ): Promise<void> {
     const dateStr = appointmentDate.toLocaleDateString();
-    const msg = this.buildAppointmentReminderMessage(to, customerName, dateStr, timeSlot);
+    const msg = this.buildAppointmentReminderMessage(
+      to,
+      customerName,
+      dateStr,
+      timeSlot,
+    );
     await this.enqueueOrSend(
       'appointment_reminder',
       { to, customerName, appointmentDate: dateStr, timeSlot },
@@ -145,23 +175,37 @@ export class EmailService {
     this.checkRateLimit(msg.to);
 
     if (!this.primaryTransporter && !this.fallbackTransporter) {
-      this.logger.log({ event: 'email_sent', to: msg.to, subject: msg.subject, mode: 'dev_log' });
+      this.logger.log({
+        event: 'email_sent',
+        to: msg.to,
+        subject: msg.subject,
+        mode: 'dev_log',
+      });
       const linkMatch = msg.html.match(/href="([^"]+)"/);
       if (linkMatch) {
-        this.logger.warn(`[DEV] Copy this invite link manually: ${linkMatch[1]}`);
+        this.logger.warn(
+          `[DEV] Copy this invite link manually: ${linkMatch[1]}`,
+        );
       }
       if (type && this.metrics) this.metrics.recordEmailSent(type);
       return;
     }
 
     let lastError: Error | null = null;
-    const transporters = [this.primaryTransporter, this.fallbackTransporter].filter(Boolean);
+    const transporters = [
+      this.primaryTransporter,
+      this.fallbackTransporter,
+    ].filter(Boolean);
 
     for (const transporter of transporters) {
       if (!transporter) continue;
       try {
         await transporter.sendMail(msg);
-        this.logger.log({ event: 'email_sent', to: msg.to, subject: msg.subject });
+        this.logger.log({
+          event: 'email_sent',
+          to: msg.to,
+          subject: msg.subject,
+        });
         if (type && this.metrics) this.metrics.recordEmailSent(type);
         return;
       } catch (err) {
@@ -204,9 +248,16 @@ export class EmailService {
       return this.buildInviteMessage(payload.to, payload.name, payload.token);
     }
     if (type === 'password_reset' && this.isPasswordResetPayload(payload)) {
-      return this.buildPasswordResetMessage(payload.to, payload.name, payload.token);
+      return this.buildPasswordResetMessage(
+        payload.to,
+        payload.name,
+        payload.token,
+      );
     }
-    if (type === 'appointment_reminder' && this.isAppointmentReminderPayload(payload)) {
+    if (
+      type === 'appointment_reminder' &&
+      this.isAppointmentReminderPayload(payload)
+    ) {
       return this.buildAppointmentReminderMessage(
         payload.to,
         payload.customerName,
@@ -227,7 +278,9 @@ export class EmailService {
     );
   }
 
-  private isPasswordResetPayload(p: unknown): p is EmailJobPayloadMap['password_reset'] {
+  private isPasswordResetPayload(
+    p: unknown,
+  ): p is EmailJobPayloadMap['password_reset'] {
     if (typeof p !== 'object' || p === null) return false;
     const q = p as Record<string, unknown>;
     return (
@@ -260,7 +313,11 @@ export class EmailService {
       .replace(/'/g, '&#039;');
   }
 
-  private buildInviteMessage(to: string, name: string, token: string): EmailMessage {
+  private buildInviteMessage(
+    to: string,
+    name: string,
+    token: string,
+  ): EmailMessage {
     const setupUrl = `${this.frontendUrl}/auth/setup-password?token=${token}`;
     const safeName = this.escapeHtml(name);
     return {
@@ -283,7 +340,11 @@ export class EmailService {
     };
   }
 
-  private buildPasswordResetMessage(to: string, name: string, token: string): EmailMessage {
+  private buildPasswordResetMessage(
+    to: string,
+    name: string,
+    token: string,
+  ): EmailMessage {
     const resetUrl = `${this.frontendUrl}/auth/reset-password?token=${token}`;
     const safeName = this.escapeHtml(name);
     return {
@@ -338,7 +399,12 @@ export class EmailService {
     if (this.emailQueue?.isEnabled?.()) {
       const jobId = await this.emailQueue.enqueueEmail(type, payload);
       if (jobId) {
-        this.logger.debug({ event: 'email_queued', type, to: payload.to, jobId });
+        this.logger.debug({
+          event: 'email_queued',
+          type,
+          to: payload.to,
+          jobId,
+        });
         return;
       }
     }

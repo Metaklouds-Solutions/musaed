@@ -23,14 +23,26 @@ const booleanString = (defaultValue: 'true' | 'false') =>
  */
 export const envValidationSchema = Joi.object({
   // ── MongoDB ───────────────────────────────────────────────────────────
-  MONGODB_URI: Joi.string().pattern(/^mongodb(\+srv)?:\/\//).required().messages({
-    'string.pattern.base': 'MONGODB_URI must be a valid MongoDB connection string (mongodb:// or mongodb+srv://)',
-  }),
-  MONGODB_MAX_POOL_SIZE: Joi.alternatives().try(Joi.number().integer().min(1), Joi.string().pattern(/^\d+$/)).optional().allow(''),
-  MONGODB_MIN_POOL_SIZE: Joi.alternatives().try(Joi.number().integer().min(0), Joi.string().pattern(/^\d+$/)).optional().allow(''),
+  MONGODB_URI: Joi.string()
+    .pattern(/^mongodb(\+srv)?:\/\//)
+    .required()
+    .messages({
+      'string.pattern.base':
+        'MONGODB_URI must be a valid MongoDB connection string (mongodb:// or mongodb+srv://)',
+    }),
+  MONGODB_MAX_POOL_SIZE: Joi.alternatives()
+    .try(Joi.number().integer().min(1), Joi.string().pattern(/^\d+$/))
+    .optional()
+    .allow(''),
+  MONGODB_MIN_POOL_SIZE: Joi.alternatives()
+    .try(Joi.number().integer().min(0), Joi.string().pattern(/^\d+$/))
+    .optional()
+    .allow(''),
 
   // ── Server ────────────────────────────────────────────────────────────
-  PORT: Joi.alternatives().try(Joi.number().integer().min(1), Joi.string().pattern(/^\d+$/)).default(3001),
+  PORT: Joi.alternatives()
+    .try(Joi.number().integer().min(1), Joi.string().pattern(/^\d+$/))
+    .default(3001),
   NODE_ENV: Joi.string()
     .valid('development', 'production', 'test')
     .default('development'),
@@ -41,7 +53,8 @@ export const envValidationSchema = Joi.object({
 
   // ── JWT ───────────────────────────────────────────────────────────────
   JWT_SECRET: Joi.string().min(16).required().messages({
-    'string.min': 'JWT_SECRET must be at least 16 characters (use e.g. openssl rand -base64 32)',
+    'string.min':
+      'JWT_SECRET must be at least 16 characters (use e.g. openssl rand -base64 32)',
   }),
   JWT_EXPIRES_IN: Joi.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
@@ -87,7 +100,9 @@ export const envValidationSchema = Joi.object({
   RETELL_TOOL_API_KEY: Joi.string().optional().allow(''),
   AGENT_DEPLOYMENT_V2_ENABLED: booleanString('true'),
   AGENT_AUTO_DEPLOY_ON_CREATE: booleanString('true'),
-  AGENT_DEPLOYMENT_FAILURE_ALERT_THRESHOLD: decimalString().optional().default(0.3),
+  AGENT_DEPLOYMENT_FAILURE_ALERT_THRESHOLD: decimalString()
+    .optional()
+    .default(0.3),
   CALL_SESSION_INGEST_ENABLED: booleanString('true'),
 
   // ── Seed ──────────────────────────────────────────────────────────────

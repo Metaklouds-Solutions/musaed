@@ -25,7 +25,9 @@ export class AuditService {
   ): Promise<AuditEntryDocument> {
     const doc = await this.auditModel.create({
       action,
-      userId: Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : undefined,
+      userId: Types.ObjectId.isValid(userId)
+        ? new Types.ObjectId(userId)
+        : undefined,
       tenantId: tenantId ? new Types.ObjectId(tenantId) : null,
       meta: meta ?? {},
       timestamp: new Date(),

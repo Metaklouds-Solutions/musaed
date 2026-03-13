@@ -7,7 +7,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
 import { Tenant, TenantDocument } from './schemas/tenant.schema';
-import { TenantStaff, TenantStaffDocument } from './schemas/tenant-staff.schema';
+import {
+  TenantStaff,
+  TenantStaffDocument,
+} from './schemas/tenant-staff.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
@@ -15,19 +18,28 @@ import { AuthService } from '../auth/auth.service';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
-import { AgentInstance, AgentInstanceDocument } from '../agent-instances/schemas/agent-instance.schema';
+import {
+  AgentInstance,
+  AgentInstanceDocument,
+} from '../agent-instances/schemas/agent-instance.schema';
 import { AgentDeploymentService } from '../agent-deployments/agent-deployment.service';
-import { AgentTemplate, AgentTemplateDocument } from '../agent-templates/schemas/agent-template.schema';
+import {
+  AgentTemplate,
+  AgentTemplateDocument,
+} from '../agent-templates/schemas/agent-template.schema';
 import { AgentRolloutService } from '../agent-deployments/agent-rollout.service';
 
 @Injectable()
 export class TenantsService {
   constructor(
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
-    @InjectModel(TenantStaff.name) private staffModel: Model<TenantStaffDocument>,
+    @InjectModel(TenantStaff.name)
+    private staffModel: Model<TenantStaffDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(AgentInstance.name) private agentInstanceModel: Model<AgentInstanceDocument>,
-    @InjectModel(AgentTemplate.name) private agentTemplateModel: Model<AgentTemplateDocument>,
+    @InjectModel(AgentInstance.name)
+    private agentInstanceModel: Model<AgentInstanceDocument>,
+    @InjectModel(AgentTemplate.name)
+    private agentTemplateModel: Model<AgentTemplateDocument>,
     private authService: AuthService,
     private emailService: EmailService,
     private notificationsService: NotificationsService,
@@ -36,9 +48,12 @@ export class TenantsService {
     private agentRolloutService: AgentRolloutService,
   ) {}
 
-  async findAll(
-    query: { status?: string; search?: string; page?: number; limit?: number },
-  ): Promise<{
+  async findAll(query: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
     data: Array<Record<string, unknown>>;
     total: number;
     page: number;
@@ -60,28 +75,36 @@ export class TenantsService {
         .sort({ createdAt: -1 })
         .lean(),
       this.tenantModel.countDocuments(filter),
-      this.agentInstanceModel.aggregate<{ _id: Types.ObjectId; count: number }>([
-        {
-          $match: {
-            status: { $ne: 'deleted' },
-            tenantId: { $ne: null },
+      this.agentInstanceModel.aggregate<{ _id: Types.ObjectId; count: number }>(
+        [
+          {
+            $match: {
+              status: { $ne: 'deleted' },
+              tenantId: { $ne: null },
+            },
           },
-        },
-        {
-          $group: {
-            _id: '$tenantId',
-            count: { $sum: 1 },
+          {
+            $group: {
+              _id: '$tenantId',
+              count: { $sum: 1 },
+            },
           },
-        },
-      ]),
+        ],
+      ),
     ]);
 
-    const counts = new Map(agentCounts.map((row) => [row._id.toString(), row.count]));
+    const counts = new Map(
+      agentCounts.map((row) => [row._id.toString(), row.count]),
+    );
     const dataWithCounts = data.map((tenant) => {
-      const tenantId = (tenant as { _id?: Types.ObjectId })._id?.toString?.() ?? '';
-      const ownerCandidate = (tenant as unknown as { ownerId?: unknown }).ownerId;
+      const tenantId =
+        (tenant as { _id?: Types.ObjectId })._id?.toString?.() ?? '';
+      const ownerCandidate = (tenant as unknown as { ownerId?: unknown })
+        .ownerId;
       const owner =
-        ownerCandidate && typeof ownerCandidate === 'object' && !('_bsontype' in (ownerCandidate as object))
+        ownerCandidate &&
+        typeof ownerCandidate === 'object' &&
+        !('_bsontype' in ownerCandidate)
           ? (ownerCandidate as Record<string, unknown>)
           : null;
       const ownerStatus =
@@ -92,7 +115,8 @@ export class TenantsService {
 
       let dynamicStep = 1;
       if (agentCount > 0) dynamicStep = 2;
-      if (dynamicStep >= 2 && ownerStatus === 'active' && ownerLastLoginAt) dynamicStep = 3;
+      if (dynamicStep >= 2 && ownerStatus === 'active' && ownerLastLoginAt)
+        dynamicStep = 3;
       if (
         dynamicStep >= 3 &&
         ((tenant as { status?: string }).status === 'ACTIVE' ||
@@ -129,7 +153,10 @@ export class TenantsService {
   }
 
   async create(dto: CreateTenantDto, adminUserId?: string) {
-    const existing = await this.tenantModel.findOne({ slug: dto.slug, deletedAt: null });
+    const existing = await this.tenantModel.findOne({
+      slug: dto.slug,
+      deletedAt: null,
+    });
     if (existing) throw new ConflictException('Slug already taken');
 
     let selectedTemplate: AgentTemplateDocument | null = null;
@@ -156,18 +183,26 @@ export class TenantsService {
     }
 
     const ownerEmail = dto.ownerEmail.toLowerCase().trim();
-    const existingOwner = await this.userModel.findOne({ email: ownerEmail, deletedAt: null });
+    const existingOwner = await this.userModel.findOne({
+      email: ownerEmail,
+      deletedAt: null,
+    });
     if (existingOwner) {
       const tenantWithOwner = await this.tenantModel.findOne({
         ownerId: existingOwner._id,
         deletedAt: null,
       });
       if (tenantWithOwner) {
-        throw new ConflictException('A tenant with this owner email already exists');
+        throw new ConflictException(
+          'A tenant with this owner email already exists',
+        );
       }
     }
 
-    let owner = await this.userModel.findOne({ email: ownerEmail, deletedAt: null });
+    let owner = await this.userModel.findOne({
+      email: ownerEmail,
+      deletedAt: null,
+    });
     const isNewUser = !owner;
 
     if (!owner) {
@@ -181,8 +216,10 @@ export class TenantsService {
     }
 
     const hasPassword =
-      typeof owner.passwordHash === 'string' && owner.passwordHash.trim().length > 0;
-    const shouldSendInvite = !hasPassword || owner.status === 'pending' || owner.status === 'invited';
+      typeof owner.passwordHash === 'string' &&
+      owner.passwordHash.trim().length > 0;
+    const shouldSendInvite =
+      !hasPassword || owner.status === 'pending' || owner.status === 'invited';
 
     const tenant = await this.tenantModel.create({
       name: dto.name,
@@ -198,13 +235,22 @@ export class TenantsService {
       tenantId: tenant._id,
       roleSlug: 'clinic_admin',
       status: shouldSendInvite ? 'invited' : 'active',
-      ...(shouldSendInvite ? { invitedAt: new Date() } : { joinedAt: new Date() }),
+      ...(shouldSendInvite
+        ? { invitedAt: new Date() }
+        : { joinedAt: new Date() }),
     });
 
     let inviteSetupUrl: string | undefined;
     if (shouldSendInvite) {
-      const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
-      inviteSetupUrl = await this.emailService.sendInviteEmail(owner.email, owner.name, token);
+      const token = await this.authService.generateInviteToken(
+        owner._id.toString(),
+        'invite',
+      );
+      inviteSetupUrl = await this.emailService.sendInviteEmail(
+        owner.email,
+        owner.name,
+        token,
+      );
     }
 
     await this.notificationsService.createForAdmins({
@@ -220,7 +266,11 @@ export class TenantsService {
       await this.auditService.log(
         'tenant.created',
         adminUserId,
-        { tenantId: tenant._id.toString(), name: tenant.name, slug: tenant.slug },
+        {
+          tenantId: tenant._id.toString(),
+          name: tenant.name,
+          slug: tenant.slug,
+        },
         tenant._id.toString(),
       );
     }
@@ -233,8 +283,14 @@ export class TenantsService {
         tenantId: tenant._id,
         templateId: new Types.ObjectId(dto.templateId),
         name: `${tenant.name} Assistant`,
-        channelsEnabled: this.resolveInitialChannels(dto.channelsEnabled, selectedTemplate),
-        channel: this.resolveInitialChannel(dto.channelsEnabled, selectedTemplate),
+        channelsEnabled: this.resolveInitialChannels(
+          dto.channelsEnabled,
+          selectedTemplate,
+        ),
+        channel: this.resolveInitialChannel(
+          dto.channelsEnabled,
+          selectedTemplate,
+        ),
         templateVersion: selectedTemplate.version ?? 1,
         status: 'paused',
         customConfig: {},
@@ -251,7 +307,10 @@ export class TenantsService {
   }
 
   async resendInvite(tenantId: string) {
-    const tenant = await this.tenantModel.findOne({ _id: tenantId, deletedAt: null });
+    const tenant = await this.tenantModel.findOne({
+      _id: tenantId,
+      deletedAt: null,
+    });
     if (!tenant) throw new NotFoundException('Tenant not found');
 
     const owner = await this.userModel.findById(tenant.ownerId);
@@ -261,8 +320,15 @@ export class TenantsService {
       return { message: 'Owner account is already activated.' };
     }
 
-    const token = await this.authService.generateInviteToken(owner._id.toString(), 'invite');
-    const inviteSetupUrl = await this.emailService.sendInviteEmail(owner.email, owner.name, token);
+    const token = await this.authService.generateInviteToken(
+      owner._id.toString(),
+      'invite',
+    );
+    const inviteSetupUrl = await this.emailService.sendInviteEmail(
+      owner.email,
+      owner.name,
+      token,
+    );
     return { message: 'Invitation email has been resent.', inviteSetupUrl };
   }
 
@@ -333,7 +399,10 @@ export class TenantsService {
   }
 
   private resolveSupportedChannels(template: AgentTemplateDocument): string[] {
-    if (Array.isArray(template.supportedChannels) && template.supportedChannels.length > 0) {
+    if (
+      Array.isArray(template.supportedChannels) &&
+      template.supportedChannels.length > 0
+    ) {
       return template.supportedChannels;
     }
     if (template.channel) {
@@ -364,5 +433,4 @@ export class TenantsService {
     }
     return this.resolveSupportedChannels(template)[0] ?? 'chat';
   }
-
 }

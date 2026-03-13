@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron } from '@nestjs/schedule';
 import { Model } from 'mongoose';
-import { Notification, NotificationDocument } from './schemas/notification.schema';
+import {
+  Notification,
+  NotificationDocument,
+} from './schemas/notification.schema';
 
 @Injectable()
 export class NotificationRetentionService {
@@ -16,14 +19,18 @@ export class NotificationRetentionService {
 
   @Cron('0 20 * * * *')
   async cleanupOldNotifications(): Promise<void> {
-    const before = new Date(Date.now() - NotificationRetentionService.RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const before = new Date(
+      Date.now() -
+        NotificationRetentionService.RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    );
     const result = await this.notificationModel.deleteMany({
       createdAt: { $lt: before },
     });
     const deleted = result.deletedCount ?? 0;
     if (deleted > 0) {
-      this.logger.log(`Deleted ${deleted} old notifications (retention=${NotificationRetentionService.RETENTION_DAYS} days)`);
+      this.logger.log(
+        `Deleted ${deleted} old notifications (retention=${NotificationRetentionService.RETENTION_DAYS} days)`,
+      );
     }
   }
 }
-

@@ -12,10 +12,7 @@ import {
   TenantStaffSchema,
 } from '../tenants/schemas/tenant-staff.schema';
 import { Tenant, TenantSchema } from '../tenants/schemas/tenant.schema';
-import {
-  InviteToken,
-  InviteTokenSchema,
-} from './schemas/invite-token.schema';
+import { InviteToken, InviteTokenSchema } from './schemas/invite-token.schema';
 import {
   RefreshToken,
   RefreshTokenSchema,

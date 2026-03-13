@@ -8,9 +8,15 @@ import { TenantsService } from './tenants.service';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuditModule } from '../audit/audit.module';
-import { AgentInstance, AgentInstanceSchema } from '../agent-instances/schemas/agent-instance.schema';
+import {
+  AgentInstance,
+  AgentInstanceSchema,
+} from '../agent-instances/schemas/agent-instance.schema';
 import { AgentDeploymentsModule } from '../agent-deployments/agent-deployments.module';
-import { AgentTemplate, AgentTemplateSchema } from '../agent-templates/schemas/agent-template.schema';
+import {
+  AgentTemplate,
+  AgentTemplateSchema,
+} from '../agent-templates/schemas/agent-template.schema';
 
 @Module({
   imports: [

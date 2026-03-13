@@ -5,7 +5,10 @@ import {
   SubscriptionPlanSchema,
 } from '../subscription-plans/schemas/subscription-plan.schema';
 import { Tenant, TenantSchema } from '../tenants/schemas/tenant.schema';
-import { BillingAdminController, BillingTenantController } from './billing.controller';
+import {
+  BillingAdminController,
+  BillingTenantController,
+} from './billing.controller';
 import { BillingService } from './billing.service';
 
 @Module({

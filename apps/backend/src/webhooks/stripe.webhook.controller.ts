@@ -47,7 +47,9 @@ export class StripeWebhookController {
     }
 
     let event: Stripe.Event | undefined;
-    const secrets = [this.webhookSecret, this.webhookSecretLegacy].filter(Boolean);
+    const secrets = [this.webhookSecret, this.webhookSecretLegacy].filter(
+      Boolean,
+    );
     let lastError: Error | null = null;
 
     for (const secret of secrets) {
@@ -59,7 +61,9 @@ export class StripeWebhookController {
           secret,
         );
         if (secret === this.webhookSecretLegacy) {
-          this.logger.log('Stripe webhook verified with legacy secret (rotation in progress)');
+          this.logger.log(
+            'Stripe webhook verified with legacy secret (rotation in progress)',
+          );
         }
         break;
       } catch (err: unknown) {
@@ -68,7 +72,8 @@ export class StripeWebhookController {
     }
 
     if (!event) {
-      const message = lastError instanceof Error ? lastError.message : 'Unknown error';
+      const message =
+        lastError instanceof Error ? lastError.message : 'Unknown error';
       this.logger.error(`Webhook signature verification failed: ${message}`);
       throw new BadRequestException('Invalid signature');
     }
@@ -118,7 +123,11 @@ export class StripeWebhookController {
         this.logger.log(`Unhandled event type: ${event.type}`);
     }
 
-    await this.webhooksService.recordProcessedEvent(event.id, 'stripe', event.type);
+    await this.webhooksService.recordProcessedEvent(
+      event.id,
+      'stripe',
+      event.type,
+    );
     return { received: true };
   }
 }

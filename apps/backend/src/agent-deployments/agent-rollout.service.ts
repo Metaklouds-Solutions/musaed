@@ -27,8 +27,10 @@ export class AgentRolloutService {
     if (value === undefined || value === null) return fallback;
     if (typeof value === 'boolean') return value;
     const normalized = String(value).trim().toLowerCase();
-    if (normalized === 'true' || normalized === '1' || normalized === 'yes') return true;
-    if (normalized === 'false' || normalized === '0' || normalized === 'no') return false;
+    if (normalized === 'true' || normalized === '1' || normalized === 'yes')
+      return true;
+    if (normalized === 'false' || normalized === '0' || normalized === 'no')
+      return false;
     return fallback;
   }
 }

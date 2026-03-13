@@ -45,6 +45,12 @@ export function AdminSupportSnapshot({ snapshot }: AdminSupportSnapshotProps) {
           <span>{snapshot.criticalCount} critical ticket(s) need attention</span>
         </div>
       )}
+      {snapshot.openCount === 0 && snapshot.criticalCount === 0 && (
+        <div className="mt-4 text-sm text-[var(--text-muted)]">
+          Support queue is clear right now. If the business expects ticket volume, compare this with
+          the raw support list to confirm the feed is current.
+        </div>
+      )}
     </motion.section>
   );
 }

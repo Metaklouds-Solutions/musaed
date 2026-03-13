@@ -86,7 +86,12 @@ export class MetricsService implements OnModuleInit {
   /**
    * Records an HTTP request for metrics. Call from middleware on response finish.
    */
-  recordHttpRequest(method: string, path: string, status: number, durationMs: number): void {
+  recordHttpRequest(
+    method: string,
+    path: string,
+    status: number,
+    durationMs: number,
+  ): void {
     const durationSec = durationMs / 1000;
     const pathLabel = this.normalizePath(path);
     const statusLabel = String(status);
@@ -112,7 +117,9 @@ export class MetricsService implements OnModuleInit {
   private normalizePath(path: string): string {
     if (!path || path === '/') return '/';
     const parts = path.split('/').filter(Boolean);
-    const normalized = parts.map((p) => (/^\d+$|^[a-f0-9-]{24}$/i.test(p) ? ':id' : p)).join('/');
+    const normalized = parts
+      .map((p) => (/^\d+$|^[a-f0-9-]{24}$/i.test(p) ? ':id' : p))
+      .join('/');
     return '/' + normalized;
   }
 }

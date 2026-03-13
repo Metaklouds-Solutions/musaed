@@ -2,8 +2,14 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Model, Types } from 'mongoose';
-import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
-import { AgentInstance, AgentInstanceDocument } from './schemas/agent-instance.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from '../calls/schemas/call-session.schema';
+import {
+  AgentInstance,
+  AgentInstanceDocument,
+} from './schemas/agent-instance.schema';
 import { AlertsService } from '../alerts/alerts.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -41,8 +47,10 @@ export class AgentHealthService {
   private readonly logger = new Logger(AgentHealthService.name);
 
   constructor(
-    @InjectModel(CallSession.name) private callSessionModel: Model<CallSessionDocument>,
-    @InjectModel(AgentInstance.name) private agentModel: Model<AgentInstanceDocument>,
+    @InjectModel(CallSession.name)
+    private callSessionModel: Model<CallSessionDocument>,
+    @InjectModel(AgentInstance.name)
+    private agentModel: Model<AgentInstanceDocument>,
     private alertsService: AlertsService,
     private notificationsService: NotificationsService,
   ) {}
@@ -51,7 +59,10 @@ export class AgentHealthService {
    * Verifies that an agent belongs to the specified tenant.
    * Throws NotFoundException if the agent does not exist or does not belong to the tenant.
    */
-  async verifyAgentOwnership(agentInstanceId: string, tenantId: string): Promise<void> {
+  async verifyAgentOwnership(
+    agentInstanceId: string,
+    tenantId: string,
+  ): Promise<void> {
     const agent = await this.agentModel
       .findOne({
         _id: new Types.ObjectId(agentInstanceId),
@@ -120,8 +131,12 @@ export class AgentHealthService {
       },
       {
         $project: {
-          totalCalls: { $ifNull: [{ $arrayElemAt: ['$stats.totalCalls', 0] }, 0] },
-          avgDuration: { $ifNull: [{ $arrayElemAt: ['$stats.avgDuration', 0] }, 0] },
+          totalCalls: {
+            $ifNull: [{ $arrayElemAt: ['$stats.totalCalls', 0] }, 0],
+          },
+          avgDuration: {
+            $ifNull: [{ $arrayElemAt: ['$stats.avgDuration', 0] }, 0],
+          },
           outcomes: 1,
           sentiments: 1,
         },
@@ -162,7 +177,10 @@ export class AgentHealthService {
    * @param agentInstanceId - The agent instance's MongoDB ID
    * @param tenantId - Optional tenant ID for ownership verification
    */
-  async getHealth(agentInstanceId: string, tenantId?: string): Promise<AgentHealthResult> {
+  async getHealth(
+    agentInstanceId: string,
+    tenantId?: string,
+  ): Promise<AgentHealthResult> {
     if (tenantId) {
       await this.verifyAgentOwnership(agentInstanceId, tenantId);
     }
@@ -287,7 +305,9 @@ export class AgentHealthService {
     }
 
     if (criticalCount > 0) {
-      this.logger.warn(`Health check complete: ${criticalCount} critical agent(s) detected`);
+      this.logger.warn(
+        `Health check complete: ${criticalCount} critical agent(s) detected`,
+      );
     }
   }
 }

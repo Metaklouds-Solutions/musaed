@@ -55,22 +55,34 @@ export class TenantsController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateTenantDto) {
+  update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateTenantDto,
+  ) {
     return this.tenantsService.update(id, dto);
   }
 
   @Post(':id/suspend')
-  suspend(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
+  suspend(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseObjectIdPipe) id: string,
+  ) {
     return this.tenantsService.suspend(id, req.user._id.toString());
   }
 
   @Post(':id/disable')
-  disable(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
+  disable(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseObjectIdPipe) id: string,
+  ) {
     return this.tenantsService.disable(id, req.user._id.toString());
   }
 
   @Post(':id/enable')
-  enable(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
+  enable(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseObjectIdPipe) id: string,
+  ) {
     return this.tenantsService.enable(id, req.user._id.toString());
   }
 
@@ -80,7 +92,10 @@ export class TenantsController {
   }
 
   @Delete(':id')
-  remove(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
+  remove(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseObjectIdPipe) id: string,
+  ) {
     return this.tenantsService.remove(id, req.user._id.toString());
   }
 }

@@ -48,7 +48,10 @@ export function RecentCallsTable({ calls }: RecentCallsTableProps) {
         className="rounded-[var(--radius-card)] card-glass p-6"
       >
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Recent Calls</h2>
-        <p className="text-sm text-[var(--text-muted)]">No calls yet.</p>
+        <p className="text-sm text-[var(--text-muted)]">
+          No calls were found for the selected range. If you expect activity here, expand the date
+          range or verify call ingestion.
+        </p>
       </motion.section>
     );
   }

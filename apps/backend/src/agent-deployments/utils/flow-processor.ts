@@ -27,17 +27,33 @@ export function validateFlowTemplate(flow: Record<string, unknown>): void {
   const responseEngine = getRecord(flow.response_engine);
   const tools = conversationFlow?.tools;
 
-  if (!conversationFlow) {
-    throw new BadRequestException('Invalid flow template: conversationFlow is required');
-  }
   if (!responseEngine) {
-    throw new BadRequestException('Invalid flow template: response_engine is required');
+    throw new BadRequestException(
+      'Invalid flow template: response_engine is required',
+    );
   }
-  if (!Array.isArray(conversationFlow.nodes)) {
-    throw new BadRequestException('Invalid flow template: conversationFlow.nodes must be an array');
-  }
-  if (!Array.isArray(tools)) {
-    throw new BadRequestException('Invalid flow template: conversationFlow.tools must be an array');
+  const responseEngineType =
+    typeof responseEngine.type === 'string' ? responseEngine.type : null;
+  if (responseEngineType === 'conversation-flow' || conversationFlow) {
+    if (!conversationFlow) {
+      throw new BadRequestException(
+        'Invalid flow template: conversationFlow is required',
+      );
+    }
+    if (!Array.isArray(conversationFlow.nodes)) {
+      throw new BadRequestException(
+        'Invalid flow template: conversationFlow.nodes must be an array',
+      );
+    }
+    if (!Array.isArray(tools)) {
+      throw new BadRequestException(
+        'Invalid flow template: conversationFlow.tools must be an array',
+      );
+    }
+  } else if (!responseEngineType) {
+    throw new BadRequestException(
+      'Invalid flow template: response_engine.type is required',
+    );
   }
 }
 
@@ -57,7 +73,8 @@ export function processFlowTemplate(
     '{{API_BASE_URL}}': apiBaseUrl,
   };
   if (context.retellToolApiKey && context.retellToolApiKey.trim().length > 0) {
-    replacements[RETELL_TOOL_API_KEY_PLACEHOLDER] = context.retellToolApiKey.trim();
+    replacements[RETELL_TOOL_API_KEY_PLACEHOLDER] =
+      context.retellToolApiKey.trim();
   }
 
   const cloned = structuredClone(flow) as JsonValue;
@@ -143,7 +160,9 @@ function getRecord(value: unknown): Record<string, unknown> | null {
 function ensureRecord(value: JsonValue): Record<string, unknown> {
   const record = getRecord(value);
   if (!record) {
-    throw new BadRequestException('Invalid flow template: expected object payload');
+    throw new BadRequestException(
+      'Invalid flow template: expected object payload',
+    );
   }
   return record;
 }
@@ -164,7 +183,9 @@ function containsPlaceholder(value: JsonValue, target: string): boolean {
     return value.some((item) => containsPlaceholder(item, target));
   }
   if (value && typeof value === 'object') {
-    return Object.values(value).some((item) => containsPlaceholder(item, target));
+    return Object.values(value).some((item) =>
+      containsPlaceholder(item, target),
+    );
   }
   return false;
 }

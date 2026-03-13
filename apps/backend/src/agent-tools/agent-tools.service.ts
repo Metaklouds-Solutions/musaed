@@ -20,10 +20,16 @@ import {
   SupportTicketDocument,
 } from '../support/schemas/support-ticket.schema';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
-import { Customer, CustomerDocument } from '../customers/schemas/customer.schema';
+import {
+  Customer,
+  CustomerDocument,
+} from '../customers/schemas/customer.schema';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
-import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from '../calls/schemas/call-session.schema';
 
 interface AgentContext {
   agent: AgentInstanceDocument & { tenantId: Types.ObjectId };
@@ -78,7 +84,11 @@ export class AgentToolsService {
     };
   }
 
-  async getPastTickets(agentId: string, userEmail: string, minutesThreshold = 1440) {
+  async getPastTickets(
+    agentId: string,
+    userEmail: string,
+    minutesThreshold = 1440,
+  ) {
     const context = await this.getAgentContext(agentId);
     const user = await this.userModel.findOne({
       email: userEmail.toLowerCase().trim(),
@@ -88,7 +98,9 @@ export class AgentToolsService {
       return { result: { tickets: [] } };
     }
 
-    const thresholdDate = new Date(Date.now() - Math.max(minutesThreshold, 1) * 60_000);
+    const thresholdDate = new Date(
+      Date.now() - Math.max(minutesThreshold, 1) * 60_000,
+    );
     const tickets = await this.ticketModel
       .find({
         tenantId: context.agent.tenantId,
@@ -111,7 +123,12 @@ export class AgentToolsService {
     };
   }
 
-  async createTicket(agentId: string, userEmail: string, subject: string, problem: string) {
+  async createTicket(
+    agentId: string,
+    userEmail: string,
+    subject: string,
+    problem: string,
+  ) {
     const context = await this.getAgentContext(agentId);
     const requester = await this.findOrCreateRequester(
       context.agent.tenantId.toString(),
@@ -152,7 +169,11 @@ export class AgentToolsService {
     };
   }
 
-  async invokeSkill(agentId: string, skillName: string, params: Record<string, unknown>) {
+  async invokeSkill(
+    agentId: string,
+    skillName: string,
+    params: Record<string, unknown>,
+  ) {
     await this.getAgentContext(agentId);
     return {
       result: {
@@ -192,7 +213,9 @@ export class AgentToolsService {
       status: { $nin: ['cancelled'] },
     });
     const booked = new Set(existing.map((item) => item.timeSlot));
-    const availableSlots = candidateSlots.filter((slot) => !booked.has(slot)).slice(0, 5);
+    const availableSlots = candidateSlots
+      .filter((slot) => !booked.has(slot))
+      .slice(0, 5);
     return {
       result: {
         timezone,
@@ -285,9 +308,16 @@ export class AgentToolsService {
     }
     const template =
       agent.templateId != null
-        ? await this.templateModel.findOne({ _id: agent.templateId, deletedAt: null })
+        ? await this.templateModel.findOne({
+            _id: agent.templateId,
+            deletedAt: null,
+          })
         : null;
-    return { agent: agent as AgentInstanceDocument & { tenantId: Types.ObjectId }, tenant, template };
+    return {
+      agent: agent as AgentInstanceDocument & { tenantId: Types.ObjectId },
+      tenant,
+      template,
+    };
   }
 
   private readCapabilityLevel(config: Record<string, unknown>): string | null {
@@ -304,7 +334,9 @@ export class AgentToolsService {
   }
 
   private readString(value: unknown): string | null {
-    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+    return typeof value === 'string' && value.trim().length > 0
+      ? value.trim()
+      : null;
   }
 
   private parseDate(rawDate: string): Date {
@@ -327,10 +359,14 @@ export class AgentToolsService {
     return value;
   }
 
-  private buildCandidateSlots(date: Date, preferredTimeWindow: string): string[] {
-    const normalized = typeof preferredTimeWindow === 'string'
-      ? preferredTimeWindow.toLowerCase()
-      : '';
+  private buildCandidateSlots(
+    date: Date,
+    preferredTimeWindow: string,
+  ): string[] {
+    const normalized =
+      typeof preferredTimeWindow === 'string'
+        ? preferredTimeWindow.toLowerCase()
+        : '';
     const startHour = normalized.includes('morning')
       ? 9
       : normalized.includes('afternoon')
@@ -344,12 +380,17 @@ export class AgentToolsService {
       if (hour > 20) {
         break;
       }
-      slots.push(`${date.toISOString().slice(0, 10)} ${String(hour).padStart(2, '0')}:00`);
+      slots.push(
+        `${date.toISOString().slice(0, 10)} ${String(hour).padStart(2, '0')}:00`,
+      );
     }
     return slots;
   }
 
-  private parseConfirmedSlot(confirmedSlot: string): { date: Date; timeSlot: string } {
+  private parseConfirmedSlot(confirmedSlot: string): {
+    date: Date;
+    timeSlot: string;
+  } {
     const parsed = new Date(confirmedSlot);
     if (!Number.isNaN(parsed.getTime())) {
       return {

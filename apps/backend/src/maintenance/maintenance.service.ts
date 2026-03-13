@@ -6,7 +6,8 @@ import { Maintenance, MaintenanceDocument } from './schemas/maintenance.schema';
 @Injectable()
 export class MaintenanceService {
   constructor(
-    @InjectModel(Maintenance.name) private maintenanceModel: Model<MaintenanceDocument>,
+    @InjectModel(Maintenance.name)
+    private maintenanceModel: Model<MaintenanceDocument>,
   ) {}
 
   async getStatus(): Promise<{ enabled: boolean; message: string }> {
@@ -14,11 +15,16 @@ export class MaintenanceService {
     if (!doc) return { enabled: false, message: '' };
     return {
       enabled: doc.enabled,
-      message: doc.message ?? 'System maintenance in progress. Some features may be temporarily unavailable.',
+      message:
+        doc.message ??
+        'System maintenance in progress. Some features may be temporarily unavailable.',
     };
   }
 
-  async setStatus(enabled: boolean, message?: string): Promise<{ enabled: boolean; message: string }> {
+  async setStatus(
+    enabled: boolean,
+    message?: string,
+  ): Promise<{ enabled: boolean; message: string }> {
     const current = await this.getStatus();
     const newMessage = message ?? current.message;
     await this.maintenanceModel.updateOne(

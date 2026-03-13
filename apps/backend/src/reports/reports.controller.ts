@@ -47,10 +47,14 @@ export class ReportsController {
   @Get('performance-for-period')
   getPerformanceForPeriod(
     @Request() req: AuthenticatedRequest,
-    @Query('period') period?: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth',
+    @Query('period')
+    period?: 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth',
   ) {
     const tenantId = requireTenantId(req);
-    return this.reportsService.getPerformanceForPeriod(tenantId, period ?? 'thisWeek');
+    return this.reportsService.getPerformanceForPeriod(
+      tenantId,
+      period ?? 'thisWeek',
+    );
   }
 
   @Get('sentiment-distribution')
@@ -60,7 +64,11 @@ export class ReportsController {
     @Query('dateTo') dateTo?: string,
   ) {
     const tenantId = requireTenantId(req);
-    return this.reportsService.getSentimentDistribution(tenantId, dateFrom, dateTo);
+    return this.reportsService.getSentimentDistribution(
+      tenantId,
+      dateFrom,
+      dateTo,
+    );
   }
 
   @Get('peak-hours')
@@ -80,6 +88,10 @@ export class ReportsController {
     @Query('dateTo') dateTo?: string,
   ) {
     const tenantId = requireTenantId(req);
-    return this.reportsService.getIntentDistribution(tenantId, dateFrom, dateTo);
+    return this.reportsService.getIntentDistribution(
+      tenantId,
+      dateFrom,
+      dateTo,
+    );
   }
 }

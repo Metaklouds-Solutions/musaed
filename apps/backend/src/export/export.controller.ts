@@ -1,4 +1,11 @@
-import { Controller, Get, UseGuards, Request, Res, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Request,
+  Res,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
@@ -12,7 +19,10 @@ export class ExportTenantController {
   constructor(private exportService: ExportService) {}
 
   @Get('staff')
-  async exportStaff(@Request() req: AuthenticatedRequest, @Res() res: Response) {
+  async exportStaff(
+    @Request() req: AuthenticatedRequest,
+    @Res() res: Response,
+  ) {
     const tenantId = req.tenantId;
     if (!tenantId) throw new ForbiddenException('Tenant context required');
     const csv = await this.exportService.exportStaffCsv(tenantId);
@@ -25,7 +35,10 @@ export class ExportTenantController {
   }
 
   @Get('tickets')
-  async exportTickets(@Request() req: AuthenticatedRequest, @Res() res: Response) {
+  async exportTickets(
+    @Request() req: AuthenticatedRequest,
+    @Res() res: Response,
+  ) {
     const tenantId = req.tenantId;
     if (!tenantId) throw new ForbiddenException('Tenant context required');
     const csv = await this.exportService.exportTicketsCsv(tenantId);

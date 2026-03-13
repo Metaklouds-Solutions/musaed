@@ -17,7 +17,11 @@ export class AgentChannelDeployment {
   @Prop({ required: true, default: 'retell' })
   provider: string;
 
-  @Prop({ required: true, enum: ['pending', 'active', 'failed'], default: 'pending' })
+  @Prop({
+    required: true,
+    enum: ['pending', 'active', 'failed'],
+    default: 'pending',
+  })
   status: string;
 
   @Prop({ type: String, default: null })
@@ -39,8 +43,9 @@ export class AgentChannelDeployment {
   deletedAt: Date | null;
 }
 
-export const AgentChannelDeploymentSchema =
-  SchemaFactory.createForClass(AgentChannelDeployment);
+export const AgentChannelDeploymentSchema = SchemaFactory.createForClass(
+  AgentChannelDeployment,
+);
 
 AgentChannelDeploymentSchema.index({ tenantId: 1 });
 AgentChannelDeploymentSchema.index({ agentInstanceId: 1 });

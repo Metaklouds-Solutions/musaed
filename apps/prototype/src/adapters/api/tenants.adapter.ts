@@ -86,6 +86,16 @@ interface TenantBookingsApiResponse {
   total?: number;
 }
 
+interface TenantBillingApiResponse extends Record<string, unknown> {
+  tenantId?: string;
+  plan?: Record<string, unknown> | string | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  status?: string;
+  creditBalance?: number;
+  minutesUsed?: number;
+}
+
 function isForbiddenError(error: unknown): boolean {
   return Boolean(
     error &&
@@ -119,6 +129,18 @@ function normalizeChannels(rawChannels: unknown, fallbackChannel: unknown): Agen
     return [fallback];
   }
   return ['chat'];
+}
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function withTenantScope(path: string, tenantId: string | null, isAdmin: boolean): string {
+  if (!isAdmin || !tenantId) {
+    return path;
+  }
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}tenantId=${encodeURIComponent(tenantId)}`;
 }
 
 function toTenantStatus(status: unknown): 'ACTIVE' | 'TRIAL' | 'SUSPENDED' {
@@ -264,6 +286,7 @@ export const tenantsAdapter = {
       const me = await api.get<Record<string, unknown>>('/auth/me').catch(() => null);
       const role = (readString(me?.role) ?? '').toUpperCase();
       let isAdmin = role === 'ADMIN';
+      let scopedTenantId: string | null = id;
 
       let t: TenantApiResponse | null = null;
       if (isAdmin) {
@@ -279,6 +302,7 @@ export const tenantsAdapter = {
         }
       } else {
         t = await api.get<TenantApiResponse>('/tenant/settings').catch(() => null);
+        scopedTenantId = readString(me?.tenantId) ?? readString(t?._id) ?? id;
       }
       const owner = t && t.ownerId && typeof t.ownerId === 'object' ? t.ownerId : {};
       const settingsRes = await api
@@ -286,7 +310,7 @@ export const tenantsAdapter = {
           timezone?: string;
           locale?: string;
           settings?: Record<string, unknown>;
-        }>('/tenant/settings')
+        }>(withTenantScope('/tenant/settings', scopedTenantId, isAdmin))
         .catch(() => null);
 
       const agentsPromise = isAdmin
@@ -323,19 +347,32 @@ export const tenantsAdapter = {
         agentsPromise,
         callsPromise,
         api
-          .get<TenantBookingsApiResponse>('/tenant/bookings?page=1&limit=1')
+          .get<TenantBookingsApiResponse>(
+            withTenantScope('/tenant/bookings?page=1&limit=1', scopedTenantId, isAdmin),
+          )
           .catch(() => ({ total: 0, data: [] })),
         api
-          .get<TenantStaffApiResponse[]>('/tenant/staff')
+          .get<TenantStaffApiResponse[]>(
+            withTenantScope('/tenant/staff', scopedTenantId, isAdmin),
+          )
           .catch(() => [] as TenantStaffApiResponse[]),
         api
-          .get<TenantSupportApiResponse>('/tenant/support/tickets?page=1&limit=20')
+          .get<TenantSupportApiResponse>(
+            withTenantScope('/tenant/support/tickets?page=1&limit=20', scopedTenantId, isAdmin),
+          )
           .catch(() => ({ data: [] })),
         api
-          .get<Record<string, unknown>>('/tenant/billing')
-          .catch(() => ({})),
+          .get<TenantBillingApiResponse>(
+            withTenantScope('/tenant/billing', scopedTenantId, isAdmin),
+          )
+          .catch(() => ({}) as TenantBillingApiResponse),
       ]);
-      const summaries = agents.map((agent) => toAgentInstanceSummary(agent, id));
+      const normalizedAgents = asArray<TenantAgentApiResponse>(agents);
+      const normalizedStaff = asArray<TenantStaffApiResponse>(staff);
+      const normalizedTickets = asArray<Record<string, unknown>>(support.data);
+      const summaries = normalizedAgents.map((agent) =>
+        toAgentInstanceSummary(agent, scopedTenantId ?? id),
+      );
 
       const hasAssignedAgent = summaries.length > 0;
       const hasDeployedAgent = summaries.some((summary) => {
@@ -364,7 +401,7 @@ export const tenantsAdapter = {
             readString((t.planId as Record<string, unknown>)._id),
         );
 
-      const tickets = (support.data ?? []).map((ticket) => ({
+      const tickets = normalizedTickets.map((ticket) => ({
         id: readString(ticket._id) ?? '',
         title: readString(ticket.title) ?? 'Ticket',
         priority: readString(ticket.priority) ?? 'normal',
@@ -372,7 +409,7 @@ export const tenantsAdapter = {
         createdAt: readString(ticket.createdAt) ?? '',
       }));
 
-      const members = staff.map((m) => {
+      const members = normalizedStaff.map((m) => {
         const user = m.userId && typeof m.userId === 'object' ? m.userId : {};
         const statusRaw = readString(m.status) ?? 'invited';
         return {
@@ -430,7 +467,7 @@ export const tenantsAdapter = {
           creditsRemaining: Number((billing.creditBalance as number | undefined) ?? 0),
         },
         members,
-        agents: agents.map((agent) => {
+        agents: normalizedAgents.map((agent) => {
           const summary = toAgentInstanceSummary(agent, id);
           const retellAgentId =
             typeof agent.retellAgentId === 'string' && agent.retellAgentId.trim().length > 0
@@ -453,7 +490,9 @@ export const tenantsAdapter = {
             (t?.planId && typeof t.planId === 'object'
               ? readString((t.planId as Record<string, unknown>).name)
               : null) ??
-            readString(billing.plan) ??
+            (typeof billing.plan === 'object' && billing.plan !== null
+              ? readString((billing.plan as Record<string, unknown>).name)
+              : readString(billing.plan)) ??
             '—',
           nextBillingDate: '',
           lastPayment: '',
@@ -555,10 +594,14 @@ export const tenantsAdapter = {
       '/admin/tenants',
       body,
     );
-    const wrappedTenant = 'tenant' in created ? created.tenant : undefined;
+    const createdRecord = created as TenantApiResponse & {
+      tenant?: TenantApiResponse;
+      inviteSetupUrl?: string;
+    };
+    const wrappedTenant = createdRecord.tenant;
     const tenant = wrappedTenant ?? created;
     const inviteSetupUrl =
-      'inviteSetupUrl' in created ? readString(created.inviteSetupUrl) ?? undefined : undefined;
+      readString(createdRecord.inviteSetupUrl) ?? undefined;
     return {
       id: readString(tenant._id) ?? '',
       name: readString(tenant.name) ?? data.name,

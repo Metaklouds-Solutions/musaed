@@ -26,7 +26,10 @@ export class TenantSettings {
   @Prop({ type: [Object], default: [] })
   locations: Record<string, unknown>[];
 
-  @Prop({ type: AppointmentRemindersConfig, default: () => ({ advanceMinutes: 60, channel: 'email' }) })
+  @Prop({
+    type: AppointmentRemindersConfig,
+    default: () => ({ advanceMinutes: 60, channel: 'email' }),
+  })
   appointmentReminders?: AppointmentRemindersConfig;
 }
 
@@ -38,7 +41,10 @@ export class Tenant {
   @Prop({ required: true })
   slug: string;
 
-  @Prop({ required: true, enum: ['ONBOARDING', 'ACTIVE', 'TRIAL', 'SUSPENDED', 'CHURNED'] })
+  @Prop({
+    required: true,
+    enum: ['ONBOARDING', 'ACTIVE', 'TRIAL', 'SUSPENDED', 'CHURNED'],
+  })
   status: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })

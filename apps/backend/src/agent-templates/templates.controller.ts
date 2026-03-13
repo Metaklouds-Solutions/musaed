@@ -44,7 +44,10 @@ export class TemplatesController {
   }
 
   @Post('import')
-  importTemplate(@Body() dto: ImportTemplateDto, @Request() req: AuthenticatedRequest) {
+  importTemplate(
+    @Body() dto: ImportTemplateDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.templatesService.importTemplate(dto, req.user._id.toString());
   }
 
@@ -54,7 +57,10 @@ export class TemplatesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateTemplateDto) {
+  update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateTemplateDto,
+  ) {
     return this.templatesService.update(id, dto);
   }
 

@@ -20,7 +20,8 @@ export class QueueDepthLogger {
   @Cron(CronExpression.EVERY_5_MINUTES)
   async logQueueDepths(): Promise<void> {
     const enabled =
-      this.config.get<string>('QUEUE_DEPTH_LOGGING_ENABLED', 'false') === 'true';
+      this.config.get<string>('QUEUE_DEPTH_LOGGING_ENABLED', 'false') ===
+      'true';
     if (!enabled) return;
 
     const [webhooks, email, notifications] = await Promise.all([

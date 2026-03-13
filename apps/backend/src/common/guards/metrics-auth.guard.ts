@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { safeEqual } from '../helpers/timing-safe-equal';
@@ -23,11 +28,14 @@ export class MetricsAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
 
     const authHeader = request.header('authorization') ?? '';
-    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    const bearerToken = authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7)
+      : '';
     if (safeEqual(bearerToken, this.apiKey)) return true;
 
     const queryKey = request.query['key'];
-    if (typeof queryKey === 'string' && safeEqual(queryKey, this.apiKey)) return true;
+    if (typeof queryKey === 'string' && safeEqual(queryKey, this.apiKey))
+      return true;
 
     throw new ForbiddenException('Invalid or missing metrics API key');
   }

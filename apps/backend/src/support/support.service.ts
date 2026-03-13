@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
-import { SupportTicket, SupportTicketDocument } from './schemas/support-ticket.schema';
+import {
+  SupportTicket,
+  SupportTicketDocument,
+} from './schemas/support-ticket.schema';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { AddMessageDto } from './dto/add-message.dto';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -9,7 +12,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 @Injectable()
 export class SupportService {
   constructor(
-    @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
+    @InjectModel(SupportTicket.name)
+    private ticketModel: Model<SupportTicketDocument>,
     private notificationsService: NotificationsService,
   ) {}
 
@@ -38,7 +42,11 @@ export class SupportService {
     return { data, total, page, limit };
   }
 
-  async findAllAdmin(query: { status?: string; page?: number; limit?: number }) {
+  async findAllAdmin(query: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const { status, page = 1, limit = 20 } = query;
     const filter: FilterQuery<SupportTicketDocument> = {};
     if (status) filter.status = status;
@@ -82,7 +90,13 @@ export class SupportService {
       priority: dto.priority ?? 'medium',
       status: 'open',
       messages: dto.body
-        ? [{ authorId: new Types.ObjectId(userId), body: dto.body, createdAt: new Date() }]
+        ? [
+            {
+              authorId: new Types.ObjectId(userId),
+              body: dto.body,
+              createdAt: new Date(),
+            },
+          ]
         : [],
     });
 
@@ -94,7 +108,10 @@ export class SupportService {
       message: dto.title,
       link: `/help/tickets/${ticket._id}`,
       meta: { ticketId: ticket._id.toString() },
-      priority: dto.priority === 'high' || dto.priority === 'critical' ? 'high' : 'normal',
+      priority:
+        dto.priority === 'high' || dto.priority === 'critical'
+          ? 'high'
+          : 'normal',
     });
 
     await this.notificationsService.createForAdmins({
@@ -128,12 +145,21 @@ export class SupportService {
       update.closedAt = new Date();
     }
 
-    const ticket = await this.ticketModel.findOneAndUpdate(filter, { $set: update }, { new: true });
+    const ticket = await this.ticketModel.findOneAndUpdate(
+      filter,
+      { $set: update },
+      { new: true },
+    );
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
   }
 
-  async addMessage(id: string, userId: string, dto: AddMessageDto, tenantId?: string) {
+  async addMessage(
+    id: string,
+    userId: string,
+    dto: AddMessageDto,
+    tenantId?: string,
+  ) {
     const filter: FilterQuery<SupportTicketDocument> = { _id: id };
     if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
 
@@ -152,11 +178,16 @@ export class SupportService {
 
     const closedStatuses = ['resolved', 'closed'];
     if (!closedStatuses.includes(ticket.status)) {
-      (update as Record<string, Record<string, string>>).$set = { status: 'in_progress' };
+      (update as Record<string, Record<string, string>>).$set = {
+        status: 'in_progress',
+      };
     }
 
-    const updated = await this.ticketModel.findOneAndUpdate(filter, update, { new: true });
-    const tid = tenantId ?? (ticket.tenantId ? String(ticket.tenantId) : undefined);
+    const updated = await this.ticketModel.findOneAndUpdate(filter, update, {
+      new: true,
+    });
+    const tid =
+      tenantId ?? (ticket.tenantId ? String(ticket.tenantId) : undefined);
     if (updated && tid) {
       await this.notificationsService.createForTenantStaff(tid, {
         type: 'ticket_updated',

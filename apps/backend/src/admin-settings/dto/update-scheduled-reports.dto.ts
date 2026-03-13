@@ -24,7 +24,10 @@ export class UpdateScheduledReportsDto {
   frequency?: 'daily' | 'weekly' | 'monthly';
 
   @IsArray()
-  @IsEmail({}, { each: true, message: 'Each recipient must be a valid email address' })
+  @IsEmail(
+    {},
+    { each: true, message: 'Each recipient must be a valid email address' },
+  )
   @ArrayMaxSize(50)
   @IsOptional()
   recipients?: string[];

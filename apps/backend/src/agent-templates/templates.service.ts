@@ -1,7 +1,14 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { AgentTemplate, AgentTemplateDocument } from './schemas/agent-template.schema';
+import {
+  AgentTemplate,
+  AgentTemplateDocument,
+} from './schemas/agent-template.schema';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { ImportTemplateDto } from './dto/import-template.dto';
@@ -27,7 +34,8 @@ const FLOW_IMPACTING_FIELDS: Array<keyof UpdateTemplateDto> = [
 @Injectable()
 export class TemplatesService {
   constructor(
-    @InjectModel(AgentTemplate.name) private templateModel: Model<AgentTemplateDocument>,
+    @InjectModel(AgentTemplate.name)
+    private templateModel: Model<AgentTemplateDocument>,
   ) {}
 
   async findAll(query: { channel?: string; page?: number; limit?: number }) {
@@ -48,7 +56,10 @@ export class TemplatesService {
   }
 
   async findById(id: string) {
-    const template = await this.templateModel.findOne({ _id: id, deletedAt: null });
+    const template = await this.templateModel.findOne({
+      _id: id,
+      deletedAt: null,
+    });
     if (!template) throw new NotFoundException('Template not found');
     return template;
   }
@@ -92,7 +103,10 @@ export class TemplatesService {
   }
 
   async update(id: string, dto: UpdateTemplateDto) {
-    const existing = await this.templateModel.findOne({ _id: id, deletedAt: null });
+    const existing = await this.templateModel.findOne({
+      _id: id,
+      deletedAt: null,
+    });
     if (!existing) throw new NotFoundException('Template not found');
 
     const patch: Partial<UpdateTemplateDto & { version: number }> = { ...dto };
@@ -108,8 +122,13 @@ export class TemplatesService {
       patch.channel = selectDefaultChannel(nextSupportedChannels);
     }
 
-    const effectiveFlowTemplate = normalizeFlowTemplateUrls(dto.flowTemplate ?? existing.flowTemplate);
-    validateFlowTemplateForChannels(effectiveFlowTemplate, nextSupportedChannels);
+    const effectiveFlowTemplate = normalizeFlowTemplateUrls(
+      dto.flowTemplate ?? existing.flowTemplate,
+    );
+    validateFlowTemplateForChannels(
+      effectiveFlowTemplate,
+      nextSupportedChannels,
+    );
     if (dto.flowTemplate) {
       patch.flowTemplate = effectiveFlowTemplate;
     }
@@ -118,7 +137,11 @@ export class TemplatesService {
       patch.version = (existing.version ?? 1) + 1;
     }
 
-    const template = await this.templateModel.findByIdAndUpdate(id, { $set: patch }, { new: true });
+    const template = await this.templateModel.findByIdAndUpdate(
+      id,
+      { $set: patch },
+      { new: true },
+    );
     if (!template) throw new NotFoundException('Template not found');
     return template;
   }

@@ -6,7 +6,9 @@ import { MaintenanceService } from './maintenance.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Maintenance.name, schema: MaintenanceSchema }]),
+    MongooseModule.forFeature([
+      { name: Maintenance.name, schema: MaintenanceSchema },
+    ]),
   ],
   controllers: [MaintenanceController],
   providers: [MaintenanceService],

@@ -21,6 +21,16 @@ export class DashboardController {
     return this.dashboardService.getTenantMetrics(tenantId);
   }
 
+  @Get('summary')
+  getSummary(
+    @Request() req: AuthenticatedRequest,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    const tenantId = requireTenantId(req);
+    return this.dashboardService.getTenantSummary(tenantId, dateFrom, dateTo);
+  }
+
   @Get('funnel')
   getFunnel(
     @Request() req: AuthenticatedRequest,

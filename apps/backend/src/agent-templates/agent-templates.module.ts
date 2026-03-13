@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AgentTemplate, AgentTemplateSchema } from './schemas/agent-template.schema';
+import {
+  AgentTemplate,
+  AgentTemplateSchema,
+} from './schemas/agent-template.schema';
 import { TemplatesController } from './templates.controller';
 import { TemplatesService } from './templates.service';
 

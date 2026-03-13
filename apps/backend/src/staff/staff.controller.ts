@@ -54,7 +54,10 @@ export class StaffController {
 
   @Delete(':id')
   @RequirePermissions(PERMISSIONS.STAFF_WRITE)
-  remove(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  remove(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const tenantId = requireTenantId(req);
     return this.staffService.remove(id, tenantId, req.user._id.toString());
   }

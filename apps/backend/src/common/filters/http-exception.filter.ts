@@ -43,7 +43,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           scope.setTag('path', request.url);
           scope.setTag('method', request.method);
           scope.setTag('status', String(status));
-          const requestId = request.header('x-request-id') ?? request.header('x-correlation-id');
+          const requestId =
+            request.header('x-request-id') ??
+            request.header('x-correlation-id');
           if (requestId) scope.setTag('requestId', requestId);
           if (authReq.tenantId) scope.setTag('tenantId', authReq.tenantId);
           if (authReq.user?._id) scope.setUser({ id: authReq.user._id });

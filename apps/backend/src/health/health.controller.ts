@@ -74,17 +74,25 @@ export class HealthController {
   }> {
     try {
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Redis health check timed out')), HealthController.REDIS_TIMEOUT_MS),
+        setTimeout(
+          () => reject(new Error('Redis health check timed out')),
+          HealthController.REDIS_TIMEOUT_MS,
+        ),
       );
       const probe = (async () => {
         const client = await this.webhooksQueue.client;
         const start = Date.now();
         await client.ping();
-        return { up: true as const, latencyMs: Date.now() - start, error: undefined };
+        return {
+          up: true as const,
+          latencyMs: Date.now() - start,
+          error: undefined,
+        };
       })();
       return await Promise.race([probe, timeout]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown Redis error';
+      const message =
+        err instanceof Error ? err.message : 'Unknown Redis error';
       this.logger.warn(`Redis health check failed: ${message}`);
       return { up: false, latencyMs: null, error: message };
     }

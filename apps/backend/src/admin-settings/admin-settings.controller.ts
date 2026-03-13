@@ -1,4 +1,11 @@
-import { Controller, Get, Patch, Body, UseGuards, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { AdminSettingsService } from './admin-settings.service';
@@ -31,7 +38,9 @@ export class AdminSettingsController {
         days: dto.days,
       });
     } else {
-      throw new BadRequestException('Either "id" or "policies" must be provided.');
+      throw new BadRequestException(
+        'Either "id" or "policies" must be provided.',
+      );
     }
     return this.adminSettingsService.getRetentionPolicies();
   }

@@ -6,9 +6,7 @@ import { SettingsService } from './settings.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Tenant.name, schema: TenantSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Tenant.name, schema: TenantSchema }]),
   ],
   controllers: [SettingsController],
   providers: [SettingsService],

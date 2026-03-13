@@ -7,7 +7,10 @@ import {
   ReportSnapshot,
   ReportSnapshotDocument,
 } from './schemas/report-snapshot.schema';
-import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from '../calls/schemas/call-session.schema';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
 
 @Injectable()
@@ -40,7 +43,9 @@ export class ReportAggregationService {
     const endOfDay = new Date(yesterday);
     endOfDay.setHours(23, 59, 59, 999);
 
-    this.logger.log(`Aggregating report snapshots for ${yesterday.toISOString().slice(0, 10)}`);
+    this.logger.log(
+      `Aggregating report snapshots for ${yesterday.toISOString().slice(0, 10)}`,
+    );
 
     const tenants = await this.tenantModel
       .find({ deletedAt: null })
@@ -135,7 +140,8 @@ export class ReportAggregationService {
           outcomes,
           sentiment,
           peakHours,
-          avgDurationMs: durationCount > 0 ? totalDuration / durationCount : null,
+          avgDurationMs:
+            durationCount > 0 ? totalDuration / durationCount : null,
         },
       },
       { upsert: true },

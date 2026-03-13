@@ -47,6 +47,21 @@ const COST_PER_MINUTE_HUMAN = 0.15;
 const COST_PER_MINUTE_AI = 0.02;
 
 export const dashboardAdapter = {
+  async getSummary(tenantId: string | undefined, dateRange?: DateRangeFilter) {
+    const [metrics, kpis] = await Promise.all([
+      this.getMetrics(tenantId, dateRange),
+      this.getTenantKpis(tenantId, dateRange),
+    ]);
+    return {
+      metrics,
+      kpis,
+      signal:
+        kpis.calls7d === 0 && kpis.appointmentsBooked === 0
+          ? { status: 'empty' as const, reason: 'No calls or bookings were recorded in the selected range.' }
+          : { status: 'healthy' as const, reason: 'Calls and bookings are flowing into the dashboard.' },
+    };
+  },
+
   async getMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<DashboardMetrics> {
     const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
     const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
@@ -189,7 +204,7 @@ export const dashboardAdapter = {
     return filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange)
       .map((c) => ({
         id: c.id,
-        outcome: c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed',
+        outcome: (c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed') as TenantRecentCall['outcome'],
         duration: c.duration,
         createdAt: c.createdAt,
       }))

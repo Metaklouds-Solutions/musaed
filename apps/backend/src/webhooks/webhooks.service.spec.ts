@@ -116,7 +116,13 @@ describe('WebhooksService', () => {
       callSessionModelMock.updateOne.mockResolvedValue({ acknowledged: true });
     });
 
-    function mockFindOneChain(result: { _id?: unknown; status?: string; metadata?: Record<string, unknown> } | null) {
+    function mockFindOneChain(
+      result: {
+        _id?: unknown;
+        status?: string;
+        metadata?: Record<string, unknown>;
+      } | null,
+    ) {
       return {
         select: jest.fn().mockReturnValue({
           lean: jest.fn().mockResolvedValue(result),
@@ -127,8 +133,12 @@ describe('WebhooksService', () => {
     it('allows normal order: started → ended → analyzed', async () => {
       callSessionModelMock.findOne
         .mockReturnValueOnce(mockFindOneChain(null))
-        .mockReturnValueOnce(mockFindOneChain({ _id: 1, status: 'started', metadata: {} }))
-        .mockReturnValueOnce(mockFindOneChain({ _id: 1, status: 'ended', metadata: {} }));
+        .mockReturnValueOnce(
+          mockFindOneChain({ _id: 1, status: 'started', metadata: {} }),
+        )
+        .mockReturnValueOnce(
+          mockFindOneChain({ _id: 1, status: 'ended', metadata: {} }),
+        );
 
       await service.handleRetellCallStarted({
         event: 'call_started',
@@ -157,9 +167,15 @@ describe('WebhooksService', () => {
     it('skips out-of-order event: analyzed then ended (ended is stale)', async () => {
       callSessionModelMock.findOne
         .mockReturnValueOnce(mockFindOneChain(null))
-        .mockReturnValueOnce(mockFindOneChain({ _id: 1, status: 'started', metadata: {} }))
-        .mockReturnValueOnce(mockFindOneChain({ _id: 1, status: 'ended', metadata: {} }))
-        .mockReturnValueOnce(mockFindOneChain({ _id: 1, status: 'analyzed', metadata: {} }));
+        .mockReturnValueOnce(
+          mockFindOneChain({ _id: 1, status: 'started', metadata: {} }),
+        )
+        .mockReturnValueOnce(
+          mockFindOneChain({ _id: 1, status: 'ended', metadata: {} }),
+        )
+        .mockReturnValueOnce(
+          mockFindOneChain({ _id: 1, status: 'analyzed', metadata: {} }),
+        );
 
       await service.handleRetellCallStarted({
         event: 'call_started',
@@ -209,7 +225,11 @@ describe('WebhooksService', () => {
       const newerTs = 1700000000000;
       const olderTs = 1699999999000;
       callSessionModelMock.findOne.mockReturnValue(
-        mockFindOneChain({ _id: 1, status: 'started', metadata: { lastEventTimestamp: newerTs } }),
+        mockFindOneChain({
+          _id: 1,
+          status: 'started',
+          metadata: { lastEventTimestamp: newerTs },
+        }),
       );
 
       await service.handleRetellCallEnded({
@@ -227,7 +247,11 @@ describe('WebhooksService', () => {
       const olderTs = 1699999999000;
       const newerTs = 1700000000000;
       callSessionModelMock.findOne.mockReturnValue(
-        mockFindOneChain({ _id: 1, status: 'started', metadata: { lastEventTimestamp: olderTs } }),
+        mockFindOneChain({
+          _id: 1,
+          status: 'started',
+          metadata: { lastEventTimestamp: olderTs },
+        }),
       );
 
       await service.handleRetellCallEnded({
@@ -242,4 +266,3 @@ describe('WebhooksService', () => {
     });
   });
 });
-

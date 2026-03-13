@@ -19,7 +19,9 @@ export class BillingService {
   ) {}
 
   async getPlans() {
-    return this.planModel.find({ isActive: true }).sort({ monthlyPriceCents: 1 });
+    return this.planModel
+      .find({ isActive: true })
+      .sort({ monthlyPriceCents: 1 });
   }
 
   async getAllPlans() {
@@ -50,10 +52,19 @@ export class BillingService {
     const [plans, tenantsByPlan, totalTenants] = await Promise.all([
       this.planModel.find({ isActive: true }),
       this.tenantModel.aggregate([
-        { $match: { deletedAt: null, status: { $in: ['ACTIVE', 'TRIAL'] }, planId: { $ne: null } } },
+        {
+          $match: {
+            deletedAt: null,
+            status: { $in: ['ACTIVE', 'TRIAL'] },
+            planId: { $ne: null },
+          },
+        },
         { $group: { _id: '$planId', count: { $sum: 1 } } },
       ]),
-      this.tenantModel.countDocuments({ deletedAt: null, status: { $in: ['ACTIVE', 'TRIAL'] } }),
+      this.tenantModel.countDocuments({
+        deletedAt: null,
+        status: { $in: ['ACTIVE', 'TRIAL'] },
+      }),
     ]);
 
     const countByPlan = new Map<string, number>();

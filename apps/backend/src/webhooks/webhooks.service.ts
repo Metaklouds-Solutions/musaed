@@ -3,10 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
-import { AgentInstance, AgentInstanceDocument } from '../agent-instances/schemas/agent-instance.schema';
-import { ProcessedEvent, ProcessedEventDocument } from './schemas/processed-event.schema';
+import {
+  AgentInstance,
+  AgentInstanceDocument,
+} from '../agent-instances/schemas/agent-instance.schema';
+import {
+  ProcessedEvent,
+  ProcessedEventDocument,
+} from './schemas/processed-event.schema';
 import { RetellWebhookDto } from './dto/retell-webhook.dto';
-import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from '../calls/schemas/call-session.schema';
 import { AgentRun, AgentRunDocument } from '../runs/schemas/agent-run.schema';
 import { RunEvent, RunEventDocument } from '../runs/schemas/run-event.schema';
 
@@ -41,9 +50,12 @@ export class WebhooksService {
   constructor(
     private readonly configService: ConfigService,
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
-    @InjectModel(AgentInstance.name) private agentModel: Model<AgentInstanceDocument>,
-    @InjectModel(ProcessedEvent.name) private processedEventModel: Model<ProcessedEventDocument>,
-    @InjectModel(CallSession.name) private callSessionModel: Model<CallSessionDocument>,
+    @InjectModel(AgentInstance.name)
+    private agentModel: Model<AgentInstanceDocument>,
+    @InjectModel(ProcessedEvent.name)
+    private processedEventModel: Model<ProcessedEventDocument>,
+    @InjectModel(CallSession.name)
+    private callSessionModel: Model<CallSessionDocument>,
     @InjectModel(AgentRun.name) private runModel: Model<AgentRunDocument>,
     @InjectModel(RunEvent.name) private runEventModel: Model<RunEventDocument>,
   ) {}
@@ -52,20 +64,37 @@ export class WebhooksService {
    * Returns true if the event was already processed (duplicate).
    * Returns false if it's new (does NOT record — caller records after processing).
    */
-  async isDuplicateEvent(eventId: string, source: string, eventType: string): Promise<boolean> {
-    const existing = await this.processedEventModel.findOne({ eventId, source });
+  async isDuplicateEvent(
+    eventId: string,
+    source: string,
+    eventType: string,
+  ): Promise<boolean> {
+    const existing = await this.processedEventModel.findOne({
+      eventId,
+      source,
+    });
     return existing !== null;
   }
 
   /**
    * Records an event as processed. Call after successful processing (e.g. in queue worker).
    */
-  async recordProcessedEvent(eventId: string, source: string, eventType: string): Promise<void> {
+  async recordProcessedEvent(
+    eventId: string,
+    source: string,
+    eventType: string,
+  ): Promise<void> {
     try {
       await this.processedEventModel.create({ eventId, source, eventType });
     } catch (err: unknown) {
-      if (err instanceof Error && 'code' in err && (err as Record<string, unknown>).code === 11000) {
-        this.logger.debug(`Duplicate ${source} event already recorded: ${eventId}`);
+      if (
+        err instanceof Error &&
+        'code' in err &&
+        (err as Record<string, unknown>).code === 11000
+      ) {
+        this.logger.debug(
+          `Duplicate ${source} event already recorded: ${eventId}`,
+        );
         return;
       }
       throw err;
@@ -79,7 +108,10 @@ export class WebhooksService {
     const call = this.readCall(payload);
     const metadata = this.readMetadata(payload, call);
     const metadataEventId = this.readString(metadata?.event_id);
-    const callId = this.readString(payload.call_id) ?? this.readString(call.call_id) ?? 'unknown';
+    const callId =
+      this.readString(payload.call_id) ??
+      this.readString(call.call_id) ??
+      'unknown';
     return payload.event_id ?? metadataEventId ?? `${callId}-${payload.event}`;
   }
 
@@ -87,7 +119,9 @@ export class WebhooksService {
 
   async handleInvoicePaid(invoice: Record<string, unknown>) {
     const customerId = invoice.customer as string;
-    const tenant = await this.tenantModel.findOne({ stripeCustomerId: customerId });
+    const tenant = await this.tenantModel.findOne({
+      stripeCustomerId: customerId,
+    });
     if (!tenant) {
       this.logger.warn(`No tenant found for Stripe customer ${customerId}`);
       return;
@@ -98,13 +132,17 @@ export class WebhooksService {
       const oldStatus = tenant.status;
       tenant.status = 'ACTIVE';
       await tenant.save();
-      this.logger.log(`Tenant ${tenant.slug} transitioned ${oldStatus} → ACTIVE after payment`);
+      this.logger.log(
+        `Tenant ${tenant.slug} transitioned ${oldStatus} → ACTIVE after payment`,
+      );
     }
   }
 
   async handleInvoiceFailed(invoice: Record<string, unknown>) {
     const customerId = invoice.customer as string;
-    const tenant = await this.tenantModel.findOne({ stripeCustomerId: customerId });
+    const tenant = await this.tenantModel.findOne({
+      stripeCustomerId: customerId,
+    });
     if (!tenant) {
       this.logger.warn(`No tenant found for Stripe customer ${customerId}`);
       return;
@@ -117,7 +155,9 @@ export class WebhooksService {
 
   async handleSubscriptionDeleted(subscription: Record<string, unknown>) {
     const customerId = subscription.customer as string;
-    const tenant = await this.tenantModel.findOne({ stripeCustomerId: customerId });
+    const tenant = await this.tenantModel.findOne({
+      stripeCustomerId: customerId,
+    });
     if (!tenant) {
       this.logger.warn(`No tenant found for Stripe customer ${customerId}`);
       return;
@@ -134,9 +174,12 @@ export class WebhooksService {
 
   async handleRetellCallStarted(payload: RetellWebhookDto) {
     const call = this.readCall(payload);
-    const callId = this.readString(payload.call_id) ?? this.readString(call.call_id);
-    const agentId = this.readString(payload.agent_id) ?? this.readString(call.agent_id);
-    const startedAt = this.readDateFromTimestamp(call.start_timestamp) ?? new Date();
+    const callId =
+      this.readString(payload.call_id) ?? this.readString(call.call_id);
+    const agentId =
+      this.readString(payload.agent_id) ?? this.readString(call.agent_id);
+    const startedAt =
+      this.readDateFromTimestamp(call.start_timestamp) ?? new Date();
     this.logger.log(`Retell call started: ${callId} for agent ${agentId}`);
     if (!this.isCallIngestEnabled()) {
       return;
@@ -152,9 +195,12 @@ export class WebhooksService {
 
   async handleRetellCallEnded(payload: RetellWebhookDto) {
     const call = this.readCall(payload);
-    const callId = this.readString(payload.call_id) ?? this.readString(call.call_id);
-    const durationMs = this.readNumber(payload.duration_ms) ?? this.readNumber(call.duration_ms);
-    const endedAt = this.readDateFromTimestamp(call.end_timestamp) ?? new Date();
+    const callId =
+      this.readString(payload.call_id) ?? this.readString(call.call_id);
+    const durationMs =
+      this.readNumber(payload.duration_ms) ?? this.readNumber(call.duration_ms);
+    const endedAt =
+      this.readDateFromTimestamp(call.end_timestamp) ?? new Date();
     this.logger.log(`Retell call ended: ${callId} (${durationMs}ms)`);
     if (!this.isCallIngestEnabled()) {
       return;
@@ -171,10 +217,17 @@ export class WebhooksService {
   async handleRetellCallAnalyzed(payload: RetellWebhookDto) {
     const call = this.readCall(payload);
     const analysis = this.readRecord(call.call_analysis);
-    const summary = this.readString(payload.summary) ?? this.readString(analysis.call_summary);
-    const sentiment = this.readString(payload.sentiment) ?? this.readString(analysis.user_sentiment);
-    const callId = this.readString(payload.call_id) ?? this.readString(call.call_id);
-    this.logger.log(`Retell call analyzed: ${callId} — sentiment: ${sentiment}`);
+    const summary =
+      this.readString(payload.summary) ??
+      this.readString(analysis.call_summary);
+    const sentiment =
+      this.readString(payload.sentiment) ??
+      this.readString(analysis.user_sentiment);
+    const callId =
+      this.readString(payload.call_id) ?? this.readString(call.call_id);
+    this.logger.log(
+      `Retell call analyzed: ${callId} — sentiment: ${sentiment}`,
+    );
     if (!this.isCallIngestEnabled()) {
       return;
     }
@@ -182,7 +235,8 @@ export class WebhooksService {
       status: 'analyzed',
       summary: this.readString(summary),
       sentiment: this.readString(sentiment),
-      transcript: this.readString(payload.transcript) ?? this.readString(call.transcript),
+      transcript:
+        this.readString(payload.transcript) ?? this.readString(call.transcript),
       outcome: this.deriveOutcome(summary ?? undefined),
     });
     await this.upsertRunFromWebhook(payload, 'completed');
@@ -191,18 +245,26 @@ export class WebhooksService {
   async handleRetellAlertTriggered(payload: RetellWebhookDto) {
     // Phase 4.4 Handle alert_triggered webhook
     const call = this.readCall(payload);
-    const callId = this.readString(payload.call_id) ?? this.readString(call.call_id);
+    const callId =
+      this.readString(payload.call_id) ?? this.readString(call.call_id);
     this.logger.log(`Retell alert triggered for call: ${callId}`);
     const context = await this.resolveAgentContext(payload);
     if (!context) {
-      this.logger.warn(`No context found for alert_triggered on call ${callId}`);
+      this.logger.warn(
+        `No context found for alert_triggered on call ${callId}`,
+      );
       return;
     }
     // Route to tenant notifications or alerts table in the future
     // For now, we update the call session metadata with the alert flag
     await this.callSessionModel.updateOne(
       { callId },
-      { $set: { 'metadata.alertTriggered': true, 'metadata.lastAlert': new Date() } }
+      {
+        $set: {
+          'metadata.alertTriggered': true,
+          'metadata.lastAlert': new Date(),
+        },
+      },
     );
   }
 
@@ -222,7 +284,9 @@ export class WebhooksService {
     const call = this.readCall(payload);
     const normalizedCallId = callId ?? this.readString(call.call_id);
     if (!normalizedCallId) {
-      this.logger.warn('Retell payload missing call_id; skipping call-session upsert');
+      this.logger.warn(
+        'Retell payload missing call_id; skipping call-session upsert',
+      );
       return;
     }
 
@@ -236,7 +300,8 @@ export class WebhooksService {
 
     if (existing) {
       const currentStatus = existing.status ?? 'created';
-      const currentOrder = RETELL_STATUS_ORDER[currentStatus] ?? RETELL_STATUS_ORDER.created;
+      const currentOrder =
+        RETELL_STATUS_ORDER[currentStatus] ?? RETELL_STATUS_ORDER.created;
       const incomingOrder = incomingStatus
         ? (RETELL_STATUS_ORDER[incomingStatus] ?? -1)
         : -1;
@@ -294,7 +359,9 @@ export class WebhooksService {
 
     const context = await this.resolveAgentContext(payload);
     if (!context) {
-      this.logger.warn(`Unable to resolve tenant/agent context for call ${normalizedCallId}`);
+      this.logger.warn(
+        `Unable to resolve tenant/agent context for call ${normalizedCallId}`,
+      );
       return;
     }
 
@@ -342,7 +409,9 @@ export class WebhooksService {
     return null;
   }
 
-  private readLastEventTimestamp(metadata?: Record<string, unknown> | null): number | null {
+  private readLastEventTimestamp(
+    metadata?: Record<string, unknown> | null,
+  ): number | null {
     if (!metadata) return null;
     const ts = metadata.lastEventTimestamp;
     if (typeof ts === 'number' && Number.isFinite(ts)) return ts;
@@ -391,7 +460,9 @@ export class WebhooksService {
   }
 
   private readString(value: unknown): string | null {
-    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+    return typeof value === 'string' && value.trim().length > 0
+      ? value.trim()
+      : null;
   }
 
   private readNumber(value: unknown): number | null {
@@ -430,7 +501,8 @@ export class WebhooksService {
     status: string,
   ): Promise<void> {
     const call = this.readCall(payload);
-    const callId = this.readString(payload.call_id) ?? this.readString(call.call_id);
+    const callId =
+      this.readString(payload.call_id) ?? this.readString(call.call_id);
     if (!callId) {
       return;
     }
@@ -442,8 +514,10 @@ export class WebhooksService {
 
     const callCost = this.readRecord(call.call_cost);
     const llmTokenUsage = this.readRecord(call.llm_token_usage);
-    const runEventTs = this.readDateFromTimestamp(call.end_timestamp) ?? new Date();
-    const startedAt = this.readDateFromTimestamp(call.start_timestamp) ?? runEventTs;
+    const runEventTs =
+      this.readDateFromTimestamp(call.end_timestamp) ?? new Date();
+    const startedAt =
+      this.readDateFromTimestamp(call.start_timestamp) ?? runEventTs;
     const endedAt = this.readDateFromTimestamp(call.end_timestamp);
     const tokens =
       this.readNumber(llmTokenUsage.average) ??
@@ -463,7 +537,8 @@ export class WebhooksService {
           status,
           cost,
           tokens,
-          agentVersion: this.readString(call.agent_version?.toString()) ?? undefined,
+          agentVersion:
+            this.readString(call.agent_version?.toString()) ?? undefined,
           ...(endedAt ? { endedAt } : {}),
         },
       },
@@ -484,7 +559,10 @@ export class WebhooksService {
 
   private deriveOutcome(summary?: string): string {
     const normalized = (summary ?? '').toLowerCase();
-    if (normalized.includes('booked') || normalized.includes('appointment confirmed')) {
+    if (
+      normalized.includes('booked') ||
+      normalized.includes('appointment confirmed')
+    ) {
       return 'booked';
     }
     if (normalized.includes('escalat')) {

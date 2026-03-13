@@ -43,7 +43,10 @@ export class AgentsTenantController {
   }
 
   @Get(':id')
-  findById(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  findById(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.agentsService.findById(id, req.tenantId!);
   }
 
@@ -57,16 +60,24 @@ export class AgentsTenantController {
   }
 
   @Post(':id/sync')
-  syncAgent(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  syncAgent(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const tenantId = req.tenantId;
     if (!tenantId) {
-      throw new BadRequestException('tenantId query parameter is required for sync');
+      throw new BadRequestException(
+        'tenantId query parameter is required for sync',
+      );
     }
     return this.agentsService.syncAgent(id, tenantId);
   }
 
   @Get(':id/deployments')
-  getDeployments(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  getDeployments(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.agentsService.getDeploymentsForTenant(id, req.tenantId!);
   }
 
@@ -76,7 +87,11 @@ export class AgentsTenantController {
     @Request() req: AuthenticatedRequest,
     @Body() dto: StartConversationDto,
   ) {
-    return this.agentsService.startConversationForTenant(id, req.tenantId!, dto);
+    return this.agentsService.startConversationForTenant(
+      id,
+      req.tenantId!,
+      dto,
+    );
   }
   @Get('chats/:chatId')
   getChat(
@@ -92,7 +107,11 @@ export class AgentsTenantController {
     @Body() dto: SendChatMessageDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.agentsService.sendChatMessageForTenant(chatId, dto.content, req.tenantId!);
+    return this.agentsService.sendChatMessageForTenant(
+      chatId,
+      dto.content,
+      req.tenantId!,
+    );
   }
 
   @Get(':id/analytics')
@@ -111,7 +130,10 @@ export class AgentsTenantController {
   }
 
   @Get(':id/health')
-  getHealth(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  getHealth(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.agentHealthService.getHealth(id, req.tenantId!);
   }
 }
@@ -158,7 +180,10 @@ export class AgentsAdminController {
   }
 
   @Post(':id/assign')
-  assign(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: AssignAgentDto) {
+  assign(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: AssignAgentDto,
+  ) {
     return this.agentsService.assignToTenant(id, dto.tenantId);
   }
 
@@ -200,7 +225,10 @@ export class AgentsAdminController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateAgentDto) {
+  update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateAgentDto,
+  ) {
     return this.agentsService.update(id, dto);
   }
 

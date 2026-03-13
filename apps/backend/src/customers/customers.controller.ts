@@ -46,7 +46,10 @@ export class CustomersController {
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.CUSTOMERS_READ)
-  findById(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  findById(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const tenantId = requireTenantId(req);
     return this.customersService.findById(id, tenantId);
   }
@@ -71,14 +74,20 @@ export class CustomersController {
 
   @Get(':id/export')
   @RequirePermissions(PERMISSIONS.CUSTOMERS_READ)
-  exportData(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  exportData(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const tenantId = requireTenantId(req);
     return this.customersService.exportData(id, tenantId);
   }
 
   @Delete(':id')
   @RequirePermissions(PERMISSIONS.CUSTOMERS_WRITE)
-  softDelete(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  softDelete(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const tenantId = requireTenantId(req);
     return this.customersService.softDelete(id, tenantId);
   }

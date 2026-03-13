@@ -29,7 +29,10 @@ export class Booking {
   @Prop({ default: 30 })
   durationMinutes: number;
 
-  @Prop({ required: true, enum: ['confirmed', 'cancelled', 'completed', 'no_show'] })
+  @Prop({
+    required: true,
+    enum: ['confirmed', 'cancelled', 'completed', 'no_show'],
+  })
   status: string;
 
   @Prop({ type: String, default: null })

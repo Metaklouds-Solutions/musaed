@@ -2,11 +2,10 @@
  * Admin overview hook. Adapters only; no tenant filter (platform-wide).
  */
 
-import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { adminAdapter } from '../../../adapters';
 import { useAsyncData } from '../../../shared/hooks/useAsyncData';
-import type { AdminOverviewMetrics } from '../../../shared/types';
+import type { AdminOverviewMetrics, AdminSystemHealthExtended } from '../../../shared/types';
 
 const defaultMetrics: AdminOverviewMetrics = {
   mrr: 0, creditsRevenue: 0, totalRevenue: 0, paymentFailures: [],
@@ -16,22 +15,48 @@ const defaultMetrics: AdminOverviewMetrics = {
   usageAnomalies: [], churnRiskList: [],
 };
 
+const defaultSystemHealth: AdminSystemHealthExtended = {
+  status: 'ok',
+  integrations: [],
+  retellSync: 'ok',
+  webhooks: 'ok',
+};
+
 /** Returns admin overview dashboard aggregates and role-gated session state. */
 export function useAdminOverview() {
   const { user } = useSession();
-  const { data: metrics, loading } = useAsyncData(
-    () => adminAdapter.getOverview(),
+  const defaultSummary = {
+    overview: defaultMetrics,
+    kpis: {
+      totalTenants: 0,
+      activeTenants: 0,
+      trialTenants: 0,
+      suspendedTenants: 0,
+      callsToday: 0,
+      calls7d: 0,
+      bookedPercent: 0,
+      escalationPercent: 0,
+      failedPercent: 0,
+      totalCostUsd: 0,
+    },
+    recentTenants: [],
+    supportSnapshot: { openCount: 0, criticalCount: 0, oldestWaitingDays: 0 },
+    recentCalls: [],
+    systemHealth: defaultSystemHealth,
+    signal: { status: 'empty' as const, reason: 'Dashboard summary unavailable.' },
+  };
+  const { data: summary, loading } = useAsyncData(
+    () => adminAdapter.getDashboardSummary(),
     [],
-    defaultMetrics,
+    defaultSummary,
   );
-  const kpis = useMemo(() => adminAdapter.getAdminKpis(), []);
-  const recentTenants = useMemo(() => adminAdapter.getRecentTenants(5), []);
-  const supportSnapshot = useMemo(() => adminAdapter.getSupportSnapshot(), []);
-  const recentCalls = useMemo(() => adminAdapter.getRecentCalls(10), []);
-  const systemHealth = useMemo(
-    () => adminAdapter.getSystemHealthExtended?.() ?? adminAdapter.getSystemHealth(),
-    []
-  );
+  const metrics = summary.overview ?? defaultMetrics;
+  const kpis = summary.kpis ?? defaultSummary.kpis;
+  const recentTenants = summary.recentTenants ?? defaultSummary.recentTenants;
+  const supportSnapshot = summary.supportSnapshot ?? defaultSummary.supportSnapshot;
+  const recentCalls = summary.recentCalls ?? defaultSummary.recentCalls;
+  const systemHealth: AdminSystemHealthExtended =
+    summary.systemHealth ?? defaultSystemHealth;
   const isAdmin = user?.role === 'ADMIN';
   return {
     user,

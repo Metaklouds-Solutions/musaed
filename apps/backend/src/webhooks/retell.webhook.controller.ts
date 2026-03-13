@@ -50,10 +50,17 @@ export class RetellWebhookController {
     config: ConfigService,
   ) {
     this.webhookSecret = config.get<string>('RETELL_WEBHOOK_SECRET', '').trim();
-    this.webhookSecretLegacy = config.get<string>('RETELL_WEBHOOK_SECRET_LEGACY', '').trim();
+    this.webhookSecretLegacy = config
+      .get<string>('RETELL_WEBHOOK_SECRET_LEGACY', '')
+      .trim();
     const tsMax = config.get<string>('WEBHOOK_TIMESTAMP_MAX_AGE_SEC');
-    this.timestampMaxAgeSec = tsMax ? parseInt(tsMax, 10) : DEFAULT_TIMESTAMP_MAX_AGE_SEC;
-    if (!Number.isFinite(this.timestampMaxAgeSec) || this.timestampMaxAgeSec < 0) {
+    this.timestampMaxAgeSec = tsMax
+      ? parseInt(tsMax, 10)
+      : DEFAULT_TIMESTAMP_MAX_AGE_SEC;
+    if (
+      !Number.isFinite(this.timestampMaxAgeSec) ||
+      this.timestampMaxAgeSec < 0
+    ) {
       this.timestampMaxAgeSec = DEFAULT_TIMESTAMP_MAX_AGE_SEC;
     }
   }
@@ -77,12 +84,17 @@ export class RetellWebhookController {
         }
         const ageSec = Math.floor(Date.now() / 1000) - ts;
         if (ageSec < 0 || ageSec > this.timestampMaxAgeSec) {
-          this.logger.warn(`Retell webhook rejected: timestamp outside allowed window (age=${ageSec}s)`);
+          this.logger.warn(
+            `Retell webhook rejected: timestamp outside allowed window (age=${ageSec}s)`,
+          );
           throw new ForbiddenException('Webhook timestamp expired or invalid');
         }
       }
 
-      const rawBody = req.body instanceof Buffer ? req.body.toString('utf8') : JSON.stringify(req.body);
+      const rawBody =
+        req.body instanceof Buffer
+          ? req.body.toString('utf8')
+          : JSON.stringify(req.body);
       const expected = crypto
         .createHmac('sha256', this.webhookSecret)
         .update(rawBody)
@@ -96,7 +108,9 @@ export class RetellWebhookController {
           .digest('hex');
         valid = timingSafeEqualHex(signature, expectedLegacy);
         if (valid) {
-          this.logger.log('Retell webhook verified with legacy secret (rotation in progress)');
+          this.logger.log(
+            'Retell webhook verified with legacy secret (rotation in progress)',
+          );
         }
       }
 
@@ -112,7 +126,10 @@ export class RetellWebhookController {
 
     let body: RetellWebhookDto;
     try {
-      body = req.body instanceof Buffer ? JSON.parse(req.body.toString('utf8')) : req.body;
+      body =
+        req.body instanceof Buffer
+          ? JSON.parse(req.body.toString('utf8'))
+          : req.body;
     } catch (error) {
       throw new BadRequestException('Invalid JSON payload');
     }
@@ -169,7 +186,11 @@ export class RetellWebhookController {
         this.logger.log(`Unhandled Retell event: ${eventType}`);
     }
 
-    await this.webhooksService.recordProcessedEvent(eventId, 'retell', eventType);
+    await this.webhooksService.recordProcessedEvent(
+      eventId,
+      'retell',
+      eventType,
+    );
     return { received: true };
   }
 }

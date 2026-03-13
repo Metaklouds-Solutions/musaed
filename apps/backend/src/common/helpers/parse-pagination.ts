@@ -19,11 +19,17 @@ export function parsePagination(
   const defaultPage = defaults?.page ?? DEFAULT_PAGE;
   const defaultLimit = defaults?.limit ?? DEFAULT_LIMIT;
 
-  const parsedPage = raw.page !== undefined ? parseInt(raw.page, 10) : defaultPage;
-  const parsedLimit = raw.limit !== undefined ? parseInt(raw.limit, 10) : defaultLimit;
+  const parsedPage =
+    raw.page !== undefined ? parseInt(raw.page, 10) : defaultPage;
+  const parsedLimit =
+    raw.limit !== undefined ? parseInt(raw.limit, 10) : defaultLimit;
 
   return {
-    page: Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : defaultPage,
-    limit: Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 200) : defaultLimit,
+    page:
+      Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : defaultPage,
+    limit:
+      Number.isFinite(parsedLimit) && parsedLimit > 0
+        ? Math.min(parsedLimit, 200)
+        : defaultLimit,
   };
 }

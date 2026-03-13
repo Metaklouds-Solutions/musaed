@@ -1,10 +1,19 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ExportTenantController, ExportAdminController } from './export.controller';
+import {
+  ExportTenantController,
+  ExportAdminController,
+} from './export.controller';
 import { ExportService } from './export.service';
-import { TenantStaff, TenantStaffSchema } from '../tenants/schemas/tenant-staff.schema';
+import {
+  TenantStaff,
+  TenantStaffSchema,
+} from '../tenants/schemas/tenant-staff.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
-import { SupportTicket, SupportTicketSchema } from '../support/schemas/support-ticket.schema';
+import {
+  SupportTicket,
+  SupportTicketSchema,
+} from '../support/schemas/support-ticket.schema';
 import { Tenant, TenantSchema } from '../tenants/schemas/tenant.schema';
 
 @Module({

@@ -42,6 +42,8 @@ interface RetellConversationFlowPayload {
   [key: string]: unknown;
 }
 
+type ProcessedTemplateKind = 'conversation-flow' | 'direct-agent';
+
 export interface AgentDeployResult {
   agentInstanceId: string;
   tenantId: string;
@@ -64,12 +66,16 @@ const SYSTEM_USER_ID = 'system';
 @Injectable()
 export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AgentDeploymentService.name);
-  private queue:
-    | Queue<{ agentInstanceId: string; tenantId: string; correlationId: string }>
-    | null = null;
-  private worker:
-    | Worker<{ agentInstanceId: string; tenantId: string; correlationId: string }>
-    | null = null;
+  private queue: Queue<{
+    agentInstanceId: string;
+    tenantId: string;
+    correlationId: string;
+  }> | null = null;
+  private worker: Worker<{
+    agentInstanceId: string;
+    tenantId: string;
+    correlationId: string;
+  }> | null = null;
   private connection: ConnectionOptions | null = null;
 
   constructor(
@@ -93,12 +99,16 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
       ),
     );
     if (!queueEnabled) {
-      this.logger.warn('Agent deployment queue disabled (AGENT_DEPLOYMENT_QUEUE_ENABLED=false).');
+      this.logger.warn(
+        'Agent deployment queue disabled (AGENT_DEPLOYMENT_QUEUE_ENABLED=false).',
+      );
       return;
     }
     const redisUrl = this.configService.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL is not configured. Deployment queue is disabled.');
+      this.logger.warn(
+        'REDIS_URL is not configured. Deployment queue is disabled.',
+      );
       return;
     }
     this.connection = this.buildRedisConnection(redisUrl);
@@ -108,7 +118,10 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'agent-deployment',
       async (job) =>
-        this.deployAgentInstance(job.data.agentInstanceId, job.data.correlationId),
+        this.deployAgentInstance(
+          job.data.agentInstanceId,
+          job.data.correlationId,
+        ),
       { connection: this.connection, concurrency: 2 },
     );
     this.worker.on('failed', (job, error) => {
@@ -158,7 +171,8 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
   }
 
   async cleanupDeploymentsForTenant(tenantId: string): Promise<void> {
-    const deployments = await this.agentDeploymentsService.findByTenant(tenantId);
+    const deployments =
+      await this.agentDeploymentsService.findByTenant(tenantId);
     for (const deployment of deployments) {
       if (deployment.retellAgentId) {
         try {
@@ -168,7 +182,8 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
             await this.retellClient.deleteAgent(deployment.retellAgentId);
           }
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
           this.logger.warn(
             `Retell agent cleanup failed tenantId=${tenantId} agentId=${deployment.retellAgentId} error=${message}`,
           );
@@ -180,7 +195,8 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
             deployment.retellConversationFlowId,
           );
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
           this.logger.warn(
             `Retell flow cleanup failed tenantId=${tenantId} flowId=${deployment.retellConversationFlowId} error=${message}`,
           );
@@ -235,7 +251,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         channelResults.push(result);
       }
 
-      const successCount = channelResults.filter((item) => item.status === 'active').length;
+      const successCount = channelResults.filter(
+        (item) => item.status === 'active',
+      ).length;
       const overallStatus =
         successCount === channelResults.length
           ? 'active'
@@ -265,7 +283,8 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         channels: channelResults,
       };
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown deployment error';
+      const message =
+        error instanceof Error ? error.message : 'Unknown deployment error';
       await this.agentInstanceModel
         .updateOne(
           { _id: instance._id, status: 'deploying' },
@@ -273,7 +292,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         )
         .catch((updateError: unknown) => {
           const updateMessage =
-            updateError instanceof Error ? updateError.message : 'Unknown status update error';
+            updateError instanceof Error
+              ? updateError.message
+              : 'Unknown status update error';
           this.logger.error(
             `Failed to mark deployment as failed: instance=${instance._id.toString()} error=${updateMessage}`,
           );
@@ -291,7 +312,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         )
         .catch((auditError: unknown) => {
           const auditMessage =
-            auditError instanceof Error ? auditError.message : 'Unknown audit error';
+            auditError instanceof Error
+              ? auditError.message
+              : 'Unknown audit error';
           this.logger.error(
             `Failed to write deployment failure audit: instance=${instance._id.toString()} error=${auditMessage}`,
           );
@@ -364,34 +387,51 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         tenantId,
         agentInstanceId: instanceId,
         apiBaseUrl,
-        retellToolApiKey: this.configService.get<string>('RETELL_TOOL_API_KEY') ?? undefined,
+        retellToolApiKey:
+          this.configService.get<string>('RETELL_TOOL_API_KEY') ?? undefined,
       });
       const sanitizedFlowSnapshot = this.sanitizeFlowSnapshot(processedFlow);
       const flowVersion = this.getFlowVersion(processedFlow);
-      const conversationFlowPayload =
-        this.buildConversationFlowPayload(processedFlow);
-      const conversationFlowResponse =
-        await this.retellClient.createConversationFlow(conversationFlowPayload);
-      createdConversationFlowId = conversationFlowResponse.conversation_flow_id;
-
-      const responseEngine: Record<string, unknown> = {
-        type: 'conversation-flow',
-        conversation_flow_id: conversationFlowResponse.conversation_flow_id,
-      };
-
+      const deploymentKind = this.getDeploymentKind(processedFlow);
       let agentResponse: { agent_id: string };
-      if (channel === 'voice') {
-        const voiceId = this.getVoiceId(processedFlow);
-        agentResponse = await this.retellClient.createAgent({
-          agent_name: this.getAgentName(instance, channel),
-          response_engine: responseEngine,
-          voice_id: voiceId,
-        });
+      if (deploymentKind === 'conversation-flow') {
+        const conversationFlowPayload =
+          this.buildConversationFlowPayload(processedFlow);
+        const conversationFlowResponse =
+          await this.retellClient.createConversationFlow(
+            conversationFlowPayload,
+          );
+        createdConversationFlowId =
+          conversationFlowResponse.conversation_flow_id;
+
+        const responseEngine: Record<string, unknown> = {
+          type: 'conversation-flow',
+          conversation_flow_id: conversationFlowResponse.conversation_flow_id,
+        };
+
+        if (channel === 'voice') {
+          const voiceId = this.getVoiceId(processedFlow);
+          agentResponse = await this.retellClient.createAgent({
+            agent_name: this.getAgentName(instance, channel),
+            response_engine: responseEngine,
+            voice_id: voiceId,
+          });
+        } else {
+          agentResponse = await this.retellClient.createChatAgent({
+            agent_name: this.getAgentName(instance, channel),
+            response_engine: responseEngine,
+          });
+        }
       } else {
-        agentResponse = await this.retellClient.createChatAgent({
-          agent_name: this.getAgentName(instance, channel),
-          response_engine: responseEngine,
-        });
+        if (channel === 'voice') {
+          agentResponse = await this.retellClient.createAgent(
+            this.buildDirectAgentPayload(processedFlow, instance, channel),
+          );
+        } else {
+          agentResponse = await this.retellClient.createChatAgent(
+            this.buildDirectAgentPayload(processedFlow, instance, channel),
+          );
+        }
       }
       createdRetellAgentId = agentResponse.agent_id;
 
@@ -402,8 +442,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         provider: 'retell',
         status: 'active',
         retellAgentId: agentResponse.agent_id,
-        retellConversationFlowId:
-          conversationFlowResponse.conversation_flow_id,
+        retellConversationFlowId: createdConversationFlowId,
         flowSnapshot: sanitizedFlowSnapshot,
         error: null,
       });
@@ -412,8 +451,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         channel,
         status: 'active',
         retellAgentId: agentResponse.agent_id,
-        retellConversationFlowId:
-          conversationFlowResponse.conversation_flow_id,
+        retellConversationFlowId: createdConversationFlowId,
         error: null,
       };
     } catch (error: unknown) {
@@ -423,20 +461,26 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         `Channel deployment failed: instance=${instanceId} channel=${channel} error=${message}`,
       );
       if (createdRetellAgentId) {
-        await this.retellClient.deleteAgent(createdRetellAgentId).catch((cleanupError: unknown) => {
-          const cleanupMessage =
-            cleanupError instanceof Error ? cleanupError.message : 'Unknown cleanup error';
-          this.logger.warn(
-            `Retell agent rollback failed: instance=${instanceId} channel=${channel} agentId=${createdRetellAgentId} error=${cleanupMessage}`,
-          );
-        });
+        await this.retellClient
+          .deleteAgent(createdRetellAgentId)
+          .catch((cleanupError: unknown) => {
+            const cleanupMessage =
+              cleanupError instanceof Error
+                ? cleanupError.message
+                : 'Unknown cleanup error';
+            this.logger.warn(
+              `Retell agent rollback failed: instance=${instanceId} channel=${channel} agentId=${createdRetellAgentId} error=${cleanupMessage}`,
+            );
+          });
       }
       if (createdConversationFlowId) {
         await this.retellClient
           .deleteConversationFlow(createdConversationFlowId)
           .catch((cleanupError: unknown) => {
             const cleanupMessage =
-              cleanupError instanceof Error ? cleanupError.message : 'Unknown cleanup error';
+              cleanupError instanceof Error
+                ? cleanupError.message
+                : 'Unknown cleanup error';
             this.logger.warn(
               `Retell flow rollback failed: instance=${instanceId} channel=${channel} flowId=${createdConversationFlowId} error=${cleanupMessage}`,
             );
@@ -479,7 +523,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     return template;
   }
 
-  private getTemplateFlow(template: AgentTemplateDocument): Record<string, unknown> {
+  private getTemplateFlow(
+    template: AgentTemplateDocument,
+  ): Record<string, unknown> {
     const flow = template.flowTemplate;
     if (!flow || typeof flow !== 'object' || Array.isArray(flow)) {
       throw new NotFoundException('Template flow is missing or invalid');
@@ -526,6 +572,55 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     return rawConversationFlow as RetellConversationFlowPayload;
   }
 
+  private buildDirectAgentPayload(
+    processedFlow: Record<string, unknown>,
+    instance: AgentInstanceDocument,
+    channel: string,
+  ): Record<string, unknown> {
+    const payload = structuredClone(processedFlow);
+    payload.agent_name = this.getAgentName(instance, channel);
+    if (channel !== 'voice') {
+      delete payload.voice_id;
+      delete payload.voice_model;
+      delete payload.fallback_voice_ids;
+      delete payload.voice_temperature;
+      delete payload.voice_speed;
+      delete payload.volume;
+      delete payload.enable_backchannel;
+      delete payload.backchannel_words;
+      delete payload.ambient_sound;
+      delete payload.ambient_sound_volume;
+      delete payload.interruption_sensitivity;
+      delete payload.max_call_duration_ms;
+      delete payload.end_call_after_silence_ms;
+      delete payload.begin_message_delay_ms;
+      delete payload.stt_mode;
+      delete payload.custom_stt_config;
+      delete payload.denoising_mode;
+      delete payload.allow_user_dtmf;
+      delete payload.user_dtmf_options;
+    }
+    return payload;
+  }
+
+  private getDeploymentKind(
+    processedFlow: Record<string, unknown>,
+  ): ProcessedTemplateKind {
+    const responseEngine = processedFlow.response_engine;
+    if (
+      responseEngine &&
+      typeof responseEngine === 'object' &&
+      !Array.isArray(responseEngine) &&
+      (responseEngine as Record<string, unknown>).type === 'conversation-flow'
+    ) {
+      return 'conversation-flow';
+    }
+    if (processedFlow.conversationFlow) {
+      return 'conversation-flow';
+    }
+    return 'direct-agent';
+  }
+
   private getFlowVersion(processedFlow: Record<string, unknown>): number {
     const maybeResponseEngine = processedFlow.response_engine;
     if (
@@ -551,7 +646,10 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     return voiceId;
   }
 
-  private getAgentName(instance: AgentInstanceDocument, channel: string): string {
+  private getAgentName(
+    instance: AgentInstanceDocument,
+    channel: string,
+  ): string {
     const base = instance.name?.trim() || instance._id.toString();
     return `${base}-${channel}`;
   }
@@ -561,7 +659,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     channels: ChannelDeployResult[],
   ): void {
     const primaryChannel = instance.channelsEnabled[0] ?? instance.channel;
-    const primaryDeployment = channels.find((item) => item.channel === primaryChannel);
+    const primaryDeployment = channels.find(
+      (item) => item.channel === primaryChannel,
+    );
     if (!primaryDeployment || primaryDeployment.status !== 'active') {
       instance.retellAgentId = null;
       instance.retellLlmId = null;
@@ -613,7 +713,9 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
 
   private requireTenantId(instance: AgentInstanceDocument): string {
     if (!instance.tenantId) {
-      throw new ConflictException('Agent must be assigned to a tenant before deployment');
+      throw new ConflictException(
+        'Agent must be assigned to a tenant before deployment',
+      );
     }
     return instance.tenantId.toString();
   }
@@ -629,7 +731,8 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
 
   private isTruthy(value: string | boolean | undefined): boolean {
     if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') return value.toLowerCase() === 'true' || value === '1';
+    if (typeof value === 'string')
+      return value.toLowerCase() === 'true' || value === '1';
     return false;
   }
 }

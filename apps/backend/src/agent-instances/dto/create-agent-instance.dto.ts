@@ -1,4 +1,12 @@
-import { ArrayNotEmpty, IsArray, IsIn, IsMongoId, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsIn,
+  IsMongoId,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 /**
@@ -8,7 +16,7 @@ export class CreateAgentInstanceDto {
   @IsMongoId()
   templateId: string;
 
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsOptional()
   @MaxLength(200)

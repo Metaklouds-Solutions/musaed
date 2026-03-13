@@ -54,9 +54,9 @@ describe('AgentDeploymentService', () => {
       } as never,
     );
 
-    await expect(service.deployAgentInstance(instance._id.toString())).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.deployAgentInstance(instance._id.toString()),
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(agentInstanceModel.updateOne).toHaveBeenCalledWith(
       { _id: instance._id, status: 'deploying' },
       { $set: { status: 'failed' } },
@@ -93,6 +93,8 @@ describe('AgentDeploymentService', () => {
           .fn()
           .mockResolvedValue({ conversation_flow_id: 'flow_123' }),
         createChatAgent: jest.fn().mockResolvedValue({ agent_id: 'agent_123' }),
+        deleteAgent: jest.fn().mockResolvedValue({ success: true }),
+        deleteConversationFlow: jest.fn().mockResolvedValue({ success: true }),
       } as never,
       {
         getOrThrow: jest.fn().mockReturnValue('http://localhost:3001'),
@@ -112,6 +114,73 @@ describe('AgentDeploymentService', () => {
     expect(instance.status).toBe('active');
     expect(instance.save).toHaveBeenCalledTimes(1);
     expect(upsertByChannel).toHaveBeenCalled();
+  });
+
+  it('deploys direct retell-llm template without creating a conversation flow', async () => {
+    const instance = createMockAgentInstance({
+      channelsEnabled: ['voice'],
+      channel: 'voice',
+    });
+    const agentInstanceModel = {
+      findOneAndUpdate: jest.fn().mockResolvedValue(instance),
+      findById: jest.fn().mockResolvedValue(instance),
+      updateOne: jest.fn().mockResolvedValue({ acknowledged: true }),
+    };
+    const agentTemplateModel = {
+      findOne: jest.fn().mockResolvedValue({
+        flowTemplate: {
+          response_engine: {
+            type: 'retell-llm',
+            llm_id: 'llm_123',
+            version: 0,
+          },
+          voice_id: '11labs-Maren',
+          language: 'en-US',
+        },
+      }),
+    };
+    const createConversationFlow = jest.fn();
+    const createAgent = jest
+      .fn()
+      .mockResolvedValue({ agent_id: 'agent_voice_123' });
+    const service = new AgentDeploymentService(
+      agentInstanceModel as never,
+      agentTemplateModel as never,
+      {
+        upsertByChannel: jest.fn().mockResolvedValue(undefined),
+      } as never,
+      {
+        createConversationFlow,
+        createAgent,
+        deleteAgent: jest.fn().mockResolvedValue({ success: true }),
+        deleteConversationFlow: jest.fn().mockResolvedValue({ success: true }),
+      } as never,
+      {
+        getOrThrow: jest.fn().mockReturnValue('http://localhost:3001'),
+        get: jest.fn(),
+      } as never,
+      {
+        log: jest.fn().mockResolvedValue(undefined),
+      } as never,
+      {
+        record: jest.fn(),
+      } as never,
+    );
+
+    const result = await service.deployAgentInstance(instance._id.toString());
+
+    expect(result.overallStatus).toBe('active');
+    expect(createConversationFlow).not.toHaveBeenCalled();
+    expect(createAgent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agent_name: expect.stringContaining('-voice'),
+        response_engine: expect.objectContaining({
+          type: 'retell-llm',
+          llm_id: 'llm_123',
+        }),
+        voice_id: '11labs-Maren',
+      }),
+    );
   });
 
   it('falls back to localhost API base URL when API_BASE_URL is missing', async () => {
@@ -149,6 +218,8 @@ describe('AgentDeploymentService', () => {
       {
         createConversationFlow,
         createChatAgent: jest.fn().mockResolvedValue({ agent_id: 'agent_456' }),
+        deleteAgent: jest.fn().mockResolvedValue({ success: true }),
+        deleteConversationFlow: jest.fn().mockResolvedValue({ success: true }),
       } as never,
       {
         getOrThrow: jest.fn(),

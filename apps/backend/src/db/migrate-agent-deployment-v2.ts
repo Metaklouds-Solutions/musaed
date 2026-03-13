@@ -78,7 +78,8 @@ function readRunIdFromArgs(): string | null {
  * Safely resolves a channel from legacy instance data.
  */
 function resolveLegacyChannel(instance: AgentInstanceRecord): string {
-  const channel = typeof instance.channel === 'string' ? instance.channel : 'chat';
+  const channel =
+    typeof instance.channel === 'string' ? instance.channel : 'chat';
   return CHANNEL_VALUES.has(channel) ? channel : 'chat';
 }
 
@@ -100,8 +101,12 @@ function mapDeploymentStatus(instanceStatus: string | undefined): string {
  */
 async function runMigration(runId: string): Promise<void> {
   const agentInstances = mongoose.connection.collection('agent_instances');
-  const deployments = mongoose.connection.collection('agent_channel_deployments');
-  const backups = mongoose.connection.collection('agent_instance_migration_backups');
+  const deployments = mongoose.connection.collection(
+    'agent_channel_deployments',
+  );
+  const backups = mongoose.connection.collection(
+    'agent_instance_migration_backups',
+  );
 
   const cursor = agentInstances.find<AgentInstanceRecord>({ deletedAt: null });
   let processed = 0;
@@ -115,15 +120,22 @@ async function runMigration(runId: string): Promise<void> {
     }
     const defaultChannel = resolveLegacyChannel(instance);
     const channelsEnabled =
-      Array.isArray(instance.channelsEnabled) && instance.channelsEnabled.length > 0
+      Array.isArray(instance.channelsEnabled) &&
+      instance.channelsEnabled.length > 0
         ? instance.channelsEnabled
         : [defaultChannel];
-    const normalizedChannels = channelsEnabled.filter((channel) => CHANNEL_VALUES.has(channel));
-    const nextChannels = normalizedChannels.length > 0 ? normalizedChannels : [defaultChannel];
+    const normalizedChannels = channelsEnabled.filter((channel) =>
+      CHANNEL_VALUES.has(channel),
+    );
+    const nextChannels =
+      normalizedChannels.length > 0 ? normalizedChannels : [defaultChannel];
 
     const updates: Record<string, unknown> = {};
     const previousFields: BackupEntry['previousFields'] = {};
-    if (!Array.isArray(instance.channelsEnabled) || instance.channelsEnabled.length === 0) {
+    if (
+      !Array.isArray(instance.channelsEnabled) ||
+      instance.channelsEnabled.length === 0
+    ) {
       previousFields.channelsEnabled = instance.channelsEnabled;
       updates.channelsEnabled = nextChannels;
     }
@@ -154,8 +166,10 @@ async function runMigration(runId: string): Promise<void> {
         channel,
         provider: 'retell',
         status: mapDeploymentStatus(instance.status),
-        retellAgentId: channel === defaultChannel ? instance.retellAgentId ?? null : null,
-        retellConversationFlowId: channel === defaultChannel ? instance.retellLlmId ?? null : null,
+        retellAgentId:
+          channel === defaultChannel ? (instance.retellAgentId ?? null) : null,
+        retellConversationFlowId:
+          channel === defaultChannel ? (instance.retellLlmId ?? null) : null,
         flowSnapshot: {},
         error: null,
         createdBy: null,
@@ -173,7 +187,10 @@ async function runMigration(runId: string): Promise<void> {
       updatedInstances += 1;
     }
 
-    if (Object.keys(previousFields).length > 0 || createdDeploymentIds.length > 0) {
+    if (
+      Object.keys(previousFields).length > 0 ||
+      createdDeploymentIds.length > 0
+    ) {
       const backupEntry: BackupEntry = {
         runId,
         mode: 'migrate',
@@ -204,8 +221,12 @@ async function runMigration(runId: string): Promise<void> {
  */
 async function runRollback(runId: string): Promise<void> {
   const agentInstances = mongoose.connection.collection('agent_instances');
-  const deployments = mongoose.connection.collection('agent_channel_deployments');
-  const backups = mongoose.connection.collection('agent_instance_migration_backups');
+  const deployments = mongoose.connection.collection(
+    'agent_channel_deployments',
+  );
+  const backups = mongoose.connection.collection(
+    'agent_instance_migration_backups',
+  );
   const rollbackEntries = await backups
     .find<BackupEntry>({ runId, mode: 'migrate' })
     .sort({ createdAt: -1 })
@@ -245,7 +266,10 @@ async function runRollback(runId: string): Promise<void> {
         updatePayload.$unset = unsetFields;
       }
       if (Object.keys(updatePayload).length > 0) {
-        await agentInstances.updateOne({ _id: entry.agentInstanceId }, updatePayload);
+        await agentInstances.updateOne(
+          { _id: entry.agentInstanceId },
+          updatePayload,
+        );
         restoredInstances += 1;
       }
     }
@@ -285,7 +309,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : 'Unknown migration error';
+  const message =
+    error instanceof Error ? error.message : 'Unknown migration error';
   console.error(JSON.stringify({ error: message }));
   process.exit(1);
 });

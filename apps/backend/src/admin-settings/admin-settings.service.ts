@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { AdminConfig, AdminConfigDocument } from './schemas/admin-config.schema';
+import {
+  AdminConfig,
+  AdminConfigDocument,
+} from './schemas/admin-config.schema';
 const DEFAULT_RETENTION = [
   { id: 'rp_1', name: 'Call transcripts', days: 90, enabled: true },
   { id: 'rp_2', name: 'Audit logs', days: 365, enabled: true },
@@ -15,7 +18,8 @@ const DEFAULT_INTEGRATIONS = [
 @Injectable()
 export class AdminSettingsService {
   constructor(
-    @InjectModel(AdminConfig.name) private configModel: Model<AdminConfigDocument>,
+    @InjectModel(AdminConfig.name)
+    private configModel: Model<AdminConfigDocument>,
   ) {}
 
   private async getOrCreate(): Promise<AdminConfigDocument> {
@@ -30,7 +34,9 @@ export class AdminSettingsService {
     return doc;
   }
 
-  async getRetentionPolicies(): Promise<{ id: string; name: string; days: number; enabled: boolean }[]> {
+  async getRetentionPolicies(): Promise<
+    { id: string; name: string; days: number; enabled: boolean }[]
+  > {
     const doc = await this.getOrCreate();
     const policies = doc.retentionPolicies ?? DEFAULT_RETENTION;
     return policies.map((p) => ({
@@ -41,18 +47,28 @@ export class AdminSettingsService {
     }));
   }
 
-  async updateRetentionPolicy(id: string, updates: { enabled?: boolean; days?: number }): Promise<void> {
+  async updateRetentionPolicy(
+    id: string,
+    updates: { enabled?: boolean; days?: number },
+  ): Promise<void> {
     const doc = await this.getOrCreate();
     const policies = [...(doc.retentionPolicies ?? DEFAULT_RETENTION)];
     const idx = policies.findIndex((p) => p.id === id);
     if (idx >= 0) {
-      if (updates.enabled !== undefined) policies[idx].enabled = updates.enabled;
-      if (updates.days !== undefined) policies[idx].days = Math.max(1, Math.min(3650, updates.days));
-      await this.configModel.updateOne({ key: 'default' }, { $set: { retentionPolicies: policies } });
+      if (updates.enabled !== undefined)
+        policies[idx].enabled = updates.enabled;
+      if (updates.days !== undefined)
+        policies[idx].days = Math.max(1, Math.min(3650, updates.days));
+      await this.configModel.updateOne(
+        { key: 'default' },
+        { $set: { retentionPolicies: policies } },
+      );
     }
   }
 
-  async setRetentionPolicies(policies: { id: string; name: string; days: number; enabled: boolean }[]): Promise<void> {
+  async setRetentionPolicies(
+    policies: { id: string; name: string; days: number; enabled: boolean }[],
+  ): Promise<void> {
     await this.configModel.updateOne(
       { key: 'default' },
       { $set: { retentionPolicies: policies } },
@@ -60,7 +76,14 @@ export class AdminSettingsService {
     );
   }
 
-  async getIntegrations(): Promise<{ id: string; name: string; status: string; config?: Record<string, string> }[]> {
+  async getIntegrations(): Promise<
+    {
+      id: string;
+      name: string;
+      status: string;
+      config?: Record<string, string>;
+    }[]
+  > {
     const doc = await this.getOrCreate();
     const integrations = doc.integrations ?? DEFAULT_INTEGRATIONS;
     return integrations.map((i) => ({
@@ -71,7 +94,14 @@ export class AdminSettingsService {
     }));
   }
 
-  async updateIntegrations(integrations: { id: string; name: string; status: string; config?: Record<string, string> }[]): Promise<void> {
+  async updateIntegrations(
+    integrations: {
+      id: string;
+      name: string;
+      status: string;
+      config?: Record<string, string>;
+    }[],
+  ): Promise<void> {
     await this.configModel.updateOne(
       { key: 'default' },
       { $set: { integrations } },
@@ -80,9 +110,25 @@ export class AdminSettingsService {
   }
 
   async getFullSettings(): Promise<{
-    retentionPolicies: { id: string; name: string; days: number; enabled: boolean }[];
-    integrations: { id: string; name: string; status: string; config?: Record<string, string> }[];
-    scheduledReportConfig?: { enabled: boolean; frequency: string; recipients: string[]; dayOfWeek: number; dayOfMonth: number };
+    retentionPolicies: {
+      id: string;
+      name: string;
+      days: number;
+      enabled: boolean;
+    }[];
+    integrations: {
+      id: string;
+      name: string;
+      status: string;
+      config?: Record<string, string>;
+    }[];
+    scheduledReportConfig?: {
+      enabled: boolean;
+      frequency: string;
+      recipients: string[];
+      dayOfWeek: number;
+      dayOfMonth: number;
+    };
   }> {
     const [retentionPolicies, integrations, doc] = await Promise.all([
       this.getRetentionPolicies(),
@@ -94,22 +140,58 @@ export class AdminSettingsService {
       retentionPolicies,
       integrations,
       scheduledReportConfig: cfg
-        ? { enabled: cfg.enabled, frequency: cfg.frequency ?? 'weekly', recipients: cfg.recipients ?? [], dayOfWeek: cfg.dayOfWeek ?? 1, dayOfMonth: cfg.dayOfMonth ?? 1 }
+        ? {
+            enabled: cfg.enabled,
+            frequency: cfg.frequency ?? 'weekly',
+            recipients: cfg.recipients ?? [],
+            dayOfWeek: cfg.dayOfWeek ?? 1,
+            dayOfMonth: cfg.dayOfMonth ?? 1,
+          }
         : undefined,
     };
   }
 
-  async getScheduledReportConfig(): Promise<{ enabled: boolean; frequency: string; recipients: string[]; dayOfWeek: number; dayOfMonth: number }> {
+  async getScheduledReportConfig(): Promise<{
+    enabled: boolean;
+    frequency: string;
+    recipients: string[];
+    dayOfWeek: number;
+    dayOfMonth: number;
+  }> {
     const doc = await this.getOrCreate();
     const cfg = doc.scheduledReportConfig;
     return cfg
-      ? { enabled: cfg.enabled, frequency: cfg.frequency ?? 'weekly', recipients: cfg.recipients ?? [], dayOfWeek: cfg.dayOfWeek ?? 1, dayOfMonth: cfg.dayOfMonth ?? 1 }
-      : { enabled: false, frequency: 'weekly', recipients: [], dayOfWeek: 1, dayOfMonth: 1 };
+      ? {
+          enabled: cfg.enabled,
+          frequency: cfg.frequency ?? 'weekly',
+          recipients: cfg.recipients ?? [],
+          dayOfWeek: cfg.dayOfWeek ?? 1,
+          dayOfMonth: cfg.dayOfMonth ?? 1,
+        }
+      : {
+          enabled: false,
+          frequency: 'weekly',
+          recipients: [],
+          dayOfWeek: 1,
+          dayOfMonth: 1,
+        };
   }
 
-  async setScheduledReportConfig(config: { enabled?: boolean; frequency?: string; recipients?: string[]; dayOfWeek?: number; dayOfMonth?: number }): Promise<void> {
+  async setScheduledReportConfig(config: {
+    enabled?: boolean;
+    frequency?: string;
+    recipients?: string[];
+    dayOfWeek?: number;
+    dayOfMonth?: number;
+  }): Promise<void> {
     const doc = await this.getOrCreate();
-    const current = doc.scheduledReportConfig ?? { enabled: false, frequency: 'weekly', recipients: [], dayOfWeek: 1, dayOfMonth: 1 };
+    const current = doc.scheduledReportConfig ?? {
+      enabled: false,
+      frequency: 'weekly',
+      recipients: [],
+      dayOfWeek: 1,
+      dayOfMonth: 1,
+    };
     await this.configModel.updateOne(
       { key: 'default' },
       {

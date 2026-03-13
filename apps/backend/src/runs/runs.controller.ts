@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query, UseGuards, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
@@ -31,7 +38,10 @@ export class RunsController {
     @Param('callId') callId: string,
     @Query('tenantId') tenantId?: string,
   ) {
-    const run = await this.runsService.getRunByCallId(callId, tenantId || undefined);
+    const run = await this.runsService.getRunByCallId(
+      callId,
+      tenantId || undefined,
+    );
     if (!run) throw new NotFoundException('Run not found for this call');
     return run;
   }

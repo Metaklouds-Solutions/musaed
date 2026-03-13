@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { TenantStaff, TenantStaffDocument } from '../tenants/schemas/tenant-staff.schema';
+import {
+  TenantStaff,
+  TenantStaffDocument,
+} from '../tenants/schemas/tenant-staff.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
@@ -16,7 +19,8 @@ import { AuditService } from '../audit/audit.service';
 @Injectable()
 export class StaffService {
   constructor(
-    @InjectModel(TenantStaff.name) private staffModel: Model<TenantStaffDocument>,
+    @InjectModel(TenantStaff.name)
+    private staffModel: Model<TenantStaffDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private authService: AuthService,
     private emailService: EmailService,
@@ -38,7 +42,10 @@ export class StaffService {
   }
 
   async invite(tenantId: string, dto: InviteStaffDto) {
-    let user = await this.userModel.findOne({ email: dto.email, deletedAt: null });
+    let user = await this.userModel.findOne({
+      email: dto.email,
+      deletedAt: null,
+    });
     const isNewUser = !user;
 
     if (!user) {
@@ -55,7 +62,10 @@ export class StaffService {
       userId: user._id,
       tenantId: new Types.ObjectId(tenantId),
     });
-    if (existing) throw new ConflictException('Staff member already exists for this tenant');
+    if (existing)
+      throw new ConflictException(
+        'Staff member already exists for this tenant',
+      );
 
     const staff = await this.staffModel.create({
       userId: user._id,
@@ -66,14 +76,22 @@ export class StaffService {
     });
 
     if (isNewUser) {
-      const token = await this.authService.generateInviteToken(user._id.toString(), 'invite');
+      const token = await this.authService.generateInviteToken(
+        user._id.toString(),
+        'invite',
+      );
       await this.emailService.sendInviteEmail(user.email, user.name, token);
     }
 
     return staff;
   }
 
-  async update(id: string, tenantId: string, dto: UpdateStaffDto, actorUserId?: string) {
+  async update(
+    id: string,
+    tenantId: string,
+    dto: UpdateStaffDto,
+    actorUserId?: string,
+  ) {
     const staff = await this.staffModel.findOneAndUpdate(
       { _id: id, tenantId: new Types.ObjectId(tenantId) },
       { $set: dto },

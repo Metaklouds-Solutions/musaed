@@ -1,12 +1,31 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, PipelineStage } from 'mongoose';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
-import { Customer, CustomerDocument } from '../customers/schemas/customer.schema';
-import { AgentInstance, AgentInstanceDocument } from '../agent-instances/schemas/agent-instance.schema';
-import { SupportTicket, SupportTicketDocument } from '../support/schemas/support-ticket.schema';
-import { TenantStaff, TenantStaffDocument } from '../tenants/schemas/tenant-staff.schema';
-import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
+import {
+  Customer,
+  CustomerDocument,
+} from '../customers/schemas/customer.schema';
+import {
+  AgentInstance,
+  AgentInstanceDocument,
+} from '../agent-instances/schemas/agent-instance.schema';
+import {
+  SupportTicket,
+  SupportTicketDocument,
+} from '../support/schemas/support-ticket.schema';
+import {
+  TenantStaff,
+  TenantStaffDocument,
+} from '../tenants/schemas/tenant-staff.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from '../calls/schemas/call-session.schema';
 
 export interface FunnelStageDto {
   stage: string;
@@ -40,6 +59,33 @@ export interface TenantRecentCallDto {
   createdAt: string;
 }
 
+export interface TenantDashboardSummaryDto {
+  kpis: {
+    callsToday: number;
+    calls7d: number;
+    appointmentsBooked: number;
+    escalations: number;
+    missedNoAnswer: number;
+    failedCalls: number;
+    avgDurationSec: number;
+    topOutcome: string;
+    minutesUsed: number;
+    creditBalance: number;
+  };
+  metrics: {
+    totalBookings: number;
+    conversionRate: number;
+    callsHandled: number;
+    escalationRate: number;
+    costSaved: number;
+    aiConfidenceScore: number;
+  };
+  signal: {
+    status: 'healthy' | 'warning' | 'empty';
+    reason: string;
+  };
+}
+
 @Injectable()
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
@@ -47,10 +93,14 @@ export class DashboardService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(Customer.name) private customerModel: Model<CustomerDocument>,
-    @InjectModel(AgentInstance.name) private instanceModel: Model<AgentInstanceDocument>,
-    @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
-    @InjectModel(TenantStaff.name) private staffModel: Model<TenantStaffDocument>,
-    @InjectModel(CallSession.name) private callSessionModel: Model<CallSessionDocument>,
+    @InjectModel(AgentInstance.name)
+    private instanceModel: Model<AgentInstanceDocument>,
+    @InjectModel(SupportTicket.name)
+    private ticketModel: Model<SupportTicketDocument>,
+    @InjectModel(TenantStaff.name)
+    private staffModel: Model<TenantStaffDocument>,
+    @InjectModel(CallSession.name)
+    private callSessionModel: Model<CallSessionDocument>,
   ) {}
 
   async getTenantMetrics(tenantId: string) {
@@ -73,11 +123,23 @@ export class DashboardService {
       this.customerModel.countDocuments({ tenantId: tid, deletedAt: null }),
       this.bookingModel.countDocuments({ tenantId: tid }),
       this.instanceModel.countDocuments({ tenantId: tid, status: 'active' }),
-      this.ticketModel.countDocuments({ tenantId: tid, status: { $in: ['open', 'in_progress'] } }),
+      this.ticketModel.countDocuments({
+        tenantId: tid,
+        status: { $in: ['open', 'in_progress'] },
+      }),
       this.callSessionModel.countDocuments({ tenantId: tid }),
-      this.callSessionModel.countDocuments({ tenantId: tid, outcome: 'booked' }),
-      this.callSessionModel.countDocuments({ tenantId: tid, outcome: 'failed' }),
-      this.callSessionModel.countDocuments({ tenantId: tid, outcome: 'escalated' }),
+      this.callSessionModel.countDocuments({
+        tenantId: tid,
+        outcome: 'booked',
+      }),
+      this.callSessionModel.countDocuments({
+        tenantId: tid,
+        outcome: 'failed',
+      }),
+      this.callSessionModel.countDocuments({
+        tenantId: tid,
+        outcome: 'escalated',
+      }),
       this.callSessionModel.aggregate<{ value: number }>([
         { $match: { tenantId: tid, durationMs: { $ne: null } } },
         { $group: { _id: null, value: { $avg: '$durationMs' } } },
@@ -126,15 +188,21 @@ export class DashboardService {
       total: Object.values(roleCounts).reduce((acc, n) => acc + n, 0),
     };
 
-    const openTickets = (openTicketsList as { _id?: unknown; title?: string; status?: string; priority?: string; createdAt?: Date }[]).map(
-      (t) => ({
-        id: t._id != null ? String(t._id) : '',
-        title: t.title ?? '',
-        status: t.status ?? '',
-        priority: t.priority ?? 'medium',
-        createdAt: t.createdAt,
-      }),
-    );
+    const openTickets = (
+      openTicketsList as {
+        _id?: unknown;
+        title?: string;
+        status?: string;
+        priority?: string;
+        createdAt?: Date;
+      }[]
+    ).map((t) => ({
+      id: t._id != null ? String(t._id) : '',
+      title: t.title ?? '',
+      status: t.status ?? '',
+      priority: t.priority ?? 'medium',
+      createdAt: t.createdAt,
+    }));
 
     return {
       totalCustomers,
@@ -152,7 +220,10 @@ export class DashboardService {
         failed: failedCallsCount,
         escalated: escalatedCallsCount,
         unknown: Math.max(
-          totalCalls - bookedCallsCount - failedCallsCount - escalatedCallsCount,
+          totalCalls -
+            bookedCallsCount -
+            failedCallsCount -
+            escalatedCallsCount,
           0,
         ),
       },
@@ -160,7 +231,72 @@ export class DashboardService {
     };
   }
 
-  async getFunnel(tenantId: string, dateFrom?: string, dateTo?: string): Promise<FunnelStageDto[]> {
+  async getTenantSummary(
+    tenantId: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ): Promise<TenantDashboardSummaryDto> {
+    const analytics = await this.getCallsAnalyticsForRange(tenantId, dateFrom, dateTo);
+    const [callsToday, totalBookings] = await Promise.all([
+      this.callSessionModel.countDocuments({
+        tenantId: new Types.ObjectId(tenantId),
+        startedAt: {
+          $gte: this.startOfToday(),
+          $lte: new Date(),
+        },
+      }),
+      this.bookingModel.countDocuments(this.buildBookingRangeFilter(tenantId, dateFrom, dateTo)),
+    ]);
+
+    const totalCalls = analytics.totalCalls;
+    const booked = analytics.outcomes.booked;
+    const escalated = analytics.outcomes.escalated;
+    const failed = analytics.outcomes.failed;
+    const topOutcome =
+      booked >= escalated && booked >= failed
+        ? 'booked'
+        : escalated >= failed
+          ? 'escalated'
+          : failed > 0
+            ? 'failed'
+            : '—';
+    const minutesUsed = totalCalls > 0 ? (analytics.avgDuration * totalCalls) / 60 : 0;
+    const signal = this.buildTenantSignal({
+      totalCalls,
+      totalBookings,
+      recentRows: analytics.totalCalls,
+    });
+
+    return {
+      kpis: {
+        callsToday,
+        calls7d: totalCalls,
+        appointmentsBooked: totalBookings,
+        escalations: escalated,
+        missedNoAnswer: 0,
+        failedCalls: failed,
+        avgDurationSec: analytics.avgDuration,
+        topOutcome,
+        minutesUsed,
+        creditBalance: 0,
+      },
+      metrics: {
+        totalBookings,
+        conversionRate: totalCalls > 0 ? (booked / totalCalls) * 100 : 0,
+        callsHandled: totalCalls,
+        escalationRate: totalCalls > 0 ? (escalated / totalCalls) * 100 : 0,
+        costSaved: minutesUsed * 2,
+        aiConfidenceScore: 0,
+      },
+      signal,
+    };
+  }
+
+  async getFunnel(
+    tenantId: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ): Promise<FunnelStageDto[]> {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
@@ -185,8 +321,10 @@ export class DashboardService {
       }>(pipeline);
       const statusCounts: Record<string, number> = {};
       const outcomeCounts: Record<string, number> = {};
-      for (const r of result?.byStatus ?? []) statusCounts[r._id ?? 'started'] = r.count;
-      for (const r of result?.byOutcome ?? []) outcomeCounts[r._id ?? 'unknown'] = r.count;
+      for (const r of result?.byStatus ?? [])
+        statusCounts[r._id ?? 'started'] = r.count;
+      for (const r of result?.byOutcome ?? [])
+        outcomeCounts[r._id ?? 'unknown'] = r.count;
       return [
         { stage: 'started', count: statusCounts.started ?? 0 },
         { stage: 'ended', count: statusCounts.ended ?? 0 },
@@ -201,7 +339,11 @@ export class DashboardService {
     }
   }
 
-  async getTrend(tenantId: string, dateFrom?: string, dateTo?: string): Promise<TrendPointDto[]> {
+  async getTrend(
+    tenantId: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ): Promise<TrendPointDto[]> {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
@@ -213,10 +355,18 @@ export class DashboardService {
       }
       const pipeline: PipelineStage[] = [
         { $match: match },
-        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, count: { $sum: 1 } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+            count: { $sum: 1 },
+          },
+        },
         { $sort: { _id: 1 } },
       ];
-      const rows = await this.bookingModel.aggregate<{ _id: string; count: number }>(pipeline);
+      const rows = await this.bookingModel.aggregate<{
+        _id: string;
+        count: number;
+      }>(pipeline);
       return rows.map((r) => ({ date: r._id, bookings: r.count }));
     } catch (error) {
       this.logger.error('getTrend aggregation failed', error);
@@ -224,7 +374,11 @@ export class DashboardService {
     }
   }
 
-  async getRoiMetrics(tenantId: string, dateFrom?: string, dateTo?: string): Promise<RoiMetricsDto> {
+  async getRoiMetrics(
+    tenantId: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ): Promise<RoiMetricsDto> {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
@@ -237,7 +391,12 @@ export class DashboardService {
       const [totalMinutes, bookedCount] = await Promise.all([
         this.callSessionModel.aggregate<{ total: number }>([
           { $match: { ...match, durationMs: { $ne: null } } },
-          { $group: { _id: null, total: { $sum: { $divide: ['$durationMs', 60_000] } } } },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: { $divide: ['$durationMs', 60_000] } },
+            },
+          },
         ]),
         this.callSessionModel.countDocuments({ ...match, outcome: 'booked' }),
       ]);
@@ -253,19 +412,31 @@ export class DashboardService {
     }
   }
 
-  async getTenantAgentStatus(tenantId: string): Promise<TenantAgentStatusDto | null> {
+  async getTenantAgentStatus(
+    tenantId: string,
+  ): Promise<TenantAgentStatusDto | null> {
     const agent = await this.instanceModel
-      .findOne({ tenantId: new Types.ObjectId(tenantId), channel: 'voice', status: { $in: ['active', 'partially_deployed', 'paused'] } })
+      .findOne({
+        tenantId: new Types.ObjectId(tenantId),
+        channel: 'voice',
+        status: { $in: ['active', 'partially_deployed', 'paused'] },
+      })
       .sort({ lastSyncedAt: -1 })
       .select('status lastSyncedAt customConfig')
       .lean();
     if (!agent) return null;
-    const a = agent as { status?: string; lastSyncedAt?: Date; customConfig?: { language?: string } };
+    const a = agent as {
+      status?: string;
+      lastSyncedAt?: Date;
+      customConfig?: { language?: string };
+    };
     return {
       voice: 'default',
       language: (a.customConfig?.language as string) ?? 'en',
       status: a.status === 'paused' ? 'paused' : 'active',
-      lastSyncedAt: a.lastSyncedAt ? new Date(a.lastSyncedAt).toISOString() : new Date().toISOString(),
+      lastSyncedAt: a.lastSyncedAt
+        ? new Date(a.lastSyncedAt).toISOString()
+        : new Date().toISOString(),
     };
   }
 
@@ -276,7 +447,10 @@ export class DashboardService {
     dateTo?: string,
   ): Promise<TenantRecentCallDto[]> {
     const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid, outcome: { $in: ['booked', 'escalated', 'failed'] } };
+    const match: Record<string, unknown> = {
+      tenantId: tid,
+      outcome: { $in: ['booked', 'escalated', 'failed'] },
+    };
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
       if (dateFrom) dateFilter.$gte = new Date(dateFrom);
@@ -290,14 +464,140 @@ export class DashboardService {
       .select('_id outcome durationMs createdAt')
       .lean();
     return calls.map((c) => {
-      const doc = c as { _id?: unknown; outcome?: string; durationMs?: number; createdAt?: Date };
+      const doc = c as {
+        _id?: unknown;
+        outcome?: string;
+        durationMs?: number;
+        createdAt?: Date;
+      };
       const outcome = doc.outcome as 'booked' | 'escalated' | 'failed';
       return {
         id: doc._id != null ? String(doc._id) : '',
         outcome: outcome ?? 'failed',
         duration: Math.round((doc.durationMs ?? 0) / 1000),
-        createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
+        createdAt: doc.createdAt
+          ? new Date(doc.createdAt).toISOString()
+          : new Date().toISOString(),
       };
     });
+  }
+
+  private async getCallsAnalyticsForRange(
+    tenantId: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ) {
+    const tid = new Types.ObjectId(tenantId);
+    const match: Record<string, unknown> = { tenantId: tid };
+    const from = dateFrom ? new Date(dateFrom) : this.startOfDaysAgo(6);
+    const to = dateTo ? new Date(dateTo) : new Date();
+    match.startedAt = { $gte: from, $lte: to };
+
+    const [grouped, durationAgg] = await Promise.all([
+      this.callSessionModel.aggregate<{ _id: string; count: number }>([
+        { $match: match },
+        { $group: { _id: '$outcome', count: { $sum: 1 } } },
+      ]),
+      this.callSessionModel.aggregate<{ totalCalls: number; avgDuration: number }>([
+        { $match: match },
+        {
+          $group: {
+            _id: null,
+            totalCalls: { $sum: 1 },
+            avgDuration: { $avg: '$durationMs' },
+          },
+        },
+      ]),
+    ]);
+
+    const outcomes = {
+      booked: 0,
+      escalated: 0,
+      failed: 0,
+      info_only: 0,
+      unknown: 0,
+    };
+    for (const row of grouped) {
+      if (row._id in outcomes) {
+        outcomes[row._id as keyof typeof outcomes] = row.count;
+      } else {
+        outcomes.unknown += row.count;
+      }
+    }
+
+    return {
+      totalCalls: durationAgg[0]?.totalCalls ?? 0,
+      avgDuration: Math.round((durationAgg[0]?.avgDuration ?? 0) / 1000),
+      outcomes,
+    };
+  }
+
+  private buildBookingRangeFilter(
+    tenantId: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ): Record<string, unknown> {
+    const filter: Record<string, unknown> = {
+      tenantId: new Types.ObjectId(tenantId),
+    };
+    const from = dateFrom
+      ? this.startOfDay(new Date(dateFrom))
+      : this.startOfDaysAgo(6);
+    const to = dateTo ? this.endOfDay(new Date(dateTo)) : this.endOfDay(new Date());
+    filter.date = { $gte: from, $lte: to };
+    return filter;
+  }
+
+  private buildTenantSignal(args: {
+    totalCalls: number;
+    totalBookings: number;
+    recentRows: number;
+  }): { status: 'healthy' | 'warning' | 'empty'; reason: string } {
+    if (args.totalCalls === 0 && args.totalBookings === 0) {
+      return {
+        status: 'empty',
+        reason: 'No calls or bookings were recorded in the selected range.',
+      };
+    }
+
+    if (args.totalCalls > 0 && args.recentRows === 0) {
+      return {
+        status: 'warning',
+        reason: 'Aggregate call counts exist, but recent call rows are missing.',
+      };
+    }
+
+    return {
+      status: 'healthy',
+      reason: 'Calls and bookings are flowing into the dashboard.',
+    };
+  }
+
+  private startOfToday(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  private startOfDaysAgo(daysAgo: number): Date {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    start.setDate(start.getDate() - daysAgo);
+    return start;
+  }
+
+  private startOfDay(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  private endOfDay(date: Date): Date {
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
   }
 }

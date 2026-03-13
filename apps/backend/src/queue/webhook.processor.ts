@@ -6,6 +6,7 @@ import { QUEUE_NAMES } from './queue.constants';
 import { WebhooksService } from '../webhooks/webhooks.service';
 import type { WebhookJobPayload } from './webhook-queue.service';
 import { RetellWebhookDto } from '../webhooks/dto/retell-webhook.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Processor(QUEUE_NAMES.WEBHOOKS, {
   concurrency: 2,
@@ -13,15 +14,24 @@ import { RetellWebhookDto } from '../webhooks/dto/retell-webhook.dto';
 export class WebhookProcessor extends WorkerHost {
   private readonly logger = new Logger(WebhookProcessor.name);
 
-  constructor(private webhooksService: WebhooksService) {
+  constructor(
+    private webhooksService: WebhooksService,
+    private notificationsService: NotificationsService,
+  ) {
     super();
   }
 
   async process(job: Job<WebhookJobPayload>): Promise<void> {
     const { source, eventId, eventType, payload } = job.data;
-    this.logger.log(`Processing webhook job: ${source} ${eventType} (${eventId})`);
+    this.logger.log(
+      `Processing webhook job: ${source} ${eventType} (${eventId})`,
+    );
 
-    const isDuplicate = await this.webhooksService.isDuplicateEvent(eventId, source, eventType);
+    const isDuplicate = await this.webhooksService.isDuplicateEvent(
+      eventId,
+      source,
+      eventType,
+    );
     if (isDuplicate) {
       this.logger.debug(`Duplicate skipped: ${eventId}`);
       return;
@@ -46,7 +56,7 @@ export class WebhookProcessor extends WorkerHost {
           this.logger.log(`Unhandled Retell event: ${eventType}`);
       }
     } else if (source === 'stripe') {
-      const data = payload as Record<string, unknown>;
+      const data = payload;
       switch (eventType) {
         case 'invoice.payment_succeeded':
           await this.webhooksService.handleInvoicePaid(data);
@@ -79,5 +89,26 @@ export class WebhookProcessor extends WorkerHost {
     Sentry.captureException(error, {
       extra: { eventId, source, eventType, jobId: job?.id },
     });
+    this.notificationsService
+      .createForAdmins({
+        type: 'webhook_job_failed',
+        source: String(source),
+        severity: 'important',
+        title: 'Webhook processing failed',
+        message: `${String(source)} webhook processing failed after retries`,
+        metadata: {
+          eventId,
+          eventType,
+          jobId: job?.id ?? null,
+          error: error.message,
+        },
+      })
+      .catch((notifyErr: unknown) => {
+        this.logger.error(
+          `Failed to notify admins about webhook job failure: ${
+            notifyErr instanceof Error ? notifyErr.message : String(notifyErr)
+          }`,
+        );
+      });
   }
 }

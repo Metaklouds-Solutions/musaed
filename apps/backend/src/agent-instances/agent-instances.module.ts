@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AgentInstance, AgentInstanceSchema } from './schemas/agent-instance.schema';
+import {
+  AgentInstance,
+  AgentInstanceSchema,
+} from './schemas/agent-instance.schema';
 import {
   AgentsTenantController,
   AgentsAdminController,
@@ -9,8 +12,14 @@ import {
 import { AgentsService } from './agents.service';
 import { AgentHealthService } from './agent-health.service';
 import { AgentDeploymentsModule } from '../agent-deployments/agent-deployments.module';
-import { AgentTemplate, AgentTemplateSchema } from '../agent-templates/schemas/agent-template.schema';
-import { CallSession, CallSessionSchema } from '../calls/schemas/call-session.schema';
+import {
+  AgentTemplate,
+  AgentTemplateSchema,
+} from '../agent-templates/schemas/agent-template.schema';
+import {
+  CallSession,
+  CallSessionSchema,
+} from '../calls/schemas/call-session.schema';
 import { RetellModule } from '../retell/retell.module';
 import { AlertsModule } from '../alerts/alerts.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -27,7 +36,11 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: CallSession.name, schema: CallSessionSchema },
     ]),
   ],
-  controllers: [AgentsTenantController, AgentsAdminController, AgentsAdminV1Controller],
+  controllers: [
+    AgentsTenantController,
+    AgentsAdminController,
+    AgentsAdminV1Controller,
+  ],
   providers: [AgentsService, AgentHealthService],
   exports: [AgentsService, AgentHealthService, MongooseModule],
 })

@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { EmailService } from '../email/email.service';
@@ -23,7 +27,9 @@ function mockUser(overrides: Record<string, unknown> = {}) {
     passwordHash: HASHED_PASSWORD,
     avatarUrl: null,
     deletedAt: null,
-    toJSON: function () { return { ...this }; },
+    toJSON: function () {
+      return { ...this };
+    },
     ...overrides,
   };
 }
@@ -36,7 +42,11 @@ function createMockModel(defaultDoc: unknown = null) {
     findById: jest.fn().mockResolvedValue(defaultDoc),
     findByIdAndUpdate: jest.fn().mockResolvedValue(defaultDoc),
     findOneAndUpdate: jest.fn().mockResolvedValue(defaultDoc),
-    create: jest.fn().mockImplementation((data: unknown) => Promise.resolve({ ...data as object, _id: 'new-id' })),
+    create: jest
+      .fn()
+      .mockImplementation((data: unknown) =>
+        Promise.resolve({ ...(data as object), _id: 'new-id' }),
+      ),
     updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
     updateMany: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
   };
@@ -121,44 +131,44 @@ describe('AuthService', () => {
       const user = mockUser();
       userModel.findOne.mockResolvedValue(user);
 
-      await expect(service.login('test@example.com', 'WrongPass')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.login('test@example.com', 'WrongPass'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for non-existent user', async () => {
       userModel.findOne.mockResolvedValue(null);
 
-      await expect(service.login('none@example.com', 'Pass123!')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.login('none@example.com', 'Pass123!'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw ForbiddenException for pending user', async () => {
       const user = mockUser({ status: 'pending' });
       userModel.findOne.mockResolvedValue(user);
 
-      await expect(service.login('test@example.com', 'ValidPass1!')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.login('test@example.com', 'ValidPass1!'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException for disabled user', async () => {
       const user = mockUser({ status: 'disabled' });
       userModel.findOne.mockResolvedValue(user);
 
-      await expect(service.login('test@example.com', 'ValidPass1!')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.login('test@example.com', 'ValidPass1!'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException for user with no password', async () => {
       const user = mockUser({ passwordHash: null });
       userModel.findOne.mockResolvedValue(user);
 
-      await expect(service.login('test@example.com', 'SomePass1!')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.login('test@example.com', 'SomePass1!'),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -265,18 +275,18 @@ describe('AuthService', () => {
       inviteTokenModel.findOneAndUpdate.mockResolvedValue(null);
       inviteTokenModel.findOne.mockResolvedValue(null);
 
-      await expect(service.resetPassword('bad-tok', 'NewPass1!')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.resetPassword('bad-tok', 'NewPass1!'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for already used token', async () => {
       inviteTokenModel.findOneAndUpdate.mockResolvedValue(null);
       inviteTokenModel.findOne.mockResolvedValue({ usedAt: new Date() });
 
-      await expect(service.resetPassword('used-tok', 'NewPass1!')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.resetPassword('used-tok', 'NewPass1!'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -285,7 +295,11 @@ describe('AuthService', () => {
       const user = mockUser();
       userModel.findOne.mockResolvedValue(user);
 
-      const result = await service.changePassword('user-1', 'ValidPass1!', 'NewPass2!');
+      const result = await service.changePassword(
+        'user-1',
+        'ValidPass1!',
+        'NewPass2!',
+      );
 
       expect(result.message).toBe('Password updated');
       expect(userModel.updateOne).toHaveBeenCalled();

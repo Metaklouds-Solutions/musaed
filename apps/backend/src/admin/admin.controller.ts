@@ -13,6 +13,11 @@ export class AdminController {
     return this.adminService.getSystemOverview();
   }
 
+  @Get('dashboard/summary')
+  getDashboardSummary() {
+    return this.adminService.getDashboardSummary();
+  }
+
   @Get('system')
   getSystemHealth() {
     return this.adminService.getSystemHealth();

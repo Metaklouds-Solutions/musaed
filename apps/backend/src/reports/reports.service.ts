@@ -1,10 +1,20 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, PipelineStage } from 'mongoose';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
-import { Customer, CustomerDocument } from '../customers/schemas/customer.schema';
+import {
+  Customer,
+  CustomerDocument,
+} from '../customers/schemas/customer.schema';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
-import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from '../calls/schemas/call-session.schema';
 
 export interface ABTestOutcomeRowDto {
   version: string;
@@ -45,13 +55,106 @@ export class ReportsService {
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(Customer.name) private customerModel: Model<CustomerDocument>,
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
-    @InjectModel(CallSession.name) private callSessionModel: Model<CallSessionDocument>,
+    @InjectModel(CallSession.name)
+    private callSessionModel: Model<CallSessionDocument>,
   ) {}
 
   async getPerformance(tenantId: string, dateFrom?: string, dateTo?: string) {
     try {
+      const tid = new Types.ObjectId(tenantId);
+      const match: Record<string, unknown> = { tenantId: tid };
+
+      if (dateFrom || dateTo) {
+        const dateFilter: Record<string, Date> = {};
+        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        match.date = dateFilter;
+      }
+
+      const pipeline: PipelineStage[] = [
+        { $match: match },
+        {
+          $group: {
+            _id: null,
+            totalBookings: { $sum: 1 },
+            byStatus: { $push: '$status' },
+            byServiceType: { $push: '$serviceType' },
+          },
+        },
+      ];
+
+      const [result] = await this.bookingModel.aggregate(pipeline);
+
+      const statusCounts: Record<string, number> = {};
+      const serviceTypeCounts: Record<string, number> = {};
+
+      if (result) {
+        for (const s of result.byStatus) {
+          statusCounts[s] = (statusCounts[s] || 0) + 1;
+        }
+        for (const s of result.byServiceType) {
+          if (s) serviceTypeCounts[s] = (serviceTypeCounts[s] || 0) + 1;
+        }
+      }
+
+      const totalCustomers = await this.customerModel.countDocuments({
+        tenantId: tid,
+        deletedAt: null,
+      });
+      const callMatch: Record<string, unknown> = { tenantId: tid };
+      if (dateFrom || dateTo) {
+        const createdAtFilter: Record<string, Date> = {};
+        if (dateFrom) createdAtFilter.$gte = new Date(dateFrom);
+        if (dateTo) createdAtFilter.$lte = new Date(dateTo);
+        callMatch.createdAt = createdAtFilter;
+      }
+      const [totalCalls, callOutcomeRows, avgCallDuration] = await Promise.all([
+        this.callSessionModel.countDocuments(callMatch),
+        this.callSessionModel.aggregate<{ _id: string; count: number }>([
+          { $match: callMatch },
+          { $group: { _id: '$outcome', count: { $sum: 1 } } },
+        ]),
+        this.callSessionModel.aggregate<{ value: number }>([
+          { $match: { ...callMatch, durationMs: { $ne: null } } },
+          { $group: { _id: null, value: { $avg: '$durationMs' } } },
+        ]),
+      ]);
+      const callOutcomes: Record<string, number> = {
+        unknown: 0,
+        booked: 0,
+        escalated: 0,
+        failed: 0,
+        info_only: 0,
+      };
+      for (const row of callOutcomeRows) {
+        callOutcomes[row._id] = row.count;
+      }
+
+      return {
+        totalBookings: result?.totalBookings ?? 0,
+        byStatus: statusCounts,
+        byServiceType: serviceTypeCounts,
+        totalCustomers,
+        callMetrics: {
+          totalCalls,
+          outcomes: callOutcomes,
+          avgDurationMs: avgCallDuration[0]?.value ?? 0,
+        },
+      };
+    } catch (error) {
+      this.logger.error('getPerformance aggregation failed', error);
+      throw new InternalServerErrorException(
+        'Failed to generate performance report',
+      );
+    }
+  }
+
+  async getOutcomesByDay(tenantId: string, dateFrom?: string, dateTo?: string) {
     const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid };
+    const match: Record<string, unknown> = {
+      tenantId: tid,
+      status: { $nin: ['cancelled'] },
+    };
 
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
@@ -64,96 +167,17 @@ export class ReportsService {
       { $match: match },
       {
         $group: {
-          _id: null,
-          totalBookings: { $sum: 1 },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
           byStatus: { $push: '$status' },
-          byServiceType: { $push: '$serviceType' },
         },
       },
-    ];
-
-    const [result] = await this.bookingModel.aggregate(pipeline);
-
-    const statusCounts: Record<string, number> = {};
-    const serviceTypeCounts: Record<string, number> = {};
-
-    if (result) {
-      for (const s of result.byStatus) {
-        statusCounts[s] = (statusCounts[s] || 0) + 1;
-      }
-      for (const s of result.byServiceType) {
-        if (s) serviceTypeCounts[s] = (serviceTypeCounts[s] || 0) + 1;
-      }
-    }
-
-    const totalCustomers = await this.customerModel.countDocuments({
-      tenantId: tid,
-      deletedAt: null,
-    });
-    const callMatch: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
-      const createdAtFilter: Record<string, Date> = {};
-      if (dateFrom) createdAtFilter.$gte = new Date(dateFrom);
-      if (dateTo) createdAtFilter.$lte = new Date(dateTo);
-      callMatch.createdAt = createdAtFilter;
-    }
-    const [totalCalls, callOutcomeRows, avgCallDuration] = await Promise.all([
-      this.callSessionModel.countDocuments(callMatch),
-      this.callSessionModel.aggregate<{ _id: string; count: number }>([
-        { $match: callMatch },
-        { $group: { _id: '$outcome', count: { $sum: 1 } } },
-      ]),
-      this.callSessionModel.aggregate<{ value: number }>([
-        { $match: { ...callMatch, durationMs: { $ne: null } } },
-        { $group: { _id: null, value: { $avg: '$durationMs' } } },
-      ]),
-    ]);
-    const callOutcomes: Record<string, number> = {
-      unknown: 0,
-      booked: 0,
-      escalated: 0,
-      failed: 0,
-      info_only: 0,
-    };
-    for (const row of callOutcomeRows) {
-      callOutcomes[row._id] = row.count;
-    }
-
-    return {
-      totalBookings: result?.totalBookings ?? 0,
-      byStatus: statusCounts,
-      byServiceType: serviceTypeCounts,
-      totalCustomers,
-      callMetrics: {
-        totalCalls,
-        outcomes: callOutcomes,
-        avgDurationMs: avgCallDuration[0]?.value ?? 0,
-      },
-    };
-    } catch (error) {
-      this.logger.error('getPerformance aggregation failed', error);
-      throw new InternalServerErrorException('Failed to generate performance report');
-    }
-  }
-
-  async getOutcomesByDay(tenantId: string, dateFrom?: string, dateTo?: string) {
-    const tid = new Types.ObjectId(tenantId);
-    const match: Record<string, unknown> = { tenantId: tid, status: { $nin: ['cancelled'] } };
-
-    if (dateFrom || dateTo) {
-      const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
-      match.date = dateFilter;
-    }
-
-    const pipeline: PipelineStage[] = [
-      { $match: match },
-      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, byStatus: { $push: '$status' } } },
       { $sort: { _id: 1 } },
     ];
 
-    const results = await this.bookingModel.aggregate<{ _id: string; byStatus: string[] }>(pipeline);
+    const results = await this.bookingModel.aggregate<{
+      _id: string;
+      byStatus: string[];
+    }>(pipeline);
     const callMatch: Record<string, unknown> = { tenantId: tid };
     if (dateFrom || dateTo) {
       const createdAtFilter: Record<string, Date> = {};
@@ -199,7 +223,9 @@ export class ReportsService {
     );
 
     return results.map((r) => {
-      const booked = r.byStatus.filter((s) => s === 'completed' || s === 'confirmed').length;
+      const booked = r.byStatus.filter(
+        (s) => s === 'completed' || s === 'confirmed',
+      ).length;
       const failed = r.byStatus.filter((s) => s === 'no_show').length;
       const escalated = r.byStatus.filter((s) => s === 'escalated').length;
       const total = r.byStatus.length;
@@ -220,8 +246,14 @@ export class ReportsService {
     });
   }
 
-  async getTenantComparison(tenantIds: string[], dateFrom?: string, dateTo?: string) {
-    const match: Record<string, unknown> = { tenantId: { $in: tenantIds.map((id) => new Types.ObjectId(id)) } };
+  async getTenantComparison(
+    tenantIds: string[],
+    dateFrom?: string,
+    dateTo?: string,
+  ) {
+    const match: Record<string, unknown> = {
+      tenantId: { $in: tenantIds.map((id) => new Types.ObjectId(id)) },
+    };
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
       if (dateFrom) dateFilter.$gte = new Date(dateFrom);
@@ -229,16 +261,37 @@ export class ReportsService {
       match.date = dateFilter;
     }
 
-    const tenants = await this.tenantModel.find({ _id: { $in: tenantIds.map((id) => new Types.ObjectId(id)) }, deletedAt: null }).select('name').lean();
+    const tenants = await this.tenantModel
+      .find({
+        _id: { $in: tenantIds.map((id) => new Types.ObjectId(id)) },
+        deletedAt: null,
+      })
+      .select('name')
+      .lean();
 
-    const tenantMap = new Map(tenants.map((t) => [String((t as { _id?: unknown })._id), (t as { name?: string }).name ?? 'Unknown']));
+    const tenantMap = new Map(
+      tenants.map((t) => [
+        String((t as { _id?: unknown })._id),
+        (t as { name?: string }).name ?? 'Unknown',
+      ]),
+    );
 
     const pipeline: PipelineStage[] = [
       { $match: match },
-      { $group: { _id: '$tenantId', totalBookings: { $sum: 1 }, byStatus: { $push: '$status' } } },
+      {
+        $group: {
+          _id: '$tenantId',
+          totalBookings: { $sum: 1 },
+          byStatus: { $push: '$status' },
+        },
+      },
     ];
 
-    const results = await this.bookingModel.aggregate<{ _id: Types.ObjectId; totalBookings: number; byStatus: string[] }>(pipeline);
+    const results = await this.bookingModel.aggregate<{
+      _id: Types.ObjectId;
+      totalBookings: number;
+      byStatus: string[];
+    }>(pipeline);
     const callAgg = await this.callSessionModel.aggregate<{
       _id: Types.ObjectId;
       totalCalls: number;
@@ -246,26 +299,43 @@ export class ReportsService {
       escalatedCalls: number;
       failedCalls: number;
     }>([
-      { $match: { tenantId: { $in: tenantIds.map((id) => new Types.ObjectId(id)) } } },
+      {
+        $match: {
+          tenantId: { $in: tenantIds.map((id) => new Types.ObjectId(id)) },
+        },
+      },
       {
         $group: {
           _id: '$tenantId',
           totalCalls: { $sum: 1 },
-          bookedCalls: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } },
-          escalatedCalls: { $sum: { $cond: [{ $eq: ['$outcome', 'escalated'] }, 1, 0] } },
-          failedCalls: { $sum: { $cond: [{ $eq: ['$outcome', 'failed'] }, 1, 0] } },
+          bookedCalls: {
+            $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] },
+          },
+          escalatedCalls: {
+            $sum: { $cond: [{ $eq: ['$outcome', 'escalated'] }, 1, 0] },
+          },
+          failedCalls: {
+            $sum: { $cond: [{ $eq: ['$outcome', 'failed'] }, 1, 0] },
+          },
         },
       },
     ]);
 
     const customerCounts = await Promise.all(
-      tenantIds.map((tid) => this.customerModel.countDocuments({ tenantId: new Types.ObjectId(tid), deletedAt: null }))
+      tenantIds.map((tid) =>
+        this.customerModel.countDocuments({
+          tenantId: new Types.ObjectId(tid),
+          deletedAt: null,
+        }),
+      ),
     );
 
     const rows = tenantIds.map((tid, i) => {
       const agg = results.find((r) => r._id.toString() === tid);
       const totalBookings = agg?.totalBookings ?? 0;
-      const completed = agg?.byStatus.filter((s) => s === 'completed' || s === 'confirmed').length ?? 0;
+      const completed =
+        agg?.byStatus.filter((s) => s === 'completed' || s === 'confirmed')
+          .length ?? 0;
       const callMetrics = callAgg.find((row) => row._id.toString() === tid);
       const totalCalls = callMetrics?.totalCalls ?? 0;
       return {
@@ -273,7 +343,8 @@ export class ReportsService {
         tenantName: tenantMap.get(tid) ?? 'Unknown',
         totalCalls,
         totalBookings,
-        conversionRate: totalBookings > 0 ? (completed / totalBookings) * 100 : 0,
+        conversionRate:
+          totalBookings > 0 ? (completed / totalBookings) * 100 : 0,
         escalationRate:
           totalCalls > 0
             ? ((callMetrics?.escalatedCalls ?? 0) / totalCalls) * 100
@@ -307,14 +378,23 @@ export class ReportsService {
     }
     const pipeline: PipelineStage[] = [
       { $match: match },
-      { $lookup: { from: 'agent_instances', localField: 'agentInstanceId', foreignField: '_id', as: 'agent' } },
+      {
+        $lookup: {
+          from: 'agent_instances',
+          localField: 'agentInstanceId',
+          foreignField: '_id',
+          as: 'agent',
+        },
+      },
       { $unwind: { path: '$agent', preserveNullAndEmptyArrays: true } },
       {
         $group: {
           _id: { $ifNull: ['$agent.templateVersion', 1] },
           totalCalls: { $sum: 1 },
           booked: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } },
-          escalated: { $sum: { $cond: [{ $eq: ['$outcome', 'escalated'] }, 1, 0] } },
+          escalated: {
+            $sum: { $cond: [{ $eq: ['$outcome', 'escalated'] }, 1, 0] },
+          },
           failed: { $sum: { $cond: [{ $eq: ['$outcome', 'failed'] }, 1, 0] } },
           totalDurationMs: { $sum: { $ifNull: ['$durationMs', 0] } },
         },
@@ -330,9 +410,12 @@ export class ReportsService {
       totalDurationMs: number;
     }>(pipeline);
     return rows.map((r) => {
-      const conversionRate = r.totalCalls > 0 ? (r.booked / r.totalCalls) * 100 : 0;
-      const escalationRate = r.totalCalls > 0 ? (r.escalated / r.totalCalls) * 100 : 0;
-      const avgDurationSec = r.totalCalls > 0 ? r.totalDurationMs / 1000 / r.totalCalls : 0;
+      const conversionRate =
+        r.totalCalls > 0 ? (r.booked / r.totalCalls) * 100 : 0;
+      const escalationRate =
+        r.totalCalls > 0 ? (r.escalated / r.totalCalls) * 100 : 0;
+      const avgDurationSec =
+        r.totalCalls > 0 ? r.totalDurationMs / 1000 / r.totalCalls : 0;
       return {
         version: `v${r._id}`,
         totalCalls: r.totalCalls,
@@ -404,16 +487,27 @@ export class ReportsService {
   ): Promise<SentimentBucketDto[]> {
     try {
       const tid = new Types.ObjectId(tenantId);
-      const match: Record<string, unknown> = { tenantId: tid, sentiment: { $nin: [null, ''] } };
+      const match: Record<string, unknown> = {
+        tenantId: tid,
+        sentiment: { $nin: [null, ''] },
+      };
       if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
         if (dateFrom) dateFilter.$gte = new Date(dateFrom);
         if (dateTo) dateFilter.$lte = new Date(dateTo);
         match.createdAt = dateFilter;
       }
-      const rows = await this.callSessionModel.aggregate<{ _id: string; count: number }>([
+      const rows = await this.callSessionModel.aggregate<{
+        _id: string;
+        count: number;
+      }>([
         { $match: match },
-        { $group: { _id: { $toLower: { $ifNull: ['$sentiment', 'unknown'] } }, count: { $sum: 1 } } },
+        {
+          $group: {
+            _id: { $toLower: { $ifNull: ['$sentiment', 'unknown'] } },
+            count: { $sum: 1 },
+          },
+        },
         { $sort: { count: -1 } },
       ]);
       const total = rows.reduce((acc, r) => acc + r.count, 0);
@@ -431,7 +525,9 @@ export class ReportsService {
       }));
     } catch (error) {
       this.logger.error('getSentimentDistribution aggregation failed', error);
-      throw new InternalServerErrorException('Failed to generate sentiment distribution');
+      throw new InternalServerErrorException(
+        'Failed to generate sentiment distribution',
+      );
     }
   }
 
@@ -449,7 +545,10 @@ export class ReportsService {
         if (dateTo) dateFilter.$lte = new Date(dateTo);
         match.createdAt = dateFilter;
       }
-      const rows = await this.callSessionModel.aggregate<{ _id: number; count: number }>([
+      const rows = await this.callSessionModel.aggregate<{
+        _id: number;
+        count: number;
+      }>([
         { $match: match },
         { $project: { hour: { $hour: '$createdAt' } } },
         { $group: { _id: '$hour', count: { $sum: 1 } } },
@@ -463,7 +562,9 @@ export class ReportsService {
       }));
     } catch (error) {
       this.logger.error('getPeakHours aggregation failed', error);
-      throw new InternalServerErrorException('Failed to generate peak hours report');
+      throw new InternalServerErrorException(
+        'Failed to generate peak hours report',
+      );
     }
   }
 
@@ -484,9 +585,17 @@ export class ReportsService {
         if (dateTo) dateFilter.$lte = new Date(dateTo);
         match.createdAt = dateFilter;
       }
-      const rows = await this.callSessionModel.aggregate<{ _id: string; count: number }>([
+      const rows = await this.callSessionModel.aggregate<{
+        _id: string;
+        count: number;
+      }>([
         { $match: match },
-        { $group: { _id: { $toString: '$metadata.intent' }, count: { $sum: 1 } } },
+        {
+          $group: {
+            _id: { $toString: '$metadata.intent' },
+            count: { $sum: 1 },
+          },
+        },
         { $sort: { count: -1 } },
       ]);
       const total = rows.reduce((acc, r) => acc + r.count, 0);
@@ -497,7 +606,9 @@ export class ReportsService {
       }));
     } catch (error) {
       this.logger.error('getIntentDistribution aggregation failed', error);
-      throw new InternalServerErrorException('Failed to generate intent distribution');
+      throw new InternalServerErrorException(
+        'Failed to generate intent distribution',
+      );
     }
   }
 }

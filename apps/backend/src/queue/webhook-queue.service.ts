@@ -18,7 +18,8 @@ export class WebhookQueueService {
 
   constructor(private config: ConfigService) {
     const redisUrl = this.config.get<string>('REDIS_URL');
-    const enabled = this.config.get<string>('QUEUE_WEBHOOKS_ENABLED', 'false') === 'true';
+    const enabled =
+      this.config.get<string>('QUEUE_WEBHOOKS_ENABLED', 'false') === 'true';
     if (redisUrl && enabled) {
       this.queue = new Queue<WebhookJobPayload>(QUEUE_NAMES.WEBHOOKS, {
         connection: getRedisConnectionOptions(redisUrl),
@@ -26,7 +27,9 @@ export class WebhookQueueService {
       });
       this.logger.log('Webhook queue enabled');
     } else {
-      this.logger.debug('Webhook queue disabled (REDIS_URL or QUEUE_WEBHOOKS_ENABLED)');
+      this.logger.debug(
+        'Webhook queue disabled (REDIS_URL or QUEUE_WEBHOOKS_ENABLED)',
+      );
     }
   }
 
@@ -59,7 +62,10 @@ export class WebhookQueueService {
       });
       return job.id ?? null;
     } catch (err) {
-      this.logger.error(`Failed to enqueue webhook: ${payload.eventId}`, err instanceof Error ? err.stack : err);
+      this.logger.error(
+        `Failed to enqueue webhook: ${payload.eventId}`,
+        err instanceof Error ? err.stack : err,
+      );
       const nodeEnv = this.config.get<string>('NODE_ENV', 'development');
       if (nodeEnv === 'production') {
         throw err;

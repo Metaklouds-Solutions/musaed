@@ -2,7 +2,10 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '../common/constants';
-import { CallSession, CallSessionDocument } from './schemas/call-session.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from './schemas/call-session.schema';
 import { RetellClient } from '../retell/retell.client';
 
 interface ListCallsQuery {
@@ -79,7 +82,11 @@ export class CallsService {
    * Retrieves a tenant-scoped call session by identifier.
    * Detail view includes transcript, transcriptObject, recordingUrl, summary, sentiment.
    */
-  async getByIdForTenant(id: string, tenantId: string, enrich: boolean = false) {
+  async getByIdForTenant(
+    id: string,
+    tenantId: string,
+    enrich: boolean = false,
+  ) {
     const call = await this.callSessionModel
       .findOne({ _id: id, tenantId: new Types.ObjectId(tenantId) })
       .populate('agentInstanceId', 'name')
@@ -109,7 +116,10 @@ export class CallsService {
       return call;
     }
 
-    const retellCall = await this.getRetellCallForTenant(retellCallId, tenantId);
+    const retellCall = await this.getRetellCallForTenant(
+      retellCallId,
+      tenantId,
+    );
     return this.enrichFromRetell(retellCallId, retellCall);
   }
 
@@ -156,19 +166,25 @@ export class CallsService {
    * Starts a web call for a specific agent instance.
    */
   async createWebCall(agentInstanceId: string, tenantId: string) {
-    const instance = await this.callSessionModel.db.model('AgentInstance').findOne({
-      _id: agentInstanceId,
-      tenantId: new Types.ObjectId(tenantId),
-    });
+    const instance = await this.callSessionModel.db
+      .model('AgentInstance')
+      .findOne({
+        _id: agentInstanceId,
+        tenantId: new Types.ObjectId(tenantId),
+      });
 
     if (!instance || !instance.retellAgentId) {
-      throw new NotFoundException('Agent instance not found or missing Retell configuration');
+      throw new NotFoundException(
+        'Agent instance not found or missing Retell configuration',
+      );
     }
 
     return this.retellClient.createWebCall({
       agent_id: instance.retellAgentId,
       metadata: {
-        tenant_id: (instance.tenantId ?? new Types.ObjectId(tenantId)).toString(),
+        tenant_id: (
+          instance.tenantId ?? new Types.ObjectId(tenantId)
+        ).toString(),
         agent_instance_id: instance._id.toString(),
       },
     });
@@ -258,9 +274,13 @@ export class CallsService {
               $group: {
                 _id: null,
                 totalCalls: { $sum: 1 },
-                bookedCount: { $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] } },
+                bookedCount: {
+                  $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] },
+                },
                 sumDurationMs: { $sum: { $ifNull: ['$durationMs', 0] } },
-                durationCount: { $sum: { $cond: [{ $ne: ['$durationMs', null] }, 1, 0] } },
+                durationCount: {
+                  $sum: { $cond: [{ $ne: ['$durationMs', null] }, 1, 0] },
+                },
               },
             },
           ],
@@ -321,8 +341,7 @@ export class CallsService {
       sentiment[normalized] = (sentiment[normalized] ?? 0) + row.count;
     }
 
-    const conversationRate =
-      totalCalls > 0 ? bookedCount / totalCalls : 0;
+    const conversationRate = totalCalls > 0 ? bookedCount / totalCalls : 0;
     const avgDurationSec =
       durationCount > 0 ? Math.round(sumDurationMs / durationCount / 1000) : 0;
 
@@ -387,12 +406,14 @@ export class CallsService {
    */
   async enrichFromRetell(retellCallId: string, callDataInput?: unknown) {
     try {
-      const callData = callDataInput ?? (await this.retellClient.getCall(retellCallId));
+      const callData =
+        callDataInput ?? (await this.retellClient.getCall(retellCallId));
       const callDataRecord = this.isRecord(callData) ? callData : {};
 
       const transcriptObject = callDataRecord['transcript_object'];
       const updateData: Partial<CallSession> = {
-        recordingUrl: this.readString(callDataRecord['recording_url']) ?? undefined,
+        recordingUrl:
+          this.readString(callDataRecord['recording_url']) ?? undefined,
         transcript: this.readString(callDataRecord['transcript']) ?? undefined,
         transcriptObject: this.isTranscriptObject(transcriptObject)
           ? transcriptObject
@@ -413,7 +434,10 @@ export class CallsService {
 
       return updatedCall || callData;
     } catch (error) {
-      this.logger.error(`Failed to enrich call ${retellCallId} from Retell`, error);
+      this.logger.error(
+        `Failed to enrich call ${retellCallId} from Retell`,
+        error,
+      );
       throw error;
     }
   }
@@ -439,7 +463,11 @@ export class CallsService {
       return null;
     }
 
-    return this.readString(metadata['tenant_id']) ?? this.readString(metadata['tenantId']) ?? null;
+    return (
+      this.readString(metadata['tenant_id']) ??
+      this.readString(metadata['tenantId']) ??
+      null
+    );
   }
 
   private isTranscriptObject(value: unknown): value is Record<string, unknown> {
@@ -461,7 +489,10 @@ export class CallsService {
   private buildFilter(
     query: ListCallsQuery & { tenantId?: string | null },
     tenantId: string | null,
-    options?: { dateField?: 'createdAt' | 'startedAt'; defaultLast7Days?: boolean },
+    options?: {
+      dateField?: 'createdAt' | 'startedAt';
+      defaultLast7Days?: boolean;
+    },
   ): FilterQuery<CallSessionDocument> {
     const filter: FilterQuery<CallSessionDocument> = {};
     const dateField = options?.dateField ?? 'createdAt';
@@ -504,10 +535,15 @@ export class CallsService {
    * Synchronizes all calls from Retell for all active agents.
    */
   async syncAllFromRetell() {
-    const agents = (await this.callSessionModel.db.model('AgentInstance').find({
-      retellAgentId: { $ne: null },
-      status: { $ne: 'deleted' },
-    }).select('_id retellAgentId tenantId').limit(1000).lean()) as unknown as Array<{
+    const agents = (await this.callSessionModel.db
+      .model('AgentInstance')
+      .find({
+        retellAgentId: { $ne: null },
+        status: { $ne: 'deleted' },
+      })
+      .select('_id retellAgentId tenantId')
+      .limit(1000)
+      .lean()) as unknown as Array<{
       _id: Types.ObjectId;
       retellAgentId: string;
       tenantId: Types.ObjectId;
@@ -518,9 +554,9 @@ export class CallsService {
     for (const agent of agents) {
       try {
         const calls = await this.retellClient.listCalls({
-          filter_criteria: { agent_id: [agent.retellAgentId] }
+          filter_criteria: { agent_id: [agent.retellAgentId] },
         });
-        
+
         if (calls && Array.isArray(calls)) {
           for (const callData of calls) {
             const updateData: Partial<CallSession> = {
@@ -529,26 +565,40 @@ export class CallsService {
               retellAgentId: agent.retellAgentId,
               recordingUrl: callData.recording_url || undefined,
               transcript: callData.transcript || undefined,
-              transcriptObject: callData.transcript_object ? (callData.transcript_object as unknown as Record<string, unknown>) : undefined,
+              transcriptObject: callData.transcript_object
+                ? (callData.transcript_object as unknown as Record<
+                    string,
+                    unknown
+                  >)
+                : undefined,
               status: callData.call_status === 'ended' ? 'analyzed' : 'started',
             };
 
             if (callData.end_timestamp && callData.start_timestamp) {
-              updateData.durationMs = callData.end_timestamp - callData.start_timestamp;
+              updateData.durationMs =
+                callData.end_timestamp - callData.start_timestamp;
               updateData.startedAt = new Date(callData.start_timestamp);
               updateData.endedAt = new Date(callData.end_timestamp);
             }
 
             if (callData.call_analysis) {
-              updateData.summary = callData.call_analysis.call_summary || undefined;
-              updateData.sentiment = callData.call_analysis.user_sentiment || undefined;
-              
+              updateData.summary =
+                callData.call_analysis.call_summary || undefined;
+              updateData.sentiment =
+                callData.call_analysis.user_sentiment || undefined;
+
               const summaryLower = (updateData.summary || '').toLowerCase();
-              if (summaryLower.includes('booked') || summaryLower.includes('appointment confirmed')) {
+              if (
+                summaryLower.includes('booked') ||
+                summaryLower.includes('appointment confirmed')
+              ) {
                 updateData.outcome = 'booked';
               } else if (summaryLower.includes('escalat')) {
                 updateData.outcome = 'escalated';
-              } else if (summaryLower.includes('failed') || summaryLower.includes('unable')) {
+              } else if (
+                summaryLower.includes('failed') ||
+                summaryLower.includes('unable')
+              ) {
                 updateData.outcome = 'failed';
               } else if (summaryLower.length > 0) {
                 updateData.outcome = 'info_only';
@@ -558,7 +608,7 @@ export class CallsService {
             await this.callSessionModel.updateOne(
               { callId: callData.call_id },
               { $setOnInsert: updateData },
-              { upsert: true }
+              { upsert: true },
             );
             totalSynced++;
           }

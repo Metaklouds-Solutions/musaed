@@ -3,8 +3,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Booking, BookingSchema } from '../bookings/schemas/booking.schema';
 import { Customer, CustomerSchema } from '../customers/schemas/customer.schema';
 import { Tenant, TenantSchema } from '../tenants/schemas/tenant.schema';
-import { CallSession, CallSessionSchema } from '../calls/schemas/call-session.schema';
-import { AgentInstance, AgentInstanceSchema } from '../agent-instances/schemas/agent-instance.schema';
+import {
+  CallSession,
+  CallSessionSchema,
+} from '../calls/schemas/call-session.schema';
+import {
+  AgentInstance,
+  AgentInstanceSchema,
+} from '../agent-instances/schemas/agent-instance.schema';
 import {
   ReportSnapshot,
   ReportSnapshotSchema,

@@ -30,7 +30,10 @@ describe('RetellWebhookController', () => {
 
   const secret = 'test_webhook_secret_32_chars_min';
   const rawBody = JSON.stringify({ event: 'call_started', call_id: 'call_1' });
-  const validSignature = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  const validSignature = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
 
   const mockRes = {
     status: jest.fn().mockReturnThis(),
@@ -71,7 +74,12 @@ describe('RetellWebhookController', () => {
     const req = {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
-    const result = await controller.handleWebhook(req, mockRes, validSignature, undefined);
+    const result = await controller.handleWebhook(
+      req,
+      mockRes,
+      validSignature,
+      undefined,
+    );
     expect(result).toEqual({ received: true });
     expect(mockMetrics.recordWebhookReceived).toHaveBeenCalledWith('retell');
     expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
@@ -82,7 +90,12 @@ describe('RetellWebhookController', () => {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
     await expect(
-      controller.handleWebhook(req, mockRes, 'invalid_signature_hex', undefined),
+      controller.handleWebhook(
+        req,
+        mockRes,
+        'invalid_signature_hex',
+        undefined,
+      ),
     ).rejects.toThrow('Invalid webhook signature');
     expect(mockWebhooksService.handleRetellCallStarted).not.toHaveBeenCalled();
   });
@@ -91,14 +104,17 @@ describe('RetellWebhookController', () => {
     const req = {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
-    await expect(controller.handleWebhook(req, mockRes, undefined, undefined)).rejects.toThrow(
-      'Missing webhook signature',
-    );
+    await expect(
+      controller.handleWebhook(req, mockRes, undefined, undefined),
+    ).rejects.toThrow('Missing webhook signature');
   });
 
   it('accepts legacy secret during rotation', async () => {
     const legacySecret = 'legacy_secret_32_chars_minimum';
-    const legacySig = crypto.createHmac('sha256', legacySecret).update(rawBody).digest('hex');
+    const legacySig = crypto
+      .createHmac('sha256', legacySecret)
+      .update(rawBody)
+      .digest('hex');
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RetellWebhookController],

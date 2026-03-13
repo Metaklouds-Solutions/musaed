@@ -31,7 +31,9 @@ export class AgentDeploymentMetricsService {
       'AGENT_DEPLOYMENT_FAILURE_ALERT_THRESHOLD',
     );
     this.failureAlertThreshold =
-      typeof configuredThreshold === 'number' && configuredThreshold > 0 && configuredThreshold < 1
+      typeof configuredThreshold === 'number' &&
+      configuredThreshold > 0 &&
+      configuredThreshold < 1
         ? configuredThreshold
         : DEFAULT_ALERT_THRESHOLD;
   }
@@ -39,7 +41,10 @@ export class AgentDeploymentMetricsService {
   /**
    * Records deployment status and latency for observability.
    */
-  record(status: 'active' | 'partially_deployed' | 'failed', latencyMs: number): void {
+  record(
+    status: 'active' | 'partially_deployed' | 'failed',
+    latencyMs: number,
+  ): void {
     const sample: DeploymentSample = {
       status,
       latencyMs: Math.max(0, latencyMs),
@@ -69,9 +74,14 @@ export class AgentDeploymentMetricsService {
    */
   getSnapshot(): DeploymentMetricsSnapshot {
     const total = this.samples.length;
-    const failed = this.samples.filter((item) => item.status === 'failed').length;
+    const failed = this.samples.filter(
+      (item) => item.status === 'failed',
+    ).length;
     const success = total - failed;
-    const totalLatency = this.samples.reduce((sum, item) => sum + item.latencyMs, 0);
+    const totalLatency = this.samples.reduce(
+      (sum, item) => sum + item.latencyMs,
+      0,
+    );
     return {
       total,
       success,

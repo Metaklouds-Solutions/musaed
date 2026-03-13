@@ -1,10 +1,16 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
-import { Notification, NotificationDocument } from './schemas/notification.schema';
+import {
+  Notification,
+  NotificationDocument,
+} from './schemas/notification.schema';
 import { NotificationsGateway } from './notifications.gateway';
 import { User, UserDocument } from '../users/schemas/user.schema';
-import { TenantStaff, TenantStaffDocument } from '../tenants/schemas/tenant-staff.schema';
+import {
+  TenantStaff,
+  TenantStaffDocument,
+} from '../tenants/schemas/tenant-staff.schema';
 import { NotificationsQueueService } from './notifications.queue.service';
 
 function isRecord(x: unknown): x is Record<string, unknown> {
@@ -41,9 +47,11 @@ export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
   constructor(
-    @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
+    @InjectModel(Notification.name)
+    private notificationModel: Model<NotificationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(TenantStaff.name) private tenantStaffModel: Model<TenantStaffDocument>,
+    @InjectModel(TenantStaff.name)
+    private tenantStaffModel: Model<TenantStaffDocument>,
     private gateway: NotificationsGateway,
     @Optional() private notificationsQueue: NotificationsQueueService | null,
   ) {}
@@ -72,10 +80,18 @@ export class NotificationsService {
     this.gateway.emitToUser(input.userId, 'notification', payload);
     if (input.tenantId) {
       this.gateway.emitToTenant(input.tenantId, 'notification:new', payload);
+      if (input.type === 'new_call') {
+        this.gateway.emitToTenant(input.tenantId, 'dashboard:refresh', {
+          reason: 'new_call',
+          at: new Date().toISOString(),
+        });
+      }
     }
     this.maybeTrimOldNotificationsForUser(input.userId).catch(() => undefined);
     if (input.tenantId) {
-      this.maybeTrimOldNotificationsForTenant(input.tenantId).catch(() => undefined);
+      this.maybeTrimOldNotificationsForTenant(input.tenantId).catch(
+        () => undefined,
+      );
     }
 
     return doc;
@@ -186,14 +202,24 @@ export class NotificationsService {
       priority: data.priority ?? 'normal',
     }));
 
-    const inserted = await this.notificationModel.insertMany(docs, { ordered: false });
+    const inserted = await this.notificationModel.insertMany(docs, {
+      ordered: false,
+    });
 
     for (const doc of inserted) {
       const payload = this.toPayload(doc);
-      this.gateway.emitToUser(doc.userId.toString(), 'notification:new', payload);
+      this.gateway.emitToUser(
+        doc.userId.toString(),
+        'notification:new',
+        payload,
+      );
       this.gateway.emitToUser(doc.userId.toString(), 'notification', payload);
       if (doc.tenantId) {
-        this.gateway.emitToTenant(doc.tenantId.toString(), 'notification:new', payload);
+        this.gateway.emitToTenant(
+          doc.tenantId.toString(),
+          'notification:new',
+          payload,
+        );
       }
     }
 
@@ -203,7 +229,9 @@ export class NotificationsService {
   /**
    * Notify all admin users (platform-wide).
    */
-  async createForAdmins(data: Omit<CreateNotificationInput, 'userId' | 'tenantId'>): Promise<void> {
+  async createForAdmins(
+    data: Omit<CreateNotificationInput, 'userId' | 'tenantId'>,
+  ): Promise<void> {
     const admins = await this.userModel
       .find({ role: 'ADMIN', deletedAt: null, status: 'active' })
       .select('_id')
@@ -243,7 +271,16 @@ export class NotificationsService {
   }
 
   async findAllForUser(userId: string, query: NotificationFilters) {
-    const { page = 1, limit = 50, read, severity, source, tenantId, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 50,
+      read,
+      severity,
+      source,
+      tenantId,
+      dateFrom,
+      dateTo,
+    } = query;
     const filter: FilterQuery<NotificationDocument> = {
       userId: new Types.ObjectId(userId),
     };
@@ -308,9 +345,14 @@ export class NotificationsService {
 
   async clearForUser(
     userId: string,
-    query: Pick<NotificationFilters, 'read' | 'severity' | 'source' | 'tenantId' | 'dateFrom' | 'dateTo'> = {},
+    query: Pick<
+      NotificationFilters,
+      'read' | 'severity' | 'source' | 'tenantId' | 'dateFrom' | 'dateTo'
+    > = {},
   ): Promise<number> {
-    const filter: FilterQuery<NotificationDocument> = { userId: new Types.ObjectId(userId) };
+    const filter: FilterQuery<NotificationDocument> = {
+      userId: new Types.ObjectId(userId),
+    };
     if (query.read !== undefined) filter.read = query.read;
     if (query.severity) filter.severity = query.severity;
     if (query.source) filter.source = query.source;
@@ -336,10 +378,14 @@ export class NotificationsService {
     return 'normal';
   }
 
-  private async maybeTrimOldNotificationsForTenant(tenantId: string): Promise<void> {
+  private async maybeTrimOldNotificationsForTenant(
+    tenantId: string,
+  ): Promise<void> {
     const MAX_PER_TENANT = 5000;
     const tenantObjectId = new Types.ObjectId(tenantId);
-    const count = await this.notificationModel.countDocuments({ tenantId: tenantObjectId });
+    const count = await this.notificationModel.countDocuments({
+      tenantId: tenantObjectId,
+    });
     if (count <= MAX_PER_TENANT) return;
     const overflow = count - MAX_PER_TENANT;
     const oldIds = await this.notificationModel
@@ -349,14 +395,20 @@ export class NotificationsService {
       .select('_id')
       .lean();
     if (oldIds.length > 0) {
-      await this.notificationModel.deleteMany({ _id: { $in: oldIds.map((d) => d._id) } });
+      await this.notificationModel.deleteMany({
+        _id: { $in: oldIds.map((d) => d._id) },
+      });
     }
   }
 
-  private async maybeTrimOldNotificationsForUser(userId: string): Promise<void> {
+  private async maybeTrimOldNotificationsForUser(
+    userId: string,
+  ): Promise<void> {
     const MAX_PER_USER = 5000;
     const userObjectId = new Types.ObjectId(userId);
-    const count = await this.notificationModel.countDocuments({ userId: userObjectId });
+    const count = await this.notificationModel.countDocuments({
+      userId: userObjectId,
+    });
     if (count <= MAX_PER_USER) return;
     const overflow = count - MAX_PER_USER;
     const oldIds = await this.notificationModel
@@ -366,7 +418,9 @@ export class NotificationsService {
       .select('_id')
       .lean();
     if (oldIds.length > 0) {
-      await this.notificationModel.deleteMany({ _id: { $in: oldIds.map((d) => d._id) } });
+      await this.notificationModel.deleteMany({
+        _id: { $in: oldIds.map((d) => d._id) },
+      });
     }
   }
 
@@ -393,7 +447,8 @@ export class NotificationsService {
       time: (() => {
         const dt = d.createdAt;
         if (dt instanceof Date) return dt.toISOString();
-        if (typeof dt === 'string' || typeof dt === 'number') return new Date(dt).toISOString();
+        if (typeof dt === 'string' || typeof dt === 'number')
+          return new Date(dt).toISOString();
         return '';
       })(),
     };

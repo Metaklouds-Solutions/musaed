@@ -17,8 +17,19 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   async process(job: Job<NotificationFanoutPayload>): Promise<void> {
-    const { userIds, tenantId, type, source, severity, title, message, link, meta, metadata, priority } =
-      job.data;
+    const {
+      userIds,
+      tenantId,
+      type,
+      source,
+      severity,
+      title,
+      message,
+      link,
+      meta,
+      metadata,
+      priority,
+    } = job.data;
 
     this.logger.log(
       `Processing notification fanout: ${type} to ${userIds.length} users (attempt ${job.attemptsMade + 1})`,
@@ -26,10 +37,19 @@ export class NotificationsProcessor extends WorkerHost {
 
     try {
       const uniqueIds = [...new Set(userIds)];
-      const insertedCount = await this.notificationsService.createBatchFromQueue(
-        uniqueIds,
-        { tenantId, type, source, severity, title, message, link, meta, metadata, priority },
-      );
+      const insertedCount =
+        await this.notificationsService.createBatchFromQueue(uniqueIds, {
+          tenantId,
+          type,
+          source,
+          severity,
+          title,
+          message,
+          link,
+          meta,
+          metadata,
+          priority,
+        });
       this.logger.debug({
         event: 'notification_fanout_completed',
         type,
@@ -61,14 +81,22 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job<NotificationFanoutPayload> | undefined, error: Error): void {
+  onFailed(
+    job: Job<NotificationFanoutPayload> | undefined,
+    error: Error,
+  ): void {
     const type = job?.data?.type ?? 'unknown';
     const userCount = job?.data?.userIds?.length ?? 0;
     this.logger.error(
       `Notification fanout job failed (DLQ): type=${type} users=${userCount} — ${error.message}`,
     );
     Sentry.captureException(error, {
-      extra: { jobId: job?.id, type, userCount, queue: QUEUE_NAMES.NOTIFICATIONS },
+      extra: {
+        jobId: job?.id,
+        type,
+        userCount,
+        queue: QUEUE_NAMES.NOTIFICATIONS,
+      },
     });
   }
 }

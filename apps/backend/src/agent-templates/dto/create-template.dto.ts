@@ -11,7 +11,7 @@ import {
 import { Transform } from 'class-transformer';
 
 export class CreateTemplateDto {
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @MaxLength(200)
   name: string;

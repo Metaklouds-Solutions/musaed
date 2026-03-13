@@ -30,10 +30,15 @@ describe('flow-processor', () => {
     const conversationFlow = result.conversationFlow as Record<string, unknown>;
     const nodes = conversationFlow.nodes as Array<Record<string, unknown>>;
     const tools = conversationFlow.tools as Array<Record<string, unknown>>;
-    const defaults = conversationFlow.default_dynamic_variables as Record<string, unknown>;
+    const defaults = conversationFlow.default_dynamic_variables as Record<
+      string,
+      unknown
+    >;
 
     expect(nodes[0].prompt).toBe('Tenant tenant_123 agent agent_456');
-    expect(tools[0].url).toBe('http://localhost:3001/api/agents/tools/get_agent_config');
+    expect(tools[0].url).toBe(
+      'http://localhost:3001/api/agents/tools/get_agent_config',
+    );
     expect(defaults.tenant_id).toBe('tenant_123');
     expect(defaults.agent_instance_id).toBe('agent_456');
   });

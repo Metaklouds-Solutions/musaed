@@ -7,7 +7,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
 import { Booking, BookingDocument } from './schemas/booking.schema';
-import { Customer, CustomerDocument } from '../customers/schemas/customer.schema';
+import {
+  Customer,
+  CustomerDocument,
+} from '../customers/schemas/customer.schema';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { DEFAULT_PAGE, DEFAULT_LIMIT } from '../common/constants';
@@ -100,7 +103,10 @@ export class BookingsService {
       title: 'New booking',
       message: `${customerName} - ${dto.date} ${dto.timeSlot ?? ''}`,
       link: `/bookings`,
-      meta: { bookingId: booking._id.toString(), customerId: customer._id.toString() },
+      meta: {
+        bookingId: booking._id.toString(),
+        customerId: customer._id.toString(),
+      },
       priority: 'normal',
     });
 

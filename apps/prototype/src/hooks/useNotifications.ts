@@ -120,9 +120,14 @@ export function useNotifications() {
 
     socket.on('notification:new', onNotification);
     socket.on('notification', onNotification);
+    const onDashboardRefresh = () => {
+      window.dispatchEvent(new Event('dashboard:refresh'));
+    };
+    socket.on('dashboard:refresh', onDashboardRefresh);
     return () => {
       socket.off('notification:new', onNotification);
       socket.off('notification', onNotification);
+      socket.off('dashboard:refresh', onDashboardRefresh);
     };
   }, [session?.user]);
 

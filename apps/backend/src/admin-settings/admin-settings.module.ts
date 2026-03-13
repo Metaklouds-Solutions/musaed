@@ -6,7 +6,9 @@ import { AdminSettingsService } from './admin-settings.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: AdminConfig.name, schema: AdminConfigSchema }]),
+    MongooseModule.forFeature([
+      { name: AdminConfig.name, schema: AdminConfigSchema },
+    ]),
   ],
   controllers: [AdminSettingsController],
   providers: [AdminSettingsService],

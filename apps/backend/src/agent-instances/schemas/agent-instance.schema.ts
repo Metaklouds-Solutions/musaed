@@ -44,7 +44,17 @@ export class AgentInstance {
   @Prop({ type: String, default: null })
   emailAddress: string | null;
 
-  @Prop({ required: true, enum: ['deploying', 'active', 'partially_deployed', 'paused', 'failed', 'deleted'] })
+  @Prop({
+    required: true,
+    enum: [
+      'deploying',
+      'active',
+      'partially_deployed',
+      'paused',
+      'failed',
+      'deleted',
+    ],
+  })
   status: string;
 
   @Prop({ type: Object, default: {} })

@@ -21,7 +21,9 @@ describe('AgentDeploymentService integration', () => {
         .mockResolvedValueOnce({ conversation_flow_id: 'flow_chat' })
         .mockResolvedValueOnce({ conversation_flow_id: 'flow_voice' }),
       createChatAgent: jest.fn().mockResolvedValue({ agent_id: 'chat_agent' }),
-      createAgent: jest.fn().mockRejectedValue(new Error('voice provider down')),
+      createAgent: jest
+        .fn()
+        .mockRejectedValue(new Error('voice provider down')),
       deleteConversationFlow: jest.fn().mockResolvedValue({ success: true }),
       deleteAgent: jest.fn().mockResolvedValue({ success: true }),
     };
@@ -65,6 +67,8 @@ describe('AgentDeploymentService integration', () => {
     expect(result.overallStatus).toBe('partially_deployed');
     expect(result.channels).toHaveLength(2);
     expect(retellClient.createConversationFlow).toHaveBeenCalledTimes(2);
-    expect(retellClient.deleteConversationFlow).toHaveBeenCalledWith('flow_voice');
+    expect(retellClient.deleteConversationFlow).toHaveBeenCalledWith(
+      'flow_voice',
+    );
   });
 });

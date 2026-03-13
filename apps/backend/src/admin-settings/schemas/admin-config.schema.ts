@@ -57,13 +57,38 @@ export class AdminConfig {
   key: string;
 
   @Prop({ type: [Object], default: [] })
-  retentionPolicies: { id: string; name: string; days: number; enabled: boolean }[];
+  retentionPolicies: {
+    id: string;
+    name: string;
+    days: number;
+    enabled: boolean;
+  }[];
 
   @Prop({ type: [Object], default: [] })
-  integrations: { id: string; name: string; status: string; config?: Record<string, string> }[];
+  integrations: {
+    id: string;
+    name: string;
+    status: string;
+    config?: Record<string, string>;
+  }[];
 
-  @Prop({ type: Object, default: () => ({ enabled: false, frequency: 'weekly', recipients: [], dayOfWeek: 1, dayOfMonth: 1 }) })
-  scheduledReportConfig?: { enabled: boolean; frequency: string; recipients: string[]; dayOfWeek: number; dayOfMonth: number };
+  @Prop({
+    type: Object,
+    default: () => ({
+      enabled: false,
+      frequency: 'weekly',
+      recipients: [],
+      dayOfWeek: 1,
+      dayOfMonth: 1,
+    }),
+  })
+  scheduledReportConfig?: {
+    enabled: boolean;
+    frequency: string;
+    recipients: string[];
+    dayOfWeek: number;
+    dayOfMonth: number;
+  };
 }
 
 export const AdminConfigSchema = SchemaFactory.createForClass(AdminConfig);

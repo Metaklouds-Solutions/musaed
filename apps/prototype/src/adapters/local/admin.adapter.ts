@@ -39,6 +39,21 @@ const tenantName = (tenantId: string): string => {
 };
 
 export const adminAdapter = {
+  getDashboardSummary() {
+    return {
+      overview: this.getOverview(),
+      kpis: this.getAdminKpis(),
+      recentTenants: this.getRecentTenants(5),
+      supportSnapshot: this.getSupportSnapshot(),
+      recentCalls: this.getRecentCalls(10),
+      systemHealth: this.getSystemHealthExtended(),
+      signal:
+        seedTenants.length === 0 && seedCalls.length === 0
+          ? { status: 'empty' as const, reason: 'No tenants, calls, or support activity are visible yet.' }
+          : { status: 'healthy' as const, reason: 'Tenant, call, and support activity are flowing into the admin dashboard.' },
+    };
+  },
+
   getOverview(): AdminOverviewMetrics {
     const mrr = seedTenantPlans.reduce((s, p) => s + p.mrr, 0);
     const totalRevenue = mrr + seedCreditsRevenue;
@@ -142,7 +157,7 @@ export const adminAdapter = {
     );
     return {
       totalTenants: seedTenants.length,
-      activeTenants: statusCounts.ACTIVE ?? 0,
+      activeTenants: (statusCounts.ACTIVE ?? 0) + (statusCounts.TRIAL ?? 0),
       trialTenants: statusCounts.TRIAL ?? 0,
       suspendedTenants: statusCounts.SUSPENDED ?? 0,
       callsToday,

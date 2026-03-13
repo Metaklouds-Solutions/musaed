@@ -1,7 +1,15 @@
 import {
-  IsOptional, IsString, IsBoolean, IsNumber,
-  IsArray, ValidateNested, Min, MaxLength,
-  ValidatorConstraint, ValidatorConstraintInterface, Validate,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+  Min,
+  MaxLength,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  Validate,
   ValidationArguments,
 } from 'class-validator';
 import { Type } from 'class-transformer';

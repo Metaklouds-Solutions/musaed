@@ -1,4 +1,10 @@
-import { Injectable, NestMiddleware, Logger, Optional, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  Logger,
+  Optional,
+  Inject,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { MetricsService } from '../../metrics/metrics.service';
@@ -43,7 +49,8 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const duration = Date.now() - start;
       const { statusCode } = res;
-      const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'log';
+      const level =
+        statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'log';
       if (statusCode >= 500) {
         this.errorRateMonitor?.recordServerError();
       }
@@ -67,7 +74,12 @@ export class RequestLoggerMiddleware implements NestMiddleware {
 
       if (this.metricsService && !originalUrl.startsWith('/metrics')) {
         try {
-          this.metricsService.recordHttpRequest(method, originalUrl, statusCode, duration);
+          this.metricsService.recordHttpRequest(
+            method,
+            originalUrl,
+            statusCode,
+            duration,
+          );
         } catch {
           // Avoid metrics recording failure from affecting request handling
         }

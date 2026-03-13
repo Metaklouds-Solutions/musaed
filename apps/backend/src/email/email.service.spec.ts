@@ -14,18 +14,24 @@ describe('EmailService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (configMock.get as jest.Mock).mockImplementation((key: string, def?: string) => {
-      const map: Record<string, string> = {
-        SMTP_FROM: 'noreply@test.app',
-        FRONTEND_URL: 'http://localhost:5173',
-      };
-      return map[key] ?? def ?? '';
-    });
+    (configMock.get as jest.Mock).mockImplementation(
+      (key: string, def?: string) => {
+        const map: Record<string, string> = {
+          SMTP_FROM: 'noreply@test.app',
+          FRONTEND_URL: 'http://localhost:5173',
+        };
+        return map[key] ?? def ?? '';
+      },
+    );
   });
 
   it('sends invite email via sendInternal when no transporter (dev mode)', async () => {
     const service = new EmailService(configMock, null, null);
-    const url = await service.sendInviteEmail('user@test.com', 'Alice', 'tok_abc');
+    const url = await service.sendInviteEmail(
+      'user@test.com',
+      'Alice',
+      'tok_abc',
+    );
     expect(url).toContain('/auth/setup-password?token=tok_abc');
   });
 
@@ -71,19 +77,25 @@ describe('EmailService', () => {
     };
 
     const service = new EmailService(configMock, mockQueue as never, null);
-    const url = await service.sendInviteEmail('direct@test.com', 'Eve', 'tok_direct');
+    const url = await service.sendInviteEmail(
+      'direct@test.com',
+      'Eve',
+      'tok_direct',
+    );
     expect(url).toContain('token=tok_direct');
   });
 
   it('throws when rate limit exceeded for recipient', async () => {
-    (configMock.get as jest.Mock).mockImplementation((key: string, def?: string) => {
-      const map: Record<string, string> = {
-        SMTP_FROM: 'noreply@test.app',
-        FRONTEND_URL: 'http://localhost:5173',
-        EMAIL_RATE_LIMIT_PER_RECIPIENT: '2',
-      };
-      return map[key] ?? def ?? '';
-    });
+    (configMock.get as jest.Mock).mockImplementation(
+      (key: string, def?: string) => {
+        const map: Record<string, string> = {
+          SMTP_FROM: 'noreply@test.app',
+          FRONTEND_URL: 'http://localhost:5173',
+          EMAIL_RATE_LIMIT_PER_RECIPIENT: '2',
+        };
+        return map[key] ?? def ?? '';
+      },
+    );
 
     const service = new EmailService(configMock, null, null);
     await service.sendInviteEmail('spam@test.com', 'A', 't1');

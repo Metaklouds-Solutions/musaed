@@ -8,13 +8,19 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
-import { AgentInstance, AgentInstanceDocument } from './schemas/agent-instance.schema';
+import {
+  AgentInstance,
+  AgentInstanceDocument,
+} from './schemas/agent-instance.schema';
 import { UpdatePromptsDto } from './dto/update-prompts.dto';
 import { UpdateAgentDto } from './dto/update-agent.dto';
 import { CreateAgentInstanceDto } from './dto/create-agent-instance.dto';
 import { AgentDeploymentService } from '../agent-deployments/agent-deployment.service';
 import { AgentDeploymentsService } from '../agent-deployments/agent-deployments.service';
-import { AgentTemplate, AgentTemplateDocument } from '../agent-templates/schemas/agent-template.schema';
+import {
+  AgentTemplate,
+  AgentTemplateDocument,
+} from '../agent-templates/schemas/agent-template.schema';
 import { AgentRolloutService } from '../agent-deployments/agent-rollout.service';
 import { StartConversationDto } from './dto/start-conversation.dto';
 import { RetellClient } from '../retell/retell.client';
@@ -24,8 +30,10 @@ export class AgentsService {
   private readonly logger = new Logger(AgentsService.name);
 
   constructor(
-    @InjectModel(AgentInstance.name) private instanceModel: Model<AgentInstanceDocument>,
-    @InjectModel(AgentTemplate.name) private templateModel: Model<AgentTemplateDocument>,
+    @InjectModel(AgentInstance.name)
+    private instanceModel: Model<AgentInstanceDocument>,
+    @InjectModel(AgentTemplate.name)
+    private templateModel: Model<AgentTemplateDocument>,
     private readonly agentDeploymentService: AgentDeploymentService,
     private readonly agentDeploymentsService: AgentDeploymentsService,
     private readonly agentRolloutService: AgentRolloutService,
@@ -34,7 +42,10 @@ export class AgentsService {
 
   async findAllForTenant(tenantId: string) {
     return this.instanceModel
-      .find({ tenantId: new Types.ObjectId(tenantId), status: { $ne: 'deleted' } })
+      .find({
+        tenantId: new Types.ObjectId(tenantId),
+        status: { $ne: 'deleted' },
+      })
       .populate('templateId', 'name channel')
       .sort({ createdAt: -1 })
       .lean();
@@ -47,7 +58,9 @@ export class AgentsService {
     limit?: number;
   }) {
     const { status, tenantId, page = 1, limit = 20 } = query;
-    const filter: FilterQuery<AgentInstanceDocument> = { status: { $ne: 'deleted' } };
+    const filter: FilterQuery<AgentInstanceDocument> = {
+      status: { $ne: 'deleted' },
+    };
     if (status) filter.status = status;
     if (tenantId && Types.ObjectId.isValid(tenantId)) {
       filter.tenantId = new Types.ObjectId(tenantId);
@@ -71,7 +84,12 @@ export class AgentsService {
   }
 
   private async attachLinkingMetadata(
-    instances: Array<Record<string, unknown> & { _id?: unknown; sourceAgentInstanceId?: unknown }>,
+    instances: Array<
+      Record<string, unknown> & {
+        _id?: unknown;
+        sourceAgentInstanceId?: unknown;
+      }
+    >,
   ): Promise<Array<Record<string, unknown>>> {
     if (instances.length === 0) return instances;
 
@@ -83,10 +101,16 @@ export class AgentsService {
               typeof instance.sourceAgentInstanceId === 'object' &&
               instance.sourceAgentInstanceId &&
               'toString' in instance.sourceAgentInstanceId
-                ? (instance.sourceAgentInstanceId as { toString: () => string }).toString()
+                ? (
+                    instance.sourceAgentInstanceId as { toString: () => string }
+                  ).toString()
                 : null;
             if (source) return source;
-            if (typeof instance._id === 'object' && instance._id && 'toString' in instance._id) {
+            if (
+              typeof instance._id === 'object' &&
+              instance._id &&
+              'toString' in instance._id
+            ) {
               return (instance._id as { toString: () => string }).toString();
             }
             if (typeof instance._id === 'string') return instance._id;
@@ -100,7 +124,10 @@ export class AgentsService {
       .filter((id) => Types.ObjectId.isValid(id))
       .map((id) => new Types.ObjectId(id));
 
-    const grouped = await this.instanceModel.aggregate<{ _id: Types.ObjectId; linkedTenantCount: number }>([
+    const grouped = await this.instanceModel.aggregate<{
+      _id: Types.ObjectId;
+      linkedTenantCount: number;
+    }>([
       {
         $match: {
           status: { $ne: 'deleted' },
@@ -133,10 +160,14 @@ export class AgentsService {
         typeof instance.sourceAgentInstanceId === 'object' &&
         instance.sourceAgentInstanceId &&
         'toString' in instance.sourceAgentInstanceId
-          ? (instance.sourceAgentInstanceId as { toString: () => string }).toString()
+          ? (
+              instance.sourceAgentInstanceId as { toString: () => string }
+            ).toString()
           : null;
       const selfId =
-        typeof instance._id === 'object' && instance._id && 'toString' in instance._id
+        typeof instance._id === 'object' &&
+        instance._id &&
+        'toString' in instance._id
           ? (instance._id as { toString: () => string }).toString()
           : typeof instance._id === 'string'
             ? instance._id
@@ -146,32 +177,46 @@ export class AgentsService {
       return {
         ...instance,
         baseAgentInstanceId,
-        linkedTenantCount: baseAgentInstanceId ? (countMap.get(baseAgentInstanceId) ?? 0) : 0,
+        linkedTenantCount: baseAgentInstanceId
+          ? (countMap.get(baseAgentInstanceId) ?? 0)
+          : 0,
       };
     });
   }
 
   private async enrichWithRetellIds(
-    instances: Array<Record<string, unknown> & { _id?: unknown; retellAgentId?: string | null }>,
+    instances: Array<
+      Record<string, unknown> & { _id?: unknown; retellAgentId?: string | null }
+    >,
   ): Promise<typeof instances> {
     const needsEnrichment = instances.filter((i) => !i.retellAgentId);
     if (needsEnrichment.length === 0) return instances;
 
     const ids = needsEnrichment
-      .map((i) => (typeof i._id === 'object' && i._id && 'toString' in i._id ? (i._id as { toString: () => string }).toString() : String(i._id)))
+      .map((i) =>
+        typeof i._id === 'object' && i._id && 'toString' in i._id
+          ? (i._id as { toString: () => string }).toString()
+          : String(i._id),
+      )
       .filter(Boolean);
-    const deployments = await this.agentDeploymentsService.findByAgentInstanceIds(ids);
+    const deployments =
+      await this.agentDeploymentsService.findByAgentInstanceIds(ids);
     const map = new Map<string, string>();
     for (const d of deployments) {
       const key =
-        typeof d.agentInstanceId === 'object' && d.agentInstanceId && 'toString' in d.agentInstanceId
+        typeof d.agentInstanceId === 'object' &&
+        d.agentInstanceId &&
+        'toString' in d.agentInstanceId
           ? (d.agentInstanceId as { toString: () => string }).toString()
           : String(d.agentInstanceId);
       if (d.retellAgentId && !map.has(key)) map.set(key, d.retellAgentId);
     }
 
     return instances.map((i) => {
-      const id = typeof i._id === 'object' && i._id && 'toString' in i._id ? (i._id as { toString: () => string }).toString() : String(i._id);
+      const id =
+        typeof i._id === 'object' && i._id && 'toString' in i._id
+          ? (i._id as { toString: () => string }).toString()
+          : String(i._id);
       const fromDeployment = map.get(id);
       if (!i.retellAgentId && fromDeployment) {
         return { ...i, retellAgentId: fromDeployment };
@@ -195,7 +240,10 @@ export class AgentsService {
 
   async findByTenantId(tenantId: string) {
     return this.instanceModel
-      .find({ tenantId: new Types.ObjectId(tenantId), status: { $ne: 'deleted' } })
+      .find({
+        tenantId: new Types.ObjectId(tenantId),
+        status: { $ne: 'deleted' },
+      })
       .populate('templateId', 'name channel')
       .lean();
   }
@@ -230,15 +278,25 @@ export class AgentsService {
     if (instance.retellAgentId) {
       try {
         let retellData;
-        if (instance.channel === 'voice' || instance.channelsEnabled.includes('voice')) {
+        if (
+          instance.channel === 'voice' ||
+          instance.channelsEnabled.includes('voice')
+        ) {
           retellData = await this.retellClient.getAgent(instance.retellAgentId);
         } else {
-          retellData = await this.retellClient.getChatAgent(instance.retellAgentId);
+          retellData = await this.retellClient.getChatAgent(
+            instance.retellAgentId,
+          );
         }
-        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as Record<string, unknown>;
+        instance.configSnapshot = {
+          ...instance.configSnapshot,
+          ...retellData,
+        } as Record<string, unknown>;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${errMsg}`);
+        this.logger.warn(
+          `Failed to sync Retell config for agent ${id}: ${errMsg}`,
+        );
       }
     }
 
@@ -255,15 +313,25 @@ export class AgentsService {
     if (instance.retellAgentId) {
       try {
         let retellData;
-        if (instance.channel === 'voice' || instance.channelsEnabled.includes('voice')) {
+        if (
+          instance.channel === 'voice' ||
+          instance.channelsEnabled.includes('voice')
+        ) {
           retellData = await this.retellClient.getAgent(instance.retellAgentId);
         } else {
-          retellData = await this.retellClient.getChatAgent(instance.retellAgentId);
+          retellData = await this.retellClient.getChatAgent(
+            instance.retellAgentId,
+          );
         }
-        instance.configSnapshot = { ...instance.configSnapshot, ...retellData } as Record<string, unknown>;
+        instance.configSnapshot = {
+          ...instance.configSnapshot,
+          ...retellData,
+        } as Record<string, unknown>;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`Failed to sync Retell config for agent ${id}: ${errMsg}`);
+        this.logger.warn(
+          `Failed to sync Retell config for agent ${id}: ${errMsg}`,
+        );
       }
     }
 
@@ -273,10 +341,7 @@ export class AgentsService {
     return instance;
   }
 
-  async createForTenant(
-    tenantId: string,
-    dto: CreateAgentInstanceDto,
-  ) {
+  async createForTenant(tenantId: string, dto: CreateAgentInstanceDto) {
     const template = await this.getTemplateOrThrow(dto.templateId);
     const created = await this.instanceModel.create({
       sourceAgentInstanceId: null,
@@ -287,7 +352,9 @@ export class AgentsService {
       channel: dto.channelsEnabled[0] ?? 'chat',
       templateVersion: template.version ?? 1,
       customConfig: {
-        ...(dto.capabilityLevel ? { capabilityLevel: dto.capabilityLevel } : {}),
+        ...(dto.capabilityLevel
+          ? { capabilityLevel: dto.capabilityLevel }
+          : {}),
       },
       status: 'paused',
     });
@@ -308,7 +375,9 @@ export class AgentsService {
       channel: dto.channelsEnabled[0] ?? 'chat',
       templateVersion: template.version ?? 1,
       customConfig: {
-        ...(dto.capabilityLevel ? { capabilityLevel: dto.capabilityLevel } : {}),
+        ...(dto.capabilityLevel
+          ? { capabilityLevel: dto.capabilityLevel }
+          : {}),
       },
       status: 'paused',
     });
@@ -360,7 +429,10 @@ export class AgentsService {
         deployedAt: null,
       });
 
-      if (cloned.templateId && this.agentRolloutService.isDeploymentV2Enabled()) {
+      if (
+        cloned.templateId &&
+        this.agentRolloutService.isDeploymentV2Enabled()
+      ) {
         this.triggerDeploymentAsync(cloned._id.toString(), tenantId);
       }
 
@@ -369,7 +441,7 @@ export class AgentsService {
 
     instance.tenantId = new Types.ObjectId(tenantId);
     if (!instance.sourceAgentInstanceId) {
-      instance.sourceAgentInstanceId = instance._id as Types.ObjectId;
+      instance.sourceAgentInstanceId = instance._id;
     }
     await instance.save();
 
@@ -388,7 +460,9 @@ export class AgentsService {
     const instance = await this.instanceModel.findById(id);
     if (!instance) throw new NotFoundException('Agent instance not found');
     if (instance.status === 'deploying') {
-      throw new ConflictException('Cannot unassign an agent while deployment is in progress');
+      throw new ConflictException(
+        'Cannot unassign an agent while deployment is in progress',
+      );
     }
     instance.tenantId = null;
     await instance.save();
@@ -397,8 +471,14 @@ export class AgentsService {
 
   async findAllForAdminTenant(tenantId: string) {
     return this.instanceModel
-      .find({ tenantId: new Types.ObjectId(tenantId), status: { $ne: 'deleted' } })
-      .populate('templateId', 'name slug channel supportedChannels capabilityLevel')
+      .find({
+        tenantId: new Types.ObjectId(tenantId),
+        status: { $ne: 'deleted' },
+      })
+      .populate(
+        'templateId',
+        'name slug channel supportedChannels capabilityLevel',
+      )
       .sort({ createdAt: -1 })
       .lean();
   }
@@ -411,7 +491,9 @@ export class AgentsService {
     }
     const instance = await this.findById(id);
     if (!instance.tenantId) {
-      throw new ConflictException('Assign this agent to a tenant before deployment');
+      throw new ConflictException(
+        'Assign this agent to a tenant before deployment',
+      );
     }
     if (!instance.templateId) {
       throw new ConflictException('Agent has no template assigned');
@@ -470,7 +552,8 @@ export class AgentsService {
       return;
     }
 
-    const deployments = await this.agentDeploymentsService.findByAgentInstance(id);
+    const deployments =
+      await this.agentDeploymentsService.findByAgentInstance(id);
     for (const deployment of deployments) {
       if (deployment.retellAgentId) {
         try {
@@ -480,7 +563,8 @@ export class AgentsService {
             await this.retellClient.deleteAgent(deployment.retellAgentId);
           }
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
           this.logger.warn(
             `Retell agent delete failed agentInstanceId=${id} retellAgentId=${deployment.retellAgentId} error=${message}`,
           );
@@ -492,7 +576,8 @@ export class AgentsService {
             deployment.retellConversationFlowId,
           );
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
           this.logger.warn(
             `Retell flow delete failed agentInstanceId=${id} flowId=${deployment.retellConversationFlowId} error=${message}`,
           );
@@ -510,7 +595,11 @@ export class AgentsService {
     return this.agentDeploymentsService.findByAgentInstance(id, tenantId);
   }
 
-  async startConversationForTenant(id: string, tenantId: string, dto: StartConversationDto) {
+  async startConversationForTenant(
+    id: string,
+    tenantId: string,
+    dto: StartConversationDto,
+  ) {
     const instance = await this.findById(id, tenantId);
     const deployments = await this.agentDeploymentsService.findByAgentInstance(
       id,
@@ -592,7 +681,11 @@ export class AgentsService {
   /**
    * Sends a chat message after verifying the chat belongs to the tenant.
    */
-  async sendChatMessageForTenant(chatId: string, content: string, tenantId: string) {
+  async sendChatMessageForTenant(
+    chatId: string,
+    content: string,
+    tenantId: string,
+  ) {
     const chat = await this.retellClient.getChat(chatId);
     this.verifyChatTenantOwnership(chat, tenantId);
     return this.retellClient.createChatCompletion(chatId, content);
@@ -617,7 +710,9 @@ export class AgentsService {
     }
   }
 
-  private async getTemplateOrThrow(templateId: string): Promise<AgentTemplateDocument> {
+  private async getTemplateOrThrow(
+    templateId: string,
+  ): Promise<AgentTemplateDocument> {
     const template = await this.templateModel.findOne({
       _id: templateId,
       deletedAt: null,
@@ -628,13 +723,21 @@ export class AgentsService {
     return template;
   }
 
-  private triggerDeploymentAsync(agentInstanceId: string, tenantId: string): void {
-    this.agentDeploymentService.enqueueDeployment(agentInstanceId, tenantId).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : 'Unknown deployment enqueue error';
-      this.logger.error(
-        `Failed to enqueue deployment: agentInstanceId=${agentInstanceId} tenantId=${tenantId} error=${message}`,
-      );
-    });
+  private triggerDeploymentAsync(
+    agentInstanceId: string,
+    tenantId: string,
+  ): void {
+    this.agentDeploymentService
+      .enqueueDeployment(agentInstanceId, tenantId)
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unknown deployment enqueue error';
+        this.logger.error(
+          `Failed to enqueue deployment: agentInstanceId=${agentInstanceId} tenantId=${tenantId} error=${message}`,
+        );
+      });
   }
 
   private sanitizeConversationMetadata(

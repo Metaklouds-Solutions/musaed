@@ -27,12 +27,16 @@ export class NotificationsQueueService {
   constructor(private config: ConfigService) {
     const redisUrl = this.config.get<string>('REDIS_URL');
     const enabled =
-      this.config.get<string>('QUEUE_NOTIFICATIONS_ENABLED', 'false') === 'true';
+      this.config.get<string>('QUEUE_NOTIFICATIONS_ENABLED', 'false') ===
+      'true';
     if (redisUrl && enabled) {
-      this.queue = new Queue<NotificationFanoutPayload>(QUEUE_NAMES.NOTIFICATIONS, {
-        connection: getRedisConnectionOptions(redisUrl),
-        defaultJobOptions: DEFAULT_JOB_OPTIONS,
-      });
+      this.queue = new Queue<NotificationFanoutPayload>(
+        QUEUE_NAMES.NOTIFICATIONS,
+        {
+          connection: getRedisConnectionOptions(redisUrl),
+          defaultJobOptions: DEFAULT_JOB_OPTIONS,
+        },
+      );
       this.logger.log('Notifications queue enabled');
     } else {
       this.logger.debug(
@@ -51,7 +55,9 @@ export class NotificationsQueueService {
    * @param payload - Fanout payload (userIds + notification data)
    * @returns Job ID or null if queue disabled
    */
-  async enqueueFanout(payload: NotificationFanoutPayload): Promise<string | null> {
+  async enqueueFanout(
+    payload: NotificationFanoutPayload,
+  ): Promise<string | null> {
     if (!this.queue) return null;
     const sortedIds = [...payload.userIds].sort().join(',');
     const contentHash = crypto

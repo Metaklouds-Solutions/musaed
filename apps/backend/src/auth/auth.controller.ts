@@ -1,4 +1,15 @@
-import { Controller, Post, Body, UseGuards, Get, Patch, Delete, Request, Query, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  Patch,
+  Delete,
+  Request,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -38,7 +49,8 @@ export class AuthController {
     const raw = req.user as unknown as Record<string, unknown> & {
       toObject?: () => Record<string, unknown>;
     };
-    const user = typeof raw.toObject === 'function' ? raw.toObject() : { ...raw };
+    const user =
+      typeof raw.toObject === 'function' ? raw.toObject() : { ...raw };
     delete user.passwordHash;
     return user;
   }
@@ -69,7 +81,10 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('me')
-  async updateProfile(@Request() req: AuthenticatedRequest, @Body() dto: UpdateProfileDto) {
+  async updateProfile(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ) {
     const userId = req.user?._id;
     if (!userId) throw new BadRequestException('User ID not found');
     return this.authService.updateProfile(userId, dto);
@@ -77,10 +92,17 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
-  async changePassword(@Request() req: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
+  async changePassword(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
     const userId = req.user?._id;
     if (!userId) throw new BadRequestException('User ID not found');
-    return this.authService.changePassword(userId, dto.currentPassword, dto.newPassword);
+    return this.authService.changePassword(
+      userId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   /**

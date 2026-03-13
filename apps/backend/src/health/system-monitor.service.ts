@@ -7,7 +7,10 @@ import { Queue } from 'bullmq';
 import { RetellClient } from '../retell/retell.client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { QUEUE_NAMES } from '../queue/queue.constants';
-import { AgentInstance, AgentInstanceDocument } from '../agent-instances/schemas/agent-instance.schema';
+import {
+  AgentInstance,
+  AgentInstanceDocument,
+} from '../agent-instances/schemas/agent-instance.schema';
 
 @Injectable()
 export class SystemMonitorService {
@@ -19,7 +22,8 @@ export class SystemMonitorService {
     @InjectQueue(QUEUE_NAMES.WEBHOOKS) private readonly webhooksQueue: Queue,
     private readonly retellClient: RetellClient,
     private readonly notificationsService: NotificationsService,
-    @InjectModel(AgentInstance.name) private readonly agentModel: Model<AgentInstanceDocument>,
+    @InjectModel(AgentInstance.name)
+    private readonly agentModel: Model<AgentInstanceDocument>,
   ) {}
 
   @Cron('*/45 * * * * *')
@@ -56,7 +60,8 @@ export class SystemMonitorService {
         source: 'system',
         severity: 'critical',
         title: 'Redis disconnected',
-        message: error instanceof Error ? error.message : 'Unable to ping Redis',
+        message:
+          error instanceof Error ? error.message : 'Unable to ping Redis',
         priority: 'critical',
       });
     }
@@ -81,7 +86,7 @@ export class SystemMonitorService {
     const staleAgents = await this.agentModel
       .find({
         status: { $in: ['active', 'partially_deployed'] },
-        $or: [{ lastSyncedAt: null }, { lastSyncedAt: { $lt: staleBefore } }],
+        lastSyncedAt: { $ne: null, $lt: staleBefore },
       })
       .select('_id name tenantId status lastSyncedAt')
       .limit(10)
@@ -123,7 +128,9 @@ export class SystemMonitorService {
         });
       }
     } catch (error) {
-      this.logger.warn(`Queue depth check failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(
+        `Queue depth check failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -170,4 +177,3 @@ export class SystemMonitorService {
     }
   }
 }
-

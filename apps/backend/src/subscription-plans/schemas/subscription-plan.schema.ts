@@ -36,7 +36,8 @@ export class SubscriptionPlan {
   isActive: boolean;
 }
 
-export const SubscriptionPlanSchema = SchemaFactory.createForClass(SubscriptionPlan);
+export const SubscriptionPlanSchema =
+  SchemaFactory.createForClass(SubscriptionPlan);
 
 SubscriptionPlanSchema.index({ name: 1 }, { unique: true });
 SubscriptionPlanSchema.index({ isActive: 1 });

@@ -4,7 +4,13 @@ const URL_PROTOCOL_PATTERN = /^[a-z]+:\/\//i;
 const TEMPLATE_PLACEHOLDER_PATTERN = /^\{\{[A-Z0-9_]+\}\}$/;
 const TOOL_API_KEY_HEADERS = new Set(['x-api-key', 'api-key', 'x_api_key']);
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
 /**
  * Replaces absolute external URL origins in flow template tool definitions with {{API_BASE_URL}}.
@@ -30,7 +36,11 @@ function replaceUrlsAndSecrets(value: JsonValue): JsonValue {
 
   const next: { [key: string]: JsonValue } = {};
   for (const [key, item] of Object.entries(value)) {
-    if (key === 'url' && typeof item === 'string' && URL_PROTOCOL_PATTERN.test(item)) {
+    if (
+      key === 'url' &&
+      typeof item === 'string' &&
+      URL_PROTOCOL_PATTERN.test(item)
+    ) {
       next[key] = toPlaceholderUrl(item);
       continue;
     }

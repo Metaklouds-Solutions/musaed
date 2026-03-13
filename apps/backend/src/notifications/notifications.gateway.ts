@@ -11,7 +11,11 @@ import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: (process.env.ALLOWED_ORIGINS ?? process.env.CORS_ORIGIN ?? 'http://localhost:5173')
+    origin: (
+      process.env.ALLOWED_ORIGINS ??
+      process.env.CORS_ORIGIN ??
+      'http://localhost:5173'
+    )
       .split(',')
       .map((o: string) => o.trim())
       .filter(Boolean),
@@ -19,7 +23,9 @@ import { Logger } from '@nestjs/common';
   },
   namespace: '/notifications',
 })
-export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -34,7 +40,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   handleConnection(client: Socket) {
     const auth = client.handshake?.auth as { token?: string } | undefined;
-    const headers = client.handshake?.headers as Record<string, string> | undefined;
+    const headers = client.handshake?.headers as
+      | Record<string, string>
+      | undefined;
     const token =
       auth?.token ??
       (typeof headers?.authorization === 'string'
@@ -47,7 +55,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
     try {
       const secret = this.configService.getOrThrow<string>('JWT_SECRET');
-      const payload = this.jwtService.verify<{ sub: string; role?: string; tenantId?: string }>(token, { secret });
+      const payload = this.jwtService.verify<{
+        sub: string;
+        role?: string;
+        tenantId?: string;
+      }>(token, { secret });
       const userId = payload.sub;
       if (!userId) {
         client.disconnect();

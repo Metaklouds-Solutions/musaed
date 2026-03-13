@@ -102,7 +102,9 @@ export class RetellClient {
   /**
    * Deletes a Retell conversation flow if provider cleanup is required.
    */
-  async deleteConversationFlow(conversationFlowId: string): Promise<RetellDeleteResponse> {
+  async deleteConversationFlow(
+    conversationFlowId: string,
+  ): Promise<RetellDeleteResponse> {
     try {
       await this.client.conversationFlow.delete(conversationFlowId);
       return { success: true };
@@ -236,7 +238,9 @@ export class RetellClient {
         statusCode: 200,
       };
     } catch (error: unknown) {
-      this.logger.warn(`Retell connectivity probe failed: ${this.getErrorMessage(error)}`);
+      this.logger.warn(
+        `Retell connectivity probe failed: ${this.getErrorMessage(error)}`,
+      );
       return {
         reachable: false,
         statusCode: error instanceof APIError ? error.status : null,
@@ -248,9 +252,12 @@ export class RetellClient {
     if (error instanceof APIError) {
       const status = error.status || 500;
       const isRetriable = status === 429 || status >= 500;
-      
-      this.logger.error(`Retell SDK Error in ${context}: ${error.message}`, error.stack);
-      
+
+      this.logger.error(
+        `Retell SDK Error in ${context}: ${error.message}`,
+        error.stack,
+      );
+
       throw new RetellApiException(
         `Retell API error: ${error.message}`,
         this.mapHttpStatus(status),
@@ -259,16 +266,18 @@ export class RetellClient {
           status,
           body: error.error,
           context,
-        }
+        },
       );
     }
 
-    this.logger.error(`Unexpected error in ${context}: ${this.getErrorMessage(error)}`);
+    this.logger.error(
+      `Unexpected error in ${context}: ${this.getErrorMessage(error)}`,
+    );
     throw new RetellApiException(
       'Unexpected Retell request failure',
       HttpStatus.INTERNAL_SERVER_ERROR,
       false,
-      { context, reason: this.getErrorMessage(error) }
+      { context, reason: this.getErrorMessage(error) },
     );
   }
 

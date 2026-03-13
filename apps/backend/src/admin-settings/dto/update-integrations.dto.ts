@@ -1,4 +1,10 @@
-import { IsArray, IsString, IsOptional, MaxLength, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsOptional,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class IntegrationItemDto {

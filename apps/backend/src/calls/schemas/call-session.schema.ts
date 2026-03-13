@@ -17,7 +17,11 @@ export class CallSession {
   @Prop({ type: String, required: true })
   callId: string;
 
-  @Prop({ type: String, enum: ['started', 'ended', 'analyzed'], default: 'started' })
+  @Prop({
+    type: String,
+    enum: ['started', 'ended', 'analyzed'],
+    default: 'started',
+  })
   status: string;
 
   @Prop({ type: Date, default: null })

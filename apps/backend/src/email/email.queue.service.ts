@@ -31,7 +31,8 @@ export class EmailQueueService {
 
   constructor(private config: ConfigService) {
     const redisUrl = this.config.get<string>('REDIS_URL');
-    const enabled = this.config.get<string>('QUEUE_EMAIL_ENABLED', 'false') === 'true';
+    const enabled =
+      this.config.get<string>('QUEUE_EMAIL_ENABLED', 'false') === 'true';
     if (redisUrl && enabled) {
       this.queue = new Queue<EmailJobPayload>(QUEUE_NAMES.EMAIL, {
         connection: getRedisConnectionOptions(redisUrl),
@@ -39,7 +40,9 @@ export class EmailQueueService {
       });
       this.logger.log('Email queue enabled');
     } else {
-      this.logger.debug('Email queue disabled (REDIS_URL or QUEUE_EMAIL_ENABLED)');
+      this.logger.debug(
+        'Email queue disabled (REDIS_URL or QUEUE_EMAIL_ENABLED)',
+      );
     }
   }
 

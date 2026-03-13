@@ -28,7 +28,10 @@ export class TenantCallsController {
   @Get()
   list(@Request() req: AuthenticatedRequest, @Query() query: ListCallsDto) {
     const tenantId = requireTenantId(req);
-    const pagination = parsePagination({ page: query.page, limit: query.limit });
+    const pagination = parsePagination({
+      page: query.page,
+      limit: query.limit,
+    });
     return this.callsService.listForTenant(tenantId, {
       ...pagination,
       from: query.from,
@@ -61,7 +64,10 @@ export class TenantCallsController {
   }
 
   @Get('by-retell/:callId')
-  detailByRetell(@Request() req: AuthenticatedRequest, @Param('callId') callId: string) {
+  detailByRetell(
+    @Request() req: AuthenticatedRequest,
+    @Param('callId') callId: string,
+  ) {
     const tenantId = requireTenantId(req);
     return this.callsService.getByRetellIdForTenant(callId, tenantId);
   }
@@ -84,7 +90,10 @@ export class AdminCallsController {
 
   @Get()
   list(@Query() query: ListCallsDto) {
-    const pagination = parsePagination({ page: query.page, limit: query.limit });
+    const pagination = parsePagination({
+      page: query.page,
+      limit: query.limit,
+    });
     return this.callsService.listForAdmin({
       tenantId: query.tenantId,
       ...pagination,
@@ -116,7 +125,10 @@ export class AdminCallsController {
   }
 
   @Get(':id')
-  detail(@Param('id', ParseObjectIdPipe) id: string, @Query('enrich') enrich?: string) {
+  detail(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Query('enrich') enrich?: string,
+  ) {
     return this.callsService.getByIdForAdmin(id, enrich === 'true');
   }
 }

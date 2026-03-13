@@ -11,7 +11,8 @@ const sentryDsn = process.env.SENTRY_DSN;
 if (sentryDsn) {
   Sentry.init({
     dsn: sentryDsn,
-    environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? 'development',
+    environment:
+      process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? 'development',
     release: process.env.SENTRY_RELEASE ?? undefined,
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1,
     enableTracing: true,
@@ -28,7 +29,9 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   const corsOrigins = (
-    process.env.ALLOWED_ORIGINS ?? process.env.CORS_ORIGIN ?? 'http://localhost:5173'
+    process.env.ALLOWED_ORIGINS ??
+    process.env.CORS_ORIGIN ??
+    'http://localhost:5173'
   )
     .split(',')
     .map((o) => o.trim())

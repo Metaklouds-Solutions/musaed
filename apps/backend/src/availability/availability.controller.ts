@@ -24,7 +24,9 @@ export class AvailabilityController {
   ) {
     const tenantId = requireTenantId(req);
     const start = startParam ? new Date(startParam) : new Date();
-    const end = endParam ? new Date(endParam) : new Date(Date.now() + TWO_WEEKS_MS);
+    const end = endParam
+      ? new Date(endParam)
+      : new Date(Date.now() + TWO_WEEKS_MS);
 
     return this.availabilityService.getAvailabilitySlots(tenantId, start, end);
   }

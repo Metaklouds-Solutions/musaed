@@ -45,5 +45,4 @@ describe('EmailQueueService', () => {
     expect(result).toBeNull();
     expect(service.isEnabled()).toBe(false);
   });
-
 });

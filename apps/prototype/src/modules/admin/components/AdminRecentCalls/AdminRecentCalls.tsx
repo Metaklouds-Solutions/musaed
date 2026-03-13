@@ -51,7 +51,10 @@ export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
         className="rounded-[var(--radius-card)] card-glass p-6"
       >
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Recent Calls</h2>
-        <p className="text-sm text-[var(--text-muted)]">No calls yet.</p>
+        <p className="text-sm text-[var(--text-muted)]">
+          No recent platform calls were returned. In a live environment with active tenants, treat
+          this as a signal to verify ingestion rather than a healthy zero.
+        </p>
       </motion.section>
     );
   }

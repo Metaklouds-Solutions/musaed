@@ -2,10 +2,22 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Booking, BookingSchema } from '../bookings/schemas/booking.schema';
 import { Customer, CustomerSchema } from '../customers/schemas/customer.schema';
-import { AgentInstance, AgentInstanceSchema } from '../agent-instances/schemas/agent-instance.schema';
-import { SupportTicket, SupportTicketSchema } from '../support/schemas/support-ticket.schema';
-import { TenantStaff, TenantStaffSchema } from '../tenants/schemas/tenant-staff.schema';
-import { CallSession, CallSessionSchema } from '../calls/schemas/call-session.schema';
+import {
+  AgentInstance,
+  AgentInstanceSchema,
+} from '../agent-instances/schemas/agent-instance.schema';
+import {
+  SupportTicket,
+  SupportTicketSchema,
+} from '../support/schemas/support-ticket.schema';
+import {
+  TenantStaff,
+  TenantStaffSchema,
+} from '../tenants/schemas/tenant-staff.schema';
+import {
+  CallSession,
+  CallSessionSchema,
+} from '../calls/schemas/call-session.schema';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 

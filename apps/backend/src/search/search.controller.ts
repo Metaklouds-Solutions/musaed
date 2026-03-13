@@ -1,4 +1,11 @@
-import { Controller, Get, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Request,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SearchService } from './search.service';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
@@ -16,7 +23,9 @@ export class SearchController {
   ) {
     const user = req.user;
     const isAdmin = user?.role === 'ADMIN';
-    const tenantId = isAdmin ? (req.tenantId ?? null) : (req.tenantId ?? user?.tenantId ?? null);
+    const tenantId = isAdmin
+      ? (req.tenantId ?? null)
+      : (req.tenantId ?? user?.tenantId ?? null);
 
     if (!isAdmin && !tenantId) {
       throw new ForbiddenException('Tenant context is required for search');

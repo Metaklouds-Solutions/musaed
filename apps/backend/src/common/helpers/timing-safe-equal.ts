@@ -10,7 +10,10 @@ import { timingSafeEqual } from 'crypto';
  * @param b - Second string to compare
  * @returns true if both strings are non-empty and equal
  */
-export function safeEqual(a: string | undefined, b: string | undefined): boolean {
+export function safeEqual(
+  a: string | undefined,
+  b: string | undefined,
+): boolean {
   if (!a || !b) return false;
 
   const bufA = Buffer.from(a, 'utf8');

@@ -29,7 +29,9 @@ export class ErrorRateMonitorService {
     }
 
     this.lastNotifiedAt = now;
-    this.logger.warn(`High error rate detected: ${count} server errors in last minute`);
+    this.logger.warn(
+      `High error rate detected: ${count} server errors in last minute`,
+    );
     await this.notificationsService.createForAdmins({
       type: 'high_error_rate',
       source: 'logs',
@@ -48,4 +50,3 @@ export class ErrorRateMonitorService {
     }
   }
 }
-

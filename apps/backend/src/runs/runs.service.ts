@@ -49,7 +49,12 @@ export class RunsService {
     page: number,
     limit: number,
     tenantId?: string,
-  ): Promise<{ data: RunListItem[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: RunListItem[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const filter: Record<string, unknown> = {};
     if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
 
@@ -63,11 +68,15 @@ export class RunsService {
       this.runModel.countDocuments(filter),
     ]);
 
-    const tenantIds = [...new Set(docs.map((d) => String(d.tenantId)).filter(Boolean))];
+    const tenantIds = [
+      ...new Set(docs.map((d) => String(d.tenantId)).filter(Boolean)),
+    ];
     const tenants =
       tenantIds.length > 0
         ? await this.tenantModel
-            .find({ _id: { $in: tenantIds.map((id) => new Types.ObjectId(id)) } })
+            .find({
+              _id: { $in: tenantIds.map((id) => new Types.ObjectId(id)) },
+            })
             .select('_id name')
             .lean()
         : [];
@@ -109,11 +118,17 @@ export class RunsService {
   /**
    * Get a run by call ID (for call detail auditor view).
    */
-  async getRunByCallId(callId: string, tenantId?: string): Promise<RunDetail | null> {
+  async getRunByCallId(
+    callId: string,
+    tenantId?: string,
+  ): Promise<RunDetail | null> {
     const filter: Record<string, unknown> = { callId };
     if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
 
-    const d = await this.runModel.findOne(filter).sort({ startedAt: -1 }).lean();
+    const d = await this.runModel
+      .findOne(filter)
+      .sort({ startedAt: -1 })
+      .lean();
     if (!d) return null;
     return {
       id: String(d._id),

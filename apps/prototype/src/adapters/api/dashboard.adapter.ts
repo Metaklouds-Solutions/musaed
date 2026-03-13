@@ -16,6 +16,36 @@ import type {
 } from '../../shared/types';
 
 interface DateRangeFilter { start: Date; end: Date }
+interface TenantDashboardSummaryResponse {
+  kpis?: TenantKpis;
+  metrics?: DashboardMetrics;
+  signal?: {
+    status?: 'healthy' | 'warning' | 'empty';
+    reason?: string;
+  };
+}
+interface TenantCallsListResponse {
+  data?: Array<Record<string, unknown>>;
+  total?: number;
+}
+interface TenantCallsAnalyticsResponse {
+  totalCalls?: number;
+  conversationRate?: number;
+  avgDuration?: number;
+  outcomes?: {
+    booked?: number;
+    escalated?: number;
+    failed?: number;
+    info_only?: number;
+    unknown?: number;
+  };
+}
+
+const emptyTenantCallsAnalytics: TenantCallsAnalyticsResponse = {
+  totalCalls: 0,
+  avgDuration: 0,
+  outcomes: {},
+};
 
 const defaultMetrics: DashboardMetrics = {
   totalBookings: 0, conversionRate: 0, callsHandled: 0,
@@ -31,6 +61,24 @@ const defaultKpis: TenantKpis = {
 const defaultStaffCounts: TenantStaffCounts = { doctors: 0, receptionists: 0, total: 0 };
 
 export const dashboardAdapter = {
+  async getSummary(_tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<TenantDashboardSummaryResponse> {
+    try {
+      const params = new URLSearchParams();
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
+      const suffix = params.toString();
+      return await api.get<TenantDashboardSummaryResponse>(
+        `/tenant/dashboard/summary${suffix ? `?${suffix}` : ''}`,
+      );
+    } catch {
+      return {
+        kpis: defaultKpis,
+        metrics: defaultMetrics,
+        signal: { status: 'empty', reason: 'Dashboard summary unavailable.' },
+      };
+    }
+  },
+
   async getMetrics(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<DashboardMetrics> {
     try {
       const data = await api.get<{
@@ -106,14 +154,36 @@ export const dashboardAdapter = {
 
   async getTenantKpis(_tenantId: string | undefined, _dateRange?: DateRangeFilter): Promise<TenantKpis> {
     try {
-      const data = await api.get<{
-        totalBookings?: number;
-        totalCalls?: number;
-        callOutcomes?: { booked?: number; escalated?: number; failed?: number; unknown?: number };
-        avgCallDurationMs?: number;
-      }>('/tenant/dashboard/metrics');
-      const totalCalls = data.totalCalls ?? 0;
-      const outcomes = data.callOutcomes ?? {};
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+      const [metrics, callsToday, calls7d, analytics7d] = await Promise.all([
+        api.get<{
+          totalBookings?: number;
+          totalCalls?: number;
+          callOutcomes?: { booked?: number; escalated?: number; failed?: number; unknown?: number };
+          avgCallDurationMs?: number;
+        }>('/tenant/dashboard/metrics'),
+        api
+          .get<TenantCallsListResponse>(
+            `/tenant/calls?from=${encodeURIComponent(todayStart.toISOString())}&to=${encodeURIComponent(now.toISOString())}&page=1&limit=1`,
+          )
+          .catch(() => ({ total: 0 })),
+        api
+          .get<TenantCallsListResponse>(
+            `/tenant/calls?from=${encodeURIComponent(sevenDaysAgo.toISOString())}&to=${encodeURIComponent(now.toISOString())}&page=1&limit=1`,
+          )
+          .catch(() => ({ total: 0 })),
+        api
+          .get<TenantCallsAnalyticsResponse>(
+            `/tenant/calls/analytics?from=${encodeURIComponent(sevenDaysAgo.toISOString())}&to=${encodeURIComponent(now.toISOString())}`,
+          )
+          .catch(() => emptyTenantCallsAnalytics),
+      ]);
+      const totalCalls = metrics.totalCalls ?? analytics7d.totalCalls ?? 0;
+      const outcomes = metrics.callOutcomes ?? analytics7d.outcomes ?? {};
       const booked = outcomes.booked ?? 0;
       const escalated = outcomes.escalated ?? 0;
       const failed = outcomes.failed ?? 0;
@@ -125,15 +195,17 @@ export const dashboardAdapter = {
             : failed > 0
               ? 'failed'
               : '—';
-      const totalMinutes = totalCalls > 0 ? ((data.avgCallDurationMs ?? 0) * totalCalls) / 60_000 : 0;
+      const avgDurationMs =
+        metrics.avgCallDurationMs ?? ((analytics7d.avgDuration ?? 0) * 1000);
+      const totalMinutes = totalCalls > 0 ? (avgDurationMs * totalCalls) / 60_000 : 0;
       return {
-        callsToday: 0,
-        calls7d: 0,
-        appointmentsBooked: data.totalBookings ?? 0,
+        callsToday: callsToday.total ?? 0,
+        calls7d: calls7d.total ?? 0,
+        appointmentsBooked: metrics.totalBookings ?? 0,
         escalations: escalated,
         missedNoAnswer: 0,
         failedCalls: failed,
-        avgDurationSec: (data.avgCallDurationMs ?? 0) / 1000,
+        avgDurationSec: avgDurationMs / 1000,
         topOutcome,
         minutesUsed: totalMinutes,
         creditBalance: 0,

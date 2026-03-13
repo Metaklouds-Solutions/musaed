@@ -79,12 +79,15 @@ describe('EmailProcessor', () => {
 
     await processor.process(job as never);
 
-    expect(mockSendInternalFromJob).toHaveBeenCalledWith('appointment_reminder', {
-      to: 'patient@clinic.com',
-      customerName: 'Bob',
-      appointmentDate: '2025-03-15',
-      timeSlot: '14:00',
-    });
+    expect(mockSendInternalFromJob).toHaveBeenCalledWith(
+      'appointment_reminder',
+      {
+        to: 'patient@clinic.com',
+        customerName: 'Bob',
+        appointmentDate: '2025-03-15',
+        timeSlot: '14:00',
+      },
+    );
   });
 
   it('throws on sendInternalFromJob failure to trigger retry', async () => {
@@ -100,7 +103,9 @@ describe('EmailProcessor', () => {
       id: 'job-3',
     } as unknown as Job;
 
-    await expect(processor.process(job as never)).rejects.toThrow('SMTP failed');
+    await expect(processor.process(job as never)).rejects.toThrow(
+      'SMTP failed',
+    );
     expect(mockRecordEmailFailed).toHaveBeenCalledWith('password_reset');
   });
 });

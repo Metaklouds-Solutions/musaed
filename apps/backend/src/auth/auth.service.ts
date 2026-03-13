@@ -49,25 +49,35 @@ export interface JwtPayload {
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(TenantStaff.name) private tenantStaffModel: Model<TenantStaffDocument>,
+    @InjectModel(TenantStaff.name)
+    private tenantStaffModel: Model<TenantStaffDocument>,
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
-    @InjectModel(InviteToken.name) private inviteTokenModel: Model<InviteTokenDocument>,
-    @InjectModel(RefreshToken.name) private refreshTokenModel: Model<RefreshTokenDocument>,
+    @InjectModel(InviteToken.name)
+    private inviteTokenModel: Model<InviteTokenDocument>,
+    @InjectModel(RefreshToken.name)
+    private refreshTokenModel: Model<RefreshTokenDocument>,
     private jwtService: JwtService,
     private emailService: EmailService,
   ) {}
 
   async login(email: string, password: string) {
-    const user = await this.userModel.findOne({ email: email.toLowerCase(), deletedAt: null });
+    const user = await this.userModel.findOne({
+      email: email.toLowerCase(),
+      deletedAt: null,
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (user.status === 'pending') {
-      throw new ForbiddenException('Account not activated. Check your email for the setup link.');
+      throw new ForbiddenException(
+        'Account not activated. Check your email for the setup link.',
+      );
     }
     if (user.status === 'disabled') {
-      throw new ForbiddenException('Account is disabled. Contact your administrator.');
+      throw new ForbiddenException(
+        'Account is disabled. Contact your administrator.',
+      );
     }
 
     if (user.role !== 'ADMIN') {
@@ -75,7 +85,9 @@ export class AuthService {
     }
 
     if (!user.passwordHash) {
-      throw new ForbiddenException('Account not activated. Check your email for the setup link.');
+      throw new ForbiddenException(
+        'Account not activated. Check your email for the setup link.',
+      );
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
@@ -111,7 +123,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token type');
     }
 
-    const user = await this.userModel.findOne({ _id: payload.sub, deletedAt: null });
+    const user = await this.userModel.findOne({
+      _id: payload.sub,
+      deletedAt: null,
+    });
     if (!user) {
       await this.refreshTokenModel.updateOne(
         { token: refreshToken },
@@ -158,9 +173,14 @@ export class AuthService {
 
   async validateUser(payload: JwtPayload) {
     if (payload.type === 'refresh') {
-      throw new UnauthorizedException('Refresh tokens cannot be used for authentication');
+      throw new UnauthorizedException(
+        'Refresh tokens cannot be used for authentication',
+      );
     }
-    const user = await this.userModel.findOne({ _id: payload.sub, deletedAt: null });
+    const user = await this.userModel.findOne({
+      _id: payload.sub,
+      deletedAt: null,
+    });
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
@@ -184,7 +204,10 @@ export class AuthService {
     return ROLE_PERMISSIONS[slug] ?? ROLE_PERMISSIONS.tenant_staff;
   }
 
-  async generateInviteToken(userId: string, type: 'invite' | 'password_reset'): Promise<string> {
+  async generateInviteToken(
+    userId: string,
+    type: 'invite' | 'password_reset',
+  ): Promise<string> {
     const userObjectId = new Types.ObjectId(userId);
 
     await this.inviteTokenModel.updateMany(
@@ -195,13 +218,20 @@ export class AuthService {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + INVITE_TOKEN_EXPIRY_MS);
 
-    await this.inviteTokenModel.create({ userId: userObjectId, token, type, expiresAt });
+    await this.inviteTokenModel.create({
+      userId: userObjectId,
+      token,
+      type,
+      expiresAt,
+    });
 
     return token;
   }
 
   async verifyToken(token: string) {
-    const record = await this.inviteTokenModel.findOne({ token }).populate('userId', 'email name');
+    const record = await this.inviteTokenModel
+      .findOne({ token })
+      .populate('userId', 'email name');
     if (!record) {
       return { valid: false, reason: 'invalid' };
     }
@@ -212,7 +242,10 @@ export class AuthService {
       return { valid: false, reason: 'expired' };
     }
 
-    const populatedUser = record.userId as unknown as { email: string; name: string };
+    const populatedUser = record.userId as unknown as {
+      email: string;
+      name: string;
+    };
     return {
       valid: true,
       email: populatedUser.email,
@@ -231,8 +264,13 @@ export class AuthService {
     if (!record) {
       const existing = await this.inviteTokenModel.findOne({ token });
       if (!existing) throw new BadRequestException('Invalid token');
-      if (existing.usedAt) throw new BadRequestException('This link has already been used. Please log in or request a new link.');
-      throw new BadRequestException('This link has expired. Please request a new invitation.');
+      if (existing.usedAt)
+        throw new BadRequestException(
+          'This link has already been used. Please log in or request a new link.',
+        );
+      throw new BadRequestException(
+        'This link has expired. Please request a new invitation.',
+      );
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -260,18 +298,36 @@ export class AuthService {
     });
 
     if (!user) {
-      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+      return {
+        message:
+          'If an account with that email exists, a password reset link has been sent.',
+      };
     }
 
-    const token = await this.generateInviteToken(user._id.toString(), 'password_reset');
-    await this.emailService.sendPasswordResetEmail(user.email, user.name, token);
+    const token = await this.generateInviteToken(
+      user._id.toString(),
+      'password_reset',
+    );
+    await this.emailService.sendPasswordResetEmail(
+      user.email,
+      user.name,
+      token,
+    );
 
-    return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    return {
+      message:
+        'If an account with that email exists, a password reset link has been sent.',
+    };
   }
 
   async resetPassword(token: string, password: string) {
     const record = await this.inviteTokenModel.findOneAndUpdate(
-      { token, type: 'password_reset', usedAt: null, expiresAt: { $gt: new Date() } },
+      {
+        token,
+        type: 'password_reset',
+        usedAt: null,
+        expiresAt: { $gt: new Date() },
+      },
       { $set: { usedAt: new Date() } },
       { new: true },
     );
@@ -279,8 +335,13 @@ export class AuthService {
     if (!record) {
       const existing = await this.inviteTokenModel.findOne({ token });
       if (!existing) throw new BadRequestException('Invalid token');
-      if (existing.usedAt) throw new BadRequestException('This link has already been used. Please request a new reset link.');
-      throw new BadRequestException('This link has expired. Please request a new password reset.');
+      if (existing.usedAt)
+        throw new BadRequestException(
+          'This link has already been used. Please request a new reset link.',
+        );
+      throw new BadRequestException(
+        'This link has expired. Please request a new password reset.',
+      );
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -292,15 +353,23 @@ export class AuthService {
 
     if (!user) throw new BadRequestException('User not found');
 
-    return { message: 'Password has been reset successfully. You can now log in.' };
+    return {
+      message: 'Password has been reset successfully. You can now log in.',
+    };
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     const user = await this.userModel.findOne({ _id: userId, deletedAt: null });
     if (!user) throw new UnauthorizedException('User not found');
 
     if (!user.passwordHash) {
-      throw new ForbiddenException('Account not activated. Use the setup link from your email.');
+      throw new ForbiddenException(
+        'Account not activated. Use the setup link from your email.',
+      );
     }
 
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -339,7 +408,10 @@ export class AuthService {
     return { message: 'Account deleted' };
   }
 
-  async updateProfile(userId: string, dto: { name?: string; avatarUrl?: string }) {
+  async updateProfile(
+    userId: string,
+    dto: { name?: string; avatarUrl?: string },
+  ) {
     const updateData: Partial<Pick<User, 'name' | 'avatarUrl'>> = {};
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
@@ -385,7 +457,10 @@ export class AuthService {
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS),
     });
 
-    await this.userModel.updateOne({ _id: user._id }, { lastLoginAt: new Date() });
+    await this.userModel.updateOne(
+      { _id: user._id },
+      { lastLoginAt: new Date() },
+    );
 
     return {
       accessToken,
@@ -426,7 +501,11 @@ export class AuthService {
       _id: membership.tenantId,
       deletedAt: null,
     });
-    if (!tenant || tenant.status === 'SUSPENDED' || tenant.status === 'CHURNED') {
+    if (
+      !tenant ||
+      tenant.status === 'SUSPENDED' ||
+      tenant.status === 'CHURNED'
+    ) {
       throw new ForbiddenException(
         'Your tenant access is disabled. Please contact your administrator.',
       );

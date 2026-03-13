@@ -48,7 +48,10 @@ export class SupportTenantController {
   }
 
   @Get(':id')
-  findById(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  findById(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const tenantId = requireTenantId(req);
     return this.supportService.findById(id, tenantId);
   }
@@ -70,7 +73,12 @@ export class SupportTenantController {
     @Body() dto: AddMessageDto,
   ) {
     const tenantId = requireTenantId(req);
-    return this.supportService.addMessage(id, req.user._id.toString(), dto, tenantId);
+    return this.supportService.addMessage(
+      id,
+      req.user._id.toString(),
+      dto,
+      tenantId,
+    );
   }
 }
 

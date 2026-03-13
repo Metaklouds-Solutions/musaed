@@ -26,7 +26,10 @@ import { AgentRolloutService } from './agent-rollout.service';
     MongooseModule.forFeature([
       { name: AgentInstance.name, schema: AgentInstanceSchema },
       { name: AgentTemplate.name, schema: AgentTemplateSchema },
-      { name: AgentChannelDeployment.name, schema: AgentChannelDeploymentSchema },
+      {
+        name: AgentChannelDeployment.name,
+        schema: AgentChannelDeploymentSchema,
+      },
     ]),
   ],
   providers: [

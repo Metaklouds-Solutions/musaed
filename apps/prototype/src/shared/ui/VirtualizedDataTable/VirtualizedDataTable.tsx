@@ -14,7 +14,7 @@ const MAX_HEIGHT = 400;
 const VIRTUALIZE_THRESHOLD = 50;
 
 interface VirtualizedDataTableProps<T> {
-  items: T[];
+  items: readonly T[] | null | undefined;
   header: React.ReactNode;
   renderRow: (item: T) => React.ReactNode;
   getItemKey: (item: T) => string;
@@ -31,16 +31,17 @@ export function VirtualizedDataTable<T>({
   maxHeight = MAX_HEIGHT,
 }: VirtualizedDataTableProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const useVirtual = items.length >= VIRTUALIZE_THRESHOLD;
+  const normalizedItems = Array.isArray(items) ? items : [];
+  const useVirtual = normalizedItems.length >= VIRTUALIZE_THRESHOLD;
 
   const virtualizer = useVirtualizer({
-    count: items.length,
+    count: normalizedItems.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
   });
 
-  if (items.length === 0) return null;
+  if (normalizedItems.length === 0) return null;
 
   if (!useVirtual) {
     return (
@@ -50,7 +51,7 @@ export function VirtualizedDataTable<T>({
             <TableRow>{header}</TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => (
+            {normalizedItems.map((item) => (
               <TableRow key={getItemKey(item)}>{renderRow(item)}</TableRow>
             ))}
           </TableBody>
@@ -78,7 +79,7 @@ export function VirtualizedDataTable<T>({
             style={{ height: `${totalHeight}px` }}
           >
             {virtualItems.map((virtualRow) => {
-              const item = items[virtualRow.index];
+              const item = normalizedItems[virtualRow.index];
               return (
                 <TableRow
                   key={getItemKey(item)}

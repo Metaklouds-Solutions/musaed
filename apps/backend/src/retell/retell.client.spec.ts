@@ -18,8 +18,15 @@ describe('RetellClient', () => {
 
   it('throws RetellApiException on SDK APIError', async () => {
     // Mock the SDK's agent.create method to throw an APIError
-    const mockError = new APIError(400, { message: 'bad request' }, 'bad request', undefined);
-    jest.spyOn((client as any).client.agent, 'create').mockRejectedValue(mockError);
+    const mockError = new APIError(
+      400,
+      { message: 'bad request' },
+      'bad request',
+      undefined,
+    );
+    jest
+      .spyOn((client as any).client.agent, 'create')
+      .mockRejectedValue(mockError);
 
     await expect(
       client.createAgent({
@@ -48,8 +55,15 @@ describe('RetellClient', () => {
   });
 
   it('handles probe connectivity failure', async () => {
-    const mockError = new APIError(401, { message: 'unauthorized' }, 'unauthorized', undefined);
-    jest.spyOn((client as any).client.agent, 'list').mockRejectedValue(mockError);
+    const mockError = new APIError(
+      401,
+      { message: 'unauthorized' },
+      'unauthorized',
+      undefined,
+    );
+    jest
+      .spyOn((client as any).client.agent, 'list')
+      .mockRejectedValue(mockError);
 
     const result = await client.probeConnectivity();
     expect(result.reachable).toBe(false);

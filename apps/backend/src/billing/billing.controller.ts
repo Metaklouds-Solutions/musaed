@@ -38,7 +38,10 @@ export class BillingAdminController {
   }
 
   @Patch('plans/:id')
-  updatePlan(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdatePlanDto) {
+  updatePlan(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdatePlanDto,
+  ) {
     return this.billingService.updatePlan(id, dto);
   }
 }

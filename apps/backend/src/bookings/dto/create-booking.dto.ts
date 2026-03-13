@@ -22,7 +22,7 @@ export class CreateBookingDto {
   @IsOptional()
   locationId?: string;
 
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @MaxLength(200)
   serviceType: string;

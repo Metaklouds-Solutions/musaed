@@ -59,7 +59,10 @@ export class NotificationsController {
   }
 
   @Patch(':id/read')
-  async markAsRead(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  async markAsRead(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const userId = req.user._id.toString();
     await this.notificationsService.markAsRead(id, userId);
     return { ok: true };
@@ -88,7 +91,10 @@ export class NotificationsController {
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseObjectIdPipe) id: string, @Request() req: AuthenticatedRequest) {
+  async delete(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const userId = req.user._id.toString();
     await this.notificationsService.delete(id, userId);
     return { ok: true };

@@ -2,9 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
-import { TenantStaff, TenantStaffDocument } from '../tenants/schemas/tenant-staff.schema';
+import {
+  TenantStaff,
+  TenantStaffDocument,
+} from '../tenants/schemas/tenant-staff.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
-import { SupportTicket, SupportTicketDocument } from '../support/schemas/support-ticket.schema';
+import {
+  SupportTicket,
+  SupportTicketDocument,
+} from '../support/schemas/support-ticket.schema';
 
 export interface SearchResultItem {
   id: string;
@@ -14,7 +20,10 @@ export interface SearchResultItem {
   path: string;
 }
 
-function matchQuery(q: string, ...texts: (string | undefined | null)[]): boolean {
+function matchQuery(
+  q: string,
+  ...texts: (string | undefined | null)[]
+): boolean {
   const lower = q.toLowerCase().trim();
   if (!lower) return false;
   return texts.some((t) => t?.toLowerCase().includes(lower));
@@ -24,9 +33,11 @@ function matchQuery(q: string, ...texts: (string | undefined | null)[]): boolean
 export class SearchService {
   constructor(
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
-    @InjectModel(TenantStaff.name) private staffModel: Model<TenantStaffDocument>,
+    @InjectModel(TenantStaff.name)
+    private staffModel: Model<TenantStaffDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
+    @InjectModel(SupportTicket.name)
+    private ticketModel: Model<SupportTicketDocument>,
   ) {}
 
   async search(
@@ -36,7 +47,11 @@ export class SearchService {
     const q = query.trim();
     if (!q) return [];
 
-    const { tenantId, isAdmin, types = ['tenants', 'staff', 'tickets'] } = options;
+    const {
+      tenantId,
+      isAdmin,
+      types = ['tenants', 'staff', 'tickets'],
+    } = options;
     const results: SearchResultItem[] = [];
 
     if (types.includes('tenants') && isAdmin) {
@@ -61,13 +76,18 @@ export class SearchService {
     }
 
     if (types.includes('staff')) {
-      const staffFilter: Record<string, unknown> = { status: { $ne: 'disabled' } };
+      const staffFilter: Record<string, unknown> = {
+        status: { $ne: 'disabled' },
+      };
       if (!isAdmin && tenantId) {
         staffFilter.tenantId = new Types.ObjectId(tenantId);
       }
       const staff = await this.staffModel
         .find(staffFilter)
-        .populate<{ userId: { name?: string; email?: string }; tenantId: { name?: string } }>('userId', 'name email')
+        .populate<{
+          userId: { name?: string; email?: string };
+          tenantId: { name?: string };
+        }>('userId', 'name email')
         .populate('tenantId', 'name')
         .limit(20)
         .lean();
@@ -112,7 +132,9 @@ export class SearchService {
             type: 'ticket',
             label: title,
             meta: tenantName ? `${status} · ${tenantName}` : status,
-            path: isAdmin ? `/admin/support/${t._id}` : `/help/tickets/${t._id}`,
+            path: isAdmin
+              ? `/admin/support/${t._id}`
+              : `/help/tickets/${t._id}`,
           });
         }
       }

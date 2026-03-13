@@ -1,4 +1,11 @@
-import { Controller, Get, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
@@ -23,7 +30,10 @@ export class AlertsController {
 
   @Patch(':id/resolve')
   @RequirePermissions(PERMISSIONS.ALERTS_WRITE)
-  async resolveAlert(@Request() req: AuthenticatedRequest, @Param('id', ParseObjectIdPipe) id: string) {
+  async resolveAlert(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseObjectIdPipe) id: string,
+  ) {
     const tenantId = requireTenantId(req);
     const ok = await this.alertsService.resolveAlert(tenantId, id);
     return { ok };

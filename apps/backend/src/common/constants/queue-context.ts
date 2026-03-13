@@ -26,10 +26,18 @@ export type QueueJobContext = {
  * // In Phase 2 webhook controller:
  * await webhookQueue.add('process', { ...payload, ...extractQueueContext(req) }, { jobId: eventId });
  */
-export function extractQueueContext(req: { headers?: Record<string, string | string[] | undefined>; tenantId?: string | null; user?: { _id?: string } }): Partial<QueueJobContext> {
+export function extractQueueContext(req: {
+  headers?: Record<string, string | string[] | undefined>;
+  tenantId?: string | null;
+  user?: { _id?: string };
+}): Partial<QueueJobContext> {
   const requestId =
-    (typeof req.headers?.['x-request-id'] === 'string' ? req.headers['x-request-id'] : null) ??
-    (typeof req.headers?.['x-correlation-id'] === 'string' ? req.headers['x-correlation-id'] : null);
+    (typeof req.headers?.['x-request-id'] === 'string'
+      ? req.headers['x-request-id']
+      : null) ??
+    (typeof req.headers?.['x-correlation-id'] === 'string'
+      ? req.headers['x-correlation-id']
+      : null);
   const ctx: Partial<QueueJobContext> = {};
   if (requestId) ctx[QUEUE_CONTEXT_KEYS.REQUEST_ID] = requestId;
   if (req.tenantId) ctx[QUEUE_CONTEXT_KEYS.TENANT_ID] = req.tenantId;

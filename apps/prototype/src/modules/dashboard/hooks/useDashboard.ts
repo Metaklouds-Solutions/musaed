@@ -3,7 +3,7 @@
  * Returns metrics, funnel, trend for current tenant (from session).
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { dashboardAdapter } from '../../../adapters';
 import { useAsyncData } from '../../../shared/hooks/useAsyncData';
@@ -23,55 +23,65 @@ const defaultKpis: TenantKpis = {
 
 export function useDashboard(dateRange?: DateRangeFilter) {
   const { user } = useSession();
+  const [refreshTick, setRefreshTick] = useState(0);
   const tenantId = useMemo(() => {
     if (!user) return undefined;
     if (user.role === 'ADMIN') return undefined;
     return user.tenantId;
   }, [user]);
 
-  const { data: metrics, loading } = useAsyncData(
-    () => dashboardAdapter.getMetrics(tenantId, dateRange),
-    [tenantId, dateRange],
-    defaultMetrics,
+  useEffect(() => {
+    const onRefresh = () => setRefreshTick((t) => t + 1);
+    window.addEventListener('dashboard:refresh', onRefresh);
+    return () => {
+      window.removeEventListener('dashboard:refresh', onRefresh);
+    };
+  }, []);
+
+  const { data: summary, loading } = useAsyncData(
+    () => dashboardAdapter.getSummary(tenantId, dateRange),
+    [tenantId, dateRange, refreshTick],
+    {
+      metrics: defaultMetrics,
+      kpis: defaultKpis,
+      signal: { status: 'empty' as const, reason: 'Dashboard summary unavailable.' },
+    },
   );
+  const metrics = summary.metrics ?? defaultMetrics;
   const { data: funnel } = useAsyncData(
     () => dashboardAdapter.getFunnel(tenantId, dateRange),
-    [tenantId, dateRange],
+    [tenantId, dateRange, refreshTick],
     []
   );
   const { data: trend } = useAsyncData(
     () => dashboardAdapter.getTrend(tenantId, dateRange),
-    [tenantId, dateRange],
+    [tenantId, dateRange, refreshTick],
     []
   );
-  const { data: kpis } = useAsyncData(
-    () => dashboardAdapter.getTenantKpis(tenantId, dateRange),
-    [tenantId, dateRange],
-    defaultKpis,
-  );
+  const kpis = summary.kpis ?? defaultKpis;
   const { data: agentStatus } = useAsyncData(
     () => dashboardAdapter.getTenantAgentStatus(tenantId),
-    [tenantId],
+    [tenantId, refreshTick],
     null
   );
   const { data: staffCounts } = useAsyncData(
     () => dashboardAdapter.getTenantStaffCounts(tenantId),
-    [tenantId],
+    [tenantId, refreshTick],
     { doctors: 0, receptionists: 0, total: 0 },
   );
   const { data: openTickets } = useAsyncData(
     () => dashboardAdapter.getTenantOpenTickets(tenantId, 5),
-    [tenantId],
+    [tenantId, refreshTick],
     [],
   );
   const { data: recentCalls } = useAsyncData(
     () => dashboardAdapter.getTenantRecentCalls(tenantId, 10, dateRange),
-    [tenantId, dateRange],
+    [tenantId, dateRange, refreshTick],
     []
   );
   const { data: roi } = useAsyncData(
     () => dashboardAdapter.getRoiMetrics(tenantId, dateRange),
-    [tenantId, dateRange],
+    [tenantId, dateRange, refreshTick],
     { revenue: 0, aiCost: 0, costSaved: 0, roiPercent: 0, totalMinutes: 0 }
   );
 
@@ -79,6 +89,7 @@ export function useDashboard(dateRange?: DateRangeFilter) {
     user,
     tenantId,
     metrics,
+    summary,
     loading,
     funnel,
     trend,

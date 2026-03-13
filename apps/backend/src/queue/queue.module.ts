@@ -39,7 +39,9 @@ export class QueueModule {
               };
             }
             const limitRetries = nodeEnv !== 'production';
-            return { connection: getRedisConnectionOptions(redisUrl, limitRetries) };
+            return {
+              connection: getRedisConnectionOptions(redisUrl, limitRetries),
+            };
           },
         }),
         BullModule.registerQueue(

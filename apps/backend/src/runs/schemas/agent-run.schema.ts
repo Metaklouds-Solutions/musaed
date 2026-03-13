@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-export type AgentRunDocument = AgentRun & Document & { createdAt: Date; updatedAt: Date };
+export type AgentRunDocument = AgentRun &
+  Document & { createdAt: Date; updatedAt: Date };
 
 @Schema({ timestamps: true, collection: 'agent_runs' })
 export class AgentRun {

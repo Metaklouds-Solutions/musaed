@@ -32,7 +32,11 @@ export class User {
   @Prop({ required: true, enum: ['ADMIN', 'TENANT_OWNER', 'STAFF'] })
   role: string;
 
-  @Prop({ default: 'active', enum: ['pending', 'active', 'disabled'], index: true })
+  @Prop({
+    default: 'active',
+    enum: ['pending', 'active', 'disabled'],
+    index: true,
+  })
   status: string;
 
   @Prop({ type: String, default: null })

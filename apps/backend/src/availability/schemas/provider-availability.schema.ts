@@ -21,6 +21,7 @@ export class ProviderAvailability {
   endTime: string;
 }
 
-export const ProviderAvailabilitySchema = SchemaFactory.createForClass(ProviderAvailability);
+export const ProviderAvailabilitySchema =
+  SchemaFactory.createForClass(ProviderAvailability);
 
 ProviderAvailabilitySchema.index({ tenantId: 1, providerId: 1, dayOfWeek: 1 });

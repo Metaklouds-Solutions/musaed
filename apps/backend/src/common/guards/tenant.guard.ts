@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
 @Injectable()
@@ -9,7 +14,8 @@ export class TenantGuard implements CanActivate {
 
     if (user?.role === 'ADMIN') {
       const queryTenantId = request.query?.tenantId;
-      request.tenantId = typeof queryTenantId === 'string' ? queryTenantId : null;
+      request.tenantId =
+        typeof queryTenantId === 'string' ? queryTenantId : null;
       return true;
     }
 

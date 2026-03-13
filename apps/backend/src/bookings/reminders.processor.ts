@@ -24,10 +24,19 @@ export class RemindersProcessor {
       .lean();
 
     for (const tenant of tenants) {
-      const settings = tenant.settings as { notifications?: { bookingReminders?: boolean }; appointmentReminders?: { advanceMinutes?: number; channel?: string } } | undefined;
+      const settings = tenant.settings as
+        | {
+            notifications?: { bookingReminders?: boolean };
+            appointmentReminders?: {
+              advanceMinutes?: number;
+              channel?: string;
+            };
+          }
+        | undefined;
       if (!settings?.notifications?.bookingReminders) continue;
 
-      const advanceMinutes = settings.appointmentReminders?.advanceMinutes ?? 60;
+      const advanceMinutes =
+        settings.appointmentReminders?.advanceMinutes ?? 60;
       const channel = settings.appointmentReminders?.channel ?? 'email';
       if (channel !== 'email') continue;
 
@@ -44,7 +53,9 @@ export class RemindersProcessor {
           reminderSent: false,
           date: {
             $gte: new Date(targetDateStr),
-            $lt: new Date(new Date(targetDateStr).getTime() + 24 * 60 * 60 * 1000),
+            $lt: new Date(
+              new Date(targetDateStr).getTime() + 24 * 60 * 60 * 1000,
+            ),
           },
         })
         .populate('customerId', 'name email')
@@ -58,7 +69,11 @@ export class RemindersProcessor {
       });
 
       for (const b of toSend) {
-        const customer = b.customerId as { _id?: unknown; name?: string; email?: string } | null;
+        const customer = b.customerId as {
+          _id?: unknown;
+          name?: string;
+          email?: string;
+        } | null;
         if (!customer?.email) continue;
 
         const date = (b as { date?: Date }).date;
@@ -76,9 +91,14 @@ export class RemindersProcessor {
             { _id: (b as { _id?: unknown })._id },
             { $set: { reminderSent: true, reminderAt: new Date() } },
           );
-          this.logger.log(`Reminder sent for booking ${(b as { _id?: unknown })._id}`);
+          this.logger.log(
+            `Reminder sent for booking ${(b as { _id?: unknown })._id}`,
+          );
         } catch (err) {
-          this.logger.error(`Failed to send reminder for booking ${(b as { _id?: unknown })._id}`, err instanceof Error ? err.stack : err);
+          this.logger.error(
+            `Failed to send reminder for booking ${(b as { _id?: unknown })._id}`,
+            err instanceof Error ? err.stack : err,
+          );
         }
       }
     }

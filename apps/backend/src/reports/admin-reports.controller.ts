@@ -14,7 +14,12 @@ export class AdminReportsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    const tenantIds = tenantIdsParam ? tenantIdsParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const tenantIds = tenantIdsParam
+      ? tenantIdsParam
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
     return this.reportsService.getTenantComparison(tenantIds, dateFrom, dateTo);
   }
 }

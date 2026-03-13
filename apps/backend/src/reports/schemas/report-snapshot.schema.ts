@@ -72,7 +72,8 @@ export class ReportSnapshot {
   avgDurationMs: number | null;
 }
 
-export const ReportSnapshotSchema = SchemaFactory.createForClass(ReportSnapshot);
+export const ReportSnapshotSchema =
+  SchemaFactory.createForClass(ReportSnapshot);
 
 ReportSnapshotSchema.index({ tenantId: 1, snapshotDate: -1 }, { unique: true });
 ReportSnapshotSchema.index({ snapshotDate: -1 });

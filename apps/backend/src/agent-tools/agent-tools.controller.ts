@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
 import { AgentToolsService } from './agent-tools.service';
 import {
   AgentIdDto,
@@ -31,7 +24,10 @@ export class AgentToolsController {
   }
 
   @Post('tools/get_past_tickets')
-  getPastTickets(@Body() body: PastTicketsDto, @Headers() headers: ToolHeaders) {
+  getPastTickets(
+    @Body() body: PastTicketsDto,
+    @Headers() headers: ToolHeaders,
+  ) {
     this.validateApiKey(headers);
     return this.toolsService.getPastTickets(
       body.agent_id,
@@ -52,7 +48,10 @@ export class AgentToolsController {
   }
 
   @Get(':agentId/skills')
-  getAvailableSkills(@Param('agentId') agentId: string, @Headers() headers: ToolHeaders) {
+  getAvailableSkills(
+    @Param('agentId') agentId: string,
+    @Headers() headers: ToolHeaders,
+  ) {
     this.validateApiKey(headers);
     return this.toolsService.getAvailableSkills(agentId);
   }
@@ -64,7 +63,11 @@ export class AgentToolsController {
     @Headers() headers: ToolHeaders,
   ) {
     this.validateApiKey(headers);
-    return this.toolsService.invokeSkill(body.agent_id, skillName, body.params ?? {});
+    return this.toolsService.invokeSkill(
+      body.agent_id,
+      skillName,
+      body.params ?? {},
+    );
   }
 
   @Post('tools/create_zoho_lead')
@@ -74,7 +77,10 @@ export class AgentToolsController {
   }
 
   @Post('tools/get_available_slots')
-  getAvailableSlots(@Body() body: AvailableSlotsDto, @Headers() headers: ToolHeaders) {
+  getAvailableSlots(
+    @Body() body: AvailableSlotsDto,
+    @Headers() headers: ToolHeaders,
+  ) {
     this.validateApiKey(headers);
     return this.toolsService.getAvailableSlots(
       body.agent_id,
@@ -99,7 +105,11 @@ export class AgentToolsController {
   @Post('tools/resend_invite')
   resendInvite(@Body() body: ResendInviteDto, @Headers() headers: ToolHeaders) {
     this.validateApiKey(headers);
-    return this.toolsService.resendInvite(body.agent_id, body.email, body.meeting_id);
+    return this.toolsService.resendInvite(
+      body.agent_id,
+      body.email,
+      body.meeting_id,
+    );
   }
 
   private validateApiKey(headers: ToolHeaders) {

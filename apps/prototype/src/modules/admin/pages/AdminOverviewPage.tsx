@@ -17,6 +17,53 @@ import { AdminRevenueSection } from '../components/AdminRevenueSection';
 import { AdminPlatformSection } from '../components/AdminPlatformSection';
 import { AdminAnomaliesSection } from '../components/AdminAnomaliesSection';
 import { useAdminOverview } from '../hooks';
+import { AlertTriangle, CheckCircle2, Radio } from 'lucide-react';
+
+function getAdminSignal(args: {
+  totalTenants: number;
+  activeTenants: number;
+  calls7d: number;
+  recentCalls: number;
+  recentTenants: number;
+  openTickets: number;
+}) {
+  const { totalTenants, activeTenants, calls7d, recentCalls, recentTenants, openTickets } = args;
+  const hasAnyPlatformSignal =
+    totalTenants > 0 || calls7d > 0 || recentCalls > 0 || recentTenants > 0 || openTickets > 0;
+
+  if (!hasAnyPlatformSignal) {
+    return {
+      tone: 'neutral',
+      title: 'The platform has no visible operating signal yet',
+      description:
+        'No tenants, calls, or support activity are reaching the admin dashboard. This is expected only in an empty environment.',
+    } as const;
+  }
+
+  if (activeTenants > 0 && calls7d === 0 && recentCalls === 0) {
+    return {
+      tone: 'warning',
+      title: 'Active tenants exist but the call pipeline looks empty',
+      description:
+        'That usually means ingestion, sync, or dashboard aggregation is stale. Verify Retell/webhook flow and compare with raw call records.',
+    } as const;
+  }
+
+  if (totalTenants > 0 && recentTenants === 0) {
+    return {
+      tone: 'warning',
+      title: 'Tenant volume exists but recent onboarding is not visible',
+      description:
+        'The system is tracking tenants, but the recent-tenant feed returned no rows. Check tenant sorting, createdAt data, and admin list responses.',
+    } as const;
+  }
+
+  return {
+    tone: 'positive',
+    title: 'Platform signal is healthy',
+    description: `${activeTenants} active tenants and ${calls7d} calls were detected in the last 7 days. Use the sections below to watch conversion, support pressure, and infrastructure health.`,
+  } as const;
+}
 
 /** Admin dashboard page. Platform KPIs, tenants, support, calls, system health. */
 export function AdminOverviewPage() {
@@ -28,6 +75,14 @@ export function AdminOverviewPage() {
     recentCalls,
     systemHealth,
   } = useAdminOverview();
+  const adminSignal = getAdminSignal({
+    totalTenants: kpis.totalTenants,
+    activeTenants: kpis.activeTenants,
+    calls7d: kpis.calls7d,
+    recentCalls: recentCalls.length,
+    recentTenants: recentTenants.length,
+    openTickets: supportSnapshot.openCount,
+  });
 
   return (
     <div className="space-y-8">
@@ -49,6 +104,34 @@ export function AdminOverviewPage() {
           <AdminQuickActions />
         </div>
       </motion.header>
+
+      <section
+        className={`rounded-[var(--radius-card)] border p-4 shadow-[var(--shadow-card)] ${
+          adminSignal.tone === 'warning'
+            ? 'border-[var(--warning)]/40 bg-[color-mix(in_srgb,var(--warning)_8%,var(--bg-elevated))]'
+            : adminSignal.tone === 'positive'
+              ? 'border-emerald-500/30 bg-[color-mix(in_srgb,emerald_8%,var(--bg-elevated))]'
+              : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)]/90'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={`mt-0.5 rounded-full p-2 ${
+              adminSignal.tone === 'warning'
+                ? 'bg-[var(--warning)]/15 text-[var(--warning)]'
+                : adminSignal.tone === 'positive'
+                  ? 'bg-emerald-500/15 text-emerald-400'
+                  : 'bg-[var(--ds-primary)]/15 text-[var(--ds-primary)]'
+            }`}
+          >
+            {adminSignal.tone === 'warning' ? <AlertTriangle size={16} /> : adminSignal.tone === 'positive' ? <CheckCircle2 size={16} /> : <Radio size={16} />}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">{adminSignal.title}</h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">{adminSignal.description}</p>
+          </div>
+        </div>
+      </section>
 
       <AdminKpiCards kpis={kpis} />
 
