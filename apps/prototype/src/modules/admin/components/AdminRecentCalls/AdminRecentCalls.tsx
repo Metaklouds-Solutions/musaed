@@ -1,9 +1,9 @@
 /**
- * Admin dashboard: recent calls table (cross-tenant).
+ * Admin dashboard: recent calls feed list (stacked, no table).
  */
 
 import { motion } from 'motion/react';
-import { DataTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton, PillTag } from '../../../../shared/ui';
+import { PillTag } from '../../../../shared/ui';
 import type { AdminRecentCall } from '../../../../shared/types';
 
 interface AdminRecentCallsProps {
@@ -41,7 +41,7 @@ function OutcomePill({ outcome }: { outcome: AdminRecentCall['outcome'] }) {
   return <PillTag variant={variant}>{outcome}</PillTag>;
 }
 
-/** Renders cross-tenant recent calls with outcome and duration. */
+/** Renders cross-tenant recent calls as stacked feed list. */
 export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
   if (calls.length === 0) {
     return (
@@ -64,36 +64,24 @@ export function AdminRecentCalls({ calls }: AdminRecentCallsProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.15 }}
-      className="rounded-[var(--radius-card)] card-glass overflow-x-auto"
+      className="rounded-[var(--radius-card)] card-glass p-5"
     >
-      <div className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Calls</h2>
-        <ViewButton to="/admin/calls">View all</ViewButton>
-      </div>
-      <DataTable minWidth="min-w-[480px]">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Tenant</TableHead>
-            <TableHead>Agent</TableHead>
-            <TableHead>Outcome</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Time</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {calls.map((c) => (
-            <TableRow key={c.id}>
-              <TableCell className="font-medium text-[var(--text-primary)]">{c.tenantName}</TableCell>
-              <TableCell className="text-[var(--text-secondary)]">{c.agentName}</TableCell>
-              <TableCell><OutcomePill outcome={c.outcome} /></TableCell>
-              <TableCell className="text-[var(--text-muted)]">{formatDuration(c.duration)}</TableCell>
-              <TableCell className="text-[var(--text-muted)]">{formatDateTime(c.startedAt)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      </DataTable>
+      <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Recent Calls</h2>
+      <ul className="space-y-2">
+        {calls.map((c) => (
+          <li key={c.id} className="rounded-lg bg-[var(--ds-primary)]/10 px-3 py-3">
+            <p className="font-medium text-[var(--text-primary)] truncate">
+              {c.tenantName} · {c.agentName}
+            </p>
+            <p className="mt-1 text-sm text-[var(--text-muted)] flex items-center gap-2 flex-wrap">
+              <OutcomePill outcome={c.outcome} />
+              <span>{formatDuration(c.duration)}</span>
+              <span>·</span>
+              <span>{formatDateTime(c.startedAt)}</span>
+            </p>
+          </li>
+        ))}
+      </ul>
     </motion.section>
   );
 }

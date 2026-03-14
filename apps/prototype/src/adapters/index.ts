@@ -103,7 +103,7 @@ export const toolsAdapter = localTools.toolsAdapter;
 export const skillsAdapter = localSkills.skillsAdapter;
 
 export type { DashboardMetrics, FunnelStage, TrendPoint } from '../shared/types';
-export type { AdminOverviewMetrics, PaymentFailure, UsageAnomaly, ChurnRisk } from '../shared/types';
+export type { AdminPulseKpis, AdminHealth } from '../shared/types';
 export type { SearchResult, SearchResultType } from './local/search.adapter';
 export type { ScheduledReportConfig } from './local/reports.adapter';
 export type { CalendarAppointment, CalendarAvailability } from './local/bookings.adapter';

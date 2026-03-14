@@ -33,22 +33,16 @@ interface RunListResponse {
 
 export const runsAdapter = {
   /**
-   * List all runs from the backend API with optional tenant filter.
+   * List runs with optional tenant filter. Uses tenant endpoint when tenantId provided.
    */
-  listRuns(tenantId?: string): AdminRunRow[] {
-    return [];
-  },
-
-  /**
-   * Async version that returns a promise for API mode.
-   */
-  async listRunsAsync(tenantId?: string): Promise<AdminRunRow[]> {
+  async listRuns(tenantId?: string): Promise<AdminRunRow[]> {
     try {
       const params = new URLSearchParams();
       params.set('limit', '200');
       if (tenantId) params.set('tenantId', tenantId);
 
-      const res = await api.get<RunListResponse>(`/admin/runs?${params.toString()}`);
+      const endpoint = tenantId ? '/tenant/runs' : '/admin/runs';
+      const res = await api.get<RunListResponse>(`${endpoint}?${params.toString()}`);
       const items = res?.data ?? [];
       return items.map((r) => ({
         id: r.id,
@@ -67,14 +61,7 @@ export const runsAdapter = {
   /**
    * Get run by ID.
    */
-  getRun(id: string): AgentRun | null {
-    return null;
-  },
-
-  /**
-   * Async version for API mode.
-   */
-  async getRunAsync(id: string): Promise<AgentRun | null> {
+  async getRun(id: string): Promise<AgentRun | null> {
     try {
       return await api.get<AgentRun>(`/admin/runs/${id}`);
     } catch {
@@ -83,19 +70,13 @@ export const runsAdapter = {
   },
 
   /**
-   * Get run by call ID.
+   * Get run by Retell call ID.
    */
-  getRunByCallId(callId: string, tenantId?: string): AgentRun | null {
-    return null;
-  },
-
-  /**
-   * Async version for API mode.
-   */
-  async getRunByCallIdAsync(callId: string, tenantId?: string): Promise<AgentRun | null> {
+  async getRunByCallId(callId: string, tenantId?: string): Promise<AgentRun | null> {
     try {
-      const params = tenantId ? `?tenantId=${tenantId}` : '';
-      return await api.get<AgentRun>(`/admin/runs/by-call/${callId}${params}`);
+      const params = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : '';
+      const endpoint = tenantId ? '/tenant/runs' : '/admin/runs';
+      return await api.get<AgentRun>(`${endpoint}/by-call/${callId}${params}`);
     } catch {
       return null;
     }
@@ -104,16 +85,11 @@ export const runsAdapter = {
   /**
    * Get run events.
    */
-  getRunEvents(runId: string): RunEvent[] {
-    return [];
-  },
-
-  /**
-   * Async version for API mode.
-   */
-  async getRunEventsAsync(runId: string): Promise<RunEvent[]> {
+  async getRunEvents(runId: string, tenantId?: string): Promise<RunEvent[]> {
     try {
-      const data = await api.get<RunEvent[]>(`/admin/runs/${runId}/events`);
+      const params = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : '';
+      const endpoint = tenantId ? '/tenant/runs' : '/admin/runs';
+      const data = await api.get<RunEvent[]>(`${endpoint}/${runId}/events${params}`);
       return Array.isArray(data) ? data : [];
     } catch {
       return [];

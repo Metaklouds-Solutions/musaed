@@ -10,9 +10,10 @@ export function useAdminRuns() {
   const [page, setPage] = useState(1);
 
   const { data: tenants } = useAsyncData(() => tenantsAdapter.getAllTenants(), [], []);
-  const runs = useMemo(
+  const { data: runs } = useAsyncData(
     () => runsAdapter.listRuns(tenantFilter || undefined),
-    [tenantFilter]
+    [tenantFilter],
+    [],
   );
 
   const totalCost = useMemo(

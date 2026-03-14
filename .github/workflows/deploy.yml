@@ -141,7 +141,7 @@ jobs:
             --region ${{ env.GCP_REGION }} \
             --platform managed \
             --no-allow-unauthenticated \
-            --set-env-vars "NODE_ENV=production,QUEUE_WEBHOOKS_ENABLED=true,QUEUE_EMAIL_ENABLED=true,QUEUE_NOTIFICATIONS_ENABLED=true" \
+            --set-env-vars "NODE_ENV=production,SENTRY_ENVIRONMENT=${{ steps.env.outputs.env }},QUEUE_WEBHOOKS_ENABLED=true,QUEUE_EMAIL_ENABLED=true,QUEUE_NOTIFICATIONS_ENABLED=true" \
             --set-secrets "MONGODB_URI=MONGODB_URI:latest,JWT_SECRET=JWT_SECRET:latest,REDIS_URL=REDIS_URL:latest,RETELL_API_KEY=RETELL_API_KEY:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,SMTP_USER=SMTP_USER:latest,SMTP_PASS=SMTP_PASS:latest"
 
   deploy-website:

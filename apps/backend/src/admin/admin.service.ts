@@ -98,6 +98,7 @@ export class AdminService {
     const [
       overview,
       tenantRows,
+      agentCounts,
       supportRows,
       recentCalls,
       analytics,
@@ -108,9 +109,14 @@ export class AdminService {
         .find({ deletedAt: null })
         .sort({ createdAt: -1 })
         .limit(5)
-        .select('_id name status createdAt onboardingStep planId')
+        .select('_id name status createdAt planId ownerId')
         .populate('planId', 'name')
+        .populate('ownerId', 'status lastLoginAt')
         .lean(),
+      this.instanceModel.aggregate<{ _id: unknown; count: number }>([
+        { $match: { status: { $ne: 'deleted' }, tenantId: { $ne: null } } },
+        { $group: { _id: '$tenantId', count: { $sum: 1 } } },
+      ]),
       this.ticketModel
         .find({ status: { $in: ['open', 'in_progress'] } })
         .sort({ createdAt: -1 })
@@ -120,7 +126,7 @@ export class AdminService {
       this.callSessionModel
         .find({ ...callRangeFilter })
         .sort({ createdAt: -1 })
-        .limit(10)
+        .limit(5)
         .populate('tenantId', 'name')
         .populate('agentInstanceId', 'name')
         .select('_id tenantId agentInstanceId outcome durationMs startedAt createdAt')
@@ -130,13 +136,16 @@ export class AdminService {
         date: { $gte: sevenDaysAgo, $lte: this.endOfDay(now) },
       }),
     ]);
+    const agentCountMap = new Map(
+      (agentCounts ?? []).map((row) => [String(row._id), row.count]),
+    );
     const typedTenantRows = tenantRows as Array<{
       _id: unknown;
       name?: string;
       status?: string;
       createdAt?: Date | string;
-      onboardingStep?: number;
       planId?: { name?: string } | null;
+      ownerId?: { status?: string; lastLoginAt?: unknown } | null;
     }>;
     const typedSupportRows = supportRows as Array<{
       _id: unknown;
@@ -169,67 +178,76 @@ export class AdminService {
       }, 0),
     };
 
-    const trialTenants = typedTenantRows.filter(
-      (tenant) => tenant.status === 'TRIAL' || tenant.status === 'ONBOARDING',
-    ).length;
-    const suspendedTenants = typedTenantRows.filter(
-      (tenant) => tenant.status === 'SUSPENDED',
-    ).length;
     const totalCalls = analytics.totalCalls;
     const booked = analytics.outcomes.booked;
     const escalated = analytics.outcomes.escalated;
-    const failed = analytics.outcomes.failed;
-    const totalCostUsd = totalCalls > 0 ? (totalCalls * analytics.avgDuration * 0.05) / 60 : 0;
+    const aiMinutesUsed = totalCalls > 0 ? (totalCalls * analytics.avgDuration) / 60 : 0;
+    const estimatedCostUsd = totalCalls > 0 ? (totalCalls * analytics.avgDuration * 0.05) / 60 : 0;
+    const webhookStatus = supportSnapshot.criticalCount > 0 ? 'degraded' : 'ok';
 
     return {
-      overview: {
-        mrr: 0,
-        creditsRevenue: 0,
-        totalRevenue: 0,
-        paymentFailures: [],
-        planDistribution: [],
-        activeTenants: overview.activeTenants,
-        activeAgents: overview.activeAgents,
-        aiMinutesUsed: totalCalls > 0 ? (totalCalls * analytics.avgDuration) / 60 : 0,
-        platformCallsHandled: totalCalls,
-        platformBookingsCreated: bookings7d,
-        platformConversionRate: totalCalls > 0 ? (booked / totalCalls) * 100 : 0,
-        escalationRate: totalCalls > 0 ? (escalated / totalCalls) * 100 : 0,
-        usageAnomalies: [],
-        churnRiskList: [],
-      },
-      kpis: {
+      signal: this.buildAdminSignal({
         totalTenants: overview.totalTenants,
         activeTenants: overview.activeTenants,
-        trialTenants,
-        suspendedTenants,
+        calls7d: totalCalls,
+        recentCalls: typedRecentCalls.length,
+        recentTenants: typedTenantRows.length,
+        openTickets: supportSnapshot.openCount,
+      }),
+      health: {
+        retellSync: 'ok' as const,
+        webhooks: webhookStatus as 'ok' | 'degraded' | 'error',
+        uptimeSeconds: Math.round(process.uptime()),
+      },
+      kpis: {
+        activeTenants: overview.activeTenants,
+        activeAgents: overview.activeAgents,
         callsToday,
         calls7d: totalCalls,
         bookedPercent: totalCalls > 0 ? (booked / totalCalls) * 100 : 0,
         escalationPercent: totalCalls > 0 ? (escalated / totalCalls) * 100 : 0,
-        failedPercent: totalCalls > 0 ? (failed / totalCalls) * 100 : 0,
-        totalCostUsd,
+        aiMinutesUsed,
+        estimatedCostUsd,
       },
-      recentTenants: typedTenantRows.map((tenant) => ({
-        id: String(tenant._id),
-        name: tenant.name ?? '',
-        plan:
-          tenant.planId && typeof tenant.planId === 'object' && 'name' in tenant.planId
-            ? String(tenant.planId.name ?? '—')
-            : '—',
-        status:
-          tenant.status === 'ACTIVE' || tenant.status === 'SUSPENDED'
-            ? tenant.status
-            : 'TRIAL',
-        createdAt:
-          tenant.createdAt instanceof Date
-            ? tenant.createdAt.toISOString()
-            : this.toDate(tenant.createdAt).toISOString(),
-        onboardingProgress:
-          typeof tenant.onboardingStep === 'number'
-            ? Math.min(100, Math.max(0, tenant.onboardingStep * 25))
-            : 0,
-      })),
+      recentTenants: typedTenantRows.map((tenant) => {
+        const tenantId = String(tenant._id);
+        const agentCount = agentCountMap.get(tenantId) ?? 0;
+        const owner = tenant.ownerId;
+        const ownerStatus =
+          owner && typeof owner === 'object' && 'status' in owner
+            ? String(owner.status ?? '').toLowerCase()
+            : null;
+        const ownerLastLoginAt =
+          owner && typeof owner === 'object' && owner.lastLoginAt != null;
+        let dynamicStep = 1;
+        if (agentCount > 0) dynamicStep = 2;
+        if (dynamicStep >= 2 && ownerStatus === 'active' && ownerLastLoginAt)
+          dynamicStep = 3;
+        if (
+          dynamicStep >= 3 &&
+          (tenant.status === 'ACTIVE' || Boolean(tenant.planId))
+        ) {
+          dynamicStep = 4;
+        }
+        const onboardingProgress = Math.min(100, Math.max(0, dynamicStep * 25));
+        return {
+          id: tenantId,
+          name: tenant.name ?? '',
+          plan:
+            tenant.planId && typeof tenant.planId === 'object' && 'name' in tenant.planId
+              ? String(tenant.planId.name ?? '—')
+              : '—',
+          status:
+            tenant.status === 'ACTIVE' || tenant.status === 'SUSPENDED'
+              ? tenant.status
+              : 'TRIAL',
+          createdAt:
+            tenant.createdAt instanceof Date
+              ? tenant.createdAt.toISOString()
+              : this.toDate(tenant.createdAt).toISOString(),
+          onboardingProgress,
+        };
+      }),
       supportSnapshot,
       recentCalls: typedRecentCalls.map((call) => ({
         id: String(call._id),
@@ -261,24 +279,6 @@ export class AdminService {
               ? call.createdAt.toISOString()
               : new Date().toISOString(),
       })),
-      systemHealth: {
-        status: 'ok',
-        integrations: [
-          { name: 'Backend API', status: 'ok' },
-          { name: 'Database', status: 'ok' },
-          { name: 'Webhooks', status: supportSnapshot.criticalCount > 0 ? 'degraded' : 'ok' },
-        ],
-        retellSync: 'ok',
-        webhooks: supportSnapshot.criticalCount > 0 ? 'degraded' : 'ok',
-      },
-      signal: this.buildAdminSignal({
-        totalTenants: overview.totalTenants,
-        activeTenants: overview.activeTenants,
-        calls7d: totalCalls,
-        recentCalls: typedRecentCalls.length,
-        recentTenants: typedTenantRows.length,
-        openTickets: supportSnapshot.openCount,
-      }),
     };
   }
 

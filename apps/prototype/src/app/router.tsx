@@ -23,8 +23,6 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m 
 const LinkExpiredPage = lazy(() => import('./pages/LinkExpiredPage').then(m => ({ default: m.LinkExpiredPage })));
 
 const DashboardPage = lazy(() => import('../modules/dashboard').then(m => ({ default: m.DashboardPage })));
-const StaffPage = lazy(() => import('../modules/staff').then(m => ({ default: m.StaffPage })));
-const AgentPage = lazy(() => import('../modules/agent').then(m => ({ default: m.AgentPage })));
 const CallsPage = lazy(() => import('../modules/calls').then(m => ({ default: m.CallsPage })));
 const CallDetailPage = lazy(() => import('../modules/calls').then(m => ({ default: m.CallDetailPage })));
 const BookingsPage = lazy(() => import('../modules/bookings').then(m => ({ default: m.BookingsPage })));
@@ -32,7 +30,6 @@ const CalendarPage = lazy(() => import('../modules/bookings').then(m => ({ defau
 const CustomersPage = lazy(() => import('../modules/customers').then(m => ({ default: m.CustomersPage })));
 const CustomerDetailPage = lazy(() => import('../modules/customers').then(m => ({ default: m.CustomerDetailPage })));
 const AlertsPage = lazy(() => import('../modules/alerts').then(m => ({ default: m.AlertsPage })));
-const HelpCenterPage = lazy(() => import('../modules/help').then(m => ({ default: m.HelpCenterPage })));
 const TicketDetailPage = lazy(() => import('../modules/help').then(m => ({ default: m.TicketDetailPage })));
 const ReportsPage = lazy(() => import('../modules/reports').then(m => ({ default: m.ReportsPage })));
 const BillingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.BillingPage })));
@@ -112,10 +109,10 @@ const router = createBrowserRouter([
                   { path: 'dashboard', element: <PageSuspense><DashboardPage /></PageSuspense> },
                   { path: 'calls', element: <PageSuspense><CallsPage /></PageSuspense> },
                   { path: 'calls/:id', element: <PageSuspense><CallDetailPage /></PageSuspense> },
-                  { path: 'agent', element: <PageSuspense><AgentPage /></PageSuspense> },
-                  { path: 'staff', element: <PageSuspense><StaffPage /></PageSuspense> },
+                  { path: 'agent', element: <Navigate to="/reports?tab=agent" replace /> },
+                  { path: 'staff', element: <Navigate to="/settings?tab=team" replace /> },
                   { path: 'reports', element: <FeatureFlagGuard flag="enableReports"><PageSuspense><ReportsPage /></PageSuspense></FeatureFlagGuard> },
-                  { path: 'help', element: <PageSuspense><HelpCenterPage /></PageSuspense> },
+                  { path: 'help', element: <Navigate to="/settings?tab=support" replace /> },
                   { path: 'help/tickets/:id', element: <PageSuspense><TicketDetailPage /></PageSuspense> },
                   { path: 'bookings', element: <PageSuspense><BookingsPage /></PageSuspense> },
                   { path: 'bookings/calendar', element: <FeatureFlagGuard flag="enableCalendar"><PageSuspense><CalendarPage /></PageSuspense></FeatureFlagGuard> },

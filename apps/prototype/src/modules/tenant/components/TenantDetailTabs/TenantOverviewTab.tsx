@@ -3,7 +3,7 @@
  * agent, and execution history in a compact multi-column layout.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Bot, FileText } from 'lucide-react';
@@ -22,8 +22,10 @@ import { RunEventsViewer } from '../../../admin/components/RunEventsViewer';
 import { AgentOverviewTab } from '../AgentDetailTabs/AgentOverviewTab';
 import { AgentAnalyticsSummary } from '../AgentDetailTabs/AgentAnalyticsSummary';
 import { agentsAdapter, runsAdapter } from '../../../../adapters';
+import { useAsyncData } from '../../../../shared/hooks/useAsyncData';
 import { useTenantDetail } from '../../hooks/useTenantDetail';
 import type { TenantDetailFull, TenantAgentRow, AgentDetailFull } from '../../../../shared/types';
+import type { RunEvent } from '../../../../shared/types/entities';
 import type { AdminRunRow } from '../../../../adapters/local/runs.adapter';
 
 const statusMap: Record<string, 'active' | 'pending' | 'inactive' | 'error'> = {
@@ -69,9 +71,10 @@ export function TenantOverviewTab({ tenant, agents }: TenantOverviewTabProps) {
   const badgeStatus = statusMap[profile.status] ?? 'inactive';
   const flags = Object.entries(settings.featureFlags ?? {}).filter(([, v]) => v);
 
-  const runs = useMemo(
+  const { data: runs } = useAsyncData(
     () => runsAdapter.listRuns(tenantId ?? undefined),
-    [tenantId]
+    [tenantId],
+    [] as AdminRunRow[],
   );
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
@@ -107,9 +110,13 @@ export function TenantOverviewTab({ tenant, agents }: TenantOverviewTabProps) {
       });
     return () => { cancelled = true; };
   }, [selectedAgentId, tenantId]);
-  const events = useMemo(
-    () => (selectedRunId ? runsAdapter.getRunEvents(selectedRunId) : []),
-    [selectedRunId]
+  const { data: events } = useAsyncData(
+    () =>
+      selectedRunId
+        ? runsAdapter.getRunEvents(selectedRunId, tenantId ?? undefined)
+        : Promise.resolve([]),
+    [selectedRunId, tenantId],
+    [] as RunEvent[],
   );
   const handleViewRun = useCallback((run: AdminRunRow) => setSelectedRunId(run.id), []);
   const handleCloseModal = useCallback(() => setSelectedRunId(null), []);

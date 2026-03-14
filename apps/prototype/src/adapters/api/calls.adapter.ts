@@ -69,6 +69,7 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
 
   return {
     id: String(c._id ?? ''),
+    callId: typeof c.callId === 'string' ? c.callId : undefined,
     tenantId: tenantIdStr,
     customerId: resolveCustomerId(metadata, callId),
     duration: c.durationMs != null ? Math.round(Number(c.durationMs) / 1000) : 0,

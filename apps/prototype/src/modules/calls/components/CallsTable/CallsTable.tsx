@@ -3,6 +3,7 @@
  * Virtualized when 50+ rows. [PHASE-7-VIRTUALIZED-LISTS]
  */
 
+import { Mic } from 'lucide-react';
 import {
   VirtualizedDataTable,
   TableHead,
@@ -71,7 +72,16 @@ export function CallsTable({
             </TableCell>
           )}
           <TableCell className="text-[var(--text-secondary)] text-sm">
-            {formatDate(call.createdAt)}
+            <span className="inline-flex items-center gap-1.5">
+              {formatDate(call.createdAt)}
+              {call.recordingUrl && (
+                <Mic
+                  size={14}
+                  className="text-[var(--text-tertiary)] shrink-0"
+                  aria-label="Has recording"
+                />
+              )}
+            </span>
           </TableCell>
           <TableCell>{getCustomerName(call.customerId)}</TableCell>
           <TableCell>{formatDuration(call.duration)}</TableCell>

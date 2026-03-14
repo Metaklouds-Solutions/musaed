@@ -11,8 +11,11 @@ interface AdminSupportSnapshotProps {
   snapshot: AdminSupportSnapshot;
 }
 
-/** Renders support queue counts and highlights critical waiting tickets. */
+/** Renders support queue counts and highlights critical waiting tickets. Hidden when queue is empty. */
 export function AdminSupportSnapshot({ snapshot }: AdminSupportSnapshotProps) {
+  if (snapshot.openCount === 0 && snapshot.criticalCount === 0) {
+    return null;
+  }
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}

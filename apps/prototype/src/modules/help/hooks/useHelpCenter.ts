@@ -10,7 +10,7 @@ import type { SupportTicket } from '../../../shared/types/entities';
 export function useHelpCenter(tenantId: string | undefined, authorId = 'u1') {
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { data: tickets, refetch } = useAsyncData(
+  const { data: tickets, loading, refetch } = useAsyncData(
     () => (tenantId ? supportAdapter.listTickets({ tenantId }) : []),
     [tenantId, refreshKey],
     [] as SupportTicket[]
@@ -51,6 +51,7 @@ export function useHelpCenter(tenantId: string | undefined, authorId = 'u1') {
 
   return {
     tickets: Array.isArray(tickets) ? tickets : [],
+    loading,
     getTicket,
     createTicket,
     addMessage,

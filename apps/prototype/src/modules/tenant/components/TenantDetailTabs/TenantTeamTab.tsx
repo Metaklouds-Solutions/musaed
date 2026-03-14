@@ -1,8 +1,8 @@
 /**
- * Tenant detail Team tab: members list with CSV import.
+ * Tenant detail Team tab: members list with CSV import and pagination.
  */
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Users, Upload } from 'lucide-react';
 import {
@@ -18,8 +18,11 @@ import {
   TableCell,
   PillTag,
   Button,
+  Pagination,
 } from '../../../../shared/ui';
 import type { TenantMemberRow } from '../../../../shared/types';
+
+const PAGE_SIZE = 10;
 
 interface TenantTeamTabProps {
   members: TenantMemberRow[];
@@ -30,10 +33,25 @@ function parseCSV(text: string): string[][] {
   return lines.map((line) => line.split(',').map((cell) => cell.trim()));
 }
 
-/** Renders tenant team members with Add Member and Import CSV actions. */
+/** Renders tenant team members with Add Member, Import CSV, and pagination. */
 export function TenantTeamTab({ members }: TenantTeamTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [parsedRows, setParsedRows] = useState<string[][] | null>(null);
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(members.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+
+  const paginatedMembers = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return members.slice(start, start + PAGE_SIZE);
+  }, [members, safePage]);
+
+  useEffect(() => {
+    if (page > totalPages && totalPages >= 1) {
+      setPage(1);
+    }
+  }, [page, totalPages]);
 
   const handleAddMember = () => {
     // Placeholder, no-op
@@ -157,35 +175,47 @@ export function TenantTeamTab({ members }: TenantTeamTabProps) {
                 </motion.div>
               )}
               {members.length > 0 && (
-                <DataTable minWidth="min-w-[480px]" variant="plain">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Joined</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {members.map((m) => (
-                        <TableRow
-                          key={`${m.name}-${m.role}-${m.joined}`}
-                          className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
-                        >
-                          <TableCell className="font-medium text-[var(--text-primary)]">{m.name}</TableCell>
-                          <TableCell className="text-[var(--text-secondary)]">{m.role}</TableCell>
-                          <TableCell>
-                            <PillTag variant={m.status === 'active' ? 'status' : 'outcomePending'}>
-                              {m.status}
-                            </PillTag>
-                          </TableCell>
-                          <TableCell className="text-[var(--text-muted)] text-sm">{m.joined}</TableCell>
+                <>
+                  <DataTable minWidth="min-w-[480px]" variant="plain">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Joined</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </DataTable>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedMembers.map((m) => (
+                          <TableRow
+                            key={`${m.name}-${m.role}-${m.joined}`}
+                            className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
+                          >
+                            <TableCell className="font-medium text-[var(--text-primary)]">{m.name}</TableCell>
+                            <TableCell className="text-[var(--text-secondary)]">{m.role}</TableCell>
+                            <TableCell>
+                              <PillTag variant={m.status === 'active' ? 'status' : 'invited'}>
+                                {m.status}
+                              </PillTag>
+                            </TableCell>
+                            <TableCell className="text-[var(--text-muted)] text-sm">{m.joined}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </DataTable>
+                  {totalPages > 1 && (
+                    <div className="p-5 border-t border-[var(--border-subtle)]/40">
+                      <Pagination
+                        page={safePage}
+                        totalPages={totalPages}
+                        onPageChange={setPage}
+                        totalItems={members.length}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}

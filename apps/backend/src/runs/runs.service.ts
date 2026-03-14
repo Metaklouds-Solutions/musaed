@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AgentRun, AgentRunDocument } from './schemas/agent-run.schema';
@@ -157,6 +157,23 @@ export class RunsService {
       payload: e.payload ?? {},
       timestamp: (e.timestamp ?? new Date()).toISOString(),
     }));
+  }
+
+  /**
+   * Get events for a run, verifying it belongs to the tenant.
+   */
+  async getRunEventsForTenant(
+    runId: string,
+    tenantId: string,
+  ): Promise<RunEventItem[]> {
+    const run = await this.runModel.findOne({
+      _id: new Types.ObjectId(runId),
+      tenantId: new Types.ObjectId(tenantId),
+    });
+    if (!run) {
+      throw new NotFoundException('Run not found');
+    }
+    return this.getRunEvents(runId);
   }
 
   /**

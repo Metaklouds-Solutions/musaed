@@ -1,11 +1,10 @@
 /**
  * Calls list page. Layout only; data from useCallsList hook.
- * Saved filters: save/apply view presets. Uses adapters for export only.
+ * Uses adapters for export only.
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown, TableSkeleton, StatCard, LOTTIE_ASSETS } from '../../../shared/ui';
-import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { PageHeader, EmptyState, TableFilters, Button, TableSkeleton, StatCard, LOTTIE_ASSETS } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList, useCallsExport, useCallAnalytics } from '../hooks';
@@ -46,35 +45,6 @@ export function CallsPage() {
   const { analytics, isLoading: analyticsLoading } = useCallAnalytics(dateRangeFilter);
   const { exportCallsCsv } = useCallsExport();
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
-
-  const currentFilters = useMemo(
-    () => ({
-      outcome: outcomeFilter,
-      dateRangeStart: dateRange.start.toISOString(),
-      dateRangeEnd: dateRange.end.toISOString(),
-    }),
-    [outcomeFilter, dateRange]
-  );
-
-  const handleApplyFilters = useCallback((f: Record<string, unknown>) => {
-    const outcome = typeof f.outcome === 'string' ? f.outcome : null;
-    setOutcomeFilter(outcome || null);
-    if (typeof f.dateRangeStart === 'string' && typeof f.dateRangeEnd === 'string') {
-      const nextStart = new Date(f.dateRangeStart);
-      const nextEnd = new Date(f.dateRangeEnd);
-      if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) return;
-      setDateRange({
-        start: nextStart,
-        end: nextEnd,
-      });
-    }
-  }, []);
-
-  const savedFilters = useSavedFilters({
-    pageKey: 'calls',
-    currentFilters,
-    onApply: handleApplyFilters,
-  });
 
   const filteredCalls = useMemo(() => {
     if (!outcomeFilter) return calls;
@@ -204,15 +174,6 @@ export function CallsPage() {
               ]}
               selectedOutcome={outcomeFilter}
               onOutcomeChange={setOutcomeFilter}
-            />
-            <SavedFiltersDropdown
-              saved={savedFilters.saved}
-              onSave={(name) => {
-                savedFilters.saveCurrent(name);
-                toast.success(`View "${name}" saved`);
-              }}
-              onApply={savedFilters.apply}
-              onDelete={savedFilters.deleteFilter}
             />
           </div>
           <CallsTable

@@ -96,7 +96,13 @@ export function StatCardEnhanced({
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-muted)]">
             {label}
           </p>
-          <p className="mt-2 text-2xl font-semibold leading-tight text-[var(--text-primary)] tabular-nums">
+          <p
+            className={cn(
+              'mt-2 text-2xl font-semibold leading-tight tabular-nums text-[var(--text-primary)]',
+              trend === 'up' && 'text-[var(--success)]',
+              trend === 'down' && 'text-[var(--error)]'
+            )}
+          >
             {animateValue != null ? (
               <AnimatedNumber value={animateValue} format={format} decimals={decimals} />
             ) : (

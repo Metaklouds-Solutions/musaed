@@ -16,7 +16,7 @@ export function useTenantCallsTabData() {
   const { id } = useParams<{ id: string }>();
   const tenantId = id ?? undefined;
 
-  const { data: calls } = useAsyncData(
+  const { data: calls, loading: callsLoading } = useAsyncData(
     () => callsAdapter.getCalls(tenantId, DEFAULT_RANGE),
     [tenantId],
     [] as Call[],
@@ -31,5 +31,5 @@ export function useTenantCallsTabData() {
     [customers]
   );
 
-  return { calls, getCustomerName };
+  return { calls, callsLoading, getCustomerName };
 }

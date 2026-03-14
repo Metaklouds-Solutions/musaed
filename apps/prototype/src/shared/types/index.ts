@@ -40,21 +40,16 @@ export type { TenantDetail } from './tenants';
 export type { StaffRow } from './staff';
 export type { TenantAgentDetail } from './agent';
 export type {
-  AdminOverviewMetrics,
+  AdminPulseKpis,
+  AdminHealth,
   AdminAgentRow,
   AdminAgentDetail,
   AdminTenantRow,
-  AdminKpis,
   AdminRecentTenant,
   AdminSupportSnapshot,
   AdminRecentCall,
-  AdminSystemHealthExtended,
   SystemHealth,
   TenantPlan,
-  PaymentFailure,
-  PlanDistributionItem,
-  UsageAnomaly,
-  ChurnRisk,
   AdminBillingRow,
   AgentTemplateOption,
   AgentInstanceSummary,

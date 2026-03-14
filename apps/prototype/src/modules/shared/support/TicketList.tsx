@@ -3,6 +3,8 @@
  */
 
 import { TicketRow } from './TicketRow';
+import { EmptyState } from '../../../shared/ui';
+import { MessageCircle } from 'lucide-react';
 import type { SupportTicket } from '../../../shared/types/entities';
 
 interface TicketListProps {
@@ -16,9 +18,11 @@ export function TicketList({ tickets, getTenantName, showTenant, toPath }: Ticke
   const list = Array.isArray(tickets) ? tickets : [];
   if (list.length === 0) {
     return (
-      <p className="text-sm text-[var(--text-muted)] py-8 text-center">
-        No tickets found.
-      </p>
+      <EmptyState
+        icon={MessageCircle}
+        title="No tickets found"
+        description="No support tickets match the current filters. Try adjusting your filters or check back later."
+      />
     );
   }
 

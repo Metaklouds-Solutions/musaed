@@ -8,35 +8,6 @@ export interface TenantPlan {
   mrr: number;
 }
 
-export interface PaymentFailure {
-  id: string;
-  tenantId: string;
-  tenantName: string;
-  amount: number;
-  failedAt: string;
-}
-
-export interface PlanDistributionItem {
-  plan: string;
-  count: number;
-}
-
-export interface UsageAnomaly {
-  id: string;
-  tenantId: string;
-  tenantName: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high';
-  detectedAt: string;
-}
-
-export interface ChurnRisk {
-  tenantId: string;
-  tenantName: string;
-  reason: string;
-  score: number;
-}
-
 /** Admin agent row for agents table. */
 export interface AdminAgentRow {
   id: string;
@@ -340,35 +311,23 @@ export interface SystemHealth {
   integrations: { name: string; status: 'ok' | 'degraded' | 'error' }[];
 }
 
-export interface AdminOverviewMetrics {
-  mrr: number;
-  creditsRevenue: number;
-  totalRevenue: number;
-  paymentFailures: PaymentFailure[];
-  planDistribution: PlanDistributionItem[];
+/** Admin dashboard platform pulse KPIs (8 cards, real data only). */
+export interface AdminPulseKpis {
   activeTenants: number;
   activeAgents: number;
-  aiMinutesUsed: number;
-  platformCallsHandled: number;
-  platformBookingsCreated: number;
-  platformConversionRate: number;
-  escalationRate: number;
-  usageAnomalies: UsageAnomaly[];
-  churnRiskList: ChurnRisk[];
-}
-
-/** Admin dashboard top KPIs. */
-export interface AdminKpis {
-  totalTenants: number;
-  activeTenants: number;
-  trialTenants: number;
-  suspendedTenants: number;
   callsToday: number;
   calls7d: number;
   bookedPercent: number;
   escalationPercent: number;
-  failedPercent: number;
-  totalCostUsd: number;
+  aiMinutesUsed: number;
+  estimatedCostUsd: number;
+}
+
+/** Admin dashboard health (Retell, webhooks, uptime). */
+export interface AdminHealth {
+  retellSync: 'ok' | 'degraded' | 'error';
+  webhooks: 'ok' | 'degraded' | 'error';
+  uptimeSeconds: number;
 }
 
 /** Recent tenant row for admin dashboard. */
@@ -397,12 +356,6 @@ export interface AdminRecentCall {
   outcome: 'booked' | 'escalated' | 'failed' | 'pending';
   duration: number;
   startedAt: string;
-}
-
-/** Extended system health with Retell and webhooks. */
-export interface AdminSystemHealthExtended extends SystemHealth {
-  retellSync: 'ok' | 'degraded' | 'error';
-  webhooks: 'ok' | 'degraded' | 'error';
 }
 
 /** Admin billing: tenant plans + usage for cross-tenant billing overview. */

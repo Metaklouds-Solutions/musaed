@@ -1,10 +1,11 @@
 /**
- * Tenant detail Activity tab: calls and support tickets.
+ * Tenant detail Activity tab: calls, agent runs, and support tickets.
  */
 
+import { useCallback, useState } from 'react';
 import { motion } from 'motion/react';
 import { useLocation, useParams } from 'react-router-dom';
-import { Phone, Headphones } from 'lucide-react';
+import { Phone, Headphones, Cpu } from 'lucide-react';
 import {
   Card,
   CardHeader,
@@ -17,23 +18,47 @@ import {
   TableHead,
   TableCell,
   PillTag,
+  Modal,
+  ModalHeader,
+  TableSkeleton,
 } from '../../../../shared/ui';
 import { CallsTable } from '../../../calls/components/CallsTable';
+import { RunsTable } from '../../../admin/components/RunsTable';
+import { RunEventsViewer } from '../../../admin/components/RunEventsViewer';
 import { useTenantCallsTabData } from '../../hooks/useTenantCallsTabData';
+import { useTenantRunsTabData } from '../../hooks/useTenantRunsTabData';
+import { runsAdapter } from '../../../../adapters';
+import { useAsyncData } from '../../../../shared/hooks/useAsyncData';
 import type { TenantTicketRow } from '../../../../shared/types';
+import type { RunEvent } from '../../../../shared/types/entities';
+import type { AdminRunRow } from '../../../../adapters/local/runs.adapter';
 
 interface TenantActivityTabProps {
   tickets: TenantTicketRow[];
 }
 
-/** Renders tenant activity: calls and support tickets in stacked sections. */
+/** Renders tenant activity: calls, agent runs, and support tickets in stacked sections. */
 export function TenantActivityTab({ tickets }: TenantActivityTabProps) {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const isAdmin = location.pathname.includes('/admin/');
   const viewBasePath = isAdmin && id ? `/admin/tenants/${id}/calls` : '/calls';
 
-  const { calls, getCustomerName } = useTenantCallsTabData();
+  const { calls, callsLoading, getCustomerName } = useTenantCallsTabData();
+  const { runs, loading: runsLoading } = useTenantRunsTabData();
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+
+  const { data: events } = useAsyncData(
+    () =>
+      selectedRunId
+        ? runsAdapter.getRunEvents(selectedRunId, id ?? undefined)
+        : Promise.resolve([]),
+    [selectedRunId, id],
+    [] as RunEvent[],
+  );
+
+  const handleViewRun = useCallback((run: AdminRunRow) => setSelectedRunId(run.id), []);
+  const handleCloseModal = useCallback(() => setSelectedRunId(null), []);
 
   return (
     <motion.div
@@ -53,13 +78,31 @@ export function TenantActivityTab({ tickets }: TenantActivityTabProps) {
             Calls
           </CardHeader>
           <CardBody className="p-0">
-            {calls.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-[var(--text-muted)] text-sm">No calls yet.</p>
-              </div>
-            ) : (
+            {callsLoading ? (
+              <TableSkeleton rows={5} cols={6} minWidth="min-w-[640px]" />
+            ) : calls.length > 0 ? (
               <CallsTable calls={calls} getCustomerName={getCustomerName} viewBasePath={viewBasePath} />
-            )}
+            ) : null}
+          </CardBody>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: 0.075 }}
+      >
+        <Card variant="glass">
+          <CardHeader className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
+            <Cpu className="w-5 h-5" aria-hidden />
+            Agent Runs
+          </CardHeader>
+          <CardBody className="p-0">
+            {runsLoading ? (
+              <TableSkeleton rows={5} cols={7} minWidth="min-w-[640px]" />
+            ) : runs.length > 0 ? (
+              <RunsTable runs={runs} onViewRun={handleViewRun} variant="plain" />
+            ) : null}
           </CardBody>
         </Card>
       </motion.div>
@@ -112,6 +155,20 @@ export function TenantActivityTab({ tickets }: TenantActivityTabProps) {
           </CardBody>
         </Card>
       </motion.div>
+
+      <Modal
+        open={selectedRunId !== null}
+        onClose={handleCloseModal}
+        title={selectedRunId ? `Run ${selectedRunId}` : 'Run events'}
+      >
+        <ModalHeader
+          title={selectedRunId ? `Run ${selectedRunId}` : 'Run events'}
+          onClose={handleCloseModal}
+        />
+        <div className="p-5">
+          <RunEventsViewer events={events} />
+        </div>
+      </Modal>
     </motion.div>
   );
 }

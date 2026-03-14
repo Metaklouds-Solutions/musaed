@@ -6,10 +6,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { PageHeader, Button, Badge, PopoverSelect, SavedFiltersDropdown, TableSkeleton, EmptyState } from '../../../shared/ui';
+import { PageHeader, Button, Badge, PopoverSelect, Skeleton, EmptyState, Pagination } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
-import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
-import { Download, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Download, MessageCircle, Search } from 'lucide-react';
 import { TicketList, TicketChatThread } from '../../shared/support';
 import { useAdminSupport } from '../hooks/useAdminSupport';
 import type { SupportTicket } from '../../../shared/types/entities';
@@ -46,6 +45,8 @@ function toPriorityFilter(s: unknown): SupportTicket['priority'] | '' {
   return isSupportTicketPriority(s) ? s : '';
 }
 
+const PAGE_SIZE = 10;
+
 function formatDate(iso: string): string {
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return '—';
@@ -72,6 +73,7 @@ export function AdminSupportPage() {
     setStatusFilter,
     setPriorityFilter,
   } = useAdminSupport();
+  const [page, setPage] = useState(1);
   const { data: ticket, loading: ticketLoading, refetch: refetchTicket } = useAsyncData(
     () => (id ? getTicket(id) : null),
     [id, getTicket],
@@ -115,32 +117,27 @@ export function AdminSupportPage() {
     [addMessage]
   );
 
-  const currentFilters = useMemo(
-    () => ({
-      tenantFilter: filters.tenantFilter,
-      statusFilter: filters.statusFilter,
-      priorityFilter: filters.priorityFilter,
-    }),
-    [filters]
-  );
+  const [search, setSearch] = useState('');
 
-  const handleApplySupportFilters = useCallback(
-    (f: Record<string, unknown>) => {
-      setTenantFilter(typeof f.tenantFilter === 'string' ? f.tenantFilter : '');
-      setStatusFilter(toStatusFilter(f.statusFilter));
-      setPriorityFilter(toPriorityFilter(f.priorityFilter));
-    },
-    [setTenantFilter, setStatusFilter, setPriorityFilter]
-  );
+  const searchedTickets = useMemo(() => {
+    if (!search.trim()) return tickets;
+    const q = search.trim().toLowerCase();
+    return tickets.filter((t) => t.title.toLowerCase().includes(q));
+  }, [tickets, search]);
 
-  const savedFilters = useSavedFilters({
-    pageKey: 'admin-support',
-    currentFilters,
-    onApply: handleApplySupportFilters,
-  });
+  const totalPages = Math.max(1, Math.ceil(searchedTickets.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedTickets = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return searchedTickets.slice(start, start + PAGE_SIZE);
+  }, [searchedTickets, safePage]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters.tenantFilter, filters.statusFilter, filters.priorityFilter, search]);
 
   const handleExport = useCallback(() => {
-    const rows = tickets.map((t) => ({
+    const rows = searchedTickets.map((t) => ({
       Title: t.title,
       Tenant: getTenantName(t.tenantId),
       Category: t.category,
@@ -150,14 +147,56 @@ export function AdminSupportPage() {
     }));
     exportTicketsCsv(rows, `tickets-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success('Tickets exported');
-  }, [tickets, getTenantName, exportTicketsCsv]);
+  }, [searchedTickets, getTenantName, exportTicketsCsv]);
 
   if (id && ticketLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader title="Support Inbox" description="Loading ticket…" />
-        <div className="rounded-[var(--radius-card)] card-glass p-8 text-center">
-          <p className="text-[var(--text-muted)] text-sm">Loading ticket…</p>
+      <div className="space-y-6" role="status" aria-label="Loading ticket">
+        {/* Header skeleton */}
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48 rounded-md" />
+          <Skeleton className="h-4 w-32 rounded-md" />
+        </div>
+
+        {/* Meta bar skeleton */}
+        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/60 p-3 flex flex-wrap items-center gap-2">
+          <Skeleton className="h-4 w-20 rounded-md" />
+          <Skeleton className="h-5 w-14 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-4 w-20 rounded-md" />
+        </div>
+
+        {/* Chat area skeleton */}
+        <div className="rounded-[var(--radius-card)] card-glass overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
+          <div className="p-4 border-b border-[var(--border-subtle)] flex flex-wrap items-center gap-3">
+            <Skeleton className="h-5 w-14 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-8 w-24 rounded-md" />
+            <Skeleton className="h-8 w-28 rounded-md" />
+          </div>
+          <div className="flex-1 p-4 space-y-4">
+            <div className="flex gap-3 items-start">
+              <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-24 rounded-md" />
+                <Skeleton className="h-16 w-3/4 rounded-lg" />
+              </div>
+            </div>
+            <div className="flex gap-3 items-start justify-end">
+              <div className="space-y-2 flex-1 flex flex-col items-end">
+                <Skeleton className="h-4 w-20 rounded-md" />
+                <Skeleton className="h-12 w-2/3 rounded-lg" />
+              </div>
+              <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+            </div>
+            <div className="flex gap-3 items-start">
+              <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-28 rounded-md" />
+                <Skeleton className="h-20 w-5/6 rounded-lg" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -182,31 +221,29 @@ export function AdminSupportPage() {
   if (id && ticket) {
     return (
       <div className="space-y-6">
-        <PageHeader
-          title={ticket.title}
-          description={`${ticket.tenantName} · ${ticket.priority}`}
-        />
-        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/60 p-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-[var(--text-muted)]">{ticket.id}</span>
-          <Badge status={ticket.priority === 'critical' ? 'error' : ticket.priority === 'high' ? 'warning' : 'pending'}>
-            {ticket.priority}
-          </Badge>
-          <Badge status={ticket.status === 'resolved' ? 'active' : ticket.status === 'in_progress' ? 'pending' : 'warning'}>
-            {statusLabel}
-          </Badge>
-          {hasNewTenantMessage && (
-            <Badge status="warning">New message</Badge>
-          )}
-          <span className="text-xs text-[var(--text-muted)]">{formatDate(ticket.createdAt)}</span>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <PageHeader
+            title={ticket.title}
+            description={`${ticket.tenantName} · ${ticket.priority}`}
+          />
+          <Button variant="ghost" className="h-8 px-3 text-sm shrink-0 self-start" onClick={() => navigate('/admin/support')}>
+            <ArrowLeft className="w-4 h-4" aria-hidden />
+            Back to Tickets
+          </Button>
         </div>
         <div className="rounded-[var(--radius-card)] card-glass overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
           <div className="p-4 border-b border-[var(--border-subtle)] flex flex-wrap items-center gap-3">
+            <span className="text-xs text-[var(--text-muted)]">{ticket.id}</span>
+            <span className="text-xs text-[var(--text-muted)]">{ticket.tenantName}</span>
             <Badge status={ticket.priority === 'critical' ? 'error' : ticket.priority === 'high' ? 'warning' : 'pending'}>
               {ticket.priority}
             </Badge>
             <Badge status={ticket.status === 'resolved' ? 'active' : ticket.status === 'in_progress' ? 'pending' : 'warning'}>
               {statusLabel}
             </Badge>
+            {hasNewTenantMessage && (
+              <Badge status="warning">New message</Badge>
+            )}
             <PopoverSelect
               value={ticket.status}
               onChange={(v) => { if (isSupportTicketStatus(v)) updateStatus(ticket.id, v); }}
@@ -219,9 +256,6 @@ export function AdminSupportPage() {
                 Assign to me
               </Button>
             )}
-            <Button variant="ghost" className="h-8 px-3 text-sm" onClick={() => navigate('/admin/support')}>
-              Back to Tickets
-            </Button>
           </div>
           <div className="flex-1 min-h-[300px]">
             <TicketChatThread
@@ -237,11 +271,43 @@ export function AdminSupportPage() {
 
   if (!ready) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" role="status" aria-label="Loading support inbox">
+        {/* Header + export button skeleton */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <PageHeader title="Support Inbox" description="Unified tickets from all tenants" />
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-40 rounded-md" />
+            <Skeleton className="h-4 w-56 rounded-md" />
+          </div>
+          <Skeleton className="h-9 w-28 rounded-md shrink-0" />
         </div>
-        <TableSkeleton rows={8} cols={5} />
+
+        {/* Filter bar skeleton */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Skeleton className="h-9 w-28 rounded-md" />
+          <Skeleton className="h-9 w-24 rounded-md" />
+          <Skeleton className="h-9 w-28 rounded-md" />
+          <Skeleton className="h-9 w-24 rounded-md" />
+        </div>
+
+        {/* Ticket list skeleton */}
+        <div className="rounded-[var(--radius-card)] card-glass p-4 space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={`ticket-skel-${String(i)}`}
+              className="rounded-lg bg-[var(--bg-elevated)] p-4 flex flex-col sm:flex-row sm:items-center gap-3"
+            >
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/3 rounded-md" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+              </div>
+              <Skeleton className="h-4 w-20 rounded-md shrink-0" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -251,7 +317,7 @@ export function AdminSupportPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Support Inbox"
-          description="Unified tickets from all tenants"
+          description={`Unified tickets from all tenants · ${searchedTickets.length} ticket${searchedTickets.length === 1 ? '' : 's'}`}
         />
         <Button variant="secondary" onClick={handleExport} className="shrink-0">
           <Download className="w-4 h-4" aria-hidden />
@@ -259,6 +325,17 @@ export function AdminSupportPage() {
         </Button>
       </div>
       <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" aria-hidden />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tickets…"
+            aria-label="Search tickets"
+            className="w-full h-10 pl-9 pr-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)]/30 focus:border-[var(--ds-primary)]/50 transition-all"
+          />
+        </div>
         <PopoverSelect
           value={filters.tenantFilter}
           onChange={setTenantFilter}
@@ -289,24 +366,23 @@ export function AdminSupportPage() {
           title="Priority"
           aria-label="Filter by priority"
         />
-        <SavedFiltersDropdown
-          saved={savedFilters.saved}
-          onSave={(name) => {
-            savedFilters.saveCurrent(name);
-            toast.success(`View "${name}" saved`);
-          }}
-          onApply={savedFilters.apply}
-          onDelete={savedFilters.deleteFilter}
-        />
       </div>
       <div className="rounded-[var(--radius-card)] card-glass p-4">
         <TicketList
-          tickets={tickets}
+          tickets={paginatedTickets}
           getTenantName={getTenantName}
           showTenant
           toPath={(tid) => `/admin/support/${tid}`}
         />
       </div>
+      {totalPages > 1 && (
+        <Pagination
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          totalItems={searchedTickets.length}
+        />
+      )}
     </div>
   );
 }

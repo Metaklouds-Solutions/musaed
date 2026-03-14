@@ -14,18 +14,25 @@ import { CallReplayViewer } from '../components/CallReplayViewer';
 import { SentimentBadge } from '../components/SentimentBadge';
 import { AudioMockPlayer } from '../components/AudioMockPlayer';
 import { RunEventsViewer } from '../../admin/components/RunEventsViewer';
-import { Phone } from 'lucide-react';
+import { Phone, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** Renders detailed call audit view with transcript modes and optional run events. */
 export function CallDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id?: string; callId?: string }>();
+  const resolvedCallId = params.callId ?? params.id;
   const { pathname } = useLocation();
-  const { user, call, linkedBooking, isLoading } = useCallDetail(id);
+  const { user, call, linkedBooking, isLoading } = useCallDetail(resolvedCallId);
   const isAdminContext = pathname.startsWith('/admin');
-  const callsPath = isAdminContext ? '/admin/calls' : '/calls';
+  const callsPath =
+    isAdminContext && params.id
+      ? `/admin/tenants/${params.id}`
+      : isAdminContext
+        ? '/admin/calls'
+        : '/calls';
   const { canAccessRunEvents } = usePermissions();
-  const { events } = useCallRunEvents(call?.id, user?.tenantId, canAccessRunEvents);
+  const retellCallId = call?.callId ?? call?.id;
+  const { events } = useCallRunEvents(retellCallId, user?.tenantId, canAccessRunEvents);
   const [transcriptMode, setTranscriptMode] = useState<'replay' | 'full'>('replay');
 
   if (!user) {
@@ -55,7 +62,7 @@ export function CallDetailPage() {
       <EmptyState
         icon={Phone}
         title="Call not found"
-        description={id ? `No call found for ID "${id}".` : 'Missing call ID.'}
+        description={resolvedCallId ? `No call found for ID "${resolvedCallId}".` : 'Missing call ID.'}
       >
         <Link to={callsPath} className="mt-6 inline-block">
           <Button variant="secondary">Back to calls</Button>
@@ -80,7 +87,7 @@ export function CallDetailPage() {
           </p>
         </div>
         <Link to={callsPath}>
-          <Button variant="secondary">Back to calls</Button>
+          <Button variant="secondary">{isAdminContext && params.id ? 'Back to tenant' : 'Back to calls'}</Button>
         </Link>
       </div>
 
@@ -106,6 +113,18 @@ export function CallDetailPage() {
           </div>
         ) : (
           <AudioMockPlayer durationSeconds={call.duration} />
+        )}
+
+        {call.summary && (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText size={16} className="text-[var(--text-secondary)]" />
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">Summary</h3>
+            </div>
+            <p className="text-sm leading-relaxed text-[var(--text-secondary)] whitespace-pre-line">
+              {call.summary}
+            </p>
+          </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

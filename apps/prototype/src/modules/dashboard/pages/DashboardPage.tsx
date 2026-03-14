@@ -1,6 +1,6 @@
 /**
  * Dashboard page: layout only. Data from useDashboard hook.
- * Tenant-scoped KPIs, agent status, recent calls, staff, support tickets.
+ * Tenant-scoped KPIs, agent status, recent calls, conversion funnel, trends.
  */
 
 import { useState, useMemo } from 'react';
@@ -11,73 +11,12 @@ import { PageHeader, EmptyState, LottiePlayer, LOTTIE_ASSETS, SkeletonCard } fro
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { TenantKpiCards } from '../components/TenantKpiCards';
-import { AgentStatusCard } from '../components/AgentStatusCard';
 import { RecentCallsTable } from '../components/RecentCallsTable';
-import { StaffQuickView } from '../components/StaffQuickView';
-import { OpenTicketsWidget } from '../components/OpenTicketsWidget';
-import { HeroMetrics } from '../components/HeroMetrics';
 import { ConversionFunnel } from '../components/ConversionFunnel';
-import { AgentIntelligence } from '../components/AgentIntelligence';
 import { TrendChart } from '../components/TrendChart';
-import { RoiDashboardWidget } from '../components/RoiDashboardWidget';
-import { QuickActions } from '../components/QuickActions';
 import { useDashboard } from '../hooks';
-import { AlertTriangle, CheckCircle2, LayoutDashboard, Radio } from 'lucide-react';
-
-function getTenantSignal(args: {
-  calls7d: number;
-  bookings: number;
-  recentCalls: number;
-  openTickets: number;
-  callsHandled: number;
-  hasAgent: boolean;
-}) {
-  const { calls7d, bookings, recentCalls, openTickets, callsHandled, hasAgent } = args;
-  const hasOperationalData =
-    calls7d > 0 || bookings > 0 || recentCalls > 0 || openTickets > 0 || callsHandled > 0;
-
-  if (!hasOperationalData) {
-    return {
-      tone: 'neutral',
-      title: 'No operational activity in the selected range',
-      description:
-        'The dashboard is live, but this date range has no calls, bookings, or tickets yet. Expand the range or verify fresh activity is being created.',
-    } as const;
-  }
-
-  if (bookings > 0 && calls7d === 0) {
-    return {
-      tone: 'warning',
-      title: 'Bookings exist but recent call volume is zero',
-      description:
-        'This usually means bookings were created outside voice flows, or the selected date range does not include the calls that drove them.',
-    } as const;
-  }
-
-  if (calls7d > 0 && recentCalls === 0) {
-    return {
-      tone: 'warning',
-      title: 'Aggregate call counts exist but the recent call list is empty',
-      description:
-        'Counts are loading from analytics, but call rows are missing from the recent-call feed. That is a data quality warning worth checking.',
-    } as const;
-  }
-
-  if (!hasAgent && calls7d > 0) {
-    return {
-      tone: 'warning',
-      title: 'Activity exists but no active agent is shown',
-      description:
-        'Calls are being counted, but the dashboard could not resolve a current agent assignment. Review agent deployment and sync state.',
-    } as const;
-  }
-
-  return {
-    tone: 'positive',
-    title: 'Operational signal is healthy',
-    description: `${calls7d} calls and ${bookings} bookings were recorded in this range. Use the call list and funnel below to identify where conversions or escalations are moving.`,
-  } as const;
-}
+import { ArrowRight, LayoutDashboard, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -94,7 +33,7 @@ const DEFAULT_RANGE = (() => {
 })();
 const SKELETON_CARD_KEYS = ['metrics-1', 'metrics-2', 'metrics-3', 'metrics-4'] as const;
 
-/** Tenant dashboard: KPIs, agent status, recent calls, staff, support, ROI. */
+/** Tenant dashboard: KPIs, agent status, recent calls, conversion funnel, trends. */
 export function DashboardPage() {
   const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
@@ -106,19 +45,8 @@ export function DashboardPage() {
     trend,
     kpis,
     agentStatus,
-    staffCounts,
-    openTickets,
     recentCalls,
-    roi,
   } = useDashboard(dateRangeFilter);
-  const tenantSignal = getTenantSignal({
-    calls7d: kpis.calls7d,
-    bookings: kpis.appointmentsBooked,
-    recentCalls: recentCalls.length,
-    openTickets: openTickets.length,
-    callsHandled: metrics.callsHandled,
-    hasAgent: Boolean(agentStatus),
-  });
 
   if (!user) {
     return (
@@ -139,10 +67,7 @@ export function DashboardPage() {
             <SkeletonCard key={key} lines={2} />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SkeletonCard lines={3} />
-          <SkeletonCard lines={3} />
-        </div>
+        <SkeletonCard lines={3} />
       </div>
     );
   }
@@ -163,61 +88,31 @@ export function DashboardPage() {
         </div>
         <PageHeader
           title="Dashboard"
-          description="Clinic command center: calls, agent, staff, and support."
+          description="Clinic command center: calls, agent, and conversion."
         />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
-          <p className="text-[var(--text-secondary)] text-sm">
-            {getGreeting()}, {displayName}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-[var(--text-secondary)] text-sm">
+              {getGreeting()}, {displayName}
+            </p>
+            <Link
+              to="/tenants/me"
+              className="inline-flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-primary-hover)] transition-colors w-fit"
+            >
+              <Users size={14} aria-hidden="true" />
+              View tenant profile
+              <ArrowRight size={12} aria-hidden="true" />
+            </Link>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />
-            <QuickActions />
           </div>
         </div>
       </motion.header>
       <div className="space-y-6">
-        <section
-          className={`rounded-[var(--radius-card)] border p-4 shadow-[var(--shadow-card)] ${
-            tenantSignal.tone === 'warning'
-              ? 'border-[var(--warning)]/40 bg-[color-mix(in_srgb,var(--warning)_8%,var(--bg-elevated))]'
-              : tenantSignal.tone === 'positive'
-                ? 'border-emerald-500/30 bg-[color-mix(in_srgb,emerald_8%,var(--bg-elevated))]'
-                : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)]/90'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <div
-              className={`mt-0.5 rounded-full p-2 ${
-                tenantSignal.tone === 'warning'
-                  ? 'bg-[var(--warning)]/15 text-[var(--warning)]'
-                  : tenantSignal.tone === 'positive'
-                    ? 'bg-emerald-500/15 text-emerald-400'
-                    : 'bg-[var(--ds-primary)]/15 text-[var(--ds-primary)]'
-              }`}
-            >
-              {tenantSignal.tone === 'warning' ? <AlertTriangle size={16} /> : tenantSignal.tone === 'positive' ? <CheckCircle2 size={16} /> : <Radio size={16} />}
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">{tenantSignal.title}</h2>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">{tenantSignal.description}</p>
-            </div>
-          </div>
-        </section>
-        <TenantKpiCards kpis={kpis} />
-        <RoiDashboardWidget roi={roi} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AgentStatusCard agent={agentStatus} />
-          <StaffQuickView counts={staffCounts} />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RecentCallsTable calls={recentCalls} />
-          <OpenTicketsWidget tickets={openTickets} />
-        </div>
-        <HeroMetrics metrics={metrics} trend={trend} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ConversionFunnel stages={funnel} />
-          <AgentIntelligence metrics={metrics} />
-        </div>
+        <TenantKpiCards kpis={kpis} metrics={metrics} />
+        <ConversionFunnel stages={funnel} />
+        <RecentCallsTable calls={recentCalls} />
         <TrendChart points={trend} />
       </div>
     </>

@@ -10,27 +10,17 @@ import {
   seedBookings,
   seedCredits,
   seedTenantPlans,
-  seedCreditsRevenue,
-  seedPaymentFailures,
-  seedUsageAnomalies,
-  seedChurnRisk,
   seedSupportTickets,
   seedTenantExtended,
 } from '../../mock/seedData';
 import type {
-  AdminOverviewMetrics,
   AdminTenantRow,
-  AdminKpis,
+  AdminPulseKpis,
+  AdminHealth,
   AdminRecentTenant,
   AdminSupportSnapshot,
   AdminRecentCall,
-  AdminSystemHealthExtended,
   AdminBillingRow,
-  SystemHealth,
-  PaymentFailure,
-  PlanDistributionItem,
-  UsageAnomaly,
-  ChurnRisk,
 } from '../../shared/types';
 
 const tenantName = (tenantId: string): string => {
@@ -41,104 +31,31 @@ const tenantName = (tenantId: string): string => {
 export const adminAdapter = {
   getDashboardSummary() {
     return {
-      overview: this.getOverview(),
-      kpis: this.getAdminKpis(),
-      recentTenants: this.getRecentTenants(5),
-      supportSnapshot: this.getSupportSnapshot(),
-      recentCalls: this.getRecentCalls(10),
-      systemHealth: this.getSystemHealthExtended(),
       signal:
         seedTenants.length === 0 && seedCalls.length === 0
           ? { status: 'empty' as const, reason: 'No tenants, calls, or support activity are visible yet.' }
           : { status: 'healthy' as const, reason: 'Tenant, call, and support activity are flowing into the admin dashboard.' },
+      health: this.getHealth(),
+      kpis: this.getPulseKpis(),
+      recentTenants: this.getRecentTenants(5),
+      supportSnapshot: this.getSupportSnapshot(),
+      recentCalls: this.getRecentCalls(5),
     };
   },
 
-  getOverview(): AdminOverviewMetrics {
-    const mrr = seedTenantPlans.reduce((s, p) => s + p.mrr, 0);
-    const totalRevenue = mrr + seedCreditsRevenue;
-    const paymentFailures: PaymentFailure[] = seedPaymentFailures.map((p) => ({
-      id: p.id,
-      tenantId: p.tenantId,
-      tenantName: tenantName(p.tenantId),
-      amount: p.amount,
-      failedAt: p.failedAt,
-    }));
-    const planCounts = new Map<string, number>();
-    seedTenantPlans.forEach((p) => planCounts.set(p.plan, (planCounts.get(p.plan) ?? 0) + 1));
-    const planDistribution: PlanDistributionItem[] = Array.from(planCounts.entries()).map(
-      ([plan, count]) => ({ plan, count })
-    );
-
-    const aiMinutesUsed = seedCredits.reduce((s, c) => s + c.minutesUsed, 0);
-    const platformCallsHandled = seedCalls.length;
-    const platformBookingsCreated = seedBookings.length;
-    const escalated = seedCalls.filter((c) => c.escalationFlag).length;
-    const escalationRate =
-      platformCallsHandled > 0 ? (escalated / platformCallsHandled) * 100 : 0;
-    const platformConversionRate =
-      platformCallsHandled > 0 ? (platformBookingsCreated / platformCallsHandled) * 100 : 0;
-
-    const usageAnomalies: UsageAnomaly[] = seedUsageAnomalies.map((a) => ({
-      id: a.id,
-      tenantId: a.tenantId,
-      tenantName: tenantName(a.tenantId),
-      description: a.description,
-      severity: a.severity,
-      detectedAt: a.detectedAt,
-    }));
-
-    const churnRiskList: ChurnRisk[] = seedChurnRisk.map((c) => ({
-      tenantId: c.tenantId,
-      tenantName: tenantName(c.tenantId),
-      reason: c.reason,
-      score: c.score,
-    }));
-
+  getHealth(): AdminHealth {
+    const uptime =
+      typeof process !== 'undefined' && typeof process.uptime === 'function'
+        ? process.uptime()
+        : 0;
     return {
-      mrr,
-      creditsRevenue: seedCreditsRevenue,
-      totalRevenue,
-      paymentFailures,
-      planDistribution,
-      activeTenants: seedTenants.length,
-      activeAgents: seedAgents.length,
-      aiMinutesUsed,
-      platformCallsHandled,
-      platformBookingsCreated,
-      platformConversionRate,
-      escalationRate,
-      usageAnomalies,
-      churnRiskList,
-    };
-  },
-
-  getTenants(): AdminTenantRow[] {
-    return tenantsAdapter.getAllTenants();
-  },
-
-  getSystemHealth(): SystemHealth {
-    return this.getSystemHealthExtended();
-  },
-
-  /** Health dashboard: Retell, DB, API, Webhooks. */
-  getSystemHealthExtended(): AdminSystemHealthExtended {
-    return {
-      status: 'ok',
-      integrations: [
-        { name: 'Retell (Voice API)', status: 'ok' },
-        { name: 'Database', status: 'ok' },
-        { name: 'API (Backend)', status: 'ok' },
-        { name: 'Stripe', status: 'ok' },
-        { name: 'Webhooks', status: 'ok' },
-      ],
       retellSync: 'ok',
       webhooks: 'ok',
+      uptimeSeconds: Math.round(uptime),
     };
   },
 
-  /** Admin dashboard: top KPIs. */
-  getAdminKpis(): AdminKpis {
+  getPulseKpis(): AdminPulseKpis {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -147,7 +64,7 @@ export const adminAdapter = {
     const booked = seedCalls.filter((c) => c.bookingCreated).length;
     const escalated = seedCalls.filter((c) => c.escalationFlag).length;
     const totalMinutes = seedCredits.reduce((s, c) => s + c.minutesUsed, 0);
-    const totalCostUsd = totalMinutes * 0.02;
+    const estimatedCostUsd = totalMinutes * 0.02;
     const statusCounts = seedTenantExtended.reduce<Record<string, number>>(
       (acc, t) => {
         acc[t.status] = (acc[t.status] ?? 0) + 1;
@@ -155,21 +72,23 @@ export const adminAdapter = {
       },
       {}
     );
+    const activeTenants = (statusCounts.ACTIVE ?? 0) + (statusCounts.TRIAL ?? 0);
     return {
-      totalTenants: seedTenants.length,
-      activeTenants: (statusCounts.ACTIVE ?? 0) + (statusCounts.TRIAL ?? 0),
-      trialTenants: statusCounts.TRIAL ?? 0,
-      suspendedTenants: statusCounts.SUSPENDED ?? 0,
+      activeTenants,
+      activeAgents: seedAgents.length,
       callsToday,
       calls7d,
       bookedPercent: seedCalls.length > 0 ? (booked / seedCalls.length) * 100 : 0,
       escalationPercent: seedCalls.length > 0 ? (escalated / seedCalls.length) * 100 : 0,
-      failedPercent: seedCalls.length > 0 ? ((seedCalls.length - booked) / seedCalls.length) * 100 : 0,
-      totalCostUsd,
+      aiMinutesUsed: totalMinutes,
+      estimatedCostUsd,
     };
   },
 
-  /** Admin dashboard: recent tenants. */
+  getTenants(): AdminTenantRow[] {
+    return tenantsAdapter.getAllTenants();
+  },
+
   getRecentTenants(limit = 5): AdminRecentTenant[] {
     return seedTenantExtended
       .map((ext) => {
@@ -190,7 +109,6 @@ export const adminAdapter = {
       .slice(0, limit);
   },
 
-  /** Admin dashboard: support inbox snapshot. */
   getSupportSnapshot(): AdminSupportSnapshot {
     const open = seedSupportTickets.filter((t) => t.status === 'open' || t.status === 'in_progress').length;
     const critical = seedSupportTickets.filter((t) => t.priority === 'critical').length;
@@ -202,8 +120,7 @@ export const adminAdapter = {
     return { openCount: open, criticalCount: critical, oldestWaitingDays: oldest };
   },
 
-  /** Admin dashboard: recent calls (cross-tenant). */
-  getRecentCalls(limit = 10): AdminRecentCall[] {
+  getRecentCalls(limit = 5): AdminRecentCall[] {
     return seedCalls
       .map((c) => {
         const agent = seedAgents.find((a) => a.tenantId === c.tenantId);
@@ -222,7 +139,6 @@ export const adminAdapter = {
       .slice(0, limit);
   },
 
-  /** Admin billing: cross-tenant plans + usage. */
   getBillingOverview(): AdminBillingRow[] {
     const RATE_PER_MINUTE = 0.02;
     return seedTenants.map((t) => {
@@ -240,5 +156,4 @@ export const adminAdapter = {
       };
     });
   },
-
 };

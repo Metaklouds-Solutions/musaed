@@ -28,6 +28,8 @@ export interface Customer {
 
 export interface Call {
   id: string;
+  /** Retell call ID (distinct from MongoDB _id). Used for run lookup. */
+  callId?: string;
   tenantId: string;
   customerId: string;
   duration: number;

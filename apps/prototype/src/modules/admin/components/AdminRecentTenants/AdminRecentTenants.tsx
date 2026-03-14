@@ -1,10 +1,10 @@
 /**
- * Admin dashboard: recent tenants table.
+ * Admin dashboard: recent tenants feed list (stacked, no table).
  */
 
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { DataTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ViewButton, PillTag } from '../../../../shared/ui';
+import { ViewButton, PillTag } from '../../../../shared/ui';
 import type { AdminRecentTenant } from '../../../../shared/types';
 
 interface AdminRecentTenantsProps {
@@ -24,7 +24,7 @@ function StatusPill({ status }: { status: AdminRecentTenant['status'] }) {
   return <PillTag variant={variant}>{status}</PillTag>;
 }
 
-/** Renders recent tenant records with status and onboarding progress. */
+/** Renders recent tenant records as stacked feed list. */
 export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
   if (tenants.length === 0) {
     return (
@@ -44,40 +44,33 @@ export function AdminRecentTenants({ tenants }: AdminRecentTenantsProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.05 }}
-      className="rounded-[var(--radius-card)] card-glass overflow-x-auto"
+      className="rounded-[var(--radius-card)] card-glass p-5"
     >
-      <div className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Tenants</h2>
         <ViewButton to="/admin/tenants">View all</ViewButton>
       </div>
-      <DataTable minWidth="min-w-[480px]">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Plan</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Onboarding</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tenants.map((t) => (
-            <TableRow key={t.id}>
-              <TableCell>
-                <Link to={`/admin/tenants/${t.id}`} className="font-medium text-[var(--ds-primary)] hover:underline">
-                  {t.name}
-                </Link>
-              </TableCell>
-              <TableCell>{t.plan}</TableCell>
-              <TableCell><StatusPill status={t.status} /></TableCell>
-              <TableCell className="text-[var(--text-muted)]">{formatDate(t.createdAt)}</TableCell>
-              <TableCell>{t.onboardingProgress}%</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      </DataTable>
+      <ul className="space-y-2">
+        {tenants.map((t) => (
+          <li key={t.id} className="rounded-lg bg-[var(--ds-primary)]/10 px-3 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <Link
+                to={`/admin/tenants/${t.id}`}
+                className="font-medium text-[var(--ds-primary)] hover:underline truncate min-w-0"
+              >
+                {t.name}
+              </Link>
+              <div className="flex items-center gap-2 shrink-0">
+                <StatusPill status={t.status} />
+                <span className="text-sm text-[var(--text-muted)]">{formatDate(t.createdAt)}</span>
+              </div>
+            </div>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Plan: {t.plan} · Onboarding: {t.onboardingProgress}%
+            </p>
+          </li>
+        ))}
+      </ul>
     </motion.section>
   );
 }
