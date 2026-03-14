@@ -2,17 +2,16 @@
  * Top bar: neomorphic search bar (icon animates left→right on focus), theme, notifications, user.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Bell, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../session/SessionContext';
+import { useNotifications } from '../../../hooks/useNotifications';
 import { GlobalSearch } from '../../../components/GlobalSearch';
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
-import {
-  NotificationDrawer,
-  type NotificationItem,
-} from './NotificationDrawer';
+import { NotificationDrawer } from './NotificationDrawer';
 import { UserMenu } from './UserMenu';
+import { TenantProfileLink } from './TenantProfileLink';
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
 
 export type Theme = 'light' | 'dark';
@@ -29,8 +28,9 @@ const THEME_STORAGE_KEY = 'clinic-crm-theme';
 export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShortcutsHelp }: HeaderProps) {
   const { t } = useTranslation();
   useSession(); // SessionProvider required for UserMenu
+  const { items: notifications, unreadCount, markAsRead, clearNotifications, bellPulse } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications] = useState<NotificationItem[]>([]);
+  const [isBellAnimating, setIsBellAnimating] = useState(false);
   const openNotifications = useCallback(() => setNotificationsOpen(true), []);
   const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
 
@@ -41,14 +41,24 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
     [onThemeToggle]
   );
 
+  useEffect(() => {
+    if (bellPulse <= 0) return;
+    setIsBellAnimating(true);
+    const id = window.setTimeout(() => setIsBellAnimating(false), 700);
+    return () => window.clearTimeout(id);
+  }, [bellPulse]);
+
   return (
     <div
       className="h-[var(--topbar-height)] w-full flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 md:px-8 md:backdrop-blur-md sticky top-0 z-10 shrink-0 rounded-xl border border-(var(--separator)) bg-(var(--bg-base))"
     >
-      <GlobalSearch
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <TenantProfileLink />
+        <GlobalSearch
         placeholder={t('common.searchPlaceholder')}
         onOpenCommandPalette={onOpenCommandPalette}
       />
+      </div>
 
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         {onOpenShortcutsHelp && (
@@ -74,19 +84,26 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
         <button
           type="button"
           onClick={openNotifications}
-          className="p-2 rounded-(var(--radius-nav)) relative hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-(var(--text-muted))"
+          className={`p-2 rounded-(var(--radius-nav)) relative hover:bg-(var(--bg-hover)) hover:text-(var(--text-primary)) focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] text-(var(--text-muted)) ${isBellAnimating ? 'animate-pulse' : ''}`}
           aria-label={t('common.notifications')}
           aria-expanded={notificationsOpen}
         >
           <Bell size={20} aria-hidden />
-          {notifications.some((n) => n.unread) && (
-                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-(var(--primary))" aria-hidden />
+          {unreadCount > 0 && (
+            <span
+              className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-[var(--ds-primary)] text-white text-[10px] leading-5 text-center font-semibold"
+              aria-hidden
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
           )}
         </button>
         <NotificationDrawer
           open={notificationsOpen}
           onClose={closeNotifications}
           items={notifications}
+          onMarkAsRead={markAsRead}
+          onClearAll={clearNotifications}
         />
         <UserMenu
           themeStorageKey={THEME_STORAGE_KEY}

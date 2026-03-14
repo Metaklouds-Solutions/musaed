@@ -9,3 +9,5 @@ export { FeatureFlagsSection } from './FeatureFlagsSection';
 export { ProviderAvailabilitySection } from './ProviderAvailabilitySection';
 export { TwoFactorSection } from './TwoFactorSection/TwoFactorSection';
 export { SessionManagementSection } from './SessionManagementSection';
+export { SupportSection } from './SupportSection';
+export { TeamSection } from './TeamSection';

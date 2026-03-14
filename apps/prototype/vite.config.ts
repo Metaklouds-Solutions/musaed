@@ -55,14 +55,13 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
+    optimizeDeps: {
+      include: ['socket.io-client'],
+    },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
+      port: Number(env.VITE_PORT) || 3002,
+      strictPort: false,
       hmr: process.env.DISABLE_HMR !== 'true',
-      /**
-       * Allowed hosts for Vite dev server. Add external tunnel hosts here for development access.
-       * This enables serving via "noncancelable-natalie-scripturally.ngrok-free.dev".
-       */
       allowedHosts: ["noncancelable-natalie-scripturally.ngrok-free.dev"],
     },
   };

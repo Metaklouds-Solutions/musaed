@@ -3,7 +3,7 @@
  */
 
 import { motion } from 'motion/react';
-import { EmptyState, Card, LOTTIE_ASSETS } from '../../../../shared/ui';
+import { EmptyState, Card, LOTTIE_ASSETS, AnimatedNumber } from '../../../../shared/ui';
 import type { FunnelStage } from '../../../../shared/types';
 import { GitBranch } from 'lucide-react';
 
@@ -51,7 +51,7 @@ export function ConversionFunnel({ stages }: ConversionFunnelProps) {
                       {dropOff}% drop-off
                     </span>
                   )}
-                  <span className="text-[var(--text-primary)] font-medium tabular-nums">{count}</span>
+                  <span className="text-[var(--text-primary)] font-medium tabular-nums"><AnimatedNumber value={count} /></span>
                 </span>
               </div>
               <div className="h-2 rounded-full overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-subtle)]">

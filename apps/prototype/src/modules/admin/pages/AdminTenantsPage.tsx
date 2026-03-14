@@ -1,13 +1,13 @@
 /**
- * Admin Tenants: Tenant list and Compare Tenants views. [PHASE-7-BULK-ACTIONS]
+ * Admin Tenants: Tenant list with bulk actions. [PHASE-7-BULK-ACTIONS]
  * Uses TenantListRow with status, plan, search filters.
  */
 
-import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserPlus, Users, GitCompare, Archive, Download } from 'lucide-react';
+import { UserPlus, Users, MoreHorizontal, Power, PowerOff } from 'lucide-react';
 import {
   PageHeader,
   DataTable,
@@ -23,33 +23,19 @@ import {
   PillTag,
   TableFilters,
   BulkActionsBar,
+  ConfirmDeleteBar,
+  Pagination,
 } from '../../../shared/ui';
-import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useAdminTenantList, useAdminTenantsActions } from '../hooks';
+import { useAdminTenantList } from '../hooks';
+import { tenantsAdapter } from '../../../adapters';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { useTableSelection } from '../../../shared/hooks/useTableSelection';
 import { useOptimisticList } from '../../../shared/hooks/useOptimisticList';
 import type { TenantListRow } from '../../../shared/types';
 import type { PillTagVariant } from '../../../shared/ui';
+import { cn } from '@/lib/utils';
 import { AddTenantModal } from '../components/AddTenantModal';
-import { TenantComparisonView } from '../components/TenantComparisonView';
-
-type ViewMode = 'list' | 'compare';
-
-const DEFAULT_RANGE = (() => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 6);
-  return { start, end };
-})();
-
-function getViewTabId(mode: ViewMode): string {
-  return `admin-tenants-tab-${mode}`;
-}
-
-function getViewPanelId(mode: ViewMode): string {
-  return `admin-tenants-panel-${mode}`;
-}
+import { TenantActionsModal } from '../components/TenantActionsModal';
 
 function statusVariant(status: string): PillTagVariant {
   if (status === 'ACTIVE') return 'status';
@@ -57,48 +43,98 @@ function statusVariant(status: string): PillTagVariant {
   return 'outcomeFailed';
 }
 
-/** Renders admin tenants list/compare views with bulk actions and date filtering. */
+/** Renders admin tenants list with bulk actions and filters. */
 export function AdminTenantsPage() {
   const ready = useDelayedReady();
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const [planFilter, setPlanFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { archiveTenant, toExportRows, exportTenantsCsv } = useAdminTenantsActions();
-  const { tenants, plans, statuses } = useAdminTenantList(refreshKey, {
+  const { tenants, loading: tenantsLoading, refetch: refetchTenants, plans, statuses } = useAdminTenantList(refreshKey, {
     plan: planFilter,
     status: statusFilter,
     search: searchQuery,
   });
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [actionsModalTenant, setActionsModalTenant] = useState<TenantListRow | null>(null);
+  const [actionTarget, setActionTarget] = useState<{
+    id: string;
+    name: string;
+    action: 'enable' | 'disable';
+    ids: string[];
+  } | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const { items: displayTenants, removeOptimistic, rollbackRemove, commit } = useOptimisticList<TenantListRow>({
+  const { items: displayTenants, addOptimistic, patchOptimistic, rollbackPatch } = useOptimisticList<TenantListRow>({
     items: tenants,
     getKey: (t) => t.id,
   });
+
+  const totalPages = Math.max(1, Math.ceil(displayTenants.length / pageSize));
+  const pagedTenants = displayTenants.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [planFilter, statusFilter, searchQuery]);
   const selection = useTableSelection((t: TenantListRow) => t.id);
 
-  const handleAddSuccess = useCallback(() => setRefreshKey((k) => k + 1), []);
-
-  const handleArchive = useCallback(
-    (id: string) => () => {
-      if (!window.confirm('Archive this tenant? They will be hidden from the list.')) return;
-      removeOptimistic(id);
-      try {
-        archiveTenant(id);
-        setRefreshKey((k) => k + 1);
-        commit();
-        toast.success('Tenant archived');
-      } catch {
-        rollbackRemove(id);
-        toast.error('Failed to archive');
-      }
+  const handleAddSuccess = useCallback(
+    (created: { id: string; name: string; plan: string }) => {
+      addOptimistic({
+        id: created.id,
+        name: created.name,
+        plan: created.plan,
+        status: 'ONBOARDING',
+        agentCount: 0,
+        mrr: 0,
+        callsThisMonth: 0,
+        onboardingStatus: 'Step 1/4',
+      });
+      setRefreshKey((k) => k + 1);
+      refetchTenants();
     },
-    [removeOptimistic, rollbackRemove, commit]
+    [addOptimistic, refetchTenants]
   );
+
+  const handleActionsClick = useCallback((tenant: TenantListRow) => () => {
+    setActionsModalTenant(tenant);
+  }, []);
+
+  const handleActionConfirm = useCallback(async () => {
+    if (!actionTarget) return;
+    const { ids, action } = actionTarget;
+    for (const id of ids) {
+      patchOptimistic(id, { status: action === 'enable' ? 'ACTIVE' : 'SUSPENDED' });
+    }
+    setProcessing(true);
+    try {
+      const fn = action === 'enable' ? tenantsAdapter.enableTenant : tenantsAdapter.disableTenant;
+      for (const id of ids) {
+        await Promise.resolve(fn(id));
+      }
+      toast.success(
+        ids.length > 1
+          ? `${ids.length} tenants ${action === 'enable' ? 'enabled' : 'disabled'}`
+          : `"${actionTarget.name}" ${action === 'enable' ? 'enabled' : 'disabled'}`
+      );
+      setActionTarget(null);
+      selection.clear();
+      setRefreshKey((k) => k + 1);
+      refetchTenants();
+    } catch {
+      toast.error(`Failed to ${action} tenant`);
+      for (const id of ids) {
+        rollbackPatch(id);
+      }
+    } finally {
+      setProcessing(false);
+    }
+  }, [actionTarget, refetchTenants, selection, patchOptimistic, rollbackPatch]);
+
+  const handleActionCancel = useCallback(() => setActionTarget(null), []);
 
   const selectedTenants = displayTenants.filter((t) => selection.selectedSet.has(t.id));
   const handleView = useCallback(
@@ -106,126 +142,59 @@ export function AdminTenantsPage() {
     [navigate]
   );
 
-  const handleBulkArchive = useCallback(() => {
+  const handleBulkDisable = useCallback(() => {
     if (selectedTenants.length === 0) return;
-    if (!window.confirm(`Archive ${selectedTenants.length} tenant(s)? They will be hidden from the list.`)) return;
-    let failed = 0;
-    for (const t of selectedTenants) {
-      removeOptimistic(t.id);
-      try {
-        archiveTenant(t.id);
-      } catch {
-        rollbackRemove(t.id);
-        failed++;
-      }
-    }
-    selection.clear();
-    setRefreshKey((k) => k + 1);
-    commit();
-    if (failed > 0) toast.error(`Failed to archive ${failed} tenant(s)`);
-    else toast.success(`Archived ${selectedTenants.length} tenant(s)`);
-  }, [selectedTenants, removeOptimistic, rollbackRemove, commit, selection]);
+    const active = selectedTenants.filter((t) => t.status !== 'SUSPENDED');
+    if (active.length === 0) return;
+    setActionTarget({
+      id: active.map((t) => t.id).join(','),
+      name: `${active.length} tenant(s)`,
+      action: 'disable',
+      ids: active.map((t) => t.id),
+    });
+  }, [selectedTenants]);
 
-  const handleBulkExport = useCallback(() => {
+  const handleBulkEnable = useCallback(() => {
     if (selectedTenants.length === 0) return;
-    const rows = toExportRows(selectedTenants);
-    exportTenantsCsv(rows, `tenants-selected-${new Date().toISOString().slice(0, 10)}.csv`);
-    selection.clear();
-    toast.success(`Exported ${selectedTenants.length} tenant(s)`);
-  }, [selectedTenants, selection, toExportRows, exportTenantsCsv]);
+    const suspended = selectedTenants.filter((t) => t.status === 'SUSPENDED');
+    if (suspended.length === 0) return;
+    setActionTarget({
+      id: suspended.map((t) => t.id).join(','),
+      name: `${suspended.length} tenant(s)`,
+      action: 'enable',
+      ids: suspended.map((t) => t.id),
+    });
+  }, [selectedTenants]);
 
   const checkboxClass =
     'w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--ds-primary)] focus:ring-2 focus:ring-[var(--ds-primary)] cursor-pointer';
-  const allTenantsSelected = displayTenants.length > 0 && displayTenants.every((t) => selection.selectedSet.has(t.id));
-  const someTenantsSelected = displayTenants.some((t) => selection.selectedSet.has(t.id));
+  const allTenantsSelected = pagedTenants.length > 0 && pagedTenants.every((t) => selection.selectedSet.has(t.id));
+  const someTenantsSelected = pagedTenants.some((t) => selection.selectedSet.has(t.id));
   const headerCheckRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const el = headerCheckRef.current;
     if (el) el.indeterminate = Boolean(someTenantsSelected && !allTenantsSelected);
   }, [someTenantsSelected, allTenantsSelected]);
 
-  const handleViewTabsKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>) => {
-      if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
-      event.preventDefault();
-      if (event.key === 'Home') return setViewMode('list');
-      if (event.key === 'End') return setViewMode('compare');
-      if (event.key === 'ArrowRight') return setViewMode(viewMode === 'list' ? 'compare' : 'list');
-      if (event.key === 'ArrowLeft') return setViewMode(viewMode === 'compare' ? 'list' : 'compare');
-    },
-    [viewMode]
-  );
-
   return (
     <div className="space-y-6">
-      {/* Header with tabs */}
-      <div className="flex flex-col gap-4 sm:gap-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <PageHeader
-            title="Tenants"
-            description="Platform tenant list and performance comparison"
-          />
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {viewMode === 'compare' && (
-              <DateRangePicker
-                value={dateRange}
-                onChange={setDateRange}
-                aria-label="Date range for comparison"
-              />
-            )}
-            {viewMode === 'list' && (
-              <Button onClick={() => setAddModalOpen(true)}>
-                <UserPlus className="w-4 h-4" aria-hidden />
-                Add Tenant
-              </Button>
-            )}
+      <div className="rounded-[var(--radius-card)] card-glass border border-[var(--border-subtle)]/50 overflow-hidden flex flex-col">
+        <div className="p-5 sm:p-6 border-b border-[var(--border-subtle)]/40">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <PageHeader
+              title="Tenants"
+              description="Platform tenant list"
+              className="mb-0"
+            />
+            <Button onClick={() => setAddModalOpen(true)} className="rounded-xl px-5 shrink-0">
+              <UserPlus className="w-4 h-4" aria-hidden />
+              Add Tenant
+            </Button>
           </div>
         </div>
 
-        {/* Tab switcher - unified with Settings */}
-        <div
-          role="tablist"
-          aria-label="View mode"
-          onKeyDown={handleViewTabsKeyDown}
-          className="inline-flex flex-wrap w-full sm:w-auto gap-1.5 p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm ring-1 ring-black/5"
-        >
-          <button
-            id={getViewTabId('list')}
-            role="tab"
-            aria-selected={viewMode === 'list'}
-            aria-controls={getViewPanelId('list')}
-            tabIndex={viewMode === 'list' ? 0 : -1}
-            onClick={() => setViewMode('list')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-              viewMode === 'list'
-                ? 'bg-[var(--bg-base)] text-[var(--ds-primary)] shadow-md border border-[var(--border-subtle)] ring-1 ring-[var(--ds-primary)]/20'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60'
-            }`}
-          >
-            <Users size={16} aria-hidden className="shrink-0" />
-            Tenants
-          </button>
-          <button
-            id={getViewTabId('compare')}
-            role="tab"
-            aria-selected={viewMode === 'compare'}
-            aria-controls={getViewPanelId('compare')}
-            tabIndex={viewMode === 'compare' ? 0 : -1}
-            onClick={() => setViewMode('compare')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-              viewMode === 'compare'
-                ? 'bg-[var(--bg-base)] text-[var(--ds-primary)] shadow-md border border-[var(--border-subtle)] ring-1 ring-[var(--ds-primary)]/20'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60'
-            }`}
-          >
-            <GitCompare size={16} aria-hidden className="shrink-0" />
-            Compare Tenants
-          </button>
-        </div>
-      </div>
-
       <AnimatePresence mode="wait">
-        {!ready ? (
+        {!ready || (tenantsLoading && displayTenants.length === 0) ? (
           <motion.div
             key="skeleton"
             initial={{ opacity: 0 }}
@@ -235,151 +204,216 @@ export function AdminTenantsPage() {
           >
             <TableSkeleton rows={6} cols={4} />
           </motion.div>
-        ) : viewMode === 'list' ? (
-          <motion.div
+        ) : (
+            <motion.div
             key="list"
-            id={getViewPanelId('list')}
-            role="tabpanel"
-            aria-labelledby={getViewTabId('list')}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="space-y-4"
+            className="flex flex-col"
           >
-            {displayTenants.length === 0 ? (
-              <p className="text-sm text-[var(--text-muted)] py-8">No tenants.</p>
+            {displayTenants.length === 0 && !searchQuery && !planFilter && !statusFilter ? (
+              <div className="flex flex-col items-center justify-center py-20 sm:py-24 px-8 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]/50 flex items-center justify-center mb-6">
+                  <Users className="w-7 h-7 text-[var(--text-muted)]" />
+                </div>
+                <p className="text-lg font-semibold text-[var(--text-primary)]">No tenants yet</p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)] max-w-md leading-relaxed">
+                  Get started by adding your first tenant. You can assign agents and monitor their performance.
+                </p>
+                <Button onClick={() => setAddModalOpen(true)} className="mt-8 rounded-xl px-6 py-2.5">
+                  <UserPlus className="w-4 h-4" aria-hidden />
+                  Add Tenant
+                </Button>
+              </div>
             ) : (
               <>
-                <TableFilters
-                  plans={plans}
-                  selectedPlan={planFilter}
-                  onPlanChange={setPlanFilter}
-                  statuses={statuses}
-                  selectedStatus={statusFilter}
-                  onStatusChange={setStatusFilter}
-                  search={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  searchPlaceholder="Search tenants…"
-                />
-                <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
-                  <Button variant="secondary" size="sm" onClick={handleBulkExport} className="shrink-0">
-                    <Download className="w-4 h-4" aria-hidden />
-                    Export
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={handleBulkArchive} className="shrink-0">
-                    <Archive className="w-4 h-4" aria-hidden />
-                    Archive
-                  </Button>
-                </BulkActionsBar>
-                <div className="rounded-xl overflow-x-auto overflow-y-visible border border-[var(--border-subtle)] shadow-sm">
-                  <DataTable minWidth="min-w-[900px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <input
-                              ref={headerCheckRef}
-                              type="checkbox"
-                              checked={allTenantsSelected}
-                              onChange={() => selection.toggleAll(displayTenants)}
-                              className={checkboxClass}
-                              aria-label="Select all"
-                            />
-                          </TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Plan</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Agents</TableHead>
-                          <TableHead className="text-right">MRR</TableHead>
-                          <TableHead className="text-right">Calls</TableHead>
-                          <TableHead>Onboarding</TableHead>
-                          <TableHead className="w-[100px]">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {displayTenants.map((t) => (
-                          <TableRow
-                            key={t.id}
-                            className="border-t border-[var(--border-subtle)]/50 first:border-t-0"
-                          >
-                            <TableCell className="w-12 py-4">
-                              <input
-                                type="checkbox"
-                                checked={selection.selectedSet.has(t.id)}
-                                onChange={() => selection.toggle(t.id)}
-                                className={checkboxClass}
-                                aria-label={`Select ${t.name}`}
-                              />
-                            </TableCell>
-                            <TableCell className="font-medium text-[var(--text-primary)] py-4">
-                              {t.name}
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <PillTag variant="plan">{t.plan}</PillTag>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <PillTag variant={statusVariant(t.status)}>{t.status}</PillTag>
-                            </TableCell>
-                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
-                              {t.agentCount}
-                            </TableCell>
-                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
-                              ${t.mrr}
-                            </TableCell>
-                            <TableCell className="py-4 text-right text-[var(--text-secondary)]">
-                              {t.callsThisMonth}
-                            </TableCell>
-                            <TableCell className="py-4 text-sm text-[var(--text-secondary)]">
-                              {t.onboardingStatus}
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <div className="flex items-center gap-2">
-                                <ViewButton onClick={handleView(t.id)} aria-label="View tenant" />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={handleArchive(t.id)}
-                                  aria-label="Archive tenant"
-                                  className="text-[var(--text-muted)] hover:text-[var(--destructive)]"
-                                >
-                                  <Archive size={16} aria-hidden />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </DataTable>
+                <div className="p-5 sm:p-6 border-b border-[var(--border-subtle)]/40 space-y-5">
+                  <TableFilters
+                    plans={plans}
+                    selectedPlan={planFilter}
+                    onPlanChange={setPlanFilter}
+                    statuses={statuses}
+                    selectedStatus={statusFilter}
+                    onStatusChange={setStatusFilter}
+                    search={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    searchPlaceholder="Search tenants…"
+                  />
+                  <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleBulkDisable}
+                      className="shrink-0"
+                      disabled={!selectedTenants.some((t) => t.status !== 'SUSPENDED')}
+                    >
+                      <PowerOff className="w-4 h-4" aria-hidden />
+                      Disable
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleBulkEnable}
+                      className="shrink-0"
+                      disabled={!selectedTenants.some((t) => t.status === 'SUSPENDED')}
+                    >
+                      <Power className="w-4 h-4" aria-hidden />
+                      Enable
+                    </Button>
+                  </BulkActionsBar>
                 </div>
+                <div className="overflow-x-auto overscroll-contain scroll-smooth">
+                  {displayTenants.length === 0 ? (
+                    <div className="py-16 text-center text-sm text-[var(--text-secondary)]">
+                      No tenants match your search or filters.
+                    </div>
+                  ) : (
+                    <DataTable minWidth="min-w-[900px]" className="!bg-transparent !border-0 !shadow-none !rounded-none">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-0 hover:bg-transparent">
+                            <TableHead className="w-14 py-4 font-semibold text-[var(--text-secondary)]">
+                              <input
+                                ref={headerCheckRef}
+                                type="checkbox"
+                                checked={allTenantsSelected}
+                                onChange={() => selection.toggleAll(pagedTenants)}
+                                className={cn(checkboxClass, 'p-1')}
+                                aria-label="Select all"
+                              />
+                            </TableHead>
+                            <TableHead className="py-4 font-semibold text-[var(--text-secondary)]">Name</TableHead>
+                            <TableHead className="py-4 font-semibold text-[var(--text-secondary)]">Plan</TableHead>
+                            <TableHead className="py-4 font-semibold text-[var(--text-secondary)]">Status</TableHead>
+                            <TableHead className="py-4 text-right font-semibold text-[var(--text-secondary)]">Agents</TableHead>
+                            <TableHead className="py-4 text-right font-semibold text-[var(--text-secondary)]">MRR</TableHead>
+                            <TableHead className="py-4 text-right font-semibold text-[var(--text-secondary)]">Calls</TableHead>
+                            <TableHead className="py-4 font-semibold text-[var(--text-secondary)]">Onboarding</TableHead>
+                            <TableHead className="w-[120px] py-4 font-semibold text-[var(--text-secondary)]">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-[var(--border-subtle)]/40">
+                          {pagedTenants.map((t, i) => {
+                            const isSelected = selection.selectedSet.has(t.id);
+                            return (
+                              <TableRow
+                                key={t.id}
+                                className={cn(
+                                  'border-0 transition-colors',
+                                  isSelected
+                                    ? 'bg-[var(--ds-primary)]/5 hover:bg-[var(--ds-primary)]/8'
+                                    : i % 2 === 0
+                                      ? 'bg-transparent hover:bg-[var(--bg-subtle)]/50'
+                                      : 'bg-[var(--bg-subtle)]/30 hover:bg-[var(--bg-subtle)]/50'
+                                )}
+                              >
+                                <TableCell className="w-14 py-5 pl-4 sm:pl-6">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => selection.toggle(t.id)}
+                                    className={cn(checkboxClass, 'p-1')}
+                                    aria-label={`Select ${t.name}`}
+                                  />
+                                </TableCell>
+                                <TableCell className="font-medium text-[var(--text-primary)] py-5">
+                                  {t.name}
+                                </TableCell>
+                                <TableCell className="py-5">
+                                  <PillTag variant="plan">{t.plan}</PillTag>
+                                </TableCell>
+                                <TableCell className="py-5">
+                                  <PillTag variant={statusVariant(t.status)}>{t.status}</PillTag>
+                                </TableCell>
+                                <TableCell className="py-5 text-right text-[var(--text-secondary)] tabular-nums">
+                                  {t.agentCount}
+                                </TableCell>
+                                <TableCell className="py-5 text-right text-[var(--text-secondary)] tabular-nums">
+                                  ${t.mrr}
+                                </TableCell>
+                                <TableCell className="py-5 text-right text-[var(--text-secondary)] tabular-nums">
+                                  {t.callsThisMonth}
+                                </TableCell>
+                                <TableCell className="py-5 text-sm text-[var(--text-secondary)]">
+                                  {t.onboardingStatus}
+                                </TableCell>
+                                <TableCell className="py-5">
+                                  <div className="flex items-center gap-2">
+                                    <ViewButton
+                                      onClick={handleView(t.id)}
+                                      aria-label="View tenant"
+                                      className="min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={handleActionsClick(t)}
+                                      aria-label="Tenant actions"
+                                      className="min-w-[44px] min-h-[44px] p-0 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                    >
+                                      <MoreHorizontal size={18} aria-hidden />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </DataTable>
+                  )}
+                </div>
+                {displayTenants.length > 0 && (
+                  <div className="p-5 sm:p-6 border-t border-[var(--border-subtle)]/40">
+                    <Pagination
+                      page={page}
+                      totalPages={totalPages}
+                      onPageChange={setPage}
+                      totalItems={displayTenants.length}
+                    />
+                  </div>
+                )}
               </>
             )}
           </motion.div>
-        ) : (
-          <motion.div
-            key="compare"
-            id={getViewPanelId('compare')}
-            role="tabpanel"
-            aria-labelledby={getViewTabId('compare')}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-          >
-            <TenantComparisonView
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-            />
-          </motion.div>
         )}
       </AnimatePresence>
+      </div>
 
       <AddTenantModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onSuccess={handleAddSuccess}
       />
+
+      <TenantActionsModal
+        open={actionsModalTenant !== null}
+        onClose={() => setActionsModalTenant(null)}
+        tenant={actionsModalTenant}
+        onSuccess={() => {
+          setRefreshKey((k) => k + 1);
+          refetchTenants();
+        }}
+      />
+
+      <ConfirmDeleteBar
+        open={actionTarget !== null}
+        itemName={actionTarget?.name ?? ''}
+        title={actionTarget?.action === 'enable' ? 'Enable tenant' : 'Disable tenant'}
+        bodyMessage={
+          actionTarget?.action === 'enable'
+            ? `${actionTarget.name} will be able to log in again.`
+            : `${actionTarget?.name ?? 'This tenant'} will not be able to log in until you enable them again.`
+        }
+        confirmLabel={actionTarget?.action === 'enable' ? 'Enable' : 'Disable'}
+        variant={actionTarget?.action === 'enable' ? 'primary' : 'danger'}
+        onConfirm={handleActionConfirm}
+        onCancel={handleActionCancel}
+        loading={processing}
+      />
+
     </div>
   );
 }

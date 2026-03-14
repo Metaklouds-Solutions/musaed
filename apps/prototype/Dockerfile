@@ -13,7 +13,9 @@ WORKDIR /app
 COPY --from=deps /app ./
 COPY . .
 ARG VITE_API_URL
+ARG VITE_DATA_MODE=api
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_DATA_MODE=$VITE_DATA_MODE
 RUN pnpm -F @musaed/prototype build
 
 FROM nginx:alpine AS runtime

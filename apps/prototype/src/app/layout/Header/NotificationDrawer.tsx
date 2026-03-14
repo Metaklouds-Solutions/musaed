@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Drawer, DrawerHeader } from '../../../shared/ui';
 import { Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,12 +15,19 @@ export interface NotificationItem {
   message: string;
   time: string;
   unread: boolean;
+  severity?: 'critical' | 'important' | 'normal' | 'info';
+  source?: string;
+  type?: string;
+  metadata?: Record<string, unknown>;
+  link?: string;
 }
 
 interface NotificationDrawerProps {
   open: boolean;
   onClose: () => void;
   items: NotificationItem[];
+  onMarkAsRead?: (id: string) => void;
+  onClearAll?: () => void;
 }
 
 type Filter = 'all' | 'unread';
@@ -28,11 +36,23 @@ export function NotificationDrawer({
   open,
   onClose,
   items,
+  onMarkAsRead,
+  onClearAll,
 }: NotificationDrawerProps) {
   const [filter, setFilter] = useState<Filter>('all');
-  const filtered =
-    filter === 'unread' ? items.filter((n) => n.unread) : items;
+  const navigate = useNavigate();
+  const filtered = items.filter((n) => {
+    if (filter === 'unread' && !n.unread) return false;
+    return true;
+  });
   const isEmpty = filtered.length === 0;
+
+  const severityDotClass = (severity?: string): string => {
+    if (severity === 'critical') return 'bg-red-500';
+    if (severity === 'important') return 'bg-orange-500';
+    if (severity === 'info') return 'bg-gray-400';
+    return 'bg-blue-500';
+  };
 
   return (
     <Drawer open={open} onClose={onClose} title="Notifications" widthRem={24} side="right">
@@ -53,6 +73,26 @@ export function NotificationDrawer({
         >
           All
         </button>
+        {onClearAll && items.length > 0 && (
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="text-sm text-[var(--primary)] hover:underline"
+          >
+            Mark all read
+          </button>
+        )}
+        {onClearAll && items.length > 0 && (
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0"
+            title="Clear all notifications from database"
+            aria-label="Clear all notifications"
+          >
+            Clear all
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setFilter('unread')}
@@ -69,7 +109,7 @@ export function NotificationDrawer({
           Unread
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+      <div className="notification-scroll-area flex-1 overflow-y-auto overscroll-contain min-h-0">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center py-16 sm:py-12 px-6 text-center">
             <div
@@ -100,7 +140,17 @@ export function NotificationDrawer({
           <ul className="divide-y divide-[var(--separator)]">
             {filtered.map((item) => (
               <li key={item.id} className="px-4 sm:px-5 py-4 sm:py-4">
-                <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (item.unread && onMarkAsRead) onMarkAsRead(item.id);
+                    if (item.link?.startsWith('/')) {
+                      onClose();
+                      navigate(item.link);
+                    }
+                  }}
+                  className="w-full text-left flex gap-3 hover:bg-[var(--bg-hover)]/50 rounded-lg -m-2 p-2 transition-colors"
+                >
                   {item.unread && (
                     <span
                       className="mt-2 w-2 h-2 rounded-full shrink-0"
@@ -109,6 +159,12 @@ export function NotificationDrawer({
                     />
                   )}
                   <div className={cn('min-w-0 flex-1', item.unread && 'pl-2')}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn('w-2 h-2 rounded-full', severityDotClass(item.severity))} />
+                      <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+                        {item.source ?? 'system'}
+                      </span>
+                    </div>
                     <p
                       className={cn(
                         'text-sm',
@@ -131,7 +187,7 @@ export function NotificationDrawer({
                       {item.time}
                     </p>
                   </div>
-                </div>
+                </button>
               </li>
             ))}
           </ul>

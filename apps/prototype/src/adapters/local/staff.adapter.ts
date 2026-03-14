@@ -70,6 +70,20 @@ export const staffAdapter = {
     return row;
   },
 
+  deleteStaff(id: string, tenantId?: string): void {
+    const idx = addedStaff.findIndex((s) => s.userId === id && (!tenantId || s.tenantId === tenantId));
+    if (idx >= 0) {
+      addedStaff.splice(idx, 1);
+      return;
+    }
+
+    // Seeded rows are immutable in-memory; soft-delete them so UI behavior matches API mode.
+    const seedMatch = seedTenantMemberships.find((m) => m.userId === id && (!tenantId || m.tenantId === tenantId));
+    if (seedMatch) {
+      softDeleteAdapter.softDeleteStaff(seedMatch.userId, seedMatch.tenantId);
+    }
+  },
+
   /** Import CSV (stub). Returns count of rows processed. */
   importCsv(_csv: string, tenantId: string): number {
     // Stub: parse CSV and call add() for each row

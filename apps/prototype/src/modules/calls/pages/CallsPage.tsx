@@ -1,16 +1,14 @@
 /**
  * Calls list page. Layout only; data from useCallsList hook.
- * Saved filters: save/apply view presets. Uses adapters for export only.
+ * Uses adapters for export only.
  */
 
-import { useMemo, useState, useCallback } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button, SavedFiltersDropdown, TableSkeleton, StatCard, LOTTIE_ASSETS } from '../../../shared/ui';
-import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { PageHeader, EmptyState, TableFilters, Button, TableSkeleton, LOTTIE_ASSETS, Pagination } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList, useCallsExport } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
-import { OutcomeBreakdown } from '../../reports/components/OutcomeBreakdown';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
 
@@ -27,7 +25,9 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
-/** Tenant calls list: filters, stats, export. Data from useCallsList hook. */
+const PAGE_SIZE = 20;
+
+/** Tenant calls list: table-first log with filters, export, and pagination. */
 export function CallsPage() {
   const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
@@ -35,56 +35,29 @@ export function CallsPage() {
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
   const { exportCallsCsv } = useCallsExport();
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
-
-  const currentFilters = useMemo(
-    () => ({
-      outcome: outcomeFilter,
-      dateRangeStart: dateRange.start.toISOString(),
-      dateRangeEnd: dateRange.end.toISOString(),
-    }),
-    [outcomeFilter, dateRange]
-  );
-
-  const handleApplyFilters = useCallback((f: Record<string, unknown>) => {
-    const outcome = typeof f.outcome === 'string' ? f.outcome : null;
-    setOutcomeFilter(outcome || null);
-    if (typeof f.dateRangeStart === 'string' && typeof f.dateRangeEnd === 'string') {
-      const nextStart = new Date(f.dateRangeStart);
-      const nextEnd = new Date(f.dateRangeEnd);
-      if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) return;
-      setDateRange({
-        start: nextStart,
-        end: nextEnd,
-      });
-    }
-  }, []);
-
-  const savedFilters = useSavedFilters({
-    pageKey: 'calls',
-    currentFilters,
-    onApply: handleApplyFilters,
-  });
+  const [page, setPage] = useState(1);
 
   const filteredCalls = useMemo(() => {
     if (!outcomeFilter) return calls;
     return calls.filter((c) => getOutcome(c) === outcomeFilter);
   }, [calls, outcomeFilter]);
 
-  const callSummary = useMemo(() => {
-    const total = calls.length;
-    const booked = calls.filter((c) => c.bookingCreated).length;
-    const escalated = calls.filter((c) => c.escalationFlag && !c.bookingCreated).length;
-    const failed = total - booked - escalated;
-    const totalDuration = calls.reduce((s, c) => s + c.duration, 0);
-    const avgDurationSec = total > 0 ? Math.round(totalDuration / total) : 0;
-    const conversionRate = total > 0 ? Math.round((booked / total) * 100) : 0;
-    const outcomes = [
-      { outcome: 'booked' as const, count: booked, percentage: total > 0 ? Math.round((booked / total) * 100) : 0 },
-      { outcome: 'escalated' as const, count: escalated, percentage: total > 0 ? Math.round((escalated / total) * 100) : 0 },
-      { outcome: 'failed' as const, count: failed, percentage: total > 0 ? Math.round((failed / total) * 100) : 0 },
-    ];
-    return { total, conversionRate, avgDurationSec, outcomes };
-  }, [calls]);
+  const totalPages = Math.max(1, Math.ceil(filteredCalls.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const pageEnd = pageStart + PAGE_SIZE;
+  const paginatedCalls = useMemo(
+    () => filteredCalls.slice(pageStart, pageEnd),
+    [filteredCalls, pageStart, pageEnd],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [outcomeFilter, dateRange.start, dateRange.end]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleExport = useCallback(() => {
     exportCallsCsv(
@@ -121,7 +94,7 @@ export function CallsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Calls"
-          description="AI call logs and conversion."
+          description="AI call logs with filtering and export."
         />
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />
@@ -129,17 +102,6 @@ export function CallsPage() {
             <Download className="w-4 h-4" aria-hidden />
             Export CSV
           </Button>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total calls" value={callSummary.total} />
-        <StatCard label="Conversion rate" value={`${callSummary.conversionRate}%`} />
-        <StatCard
-          label="Avg duration"
-          value={`${Math.floor(callSummary.avgDurationSec / 60)}:${(callSummary.avgDurationSec % 60).toString().padStart(2, '0')}`}
-        />
-        <div className="sm:col-span-2 lg:col-span-1">
-          <OutcomeBreakdown outcomes={callSummary.outcomes} />
         </div>
       </div>
       {calls.length === 0 ? (
@@ -163,20 +125,32 @@ export function CallsPage() {
               selectedOutcome={outcomeFilter}
               onOutcomeChange={setOutcomeFilter}
             />
-            <SavedFiltersDropdown
-              saved={savedFilters.saved}
-              onSave={(name) => {
-                savedFilters.saveCurrent(name);
-                toast.success(`View "${name}" saved`);
-              }}
-              onApply={savedFilters.apply}
-              onDelete={savedFilters.deleteFilter}
-            />
           </div>
-          <CallsTable
-            calls={filteredCalls}
-            getCustomerName={(id) => customerMap.get(id) ?? id}
-          />
+          {filteredCalls.length === 0 ? (
+            <div className="rounded-[var(--radius-card)] card-glass p-6">
+              <p className="text-sm text-[var(--text-muted)]">
+                No calls match the selected filters.
+              </p>
+            </div>
+          ) : (
+            <>
+              <CallsTable
+                calls={paginatedCalls}
+                getCustomerName={(id) => customerMap.get(id) ?? id}
+              />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                <p className="text-sm text-[var(--text-muted)]">
+                  Showing {pageStart + 1}-{Math.min(pageEnd, filteredCalls.length)} of {filteredCalls.length} calls
+                </p>
+                <Pagination
+                  page={safePage}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={filteredCalls.length}
+                />
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

@@ -28,9 +28,13 @@ export interface Customer {
 
 export interface Call {
   id: string;
+  /** Retell call ID (distinct from MongoDB _id). Used for run lookup. */
+  callId?: string;
   tenantId: string;
   customerId: string;
   duration: number;
+  /** Cost in USD from Retell. Optional until enriched. */
+  callCost?: number | null;
   sentimentScore: number;
   transcript: string;
   escalationFlag: boolean;
@@ -39,6 +43,12 @@ export interface Call {
   createdAt: string;
   /** A/B test version (e.g. 'A' | 'B') when agent A/B testing is enabled. */
   agentVersion?: string;
+  recordingUrl?: string;
+  summary?: string;
+  /** Backend outcome: booked | escalated | failed | info_only | unknown. Set by API adapter. */
+  outcome?: string;
+  /** Agent instance ID. Set by API adapter for filtering. */
+  agentId?: string;
 }
 
 export interface Booking {

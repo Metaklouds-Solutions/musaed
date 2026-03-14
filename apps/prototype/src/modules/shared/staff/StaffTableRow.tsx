@@ -2,7 +2,7 @@
  * Single staff table row. Avatar, PillTag for role, StatusDot for status.
  */
 
-import { Archive } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { TableRow, TableCell, Avatar, PillTag, StatusDot, Button } from '../../../shared/ui';
 import type { StaffRow } from '../../../shared/types';
 
@@ -46,10 +46,10 @@ export function StaffTableRowCells({ staff, showTenant = false, showArchiveActio
             variant="ghost"
             size="sm"
             onClick={() => onArchive(staff)}
-            aria-label="Archive staff"
+            aria-label="Delete staff"
             className="text-[var(--text-muted)] hover:text-[var(--destructive)]"
           >
-            <Archive size={16} aria-hidden />
+            <Trash2 size={16} aria-hidden />
           </Button>
         </TableCell>
       )}

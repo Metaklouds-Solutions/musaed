@@ -18,9 +18,10 @@ interface AddStaffFormProps {
   tenantId: string;
   onSubmit: (data: { name: string; email: string; roleSlug: string }) => void;
   onCancel: () => void;
+  submitting?: boolean;
 }
 
-export function AddStaffForm({ tenantId, onSubmit, onCancel }: AddStaffFormProps) {
+export function AddStaffForm({ tenantId, onSubmit, onCancel, submitting = false }: AddStaffFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [roleSlug, setRoleSlug] = useState('receptionist');
@@ -65,10 +66,10 @@ export function AddStaffForm({ tenantId, onSubmit, onCancel }: AddStaffFormProps
         />
       </div>
       <div className="flex gap-3">
-        <Button type="submit" disabled={!name.trim() || !email.trim()}>
+        <Button type="submit" loading={submitting} disabled={submitting || !name.trim() || !email.trim()}>
           Add Staff
         </Button>
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
       </div>

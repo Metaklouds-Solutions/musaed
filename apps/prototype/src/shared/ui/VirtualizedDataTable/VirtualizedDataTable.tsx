@@ -14,12 +14,14 @@ const MAX_HEIGHT = 400;
 const VIRTUALIZE_THRESHOLD = 50;
 
 interface VirtualizedDataTableProps<T> {
-  items: T[];
+  items: readonly T[] | null | undefined;
   header: React.ReactNode;
   renderRow: (item: T) => React.ReactNode;
   getItemKey: (item: T) => string;
   minWidth?: string;
   maxHeight?: number;
+  /** When true, rows get light purple background and rounded corners */
+  rowsTinted?: boolean;
 }
 
 export function VirtualizedDataTable<T>({
@@ -29,28 +31,30 @@ export function VirtualizedDataTable<T>({
   getItemKey,
   minWidth = 'min-w-[640px]',
   maxHeight = MAX_HEIGHT,
+  rowsTinted = false,
 }: VirtualizedDataTableProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const useVirtual = items.length >= VIRTUALIZE_THRESHOLD;
+  const normalizedItems = Array.isArray(items) ? items : [];
+  const useVirtual = normalizedItems.length >= VIRTUALIZE_THRESHOLD;
 
   const virtualizer = useVirtualizer({
-    count: items.length,
+    count: normalizedItems.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
   });
 
-  if (items.length === 0) return null;
+  if (normalizedItems.length === 0) return null;
 
   if (!useVirtual) {
     return (
-      <DataTable minWidth={minWidth}>
+      <DataTable minWidth={minWidth} rowsTinted={rowsTinted}>
         <Table>
           <TableHeader>
             <TableRow>{header}</TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => (
+            {normalizedItems.map((item) => (
               <TableRow key={getItemKey(item)}>{renderRow(item)}</TableRow>
             ))}
           </TableBody>
@@ -65,7 +69,11 @@ export function VirtualizedDataTable<T>({
   return (
     <div
       ref={parentRef}
-      className={cn('w-full min-w-0 overflow-auto rounded-(--radius-card) card-glass', minWidth)}
+      className={cn(
+        'w-full min-w-0 overflow-auto data-table-scroll rounded-[var(--radius-card)] card-glass',
+        rowsTinted && 'data-table-rows-tinted',
+        minWidth
+      )}
       style={{ maxHeight: `${maxHeight}px` }}
     >
       <div className={minWidth}>
@@ -78,7 +86,7 @@ export function VirtualizedDataTable<T>({
             style={{ height: `${totalHeight}px` }}
           >
             {virtualItems.map((virtualRow) => {
-              const item = items[virtualRow.index];
+              const item = normalizedItems[virtualRow.index];
               return (
                 <TableRow
                   key={getItemKey(item)}

@@ -22,6 +22,7 @@ export interface User {
   email: string;
   name: string;
   role: Role;
+  avatarUrl?: string;
   /** Set for MANAGER: the clinic (tenant) this user manages. Omitted for ADMIN. */
   tenantId?: string;
 }

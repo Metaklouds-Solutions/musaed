@@ -17,6 +17,8 @@ import type {
   AdminAgentDetail,
   TenantAgentRow,
   AgentDetailFull,
+  ChannelDeploymentSummary,
+  AgentInstanceSummary,
 } from '../../shared/types';
 
 const tenantName = (id: string) => seedTenants.find((t) => t.id === id)?.name ?? id;
@@ -109,8 +111,17 @@ function buildAgentDetailFromRow(
   };
 }
 
-/** In-memory: platform agents assigned to tenants. */
-const assignedAgents: { id: string; platformAgentId: string; tenantId: string; voice: string; language: string }[] = [];
+/** In-memory: platform agents assigned/created for tenants. */
+const assignedAgents: {
+  id: string;
+  platformAgentId: string;
+  tenantId: string | null;
+  voice: string;
+  language: string;
+  name?: string;
+  status?: string;
+  channelsEnabled?: Array<'voice' | 'chat' | 'email'>;
+}[] = [];
 
 export const agentsAdapter = {
   /** List all agents for admin. */
@@ -142,13 +153,13 @@ export const agentsAdapter = {
       }));
     const fromAssigned = assignedAgents.map((a) => ({
       id: a.id,
-      name: a.voice,
+      name: a.name ?? a.voice,
       externalAgentId: a.id,
       voice: a.voice,
       language: a.language,
       tenantId: a.tenantId,
-      tenantName: tenantName(a.tenantId),
-      status: 'active',
+      tenantName: a.tenantId ? tenantName(a.tenantId) : null,
+      status: a.status ?? 'active',
       lastSyncedAt: new Date().toISOString(),
     }));
     return [...fromVoice, ...fromPlatform, ...fromAssigned];
@@ -160,23 +171,135 @@ export const agentsAdapter = {
   },
 
   /** Assign platform agent to tenant. */
-  assign(agentId: string, tenantId: string): void {
+  async assign(agentId: string, tenantId: string): Promise<void> {
+    const existing = assignedAgents.find((item) => item.id === agentId);
+    if (existing) {
+      existing.tenantId = tenantId;
+      existing.status = 'active';
+      return;
+    }
     const pa = seedPlatformAgents.find((p) => p.id === agentId);
     if (pa) {
+      const defaultChannel: 'voice' | 'chat' | 'email' = 'chat';
       assignedAgents.push({
         id: `va_${Date.now()}`,
         platformAgentId: pa.id,
         tenantId,
+        name: pa.name,
         voice: pa.voice,
         language: pa.language,
+        status: 'active',
+        channelsEnabled: [defaultChannel],
       });
     }
   },
 
   /** Unassign agent. */
-  unassign(agentId: string): void {
-    const idx = assignedAgents.findIndex((a) => a.id === agentId);
-    if (idx >= 0) assignedAgents.splice(idx, 1);
+  async unassign(agentId: string): Promise<void> {
+    const existing = assignedAgents.find((item) => item.id === agentId);
+    if (existing) {
+      existing.tenantId = null;
+      existing.status = 'paused';
+    }
+  },
+
+  /** Update agent (e.g. name). */
+  async updateAgent(agentId: string, data: { name?: string }): Promise<void> {
+    const existing = assignedAgents.find((item) => item.id === agentId);
+    if (existing && data.name != null && data.name.trim().length > 0) {
+      existing.name = data.name.trim();
+    }
+  },
+
+  async deploy(_agentId: string): Promise<{ status: string; message: string }> {
+    return { status: 'queued', message: 'Deployment queued (local mode)' };
+  },
+
+  async createForTenant(
+    tenantId: string,
+    input: {
+      templateId: string;
+      name: string;
+      channelsEnabled: Array<'voice' | 'chat' | 'email'>;
+      capabilityLevel?: string;
+    },
+  ): Promise<AgentInstanceSummary> {
+    const template = seedPlatformAgents.find((item) => item.id === input.templateId);
+    const id = `ai_${Date.now()}`;
+    const primaryChannel = input.channelsEnabled[0] ?? 'chat';
+    assignedAgents.push({
+      id,
+      platformAgentId: input.templateId,
+      tenantId,
+      name: input.name,
+      voice: template?.voice ?? primaryChannel,
+      language: template?.language ?? input.capabilityLevel ?? 'en',
+      status: 'paused',
+      channelsEnabled: input.channelsEnabled,
+    });
+    return {
+      id,
+      tenantId,
+      tenantName: tenantName(tenantId),
+      name: input.name,
+      status: 'paused',
+      channel: primaryChannel,
+      channelsEnabled: input.channelsEnabled,
+      deployedAt: null,
+      lastSyncedAt: null,
+    };
+  },
+
+  async createUnassigned(input: {
+    templateId: string;
+    name: string;
+    channelsEnabled: Array<'voice' | 'chat' | 'email'>;
+    capabilityLevel?: string;
+  }): Promise<AgentInstanceSummary> {
+    const template = seedPlatformAgents.find((item) => item.id === input.templateId);
+    const id = `ai_${Date.now()}`;
+    const primaryChannel = input.channelsEnabled[0] ?? 'chat';
+    assignedAgents.push({
+      id,
+      platformAgentId: input.templateId,
+      tenantId: null,
+      name: input.name,
+      voice: template?.voice ?? primaryChannel,
+      language: template?.language ?? input.capabilityLevel ?? 'en',
+      status: 'paused',
+      channelsEnabled: input.channelsEnabled,
+    });
+    return {
+      id,
+      tenantId: null,
+      tenantName: null,
+      name: input.name,
+      status: 'paused',
+      channel: primaryChannel,
+      channelsEnabled: input.channelsEnabled,
+      deployedAt: null,
+      lastSyncedAt: null,
+    };
+  },
+
+  async getDeployments(agentId: string): Promise<ChannelDeploymentSummary[]> {
+    return [
+      {
+        id: `dep_${agentId}_voice`,
+        channel: 'voice',
+        provider: 'retell',
+        status: 'active',
+        retellAgentId: `retell_${agentId}`,
+        retellConversationFlowId: `flow_${agentId}`,
+        error: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+  },
+
+  async getTenantDeployments(agentId: string): Promise<ChannelDeploymentSummary[]> {
+    return this.getDeployments(agentId);
   },
 
   /** Get full agent detail for admin. */
@@ -195,7 +318,7 @@ export const agentsAdapter = {
         return { id: as.skillId, name: skill?.name ?? as.skillId, priority: as.priority };
       });
     const tid = va ? va.tenantId : assigned?.tenantId ?? null;
-    const name = 'voice' in source ? source.voice : (pa ? pa.name : source.voice);
+    const name = pa?.name ?? source.voice;
     const extId = 'externalAgentId' in source ? source.externalAgentId : source.id;
     const status = 'status' in source ? source.status : 'available';
     const lastSync = 'lastSyncedAt' in source ? source.lastSyncedAt : new Date().toISOString();
@@ -244,6 +367,14 @@ export const agentsAdapter = {
         })
       );
     return [...fromVoice, ...fromAssigned];
+  },
+
+  /** Async wrapper for AgentDetailPage; local mode returns sync result. */
+  async getAgentDetailFullAsync(
+    tenantId: string | undefined,
+    agentId: string,
+  ): Promise<AgentDetailFull | null> {
+    return Promise.resolve(this.getAgentDetailFull(tenantId, agentId));
   },
 
   /** Get full agent detail for AgentDetailPage (Retell fields, channels, etc). */
@@ -370,7 +501,7 @@ export const agentsAdapter = {
       id: source.id,
       voice: source.voice,
       language: source.language,
-      status: 'status' in source ? source.status : 'active',
+      status: source.status === 'paused' || source.status === 'active' || source.status === 'archived' ? source.status : 'active',
       lastSyncedAt: 'lastSyncedAt' in source ? source.lastSyncedAt : new Date().toISOString(),
       enabledSkills,
     };

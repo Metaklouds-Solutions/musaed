@@ -4,7 +4,7 @@
 
 /** Call outcome breakdown for reports. */
 export interface OutcomeBreakdown {
-  outcome: 'booked' | 'escalated' | 'failed';
+  outcome: 'booked' | 'escalated' | 'failed' | 'info_only';
   count: number;
   percentage: number;
 }
@@ -25,6 +25,7 @@ export interface TenantComparisonRow {
   tenantName: string;
   totalCalls: number;
   totalBookings: number;
+  totalCustomers?: number;
   conversionRate: number;
   escalationRate: number;
   avgDurationSec: number;

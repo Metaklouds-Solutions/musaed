@@ -32,7 +32,8 @@
     "english": "English",
     "arabic": "العربية",
     "agentSandbox": "Agent Sandbox",
-    "myTenant": "My Tenant"
+    "myTenant": "My Tenant",
+    "clinic": "Clinic"
   },
   "calendar": {
     "title": "Calendar",

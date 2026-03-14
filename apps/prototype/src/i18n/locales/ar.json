@@ -32,7 +32,8 @@
     "english": "English",
     "arabic": "العربية",
     "agentSandbox": "ساحة الاختبار للوكيل",
-    "myTenant": "المستأجر الخاص بي"
+    "myTenant": "المستأجر الخاص بي",
+    "clinic": "العيادة"
   },
   "calendar": {
     "title": "التقويم",

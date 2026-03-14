@@ -58,8 +58,12 @@ export function UserMenu({ themeStorageKey, onThemeToggle }: UserMenuProps) {
         )}
         aria-label={t('userMenu.userMenu')}
       >
-        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white">
-          <User size={18} aria-hidden />
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white overflow-hidden">
+          {user.avatarUrl ? (
+            <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+          ) : (
+            <User size={18} aria-hidden />
+          )}
         </div>
         <div className="text-left min-w-0 hidden sm:block">
           <p className="text-sm font-medium truncate text-(var(--text-primary))">{user.name}</p>
@@ -81,9 +85,18 @@ export function UserMenu({ themeStorageKey, onThemeToggle }: UserMenuProps) {
             'p-2 shadow-lg'
           )}
         >
-          <div className="px-3 py-2 border-b border-(var(--border-subtle)) mb-2">
-            <p className="text-sm font-medium text-(var(--text-primary)) truncate">{user.name}</p>
-            <p className="text-xs text-(var(--text-muted)) truncate">{user.email}</p>
+          <div className="px-3 py-2 border-b border-(var(--border-subtle)) mb-2 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[linear-gradient(135deg,var(--ds-accent-start)_0%,var(--ds-accent-end)_100%)] text-white overflow-hidden">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <User size={20} aria-hidden />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-(var(--text-primary)) truncate">{user.name}</p>
+              <p className="text-xs text-(var(--text-muted)) truncate">{user.email}</p>
+            </div>
           </div>
           {(themeStorageKey || onThemeToggle) && (
             <div className="md:hidden flex items-center gap-2 px-3 py-2 border-b border-(var(--border-subtle)) mb-2">

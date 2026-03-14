@@ -8,38 +8,11 @@ export interface TenantPlan {
   mrr: number;
 }
 
-export interface PaymentFailure {
-  id: string;
-  tenantId: string;
-  tenantName: string;
-  amount: number;
-  failedAt: string;
-}
-
-export interface PlanDistributionItem {
-  plan: string;
-  count: number;
-}
-
-export interface UsageAnomaly {
-  id: string;
-  tenantId: string;
-  tenantName: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high';
-  detectedAt: string;
-}
-
-export interface ChurnRisk {
-  tenantId: string;
-  tenantName: string;
-  reason: string;
-  score: number;
-}
-
 /** Admin agent row for agents table. */
 export interface AdminAgentRow {
   id: string;
+  baseAgentInstanceId?: string | null;
+  linkedTenantCount?: number;
   name: string;
   externalAgentId: string;
   voice: string;
@@ -48,6 +21,8 @@ export interface AdminAgentRow {
   tenantName: string | null;
   status: string;
   lastSyncedAt: string;
+  /** Retell agent ID for linking to Retell dashboard. */
+  retellAgentId?: string | null;
 }
 
 /** Admin agent detail for agent detail page. */
@@ -69,6 +44,42 @@ export interface AdminTenantRow {
   id: string;
   name: string;
   plan: string;
+}
+
+/** Template option used by onboarding step for agent deployment. */
+export interface AgentTemplateOption {
+  id: string;
+  name: string;
+  voice: string;
+  language: string;
+  channels: Array<'voice' | 'chat' | 'email'>;
+  capabilityLevel: string;
+}
+
+/** Tenant/admin-facing summary of an agent instance. */
+export interface AgentInstanceSummary {
+  id: string;
+  tenantId: string | null;
+  tenantName: string | null;
+  name: string;
+  status: string;
+  channel: 'voice' | 'chat' | 'email';
+  channelsEnabled: Array<'voice' | 'chat' | 'email'>;
+  deployedAt: string | null;
+  lastSyncedAt: string | null;
+}
+
+/** Per-channel deployment row shown in deployment history views. */
+export interface ChannelDeploymentSummary {
+  id: string;
+  channel: 'voice' | 'chat' | 'email';
+  provider: string;
+  status: 'pending' | 'active' | 'failed';
+  retellAgentId: string | null;
+  retellConversationFlowId: string | null;
+  error: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 /** Tenant list row for AdminTenantsPage with extended metrics. */
@@ -135,6 +146,8 @@ export interface TenantAgentRow {
   voice: string;
   language: string;
   lastSynced: string;
+  /** Retell agent ID for linking to Retell dashboard. */
+  retellAgentId?: string | null;
 }
 
 /** Tenant support ticket row. */
@@ -298,35 +311,23 @@ export interface SystemHealth {
   integrations: { name: string; status: 'ok' | 'degraded' | 'error' }[];
 }
 
-export interface AdminOverviewMetrics {
-  mrr: number;
-  creditsRevenue: number;
-  totalRevenue: number;
-  paymentFailures: PaymentFailure[];
-  planDistribution: PlanDistributionItem[];
+/** Admin dashboard platform pulse KPIs (8 cards, real data only). */
+export interface AdminPulseKpis {
   activeTenants: number;
   activeAgents: number;
-  aiMinutesUsed: number;
-  platformCallsHandled: number;
-  platformBookingsCreated: number;
-  platformConversionRate: number;
-  escalationRate: number;
-  usageAnomalies: UsageAnomaly[];
-  churnRiskList: ChurnRisk[];
-}
-
-/** Admin dashboard top KPIs. */
-export interface AdminKpis {
-  totalTenants: number;
-  activeTenants: number;
-  trialTenants: number;
-  suspendedTenants: number;
   callsToday: number;
   calls7d: number;
   bookedPercent: number;
   escalationPercent: number;
-  failedPercent: number;
-  totalCostUsd: number;
+  aiMinutesUsed: number;
+  estimatedCostUsd: number;
+}
+
+/** Admin dashboard health (Retell, webhooks, uptime). */
+export interface AdminHealth {
+  retellSync: 'ok' | 'degraded' | 'error';
+  webhooks: 'ok' | 'degraded' | 'error';
+  uptimeSeconds: number;
 }
 
 /** Recent tenant row for admin dashboard. */
@@ -355,12 +356,6 @@ export interface AdminRecentCall {
   outcome: 'booked' | 'escalated' | 'failed' | 'pending';
   duration: number;
   startedAt: string;
-}
-
-/** Extended system health with Retell and webhooks. */
-export interface AdminSystemHealthExtended extends SystemHealth {
-  retellSync: 'ok' | 'degraded' | 'error';
-  webhooks: 'ok' | 'degraded' | 'error';
 }
 
 /** Admin billing: tenant plans + usage for cross-tenant billing overview. */

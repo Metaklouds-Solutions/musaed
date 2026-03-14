@@ -27,6 +27,7 @@ export function useHotkeys(configs: HotkeyConfig[]) {
   const pendingSequence = useRef<{ first: string; timeoutId: number } | null>(null);
 
   const handler = useCallback((e: KeyboardEvent) => {
+    if (!e.key) return;
     const key = e.key.toLowerCase();
     const isMeta = e.metaKey || e.ctrlKey;
 

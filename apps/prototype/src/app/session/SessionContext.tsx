@@ -1,5 +1,5 @@
 /**
- * In-memory session for prototype. Replace with API auth (JWT) when backend exists.
+ * Session context with JWT persistence. Restores session from stored tokens on reload.
  * Includes idle timeout and activity tracking for session management.
  */
 
@@ -15,34 +15,38 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import type { Session, User } from '../../shared/types';
+import { setTokens, clearTokens, getAccessToken, getRefreshToken, saveUser, getSavedUser } from '../../lib/apiClient';
 import { SESSION_IDLE_TIMEOUT_MS, SESSION_WARNING_BEFORE_MS } from './sessionConfig';
-/** Throttle activity updates to avoid excessive state updates. */
+
 const ACTIVITY_THROTTLE_MS = 10_000;
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 interface SessionContextValue {
   session: Session | null;
   login: (user: User) => void;
+  loginWithTokens: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
   isAuthenticated: boolean;
   user: User | null;
   tenantId: string | null;
-  /** When the session started (login time). */
   sessionStartedAt: number | null;
-  /** Last user activity timestamp. */
   lastActivityAt: number | null;
-  /** Reset idle timer (extends session). */
   extendSession: () => void;
+  restoring: boolean;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [restoring, setRestoring] = useState(true);
   const lastActivityRef = useRef(0);
   const lastUpdateRef = useRef(0);
   const [lastActivityAt, setLastActivityAt] = useState(0);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   const warningShownRef = useRef(false);
+  const restoredRef = useRef(false);
 
   const login = useCallback((user: User) => {
     const now = Date.now();
@@ -52,12 +56,114 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setSession({ user });
     setSessionStartedAt(now);
     setLastActivityAt(now);
+    saveUser(user as unknown as Record<string, unknown>);
   }, []);
 
+  const loginWithTokens = useCallback((accessToken: string, refreshToken: string, user: User) => {
+    setTokens(accessToken, refreshToken);
+    login(user);
+  }, [login]);
+
   const logout = useCallback(() => {
+    const rt = getRefreshToken();
+    if (rt) {
+      fetch(`${BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: rt }),
+      }).catch(() => {
+        /* best-effort server-side revocation */
+      });
+    }
+    clearTokens();
     setSession(null);
     setSessionStartedAt(null);
   }, []);
+
+  const updateUser = useCallback((updates: Partial<User>) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const updatedUser = { ...prev.user, ...updates };
+      saveUser(updatedUser as unknown as Record<string, unknown>);
+      return { ...prev, user: updatedUser };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+
+    const token = getAccessToken();
+    if (!token) {
+      setRestoring(false);
+      return;
+    }
+
+    const restoreFromApi = async (): Promise<User | null> => {
+      try {
+        let res = await fetch(`${BASE_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          const rt = getRefreshToken();
+          if (!rt) return null;
+          const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: rt }),
+          });
+          if (!refreshRes.ok) return null;
+          const refreshData = await refreshRes.json();
+          setTokens(refreshData.accessToken, rt);
+          res = await fetch(`${BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${refreshData.accessToken}` },
+          });
+          if (!res.ok) return null;
+        }
+
+        const userData = await res.json();
+        if (!userData?._id) return null;
+        return {
+          id: userData._id,
+          email: userData.email,
+          name: userData.name,
+          role: userData.role,
+          avatarUrl: userData.avatarUrl,
+          tenantId: userData.tenantId,
+          tenantRole: userData.tenantRole,
+        };
+      } catch {
+        return null;
+      }
+    };
+
+    restoreFromApi()
+      .then((user) => {
+        if (user) {
+          login(user);
+          return;
+        }
+        // API failed (server restarted, token expired, etc.) — try cached user
+        const cached = getSavedUser();
+        if (cached && cached.id && cached.email && cached.role) {
+          login({
+            id: String(cached.id),
+            email: String(cached.email),
+            name: String(cached.name ?? ''),
+            role: String(cached.role),
+            avatarUrl: cached.avatarUrl ? String(cached.avatarUrl) : undefined,
+            tenantId: cached.tenantId ? String(cached.tenantId) : undefined,
+            tenantRole: cached.tenantRole ? String(cached.tenantRole) : undefined,
+          });
+        } else {
+          clearTokens();
+        }
+      })
+      .finally(() => {
+        setRestoring(false);
+      });
+  }, [login]);
 
   const extendSession = useCallback(() => {
     const now = Date.now();
@@ -108,15 +214,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     () => ({
       session,
       login,
+      loginWithTokens,
       logout,
+      updateUser,
       isAuthenticated: session !== null,
       user: session?.user ?? null,
       tenantId: session?.user?.tenantId ?? null,
       sessionStartedAt,
       lastActivityAt: session ? lastActivityAt : null,
       extendSession,
+      restoring,
     }),
-    [session, login, logout, sessionStartedAt, lastActivityAt, extendSession]
+    [session, login, loginWithTokens, logout, updateUser, sessionStartedAt, lastActivityAt, extendSession, restoring]
   );
 
   return (

@@ -3,14 +3,15 @@
  * Returns extended health (Retell, DB, API, Webhooks).
  */
 
-import { useMemo } from 'react';
 import { adminAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 
 /** Returns admin system health snapshot, preferring extended adapter fields when available. */
 export function useAdminSystem() {
-  const systemHealth = useMemo(
+  const { data: systemHealth, loading } = useAsyncData(
     () => adminAdapter.getSystemHealthExtended?.() ?? adminAdapter.getSystemHealth(),
-    []
+    [],
+    { status: 'ok' as const, integrations: [] },
   );
-  return useMemo(() => ({ systemHealth }), [systemHealth]);
+  return { systemHealth, loading };
 }

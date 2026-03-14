@@ -19,10 +19,21 @@ import {
 import { staffAdapter } from './staff.adapter';
 import { supportAdapter } from './support.adapter';
 import { agentsAdapter } from './agents.adapter';
-import type { TenantDetail, AdminTenantRow, TenantListRow, TenantDetailFull, TenantMemberRow } from '../../shared/types';
+import type {
+  TenantDetail,
+  AdminTenantRow,
+  TenantListRow,
+  TenantDetailFull,
+  TenantMemberRow,
+  AgentTemplateOption,
+} from '../../shared/types';
 
 /** In-memory tenants added via Add Tenant modal. */
 const addedTenants: AdminTenantRow[] = [];
+
+/** Status overrides for enable/disable in local mode. */
+const tenantStatusOverrides: Record<string, 'ACTIVE' | 'SUSPENDED'> = {};
+const tenantProfileOverrides: Record<string, { name?: string; timezone?: string; locale?: string }> = {};
 
 const ROLE_LABELS: Record<string, string> = {
   tenant_owner: 'Tenant Owner',
@@ -37,21 +48,32 @@ export const tenantsAdapter = {
     const deleted = softDeleteAdapter.getDeletedTenantIds();
     const fromAdded: TenantListRow[] = addedTenants
       .filter((t) => !deleted.has(t.id))
-      .map((t) => ({
-        id: t.id,
-        name: t.name,
-        plan: t.plan,
-        status: 'TRIAL' as const,
+      .map((t) => {
+        const profile = tenantProfileOverrides[t.id];
+        const override = tenantStatusOverrides[t.id];
+        return {
+          id: t.id,
+          name: profile?.name ?? t.name,
+          plan: t.plan,
+          status: (override ?? 'TRIAL') as 'ACTIVE' | 'TRIAL' | 'SUSPENDED',
         agentCount: 0,
         mrr: 0,
         callsThisMonth: 0,
         onboardingStatus: 'Step 1/4',
         createdAt: new Date().toISOString(),
-      }));
-    const fromSeed = seedTenantListRows.filter((t) => !deleted.has(t.id));
+      };
+      });
+    const fromSeed = seedTenantListRows
+      .filter((t) => !deleted.has(t.id))
+      .map((t) => {
+        const profile = tenantProfileOverrides[t.id];
+        const override = tenantStatusOverrides[t.id];
+        const withStatus = override ? { ...t, status: override } : t;
+        return profile?.name ? { ...withStatus, name: profile.name } : withStatus;
+      });
     const existingIds = new Set(fromSeed.map((r) => r.id));
     const addedOnly = fromAdded.filter((a) => !existingIds.has(a.id));
-    let rows = [...fromSeed, ...addedOnly];
+    let rows = [...addedOnly.reverse(), ...fromSeed];
     if (filters?.status) {
       rows = rows.filter((t) => t.status === filters.status);
     }
@@ -95,16 +117,17 @@ export const tenantsAdapter = {
         ? `${Math.floor(avgDuration / 60)}m ${avgDuration % 60}s`
         : `${avgDuration}s`;
 
+    const profileOverride = tenantProfileOverrides[id];
     return {
       id,
       profile: {
-        clinicName: tenant.name,
+        clinicName: profileOverride?.name ?? tenant.name,
         owner: '',
         email: '',
         phone: '',
         address: '',
-        timezone: settings?.timezone ?? 'UTC',
-        locale: settings?.locale ?? 'en-US',
+        timezone: profileOverride?.timezone ?? settings?.timezone ?? 'UTC',
+        locale: profileOverride?.locale ?? settings?.locale ?? 'en-US',
         plan: planRow?.plan ?? '—',
         status: ext?.status ?? 'ACTIVE',
         mrr: planRow?.mrr ?? 0,
@@ -181,16 +204,24 @@ export const tenantsAdapter = {
     const fromSeed = seedTenants
       .filter((t) => !deleted.has(t.id))
       .map((t) => {
+        const profile = tenantProfileOverrides[t.id];
         const plan = seedTenantPlans.find((p) => p.tenantId === t.id);
-        return { id: t.id, name: t.name, plan: plan?.plan ?? '—' };
+        return { id: t.id, name: profile?.name ?? t.name, plan: plan?.plan ?? '—' };
       });
     const fromAdded = addedTenants.filter((t) => !deleted.has(t.id));
-    return [...fromSeed, ...fromAdded];
+    return [...fromAdded.reverse(), ...fromSeed];
   },
 
   /** Get platform agents available for deployment. */
-  getPlatformAgents(): { id: string; name: string; voice: string; language: string }[] {
-    return [...seedPlatformAgents];
+  getPlatformAgents(): AgentTemplateOption[] {
+    return seedPlatformAgents.map((agent) => ({
+      id: agent.id,
+      name: agent.name,
+      voice: agent.voice,
+      language: agent.language,
+      channels: ['chat'],
+      capabilityLevel: agent.language,
+    }));
   },
 
   /** Create tenant (in-memory). Returns new tenant. */
@@ -204,6 +235,8 @@ export const tenantsAdapter = {
     timezone?: string;
     locale?: string;
     agentId?: string;
+    templateId?: string;
+    channelsEnabled?: Array<'voice' | 'chat' | 'email'>;
   }): AdminTenantRow {
     const id = `t_${Date.now()}`;
     const row: AdminTenantRow = { id, name: data.name, plan: data.plan };
@@ -211,21 +244,43 @@ export const tenantsAdapter = {
     return row;
   },
 
+  deleteTenant(id: string): void {
+    softDeleteAdapter.softDeleteTenant(id);
+  },
+
+  enableTenant(id: string): void {
+    tenantStatusOverrides[id] = 'ACTIVE';
+  },
+
+  disableTenant(id: string): void {
+    tenantStatusOverrides[id] = 'SUSPENDED';
+  },
+
+  updateTenant(id: string, patch: { name?: string; timezone?: string; locale?: string }): void {
+    const existing = tenantProfileOverrides[id] ?? {};
+    tenantProfileOverrides[id] = { ...existing, ...patch };
+    const added = addedTenants.find((tenant) => tenant.id === id);
+    if (added && patch.name) {
+      added.name = patch.name;
+    }
+  },
+
   /** Get full tenant detail by ID. Returns null for soft-deleted tenants. */
   getTenantDetail(id: string): TenantDetail | null {
     if (softDeleteAdapter.isTenantDeleted(id)) return null;
     const fromAdded = addedTenants.find((t) => t.id === id);
     if (fromAdded) {
+      const override = tenantProfileOverrides[id];
       return {
         id: fromAdded.id,
-        name: fromAdded.name,
+        name: override?.name ?? fromAdded.name,
         plan: fromAdded.plan,
         status: 'TRIAL',
         createdAt: new Date().toISOString(),
         onboardingStep: 1,
         onboardingComplete: false,
-        timezone: 'UTC',
-        locale: 'en-US',
+        timezone: override?.timezone ?? 'UTC',
+        locale: override?.locale ?? 'en-US',
         businessHours: '—',
       };
     }
@@ -234,16 +289,17 @@ export const tenantsAdapter = {
     const ext = seedTenantExtended.find((e) => e.tenantId === id);
     const plan = seedTenantPlans.find((p) => p.tenantId === id);
     const settings = seedTenantSettings.find((s) => s.tenantId === id);
+    const override = tenantProfileOverrides[id];
     return {
       id: tenant.id,
-      name: tenant.name,
+      name: override?.name ?? tenant.name,
       plan: plan?.plan ?? '—',
       status: ext?.status ?? 'ACTIVE',
       createdAt: ext?.createdAt ?? new Date().toISOString(),
       onboardingStep: ext?.onboardingStep ?? 0,
       onboardingComplete: (ext?.onboardingStep ?? 0) >= 4,
-      timezone: settings?.timezone ?? 'UTC',
-      locale: settings?.locale ?? 'en-US',
+      timezone: override?.timezone ?? settings?.timezone ?? 'UTC',
+      locale: override?.locale ?? settings?.locale ?? 'en-US',
       businessHours: settings?.businessHours ?? '—',
     };
   },

@@ -13,12 +13,18 @@ import { Calendar } from 'lucide-react';
 
 export function BookingsPage() {
   const { user, bookings, conversionSummary } = useBookingsList();
+  const ready = useDelayedReady();
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const filteredBookings = useMemo(() => {
     if (!statusFilter) return bookings;
     return bookings.filter((b) => b.status.toLowerCase() === statusFilter.toLowerCase());
   }, [bookings, statusFilter]);
+
+  const statuses = useMemo(() => {
+    const set = new Set(bookings.map((b) => b.status));
+    return Array.from(set).map((s) => ({ value: s.toLowerCase(), label: s }));
+  }, [bookings]);
 
   if (!user) {
     return (
@@ -48,11 +54,6 @@ export function BookingsPage() {
       />
     );
   }
-
-  const statuses = useMemo(() => {
-    const set = new Set(bookings.map((b) => b.status));
-    return Array.from(set).map((s) => ({ value: s.toLowerCase(), label: s }));
-  }, [bookings]);
 
   return (
     <div className="space-y-6">

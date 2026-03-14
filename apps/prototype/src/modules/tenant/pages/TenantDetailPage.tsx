@@ -1,5 +1,5 @@
 /**
- * Tenant detail page with 7 tabs. Shared by admin and tenant context.
+ * Tenant detail page with 4 tabs. Shared by admin and tenant context.
  */
 
 import { useState, type KeyboardEvent } from 'react';
@@ -8,36 +8,24 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   LayoutDashboard,
-  Bot,
   Users,
-  Phone,
-  CreditCard,
-  Headphones,
-  Settings,
+  Activity,
 } from 'lucide-react';
-import { PageHeader } from '../../../shared/ui';
+import { PageHeader, Skeleton } from '../../../shared/ui';
 import { useTenantDetail } from '../hooks/useTenantDetail';
 import {
   TenantOverviewTab,
-  TenantAgentsTab,
-  TenantMembersTab,
-  TenantCallsTab,
-  TenantBillingTab,
-  TenantSupportTab,
-  TenantSettingsTab,
+  TenantTeamTab,
+  TenantActivityTab,
 } from '../components/TenantDetailTabs';
 import { cn } from '@/lib/utils';
 
-type TenantTab = 'overview' | 'agents' | 'members' | 'calls' | 'billing' | 'support' | 'settings';
+type TenantTab = 'overview' | 'team' | 'activity';
 
 const TABS: { id: TenantTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'agents', label: 'Agents', icon: Bot },
-  { id: 'members', label: 'Members', icon: Users },
-  { id: 'calls', label: 'Calls', icon: Phone },
-  { id: 'billing', label: 'Billing', icon: CreditCard },
-  { id: 'support', label: 'Support', icon: Headphones },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'team', label: 'Team', icon: Users },
+  { id: 'activity', label: 'Activity', icon: Activity },
 ];
 
 function getTabId(tab: TenantTab): string {
@@ -46,6 +34,57 @@ function getTabId(tab: TenantTab): string {
 
 function getPanelId(tab: TenantTab): string {
   return `tenant-detail-panel-${tab}`;
+}
+
+/** Skeleton loader for tenant detail page. */
+function TenantDetailSkeleton() {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading tenant details">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48 rounded-lg" />
+          <Skeleton className="h-4 w-64 rounded" />
+        </div>
+        <Skeleton className="h-10 w-32 rounded-lg shrink-0" />
+      </div>
+
+      <div className="inline-flex flex-wrap gap-1.5 p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-sm">
+        <Skeleton className="h-10 w-24 rounded-xl" />
+        <Skeleton className="h-10 w-20 rounded-xl" />
+        <Skeleton className="h-10 w-24 rounded-xl" />
+      </div>
+
+      <div className="space-y-4">
+        <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
+          <div className="p-4 border-b border-[var(--border-subtle)]/50">
+            <Skeleton className="h-4 w-20 rounded" />
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-24 rounded" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[var(--radius-card)] card-glass overflow-hidden">
+          <div className="p-4 border-b border-[var(--border-subtle)]/50">
+            <Skeleton className="h-4 w-20 rounded" />
+          </div>
+          <div className="p-5 space-y-3">
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-[80%] rounded" />
+            <Skeleton className="h-4 w-[70%] rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** Renders tenant/admin tenant detail tabs with keyboard-accessible navigation. */
@@ -68,17 +107,19 @@ export function TenantDetailPage() {
     setActiveTab(TABS[nextIndex].id);
   };
 
-  if (isLoading || !tenant) {
+  if (tenant === null && !isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Tenant Details" description="Loading…" />
+        <PageHeader title="Tenant Details" description="Not found" />
         <div className="rounded-[var(--radius-card)] card-glass p-8 text-center">
-          <p className="text-[var(--text-muted)] text-sm">
-            {tenant === null && !isLoading ? 'Tenant not found.' : 'Loading tenant…'}
-          </p>
+          <p className="text-[var(--text-muted)] text-sm">Tenant not found.</p>
         </div>
       </div>
     );
+  }
+
+  if (isLoading || !tenant) {
+    return <TenantDetailSkeleton />;
   }
 
   return (
@@ -87,18 +128,19 @@ export function TenantDetailPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
+        className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
       >
-        <Link
-          to={backTo}
-          className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" aria-hidden />
-          {isAdmin ? 'Back to tenants' : 'Back'}
-        </Link>
         <PageHeader
           title={tenant.profile.clinicName}
           description={`${tenant.id} · ${tenant.profile.plan}`}
         />
+        <Link
+          to={backTo}
+          className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-[var(--ds-primary)]/10 text-[var(--ds-primary)] hover:bg-[var(--ds-primary)]/20 transition-colors shrink-0 self-start sm:self-center"
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden />
+          {isAdmin ? 'Back to tenants' : 'Back'}
+        </Link>
       </motion.header>
 
       <div
@@ -132,37 +174,17 @@ export function TenantDetailPage() {
       <AnimatePresence mode="wait">
         {activeTab === 'overview' && (
           <motion.div key="overview" id={getPanelId('overview')} role="tabpanel" aria-labelledby={getTabId('overview')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantOverviewTab tenant={tenant} />
+            <TenantOverviewTab tenant={tenant} agents={tenant.agents} />
           </motion.div>
         )}
-        {activeTab === 'agents' && (
-          <motion.div key="agents" id={getPanelId('agents')} role="tabpanel" aria-labelledby={getTabId('agents')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantAgentsTab agents={tenant.agents} />
+        {activeTab === 'team' && (
+          <motion.div key="team" id={getPanelId('team')} role="tabpanel" aria-labelledby={getTabId('team')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <TenantTeamTab members={tenant.members} />
           </motion.div>
         )}
-        {activeTab === 'members' && (
-          <motion.div key="members" id={getPanelId('members')} role="tabpanel" aria-labelledby={getTabId('members')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantMembersTab members={tenant.members} />
-          </motion.div>
-        )}
-        {activeTab === 'calls' && (
-          <motion.div key="calls" id={getPanelId('calls')} role="tabpanel" aria-labelledby={getTabId('calls')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantCallsTab />
-          </motion.div>
-        )}
-        {activeTab === 'billing' && (
-          <motion.div key="billing" id={getPanelId('billing')} role="tabpanel" aria-labelledby={getTabId('billing')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantBillingTab billing={tenant.billing} />
-          </motion.div>
-        )}
-        {activeTab === 'support' && (
-          <motion.div key="support" id={getPanelId('support')} role="tabpanel" aria-labelledby={getTabId('support')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantSupportTab tickets={tenant.tickets} />
-          </motion.div>
-        )}
-        {activeTab === 'settings' && (
-          <motion.div key="settings" id={getPanelId('settings')} role="tabpanel" aria-labelledby={getTabId('settings')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantSettingsTab settings={tenant.settings} />
+        {activeTab === 'activity' && (
+          <motion.div key="activity" id={getPanelId('activity')} role="tabpanel" aria-labelledby={getTabId('activity')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <TenantActivityTab tickets={tenant.tickets} />
           </motion.div>
         )}
       </AnimatePresence>

@@ -2,9 +2,10 @@
  * Custom prompts section. Greeting, agent name, system instructions per agent.
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PopoverSelect } from '../../../../shared/ui';
 import { agentsAdapter, settingsAdapter } from '../../../../adapters';
+import { useAsyncData } from '../../../../shared/hooks/useAsyncData';
 import type { TenantSettings, AgentPromptConfig } from '../../../../adapters/local/settings.adapter';
 import { MessageSquare } from 'lucide-react';
 
@@ -15,9 +16,10 @@ interface CustomPromptsSectionProps {
 }
 
 export function CustomPromptsSection({ tenantId, settings, onChange }: CustomPromptsSectionProps) {
-  const agents = useMemo(
+  const { data: agents } = useAsyncData(
     () => (tenantId ? agentsAdapter.getAgentsForTenant(tenantId) : []),
-    [tenantId]
+    [tenantId],
+    [],
   );
   const [selectedAgentId, setSelectedAgentId] = useState<string>(() => agents[0]?.id ?? '');
 

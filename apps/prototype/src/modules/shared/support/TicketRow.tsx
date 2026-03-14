@@ -13,6 +13,13 @@ interface TicketRowProps {
   to: string;
 }
 
+const priorityStripeColor: Record<SupportTicket['priority'], string> = {
+  critical: 'bg-[var(--error)]',
+  high: 'bg-[var(--warning)]',
+  medium: 'bg-[var(--ds-primary)]',
+  low: 'bg-[var(--text-muted)]',
+};
+
 const priorityVariant: Record<SupportTicket['priority'], 'outcomeFailed' | 'outcomeEscalated' | 'outcome' | 'outcomePending'> = {
   critical: 'outcomeFailed',
   high: 'outcomeEscalated',
@@ -39,8 +46,12 @@ export function TicketRow({ ticket, tenantName, showTenant, to }: TicketRowProps
   return (
     <Link
       to={to}
-      className="block p-4 rounded-lg bg-[var(--bg-elevated)] hover:bg-[var(--sidebar-item-hover)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
+      className="relative block overflow-hidden p-4 pl-5 rounded-lg bg-[var(--bg-elevated)] hover:bg-[var(--sidebar-item-hover)] transition-colors border border-transparent hover:border-[var(--border-subtle)]"
     >
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-[3px] ${priorityStripeColor[ticket.priority]}`}
+        aria-hidden
+      />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className="font-medium text-[var(--text-primary)] truncate">{ticket.title}</p>

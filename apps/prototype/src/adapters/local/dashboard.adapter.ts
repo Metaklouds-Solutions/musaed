@@ -47,7 +47,22 @@ const COST_PER_MINUTE_HUMAN = 0.15;
 const COST_PER_MINUTE_AI = 0.02;
 
 export const dashboardAdapter = {
-  getMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): DashboardMetrics {
+  async getSummary(tenantId: string | undefined, dateRange?: DateRangeFilter) {
+    const [metrics, kpis] = await Promise.all([
+      this.getMetrics(tenantId, dateRange),
+      this.getTenantKpis(tenantId, dateRange),
+    ]);
+    return {
+      metrics,
+      kpis,
+      signal:
+        kpis.calls7d === 0 && kpis.appointmentsBooked === 0
+          ? { status: 'empty' as const, reason: 'No calls or bookings were recorded in the selected range.' }
+          : { status: 'healthy' as const, reason: 'Calls and bookings are flowing into the dashboard.' },
+    };
+  },
+
+  async getMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<DashboardMetrics> {
     const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
     const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
     const totalCalls = calls.length;
@@ -70,7 +85,7 @@ export const dashboardAdapter = {
       aiConfidenceScore,
     };
   },
-  getFunnel(tenantId: string | undefined, dateRange?: DateRangeFilter): FunnelStage[] {
+  async getFunnel(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<FunnelStage[]> {
     const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
     const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
     const withBooking = calls.filter((c) => c.bookingCreated).length;
@@ -80,7 +95,7 @@ export const dashboardAdapter = {
       { stage: 'Confirmed', count: bookings.length },
     ];
   },
-  getTrend(tenantId: string | undefined, dateRange?: DateRangeFilter): TrendPoint[] {
+  async getTrend(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<TrendPoint[]> {
     const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
     const byDate = new Map<string, number>();
     for (const b of bookings) {
@@ -92,7 +107,7 @@ export const dashboardAdapter = {
   },
 
   /** ROI metrics: revenue from bookings, AI cost, cost saved, ROI %. */
-  getRoiMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): RoiMetrics {
+  async getRoiMetrics(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<RoiMetrics> {
     const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
     const bookings = filterByDateRange(filterByTenant(seedBookings, tenantId), dateRange);
     const totalMinutes = calls.reduce((s, c) => s + c.duration / 60, 0);
@@ -111,7 +126,7 @@ export const dashboardAdapter = {
   },
 
   /** Tenant dashboard KPIs. */
-  getTenantKpis(tenantId: string | undefined, dateRange?: DateRangeFilter): TenantKpis {
+  async getTenantKpis(tenantId: string | undefined, dateRange?: DateRangeFilter): Promise<TenantKpis> {
     const calls = filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange);
     const credits = tenantId ? seedCredits.find((c) => c.tenantId === tenantId) : null;
     const now = new Date();
@@ -147,7 +162,7 @@ export const dashboardAdapter = {
   },
 
   /** Agent status for tenant. */
-  getTenantAgentStatus(tenantId: string | undefined): TenantAgentStatus | null {
+  async getTenantAgentStatus(tenantId: string | undefined): Promise<TenantAgentStatus | null> {
     if (!tenantId) return null;
     const va = seedVoiceAgents.find((a) => a.tenantId === tenantId);
     if (!va) return null;
@@ -160,7 +175,7 @@ export const dashboardAdapter = {
   },
 
   /** Staff counts by role for tenant. */
-  getTenantStaffCounts(tenantId: string | undefined): TenantStaffCounts {
+  async getTenantStaffCounts(tenantId: string | undefined): Promise<TenantStaffCounts> {
     const members = tenantId
       ? seedTenantMemberships.filter((m) => m.tenantId === tenantId && m.status === 'active')
       : [];
@@ -170,7 +185,7 @@ export const dashboardAdapter = {
   },
 
   /** Open tickets for tenant. */
-  getTenantOpenTickets(tenantId: string | undefined, limit = 5): TenantOpenTicket[] {
+  async getTenantOpenTickets(tenantId: string | undefined, limit = 5): Promise<TenantOpenTicket[]> {
     const tickets = filterByTenant(seedSupportTickets, tenantId)
       .filter((t) => t.status !== 'resolved')
       .sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))
@@ -185,11 +200,11 @@ export const dashboardAdapter = {
   },
 
   /** Recent calls for tenant. */
-  getTenantRecentCalls(tenantId: string | undefined, limit = 10, dateRange?: DateRangeFilter): TenantRecentCall[] {
+  async getTenantRecentCalls(tenantId: string | undefined, limit = 10, dateRange?: DateRangeFilter): Promise<TenantRecentCall[]> {
     return filterByDateRange(filterByTenant(seedCalls, tenantId), dateRange)
       .map((c) => ({
         id: c.id,
-        outcome: c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed',
+        outcome: (c.bookingCreated ? 'booked' : c.escalationFlag ? 'escalated' : 'failed') as TenantRecentCall['outcome'],
         duration: c.duration,
         createdAt: c.createdAt,
       }))

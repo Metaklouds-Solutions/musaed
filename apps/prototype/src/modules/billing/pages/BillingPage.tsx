@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { PageHeader, StatCard, Button, ViewButton } from '../../../shared/ui';
+import { PageHeader, Button } from '../../../shared/ui';
 import { useBilling } from '../hooks';
 
 function formatCurrency(n: number): string {
@@ -87,8 +87,7 @@ function CreditsSection({ onBuy }: { onBuy: () => void }) {
           </div>
           
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-lg">
-            Purchase additional credits to continue using AI call handling. 
-            <span className="block mt-1 text-[var(--text-muted)] text-xs">This is a mock action for demonstration purposes.</span>
+            Purchase additional credits to continue using AI call handling.
           </p>
         </div>
         
@@ -153,9 +152,18 @@ function BillingSkeleton() {
   );
 }
 
-/** Renders tenant billing overview with usage, credits, and recent activity. */
+/** Renders tenant billing overview with plan, usage, and credits. */
 export function BillingPage() {
-  const { overview, buyCredits } = useBilling();
+  const { overview, loading, buyCredits } = useBilling();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Billing" description="Plan, credits, and usage" />
+        <BillingSkeleton />
+      </div>
+    );
+  }
 
   if (overview == null) {
     return (
@@ -219,69 +227,32 @@ export function BillingPage() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <ModernStatCard 
           label="Current plan" 
-          value={overview.plan} 
+          value={overview.plan ?? '—'} 
           icon={icons.plan}
-          trend={{ value: 12, positive: true }}
         />
         <ModernStatCard 
           label="Minutes used" 
-          value={overview.minutesUsed.toLocaleString()} 
+          value={(overview.minutesUsed ?? 0).toLocaleString()} 
           icon={icons.minutes}
         />
         <ModernStatCard 
           label="Credit balance" 
-          value={overview.creditBalance} 
+          value={overview.creditBalance ?? 0} 
           icon={icons.credits}
-          trend={{ value: 8, positive: true }}
         />
         <ModernStatCard 
           label="Estimated savings" 
-          value={formatCurrency(overview.estimatedSavings)} 
+          value={formatCurrency(overview.estimatedSavings ?? 0)} 
           icon={icons.savings}
-          trend={{ value: 24, positive: true }}
         />
         <ModernStatCard 
           label="Net ROI" 
-          value={`${overview.netROI}%`} 
+          value={`${overview.netROI ?? 0}%`} 
           icon={icons.roi}
-          trend={{ value: 5, positive: overview.netROI > 0 }}
         />
       </section>
 
       <CreditsSection onBuy={buyCredits} />
-      
-      {/* Optional: Recent Activity Section (modern addition) */}
-      <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">Recent Activity</h3>
-          <ViewButton onClick={() => {}}>View all</ViewButton>
-        </div>
-        <div className="space-y-3">
-          {[
-            { action: 'Credits purchased', amount: '+$500', time: '2 hours ago', type: 'credit' },
-            { action: 'Monthly usage deducted', amount: '-$120', time: '1 day ago', type: 'usage' },
-            { action: 'Plan upgraded to Pro', amount: '$0', time: '3 days ago', type: 'plan' }
-          ].map((item) => (
-            <div 
-              key={`${item.action}-${item.time}`}
-              className="flex items-center justify-between p-3 rounded-lg bg-[var(--border-subtle)]/20 hover:bg-[var(--border-subtle)]/40 transition-colors cursor-pointer group"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${item.type === 'credit' ? 'bg-emerald-500' : item.type === 'usage' ? 'bg-rose-500' : 'bg-blue-500'}`} />
-                <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
-                  {item.action}
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className={`text-sm font-medium ${item.amount.startsWith('+') ? 'text-emerald-500' : item.amount.startsWith('-') ? 'text-rose-500' : 'text-[var(--text-muted)]'}`}>
-                  {item.amount}
-                </span>
-                <span className="text-xs text-[var(--text-muted)]">{item.time}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

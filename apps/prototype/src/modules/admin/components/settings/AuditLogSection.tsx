@@ -16,8 +16,12 @@ import { useAdminAuditLog } from '../../hooks';
 function formatAction(action: string): string {
   const map: Record<string, string> = {
     'tenant.created': 'Tenant created',
+    'tenant.disabled': 'Tenant disabled',
+    'tenant.deleted': 'Tenant deleted',
     'agent.assigned': 'Agent assigned',
     'ticket.assigned': 'Ticket assigned',
+    'staff.disabled': 'Staff disabled',
+    'staff.deleted': 'Staff deleted',
   };
   return map[action] ?? action;
 }

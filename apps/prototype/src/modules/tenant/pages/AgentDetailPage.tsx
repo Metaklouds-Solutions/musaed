@@ -1,43 +1,21 @@
 /**
- * Agent detail page with 7 tabs. Shared by admin and tenant context.
+ * Agent detail page with 2 tabs: Overview and Runs. Shared by admin and tenant context.
  */
 
 import { useState, type KeyboardEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  ArrowLeft,
-  LayoutDashboard,
-  Sparkles,
-  Zap,
-  BarChart3,
-  GitCompare,
-  Play,
-  Webhook,
-} from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Play } from 'lucide-react';
 import { PageHeader } from '../../../shared/ui';
 import { useAgentDetail } from '../hooks/useAgentDetail';
-import {
-  AgentOverviewTab,
-  AgentLlmTab,
-  AgentSkillsTab,
-  AgentPerformanceTab,
-  AgentAbTestTab,
-  AgentRunsTab,
-  AgentSyncTab,
-} from '../components/AgentDetailTabs';
+import { AgentOverviewTab, AgentRunsTab } from '../components/AgentDetailTabs';
 import { cn } from '@/lib/utils';
 
-type AgentTab = 'overview' | 'llm' | 'skills' | 'performance' | 'abtest' | 'runs' | 'sync';
+type AgentTab = 'overview' | 'runs';
 
 const TABS: { id: AgentTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'llm', label: 'LLM & Prompt', icon: Sparkles },
-  { id: 'skills', label: 'Skills', icon: Zap },
-  { id: 'performance', label: 'Performance', icon: BarChart3 },
-  { id: 'abtest', label: 'A/B Testing', icon: GitCompare },
   { id: 'runs', label: 'Runs', icon: Play },
-  { id: 'sync', label: 'Sync & Webhook', icon: Webhook },
 ];
 
 function getTabId(tab: AgentTab): string {
@@ -128,34 +106,9 @@ export function AgentDetailPage() {
             <AgentOverviewTab agent={agent} />
           </motion.div>
         )}
-        {activeTab === 'llm' && (
-          <motion.div key="llm" id={getPanelId('llm')} role="tabpanel" aria-labelledby={getTabId('llm')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <AgentLlmTab llmConfig={agent.llmConfig} />
-          </motion.div>
-        )}
-        {activeTab === 'skills' && (
-          <motion.div key="skills" id={getPanelId('skills')} role="tabpanel" aria-labelledby={getTabId('skills')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <AgentSkillsTab skills={agent.skills} />
-          </motion.div>
-        )}
-        {activeTab === 'performance' && (
-          <motion.div key="performance" id={getPanelId('performance')} role="tabpanel" aria-labelledby={getTabId('performance')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <AgentPerformanceTab performance={agent.performance} />
-          </motion.div>
-        )}
-        {activeTab === 'abtest' && (
-          <motion.div key="abtest" id={getPanelId('abtest')} role="tabpanel" aria-labelledby={getTabId('abtest')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <AgentAbTestTab abTest={agent.abTest} />
-          </motion.div>
-        )}
         {activeTab === 'runs' && (
           <motion.div key="runs" id={getPanelId('runs')} role="tabpanel" aria-labelledby={getTabId('runs')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
             <AgentRunsTab recentRuns={agent.recentRuns} />
-          </motion.div>
-        )}
-        {activeTab === 'sync' && (
-          <motion.div key="sync" id={getPanelId('sync')} role="tabpanel" aria-labelledby={getTabId('sync')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <AgentSyncTab syncInfo={agent.syncInfo} />
           </motion.div>
         )}
       </AnimatePresence>

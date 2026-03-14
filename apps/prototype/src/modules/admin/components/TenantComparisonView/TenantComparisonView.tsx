@@ -5,7 +5,7 @@
 
 import { motion } from 'motion/react';
 import { GitCompare } from 'lucide-react';
-import { PopoverSelect, Card, CardHeader, CardBody } from '../../../../shared/ui';
+import { PopoverSelect } from '../../../../shared/ui';
 import { DateRangePicker } from '../../../../components/DateRangePicker';
 import type { TenantComparisonRow } from '../../../../shared/types/reports';
 import { cn } from '@/lib/utils';
@@ -58,8 +58,8 @@ export function TenantComparisonView({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <Card variant="glass" className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-[var(--bg-elevated)]/80 to-transparent">
+      <div className="overflow-hidden">
+        <div className="bg-gradient-to-r from-[var(--bg-elevated)]/80 to-transparent p-4 sm:p-5 border-b border-[var(--border-subtle)]/50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--ds-primary)]/10">
@@ -82,8 +82,8 @@ export function TenantComparisonView({
               />
             )}
           </div>
-        </CardHeader>
-        <CardBody className="space-y-6">
+        </div>
+        <div className="p-4 sm:p-5 space-y-6">
           <p className="text-sm text-[var(--text-muted)]">
             Select two tenants to compare call metrics side by side.
           </p>
@@ -180,8 +180,8 @@ export function TenantComparisonView({
               </p>
             </div>
           )}
-        </CardBody>
-      </Card>
+        </div>
+      </div>
     </motion.section>
   );
 }
