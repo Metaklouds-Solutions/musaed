@@ -278,6 +278,45 @@
   border-radius: 4px;
 }
 
+/* Data table: horizontal scrollbar hidden by default, visible on hover */
+.data-table-scroll {
+  scrollbar-width: none;
+}
+.data-table-scroll:hover {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+.data-table-scroll::-webkit-scrollbar {
+  display: none !important;
+  width: 8px;
+  height: 8px;
+}
+.data-table-scroll:hover::-webkit-scrollbar {
+  display: block !important;
+}
+.data-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.data-table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 4px;
+}
+
+/* Data table rows: light purple background, rounded (e.g. Calls table) */
+.data-table-rows-tinted table {
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+.data-table-rows-tinted table tbody tr {
+  background: rgba(124, 92, 255, 0.06);
+  border-radius: 8px;
+  transition: background 0.15s ease;
+  border-top: none !important;
+}
+.data-table-rows-tinted table tbody tr:hover {
+  background: rgba(124, 92, 255, 0.1);
+}
+
 /* ---------------------------------------------------------------------------
    Base: html, body, #root — Design.json typography (14px body, Inter)
    --------------------------------------------------------------------------- */

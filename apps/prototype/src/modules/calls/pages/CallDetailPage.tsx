@@ -86,9 +86,16 @@ export function CallDetailPage() {
             })()}
           </p>
         </div>
-        <Link to={callsPath}>
-          <Button variant="secondary">{isAdminContext && params.id ? 'Back to tenant' : 'Back to calls'}</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {!isAdminContext && (
+            <Link to={`/customers/${call.customerId}`}>
+              <Button variant="secondary">View customer</Button>
+            </Link>
+          )}
+          <Link to={callsPath}>
+            <Button variant="secondary">{isAdminContext && params.id ? 'Back to tenant' : 'Back to calls'}</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-6">

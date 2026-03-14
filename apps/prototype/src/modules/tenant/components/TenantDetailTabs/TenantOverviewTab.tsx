@@ -1,32 +1,24 @@
 /**
- * Tenant detail Overview tab: profile, billing, configuration, quick stats,
- * agent, and execution history in a compact multi-column layout.
+ * Tenant detail Overview tab: profile, quick stats, and agent.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Bot, FileText } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import {
   Card,
   CardHeader,
   CardBody,
   Badge,
   StatCard,
-  Modal,
-  ModalHeader,
   PopoverSelect,
 } from '../../../../shared/ui';
-import { RunsTable } from '../../../admin/components/RunsTable';
-import { RunEventsViewer } from '../../../admin/components/RunEventsViewer';
 import { AgentOverviewTab } from '../AgentDetailTabs/AgentOverviewTab';
 import { AgentAnalyticsSummary } from '../AgentDetailTabs/AgentAnalyticsSummary';
-import { agentsAdapter, runsAdapter } from '../../../../adapters';
-import { useAsyncData } from '../../../../shared/hooks/useAsyncData';
+import { agentsAdapter } from '../../../../adapters';
 import { useTenantDetail } from '../../hooks/useTenantDetail';
 import type { TenantDetailFull, TenantAgentRow, AgentDetailFull } from '../../../../shared/types';
-import type { RunEvent } from '../../../../shared/types/entities';
-import type { AdminRunRow } from '../../../../adapters/local/runs.adapter';
 
 const statusMap: Record<string, 'active' | 'pending' | 'inactive' | 'error'> = {
   ACTIVE: 'active',
@@ -67,16 +59,8 @@ export function TenantOverviewTab({ tenant, agents }: TenantOverviewTabProps) {
   const location = useLocation();
   const isAdmin = location.pathname.includes('/admin/');
 
-  const { profile, quickStats, billing, settings } = tenant;
+  const { profile, quickStats } = tenant;
   const badgeStatus = statusMap[profile.status] ?? 'inactive';
-  const flags = Object.entries(settings.featureFlags ?? {}).filter(([, v]) => v);
-
-  const { data: runs } = useAsyncData(
-    () => runsAdapter.listRuns(tenantId ?? undefined),
-    [tenantId],
-    [] as AdminRunRow[],
-  );
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(() =>
     agents.length === 1 ? agents[0].id : null
@@ -110,16 +94,6 @@ export function TenantOverviewTab({ tenant, agents }: TenantOverviewTabProps) {
       });
     return () => { cancelled = true; };
   }, [selectedAgentId, tenantId]);
-  const { data: events } = useAsyncData(
-    () =>
-      selectedRunId
-        ? runsAdapter.getRunEvents(selectedRunId, tenantId ?? undefined)
-        : Promise.resolve([]),
-    [selectedRunId, tenantId],
-    [] as RunEvent[],
-  );
-  const handleViewRun = useCallback((run: AdminRunRow) => setSelectedRunId(run.id), []);
-  const handleCloseModal = useCallback(() => setSelectedRunId(null), []);
 
   return (
     <motion.div
@@ -166,11 +140,11 @@ export function TenantOverviewTab({ tenant, agents }: TenantOverviewTabProps) {
       </div>
 
       {/* Agent section - card layout with selector and inline detail */}
-      <Card variant="glass">
-        <CardHeader className="py-2 px-3 text-sm font-semibold text-[var(--text-primary)] flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Bot className="w-4 h-4" aria-hidden />
-            {agents.length === 1 ? agents[0].name : 'Agent'}
+      <Card variant="glass" className="overflow-hidden">
+        <CardHeader className="py-4 px-4 sm:px-6 text-sm font-semibold text-[var(--text-primary)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Bot className="w-5 h-5 shrink-0 text-[var(--text-muted)]" aria-hidden />
+            <span className="truncate">{agents.length === 1 ? agents[0].name : 'Agent'}</span>
           </div>
           {agents.length > 1 && (
             <PopoverSelect
@@ -179,123 +153,47 @@ export function TenantOverviewTab({ tenant, agents }: TenantOverviewTabProps) {
               options={agents.map((a) => ({ value: a.id, label: a.name }))}
               placeholder="Select agent"
               aria-label="Select agent"
-              className="min-w-[180px]"
+              className="min-w-0 sm:min-w-[200px] w-full sm:w-auto"
             />
           )}
         </CardHeader>
         <CardBody className="p-0">
           {agents.length === 0 ? (
-            <div className="p-6 text-center">
+            <div className="p-8 sm:p-10 text-center">
               <p className="text-[var(--text-muted)] text-sm">No agents assigned yet.</p>
             </div>
           ) : (
             selectedAgentId && (
-              <div className="px-3 py-4 space-y-4">
+              <div className="px-4 sm:px-6 py-5 sm:py-6 space-y-6 border-t border-[var(--border-subtle)]/50">
                 {loadingAgentDetail ? (
-                  <p className="text-sm text-[var(--text-muted)]">Loading agent details…</p>
+                  <p className="text-sm text-[var(--text-muted)] py-4">Loading agent details…</p>
                 ) : agentDetail ? (
                   <>
-                    <AgentOverviewTab agent={agentDetail} />
+                    <section aria-labelledby="agent-identity-heading">
+                      <h3 id="agent-identity-heading" className="sr-only">Agent identity</h3>
+                      <AgentOverviewTab agent={agentDetail} />
+                    </section>
                     {tenantId && (
-                      <AgentAnalyticsSummary
-                        agentId={selectedAgentId}
-                        tenantId={tenantId}
-                        isAdmin={isAdmin}
-                      />
+                      <section aria-labelledby="agent-analytics-heading" className="pt-4 border-t border-[var(--border-subtle)]/50">
+                        <h3 id="agent-analytics-heading" className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
+                          Analytics
+                        </h3>
+                        <AgentAnalyticsSummary
+                          agentId={selectedAgentId}
+                          tenantId={tenantId}
+                          isAdmin={isAdmin}
+                        />
+                      </section>
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-[var(--text-muted)]">Could not load agent details.</p>
+                  <p className="text-sm text-[var(--text-muted)] py-4">Could not load agent details.</p>
                 )}
               </div>
             )
           )}
         </CardBody>
       </Card>
-
-      {/* Execution history - collapsible */}
-      <details className="group rounded-[var(--radius-card)] card-glass overflow-hidden">
-        <summary className="py-2 px-3 text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-          <FileText className="w-4 h-4 shrink-0" aria-hidden />
-          Execution History
-          {isAdmin && (
-            <span className="text-xs font-normal text-[var(--text-muted)]">(tenant-scoped)</span>
-          )}
-          <span className="ml-auto text-[var(--text-muted)] group-open:rotate-180 transition-transform">▼</span>
-        </summary>
-        <div className="border-t border-[var(--border-subtle)]/50">
-          {runs.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-[var(--text-muted)] text-sm">No runs yet.</p>
-            </div>
-          ) : (
-            <RunsTable runs={runs} onViewRun={handleViewRun} variant="plain" />
-          )}
-        </div>
-      </details>
-
-      {/* Billing and Configuration - collapsible */}
-      <details className="group rounded-[var(--radius-card)] card-glass overflow-hidden">
-        <summary className="py-2 px-3 text-sm font-semibold text-[var(--text-primary)] cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-          Billing &amp; Configuration
-          <span className="ml-2 text-[var(--text-muted)] group-open:rotate-180 transition-transform">▼</span>
-        </summary>
-        <div className="border-t border-[var(--border-subtle)]/50 p-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Card variant="glass" className="overflow-hidden">
-              <CardHeader className="py-2 px-3 text-sm font-semibold text-[var(--text-primary)]">
-                Billing
-              </CardHeader>
-              <CardBody className="py-2 px-3">
-                <CompactDl
-                  items={[
-                    { label: 'Plan', value: billing.currentPlan },
-                    { label: 'Next billing', value: billing.nextBillingDate },
-                    { label: 'Last payment', value: billing.lastPayment },
-                    { label: 'Method', value: billing.paymentMethod },
-                    { label: 'Credits', value: billing.creditsBalance },
-                    { label: 'Overage', value: billing.overageRate },
-                  ]}
-                  cols={2}
-                />
-              </CardBody>
-            </Card>
-            <Card variant="glass" className="overflow-hidden">
-              <CardHeader className="py-2 px-3 text-sm font-semibold text-[var(--text-primary)]">
-                Configuration
-              </CardHeader>
-              <CardBody className="py-2 px-3">
-                <CompactDl
-                  items={[
-                    { label: 'Hours', value: settings.businessHours },
-                    { label: 'After-hours', value: settings.afterHoursBehavior },
-                    { label: 'Notifications', value: settings.notifications },
-                    { label: 'PMS', value: settings.pmsIntegration },
-                    ...(flags.length > 0
-                      ? [{ label: 'Flags', value: flags.map(([k]) => k).join(', ') }]
-                      : []),
-                  ]}
-                  cols={2}
-                />
-              </CardBody>
-            </Card>
-          </div>
-        </div>
-      </details>
-
-      <Modal
-        open={selectedRunId !== null}
-        onClose={handleCloseModal}
-        title={selectedRunId ? `Run ${selectedRunId}` : 'Run events'}
-      >
-        <ModalHeader
-          title={selectedRunId ? `Run ${selectedRunId}` : 'Run events'}
-          onClose={handleCloseModal}
-        />
-        <div className="p-5">
-          <RunEventsViewer events={events} />
-        </div>
-      </Modal>
     </motion.div>
   );
 }

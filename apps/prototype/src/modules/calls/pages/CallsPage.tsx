@@ -3,15 +3,12 @@
  * Uses adapters for export only.
  */
 
-import { useMemo, useState, useCallback } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button, TableSkeleton, StatCard, LOTTIE_ASSETS } from '../../../shared/ui';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { PageHeader, EmptyState, TableFilters, Button, TableSkeleton, LOTTIE_ASSETS, Pagination } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
-import { useCallsList, useCallsExport, useCallAnalytics } from '../hooks';
+import { useCallsList, useCallsExport } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
-import { OutcomeBreakdown } from '../../reports/components/OutcomeBreakdown';
-import { SentimentChart } from '../../reports/components/SentimentChart/SentimentChart';
-import { Skeleton } from '../../../shared/ui';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
 
@@ -28,51 +25,39 @@ const DEFAULT_RANGE = (() => {
   return { start, end };
 })();
 
-/** Formats avg duration in seconds to display: 44 → "44s", 90 → "1:30". */
-function formatAvgDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
+const PAGE_SIZE = 20;
 
-/** Tenant calls list: filters, stats, export. Data from useCallsList and useCallAnalytics hooks. */
+/** Tenant calls list: table-first log with filters, export, and pagination. */
 export function CallsPage() {
   const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap } = useCallsList(dateRangeFilter);
-  const { analytics, isLoading: analyticsLoading } = useCallAnalytics(dateRangeFilter);
   const { exportCallsCsv } = useCallsExport();
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const filteredCalls = useMemo(() => {
     if (!outcomeFilter) return calls;
     return calls.filter((c) => getOutcome(c) === outcomeFilter);
   }, [calls, outcomeFilter]);
 
-  const outcomesForChart = useMemo(() => {
-    const { outcomes } = analytics;
-    const total = analytics.totalCalls;
-    const toPct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
-    return [
-      { outcome: 'booked' as const, count: outcomes.booked, percentage: toPct(outcomes.booked) },
-      { outcome: 'escalated' as const, count: outcomes.escalated, percentage: toPct(outcomes.escalated) },
-      { outcome: 'failed' as const, count: outcomes.failed, percentage: toPct(outcomes.failed) },
-      { outcome: 'info_only' as const, count: outcomes.info_only, percentage: toPct(outcomes.info_only) },
-    ];
-  }, [analytics]);
+  const totalPages = Math.max(1, Math.ceil(filteredCalls.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const pageEnd = pageStart + PAGE_SIZE;
+  const paginatedCalls = useMemo(
+    () => filteredCalls.slice(pageStart, pageEnd),
+    [filteredCalls, pageStart, pageEnd],
+  );
 
-  const sentimentBuckets = useMemo(() => {
-    const { sentiment } = analytics;
-    const total = analytics.totalCalls;
-    const toPct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
-    return [
-      { label: 'Positive', range: '0.6–1', count: sentiment.positive, percentage: toPct(sentiment.positive) },
-      { label: 'Neutral', range: '0.4–0.6', count: sentiment.neutral, percentage: toPct(sentiment.neutral) },
-      { label: 'Negative', range: '0–0.4', count: sentiment.negative, percentage: toPct(sentiment.negative) },
-    ];
-  }, [analytics]);
+  useEffect(() => {
+    setPage(1);
+  }, [outcomeFilter, dateRange.start, dateRange.end]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleExport = useCallback(() => {
     exportCallsCsv(
@@ -109,7 +94,7 @@ export function CallsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Calls"
-          description="AI call logs and conversion."
+          description="AI call logs with filtering and export."
         />
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />
@@ -118,41 +103,6 @@ export function CallsPage() {
             Export CSV
           </Button>
         </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {analyticsLoading ? (
-          <>
-            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
-            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
-            <Skeleton className="h-20 rounded-[var(--radius-card)]" />
-          </>
-        ) : (
-          <>
-            <StatCard label="Total calls" value={analytics.totalCalls} />
-            <StatCard
-              label="Conversation rate"
-              value={`${Math.round(analytics.conversationRate * 100)}%`}
-            />
-            <StatCard
-              label="Avg duration"
-              value={formatAvgDuration(analytics.avgDuration)}
-            />
-          </>
-        )}
-        <div className="sm:col-span-2 lg:col-span-1">
-          {analyticsLoading ? (
-            <Skeleton className="h-32 rounded-[var(--radius-card)]" />
-          ) : (
-            <OutcomeBreakdown outcomes={outcomesForChart} />
-          )}
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {analyticsLoading ? (
-          <Skeleton className="h-48 rounded-[var(--radius-card)]" />
-        ) : (
-          <SentimentChart buckets={sentimentBuckets} />
-        )}
       </div>
       {calls.length === 0 ? (
         <div className="rounded-[var(--radius-card)] card-glass p-8">
@@ -176,10 +126,31 @@ export function CallsPage() {
               onOutcomeChange={setOutcomeFilter}
             />
           </div>
-          <CallsTable
-            calls={filteredCalls}
-            getCustomerName={(id) => customerMap.get(id) ?? id}
-          />
+          {filteredCalls.length === 0 ? (
+            <div className="rounded-[var(--radius-card)] card-glass p-6">
+              <p className="text-sm text-[var(--text-muted)]">
+                No calls match the selected filters.
+              </p>
+            </div>
+          ) : (
+            <>
+              <CallsTable
+                calls={paginatedCalls}
+                getCustomerName={(id) => customerMap.get(id) ?? id}
+              />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                <p className="text-sm text-[var(--text-muted)]">
+                  Showing {pageStart + 1}-{Math.min(pageEnd, filteredCalls.length)} of {filteredCalls.length} calls
+                </p>
+                <Pagination
+                  page={safePage}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={filteredCalls.length}
+                />
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

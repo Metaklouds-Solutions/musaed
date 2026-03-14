@@ -40,8 +40,6 @@ const TABS: { id: ReportsTab; label: string; icon: typeof Bot }[] = [
 
 const VALID_TABS = new Set<string>(TABS.map((t) => t.id));
 
-const CARD_MIN_HEIGHT = 260;
-
 function isReportsTab(value: string | null): value is ReportsTab {
   return value !== null && VALID_TABS.has(value);
 }
@@ -184,27 +182,18 @@ export function ReportsPage() {
             ) : (
               <>
                 <div
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  style={{ gridAutoRows: `${CARD_MIN_HEIGHT}px` }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
                 >
-                  <div
-                    className="min-h-[260px] w-full [&>div]:h-full [&>div]:min-h-[260px] [&>div]:rounded-xl"
-                  >
+                  <div className="min-w-0 min-h-[240px] overflow-hidden rounded-xl [&>div]:h-full [&>div]:min-h-[240px] [&>div]:rounded-xl">
                     <OutcomeBreakdown outcomes={outcomes} />
                   </div>
-                  <div
-                    className="min-h-[260px] w-full [&>div]:h-full [&>div]:min-h-[260px]"
-                  >
+                  <div className="min-w-0 min-h-[240px] overflow-hidden rounded-xl [&>div]:h-full [&>div]:min-h-[240px] [&>div]:rounded-xl">
                     <SentimentChart buckets={sentimentDistribution} />
                   </div>
-                  <div
-                    className="min-h-[260px] w-full [&>div]:h-full [&>div]:min-h-[260px]"
-                  >
+                  <div className="min-w-0 min-h-[240px] overflow-hidden rounded-xl [&>div]:h-full [&>div]:min-h-[240px] [&>div]:rounded-xl">
                     <PeakHoursChart points={peakHours} />
                   </div>
-                  <div
-                    className="min-h-[260px] w-full [&>div]:h-full [&>div]:min-h-[260px]"
-                  >
+                  <div className="min-w-0 min-h-[240px] overflow-hidden rounded-xl [&>div]:h-full [&>div]:min-h-[240px] [&>div]:rounded-xl">
                     <IntentAnalyticsChart buckets={intentDistribution} />
                   </div>
                 </div>

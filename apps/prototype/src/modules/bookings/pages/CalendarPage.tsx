@@ -3,7 +3,8 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { PageHeader } from '../../../shared/ui';
+import { Link } from 'react-router-dom';
+import { PageHeader, Button } from '../../../shared/ui';
 import { CalendarView } from '../../../components/Calendar';
 import { useSession } from '../../../app/session/SessionContext';
 
@@ -14,10 +15,15 @@ export function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t('calendar.title')}
-        description={t('calendar.description')}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <PageHeader
+          title={t('calendar.title')}
+          description={t('calendar.description')}
+        />
+        <Link to="/bookings">
+          <Button variant="secondary">View bookings list</Button>
+        </Link>
+      </div>
       <CalendarView tenantId={tenantId} />
     </div>
   );

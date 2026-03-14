@@ -20,6 +20,8 @@ interface VirtualizedDataTableProps<T> {
   getItemKey: (item: T) => string;
   minWidth?: string;
   maxHeight?: number;
+  /** When true, rows get light purple background and rounded corners */
+  rowsTinted?: boolean;
 }
 
 export function VirtualizedDataTable<T>({
@@ -29,6 +31,7 @@ export function VirtualizedDataTable<T>({
   getItemKey,
   minWidth = 'min-w-[640px]',
   maxHeight = MAX_HEIGHT,
+  rowsTinted = false,
 }: VirtualizedDataTableProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
   const normalizedItems = Array.isArray(items) ? items : [];
@@ -45,7 +48,7 @@ export function VirtualizedDataTable<T>({
 
   if (!useVirtual) {
     return (
-      <DataTable minWidth={minWidth}>
+      <DataTable minWidth={minWidth} rowsTinted={rowsTinted}>
         <Table>
           <TableHeader>
             <TableRow>{header}</TableRow>
@@ -66,7 +69,11 @@ export function VirtualizedDataTable<T>({
   return (
     <div
       ref={parentRef}
-      className={cn('w-full min-w-0 overflow-auto rounded-(--radius-card) card-glass', minWidth)}
+      className={cn(
+        'w-full min-w-0 overflow-auto data-table-scroll rounded-[var(--radius-card)] card-glass',
+        rowsTinted && 'data-table-rows-tinted',
+        minWidth
+      )}
       style={{ maxHeight: `${maxHeight}px` }}
     >
       <div className={minWidth}>

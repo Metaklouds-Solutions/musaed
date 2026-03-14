@@ -67,12 +67,19 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
   const metadata = c.metadata as Record<string, unknown> | null | undefined;
   const { bookingCreated, escalationFlag } = outcomeToFlags(outcome);
 
+  const callCostRaw = c.callCost;
+  const callCost =
+    callCostRaw != null && typeof callCostRaw === 'number' && !Number.isNaN(callCostRaw)
+      ? callCostRaw
+      : null;
+
   return {
     id: String(c._id ?? ''),
     callId: typeof c.callId === 'string' ? c.callId : undefined,
     tenantId: tenantIdStr,
     customerId: resolveCustomerId(metadata, callId),
     duration: c.durationMs != null ? Math.round(Number(c.durationMs) / 1000) : 0,
+    callCost,
     sentimentScore: sentimentToScore(sentiment),
     transcript: typeof c.transcript === 'string' ? c.transcript : '',
     escalationFlag,

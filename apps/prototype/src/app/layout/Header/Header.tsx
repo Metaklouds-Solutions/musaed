@@ -11,6 +11,7 @@ import { GlobalSearch } from '../../../components/GlobalSearch';
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 import { NotificationDrawer } from './NotificationDrawer';
 import { UserMenu } from './UserMenu';
+import { TenantProfileLink } from './TenantProfileLink';
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
 
 export type Theme = 'light' | 'dark';
@@ -51,10 +52,13 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
     <div
       className="h-[var(--topbar-height)] w-full flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 md:px-8 md:backdrop-blur-md sticky top-0 z-10 shrink-0 rounded-xl border border-(var(--separator)) bg-(var(--bg-base))"
     >
-      <GlobalSearch
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <TenantProfileLink />
+        <GlobalSearch
         placeholder={t('common.searchPlaceholder')}
         onOpenCommandPalette={onOpenCommandPalette}
       />
+      </div>
 
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         {onOpenShortcutsHelp && (

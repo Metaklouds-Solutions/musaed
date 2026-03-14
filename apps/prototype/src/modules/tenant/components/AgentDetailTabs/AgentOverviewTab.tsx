@@ -1,5 +1,6 @@
 /**
- * Agent detail Overview tab: identity, sync status, voice, and language in a compact grid.
+ * Agent detail Overview tab: identity, sync status, voice, and language.
+ * Responsive layout: stacked on mobile, grid on larger screens.
  */
 
 import { motion } from 'motion/react';
@@ -11,29 +12,21 @@ interface AgentOverviewTabProps {
   agent: AgentDetailFull;
 }
 
-function CompactDl({
-  items,
-  cols = 3,
-}: {
-  items: { label: string; value: React.ReactNode }[];
-  cols?: 2 | 3;
-}) {
+interface InfoRowProps {
+  label: string;
+  value: React.ReactNode;
+}
+
+function InfoRow({ label, value }: InfoRowProps) {
   return (
-    <dl
-      className="grid gap-x-4 gap-y-1.5 text-xs"
-      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-    >
-      {items.map(({ label, value }) => (
-        <div key={label} className="flex gap-2 min-w-0">
-          <dt className="text-[var(--text-muted)] shrink-0">{label}</dt>
-          <dd className="font-medium text-[var(--text-primary)] truncate min-w-0">{value}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 py-2 sm:py-2.5 border-b border-[var(--border-subtle)]/50 last:border-b-0 min-w-0">
+      <dt className="text-xs sm:text-sm text-[var(--text-muted)] shrink-0 sm:w-32">{label}</dt>
+      <dd className="text-sm font-medium text-[var(--text-primary)] truncate min-w-0">{value}</dd>
+    </div>
   );
 }
 
-/** Renders core agent identity, sync state, voice, and language in a compact definition list. */
+/** Renders core agent identity, sync state, voice, and language. */
 export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
   const language =
     agent.chatConfig.status !== 'Not Configured' && agent.chatConfig.languages?.length
@@ -45,15 +38,15 @@ export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
+      className="rounded-lg bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)]/50 overflow-hidden"
     >
-      <CompactDl
-        cols={3}
-        items={[
-          { label: 'Name', value: agent.name },
-          { label: 'Channel', value: agent.channel },
-          {
-            label: 'Retell Agent ID',
-            value: agent.retellAgentId ? (
+      <dl className="px-4 sm:px-5">
+        <InfoRow label="Name" value={agent.name} />
+        <InfoRow label="Channel" value={<span className="capitalize">{agent.channel}</span>} />
+        <InfoRow
+          label="Retell Agent ID"
+          value={
+            agent.retellAgentId ? (
               <a
                 href={getRetellAgentUrl(agent.retellAgentId)}
                 target="_blank"
@@ -64,20 +57,20 @@ export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
               </a>
             ) : (
               '—'
-            ),
-          },
-          {
-            label: 'Sync status',
-            value: (
-              <Badge status={agent.syncStatus === 'In Sync' ? 'active' : 'pending'}>
-                {agent.syncStatus}
-              </Badge>
-            ),
-          },
-          { label: 'Voice', value: agent.voiceConfig.voiceName },
-          { label: 'Language', value: language },
-        ]}
-      />
+            )
+          }
+        />
+        <InfoRow
+          label="Sync status"
+          value={
+            <Badge status={agent.syncStatus === 'In Sync' ? 'active' : 'pending'}>
+              {agent.syncStatus}
+            </Badge>
+          }
+        />
+        <InfoRow label="Voice" value={agent.voiceConfig.voiceName} />
+        <InfoRow label="Language" value={language} />
+      </dl>
     </motion.div>
   );
 }

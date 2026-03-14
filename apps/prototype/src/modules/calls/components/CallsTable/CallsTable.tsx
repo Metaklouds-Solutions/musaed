@@ -39,6 +39,16 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatCost(cost: number | null | undefined): string {
+  if (cost == null || Number.isNaN(cost)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(cost);
+}
+
 /** Renders the calls grid with optional tenant column and virtualized rows. */
 export function CallsTable({
   calls,
@@ -52,13 +62,15 @@ export function CallsTable({
     <VirtualizedDataTable
       items={calls}
       getItemKey={(c) => c.id}
-      minWidth="min-w-[640px]"
+      minWidth="min-w-[720px]"
+      rowsTinted
       header={
         <>
           {showTenant && <TableHead>Tenant</TableHead>}
-          <TableHead>Date</TableHead>
-          <TableHead>Customer</TableHead>
+          <TableHead>Time</TableHead>
           <TableHead>Duration</TableHead>
+          <TableHead>Cost</TableHead>
+          <TableHead>Customer</TableHead>
           <TableHead>Sentiment</TableHead>
           <TableHead>Booking</TableHead>
           <TableHead aria-hidden />
@@ -83,8 +95,11 @@ export function CallsTable({
               )}
             </span>
           </TableCell>
-          <TableCell>{getCustomerName(call.customerId)}</TableCell>
           <TableCell>{formatDuration(call.duration)}</TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm">
+            {formatCost(call.callCost)}
+          </TableCell>
+          <TableCell>{getCustomerName(call.customerId)}</TableCell>
           <TableCell>
             <SentimentBadge score={call.sentimentScore} />
           </TableCell>

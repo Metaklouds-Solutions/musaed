@@ -33,6 +33,8 @@ export interface Call {
   tenantId: string;
   customerId: string;
   duration: number;
+  /** Cost in USD from Retell. Optional until enriched. */
+  callCost?: number | null;
   sentimentScore: number;
   transcript: string;
   escalationFlag: boolean;

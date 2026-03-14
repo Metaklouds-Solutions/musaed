@@ -11,6 +11,7 @@ import {
   Settings,
   BarChart3,
   CalendarDays,
+  Building2,
 } from 'lucide-react';
 import type { NavItem } from './types';
 
@@ -24,6 +25,7 @@ export const ADMIN_NAV: NavItem[] = [
 
 export const TENANT_NAV: NavItem[] = [
   { to: '/dashboard', label: 'common.dashboard', icon: LayoutDashboard },
+  { to: '/tenants/me', label: 'common.clinic', icon: Building2 },
   { to: '/calls', label: 'common.calls', icon: Phone },
   { to: '/bookings/calendar', label: 'common.calendar', icon: CalendarDays, featureFlag: 'enableCalendar' },
   { to: '/reports', label: 'common.reports', icon: BarChart3, featureFlag: 'enableReports' },

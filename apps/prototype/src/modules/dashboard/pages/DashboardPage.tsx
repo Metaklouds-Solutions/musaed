@@ -15,7 +15,7 @@ import { RecentCallsTable } from '../components/RecentCallsTable';
 import { ConversionFunnel } from '../components/ConversionFunnel';
 import { TrendChart } from '../components/TrendChart';
 import { useDashboard } from '../hooks';
-import { ArrowRight, LayoutDashboard, Users } from 'lucide-react';
+import { ArrowRight, Bell, LayoutDashboard, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 function getGreeting(): string {
@@ -101,6 +101,14 @@ export function DashboardPage() {
             >
               <Users size={14} aria-hidden="true" />
               View tenant profile
+              <ArrowRight size={12} aria-hidden="true" />
+            </Link>
+            <Link
+              to="/alerts"
+              className="inline-flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-primary-hover)] transition-colors w-fit"
+            >
+              <Bell size={14} aria-hidden="true" />
+              View alerts
               <ArrowRight size={12} aria-hidden="true" />
             </Link>
           </div>
