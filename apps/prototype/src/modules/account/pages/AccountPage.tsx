@@ -303,7 +303,7 @@ export function AccountPage() {
                     </p>
                     <div className="flex gap-2">
                       <Button
-                        variant="destructive"
+                        variant="danger"
                         onClick={handleDeleteAccount}
                         disabled={deleteLoading}
                         className="text-sm"

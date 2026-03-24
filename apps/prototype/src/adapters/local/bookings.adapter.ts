@@ -110,8 +110,8 @@ export const bookingsAdapter = {
     tenantId: string | undefined,
     start: Date,
     end: Date
-  ): CalendarAvailability[] {
-    const profiles = tenantId ? staffProfileAdapter.getProfiles(tenantId) : [];
+  ): Promise<CalendarAvailability[]> {
+    const profiles = tenantId ? await staffProfileAdapter.getProfiles(tenantId) : [];
     const slots: CalendarAvailability[] = [];
     const cur = new Date(start);
     cur.setHours(0, 0, 0, 0);

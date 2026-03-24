@@ -66,6 +66,8 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
+      /** One React instance so context (e.g. SessionProvider) is shared across the tree. */
+      dedupe: ['react', 'react-dom'],
     },
     optimizeDeps: {
       include: ['socket.io-client'],

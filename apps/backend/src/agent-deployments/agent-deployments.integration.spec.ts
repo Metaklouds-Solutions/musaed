@@ -52,7 +52,10 @@ describe('AgentDeploymentService integration', () => {
       retellClient as never,
       {
         getOrThrow: jest.fn().mockReturnValue('http://localhost:3001'),
-        get: jest.fn(),
+        get: jest.fn((key: string) => {
+          if (key === 'RETELL_TOOL_API_KEY') return 'test-retell-tool-key';
+          return undefined;
+        }),
       } as never,
       {
         log: jest.fn().mockResolvedValue(undefined),

@@ -6,6 +6,7 @@ import { useSession } from '../session/SessionContext';
 import FloatingLines from '../../components/FloatingLines';
 import { api, setTokens } from '../../lib/apiClient';
 import type { User as UserType } from '../../shared/types';
+import { normalizeAuthUser } from '../../lib/authUser';
 
 interface VerifyResponse {
   valid: boolean;
@@ -92,17 +93,14 @@ export function SetupPasswordPage() {
       setLoading(true);
       try {
         const data = await api.post<SetupResponse>('/auth/setup-password', { token, password });
+        const normalizedUser = normalizeAuthUser(data.user);
+        if (!normalizedUser) {
+          throw new Error('Setup response did not include a valid user.');
+        }
         setTokens(data.accessToken, data.refreshToken);
-        loginWithTokens(data.accessToken, data.refreshToken, {
-          id: String(data.user.id),
-          email: data.user.email,
-          name: data.user.name,
-          role: data.user.role,
-          tenantId: data.user.tenantId,
-          tenantRole: data.user.tenantRole,
-        });
+        loginWithTokens(data.accessToken, data.refreshToken, normalizedUser);
         toast.success('Account activated! Welcome aboard.');
-        const dest = data.user.role === 'ADMIN' ? '/admin/overview' : '/dashboard';
+        const dest = normalizedUser.role === 'ADMIN' ? '/admin/overview' : '/dashboard';
         navigate(dest, { replace: true });
       } catch (err: any) {
         setError(err?.message ?? 'Failed to set password. Please try again.');

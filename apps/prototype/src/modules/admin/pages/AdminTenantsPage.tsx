@@ -92,6 +92,7 @@ export function AdminTenantsPage() {
         mrr: 0,
         callsThisMonth: 0,
         onboardingStatus: 'Step 1/4',
+        createdAt: new Date().toISOString(),
       });
       setRefreshKey((k) => k + 1);
       refetchTenants();

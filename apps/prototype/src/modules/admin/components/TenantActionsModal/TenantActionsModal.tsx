@@ -74,9 +74,11 @@ export function TenantActionsModal({
     if (!open || !tenant) return;
     if (step === 'assign') {
       setAgentsLoading(true);
-      agentsAdapter
-        .list()
-        .then((all) => setUnassignedAgents(all.filter((a) => !a.tenantId)))
+      Promise.resolve(agentsAdapter.list())
+        .then((result) => {
+          const list = result as AdminAgentRow[];
+          setUnassignedAgents(list.filter((a) => !a.tenantId));
+        })
         .finally(() => setAgentsLoading(false));
     }
   }, [open, tenant?.id, step]);

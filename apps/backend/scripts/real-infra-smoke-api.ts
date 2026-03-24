@@ -38,7 +38,7 @@ async function login(email: string, password: string): Promise<{ accessToken: st
   return { accessToken: data.accessToken };
 }
 
-async function main(): Promise<void> {
+async function main(): Promise<number> {
   console.log('=== Real infrastructure API smoke (optional) ===\n');
 
   const adminEmail = process.env.SMOKE_ADMIN_EMAIL?.trim();
@@ -48,7 +48,7 @@ async function main(): Promise<void> {
     console.log(
       '[SKIP] Set SMOKE_ADMIN_EMAIL and SMOKE_ADMIN_PASSWORD to run admin JWT checks.',
     );
-    process.exit(0);
+    return 0;
   }
 
   const { accessToken: adminToken } = await login(adminEmail, adminPass);
@@ -162,10 +162,14 @@ async function main(): Promise<void> {
   }
 
   console.log('\n[PASSED] API smoke steps that were configured');
-  process.exit(0);
+  return 0;
 }
 
-main().catch((e) => {
-  console.error('[FAIL]', e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+void main()
+  .then((code) => {
+    process.exitCode = code;
+  })
+  .catch((e) => {
+    console.error('[FAIL]', e instanceof Error ? e.message : e);
+    process.exitCode = 1;
+  });

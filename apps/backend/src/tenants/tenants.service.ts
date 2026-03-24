@@ -234,6 +234,7 @@ export class TenantsService {
       ownerId: owner._id,
       planId: dto.planId ? new Types.ObjectId(dto.planId) : null,
       timezone: dto.timezone ?? 'Asia/Riyadh',
+      locale: dto.locale ?? 'ar',
     });
 
     const staff = await this.staffModel.create({

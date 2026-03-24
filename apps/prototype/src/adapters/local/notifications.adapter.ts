@@ -18,4 +18,6 @@ export const notificationsAdapter = {
   async markAllAsRead(): Promise<void> {},
 
   async delete(_id: string): Promise<void> {},
+
+  async clear(): Promise<void> {},
 };

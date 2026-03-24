@@ -27,6 +27,7 @@ interface NotificationDrawerProps {
   onClose: () => void;
   items: NotificationItem[];
   onMarkAsRead?: (id: string) => void;
+  onMarkAllAsRead?: () => void;
   onClearAll?: () => void;
 }
 
@@ -37,6 +38,7 @@ export function NotificationDrawer({
   onClose,
   items,
   onMarkAsRead,
+  onMarkAllAsRead,
   onClearAll,
 }: NotificationDrawerProps) {
   const [filter, setFilter] = useState<Filter>('all');
@@ -73,10 +75,10 @@ export function NotificationDrawer({
         >
           All
         </button>
-        {onClearAll && items.length > 0 && (
+        {onMarkAllAsRead && items.length > 0 && (
           <button
             type="button"
-            onClick={onClearAll}
+            onClick={onMarkAllAsRead}
             className="text-sm text-[var(--primary)] hover:underline"
           >
             Mark all read

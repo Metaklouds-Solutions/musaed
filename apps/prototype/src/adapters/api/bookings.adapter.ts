@@ -25,7 +25,7 @@ function mapBooking(b: {
   const customerId =
     typeof b.customerId === 'string'
       ? b.customerId
-      : b.customerId?._id ?? b.customerId ?? '';
+      : b.customerId?._id ?? '';
   const customer =
     typeof b.customerId === 'object' && b.customerId
       ? b.customerId

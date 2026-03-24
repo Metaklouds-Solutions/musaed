@@ -45,9 +45,9 @@ export function HeroMetrics({ metrics, trend = [] }: HeroMetricsProps) {
 
   const cards = [
     { label: 'Total bookings', value: m.totalBookings, animateValue: m.totalBookings, trend: trendDir, sparklineData },
-    { label: 'Conversion rate', value: formatPercent(m.conversionRate), animateValue: m.conversionRate, decimals: 1, format: formatPercent, trend: undefined as const, sparklineData: undefined },
-    { label: 'Calls handled', value: m.callsHandled, animateValue: m.callsHandled, trend: undefined as const, sparklineData: undefined },
-    { label: 'Escalation rate', value: formatPercent(m.escalationRate), animateValue: m.escalationRate, decimals: 1, format: formatPercent, trend: undefined as const, sparklineData: undefined },
+    { label: 'Conversion rate', value: formatPercent(m.conversionRate), animateValue: m.conversionRate, decimals: 1, format: formatPercent },
+    { label: 'Calls handled', value: m.callsHandled, animateValue: m.callsHandled },
+    { label: 'Escalation rate', value: formatPercent(m.escalationRate), animateValue: m.escalationRate, decimals: 1, format: formatPercent },
     { label: 'Cost saved', value: formatCurrency(m.costSaved), animateValue: m.costSaved, format: formatCurrency, trend: trendDir, sparklineData },
   ];
 

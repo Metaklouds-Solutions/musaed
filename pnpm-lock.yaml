@@ -267,9 +267,6 @@ importers:
       react-icons:
         specifier: ^5.5.0
         version: 5.6.0(react@19.2.3)
-      react-masonry-css:
-        specifier: ^1.0.16
-        version: 1.0.16(react@19.2.3)
       react-router-dom:
         specifier: ^7.13.0
         version: 7.13.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -298,6 +295,12 @@ importers:
       '@types/node':
         specifier: ^22.14.0
         version: 22.19.13
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       autoprefixer:
         specifier: ^10.4.21
         version: 10.4.27(postcss@8.5.8)
@@ -7156,11 +7159,6 @@ packages:
 
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
-
-  react-masonry-css@1.0.16:
-    resolution: {integrity: sha512-KSW0hR2VQmltt/qAa3eXOctQDyOu7+ZBevtKgpNDSzT7k5LA/0XntNa9z9HKCdz3QlxmJHglTZ18e4sX4V8zZQ==}
-    peerDependencies:
-      react: '>=16.0.0'
 
   react-refresh@0.18.0:
     resolution: {integrity: sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw==}
@@ -15966,10 +15964,6 @@ snapshots:
   react-is@16.13.1: {}
 
   react-is@18.3.1: {}
-
-  react-masonry-css@1.0.16(react@19.2.3):
-    dependencies:
-      react: 19.2.3
 
   react-refresh@0.18.0: {}
 

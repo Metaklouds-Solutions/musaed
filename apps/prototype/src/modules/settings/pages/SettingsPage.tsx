@@ -72,24 +72,17 @@ export function SettingsPage() {
     notifications: { emailDigest: true, ticketAlerts: true, bookingReminders: true },
     appointmentReminders: { advanceMinutes: 60, channel: 'email' },
   };
-  const [settings, setSettings] = useState<TenantSettings>(() => {
-    const result = settingsAdapter.getTenantSettings(tenantId);
-    return result instanceof Promise ? defaultSettings : result;
-  });
+  const [settings, setSettings] = useState<TenantSettings>(defaultSettings);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const load = settingsAdapter.getTenantSettings(tenantId);
-    if (load instanceof Promise) {
-      load.then((s) => setSettings(s)).catch(() => {});
-    } else if (tenantId) {
-      setSettings(load);
-    }
+    Promise.resolve(settingsAdapter.getTenantSettings(tenantId))
+      .then((s) => setSettings(s))
+      .catch(() => {});
   }, [tenantId]);
 
   const handleSave = useCallback(async () => {
-    const result = settingsAdapter.saveTenantSettings(settings, tenantId);
-    if (result instanceof Promise) await result;
+    await Promise.resolve(settingsAdapter.saveTenantSettings(settings, tenantId));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [settings, tenantId]);

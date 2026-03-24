@@ -64,6 +64,11 @@ function PageSuspense({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Root layout: must wrap `<Outlet />` with SessionProvider here — not around `<RouterProvider>`.
+ * React Router renders matched routes outside parents of RouterProvider, so context placed
+ * only above RouterProvider does not reach `RequireAuth`, `MainLayout`, or pages.
+ */
 function RootLayout() {
   return (
     <SessionProvider>

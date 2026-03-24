@@ -22,10 +22,14 @@ export function useCustomerDetail(customerId: string | undefined) {
     undefined as Customer | undefined,
   );
 
-  const calls = useMemo(() => {
-    const all = callsAdapter.getCalls(tenantId);
-    return customerId ? all.filter((c) => c.customerId === customerId) : [];
-  }, [tenantId, customerId]);
+  const { data: calls } = useAsyncData(
+    () =>
+      Promise.resolve(callsAdapter.getCalls(tenantId)).then((all) =>
+        customerId ? all.filter((c) => c.customerId === customerId) : []
+      ),
+    [tenantId, customerId],
+    [],
+  );
 
   const { data: bookings } = useAsyncData(
     () => {

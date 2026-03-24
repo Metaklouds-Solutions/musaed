@@ -73,6 +73,10 @@ const defaultTenantSettings: TenantSettings = {
   notifications: { emailDigest: true, ticketAlerts: true, bookingReminders: true },
 };
 
+function normalizeReminderChannel(value: unknown): 'email' | 'sms' {
+  return value === 'sms' ? 'sms' : 'email';
+}
+
 export const settingsAdapter = {
   async getAdminSettings(): Promise<AdminSettings> {
     try {
@@ -112,8 +116,22 @@ export const settingsAdapter = {
         timezone: data.timezone ?? defaultTenantSettings.timezone,
         locale: data.locale ?? defaultTenantSettings.locale,
         businessHours,
-        notifications: data.settings?.notifications ?? defaultTenantSettings.notifications,
-        appointmentReminders: data.settings?.appointmentReminders ?? { advanceMinutes: 60, channel: 'email' },
+        notifications: {
+          emailDigest:
+            data.settings?.notifications?.emailDigest ??
+            defaultTenantSettings.notifications.emailDigest,
+          ticketAlerts:
+            data.settings?.notifications?.ticketAlerts ??
+            defaultTenantSettings.notifications.ticketAlerts,
+          bookingReminders:
+            data.settings?.notifications?.bookingReminders ??
+            defaultTenantSettings.notifications.bookingReminders,
+        },
+        appointmentReminders: {
+          advanceMinutes:
+            data.settings?.appointmentReminders?.advanceMinutes ?? 60,
+          channel: normalizeReminderChannel(data.settings?.appointmentReminders?.channel),
+        },
       };
     } catch {
       return defaultTenantSettings;

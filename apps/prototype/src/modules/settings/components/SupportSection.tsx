@@ -163,7 +163,7 @@ export function SupportSection() {
 
       {totalPages > 1 && (
         <Pagination
-          currentPage={safePage}
+          page={safePage}
           totalPages={totalPages}
           onPageChange={setPage}
         />

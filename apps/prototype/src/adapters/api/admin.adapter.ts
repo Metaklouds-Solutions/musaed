@@ -3,6 +3,7 @@
  */
 
 import { api } from '../../lib/apiClient';
+import { normalizeEntityId } from '../../lib/entityId';
 import type {
   AdminTenantRow,
   AdminSupportSnapshot,
@@ -80,7 +81,7 @@ export const adminAdapter = {
       const resp = await api.get<{ data: unknown[] }>('/admin/tenants?page=1&limit=100');
       return ((resp.data ?? []) as Array<{ _id: string; name: string; planId?: { name?: string } }>).map(
         (t) => ({
-          id: t._id,
+          id: normalizeEntityId(t._id) ?? '',
           name: t.name,
           plan: t.planId?.name ?? '—',
         })
@@ -93,14 +94,18 @@ export const adminAdapter = {
   async getSupportSnapshot(): Promise<AdminSupportSnapshot> {
     try {
       const resp = await api.get<{ data?: unknown[] }>('/admin/support?page=1&limit=100');
-      const tickets = Array.isArray(resp.data) ? resp.data : [];
+      const tickets = (Array.isArray(resp.data) ? resp.data : []) as Array<{
+        status?: string;
+        priority?: string;
+        createdAt?: string;
+      }>;
       const openTickets = tickets.filter(
-        (t: { status?: string }) => t?.status === 'open' || t?.status === 'in_progress'
+        (t) => t?.status === 'open' || t?.status === 'in_progress'
       );
       const criticalCount = openTickets.filter(
-        (t: { priority?: string }) => t?.priority === 'critical'
+        (t) => t?.priority === 'critical'
       ).length;
-      const oldestWaitingDays = openTickets.reduce((max: number, t: { createdAt?: string }) => {
+      const oldestWaitingDays = openTickets.reduce((max: number, t) => {
         const created = new Date(String(t?.createdAt ?? ''));
         if (Number.isNaN(created.getTime())) return max;
         const age = Math.floor((Date.now() - created.getTime()) / 86400000);
@@ -149,11 +154,8 @@ export const adminAdapter = {
         startedAt?: string;
         createdAt?: string;
       }>).map((call) => ({
-        id: String(call._id ?? ''),
-        tenantId:
-          typeof call.tenantId === 'object' && call.tenantId !== null
-            ? String((call.tenantId as { _id?: string })._id ?? '')
-            : String(call.tenantId ?? ''),
+        id: normalizeEntityId(call._id) ?? '',
+        tenantId: normalizeEntityId(call.tenantId) ?? '',
         tenantName:
           typeof call.tenantId === 'object' && call.tenantId !== null
             ? String((call.tenantId as { name?: string }).name ?? '—')

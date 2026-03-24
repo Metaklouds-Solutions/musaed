@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
+import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { Connection, Model } from 'mongoose';
 import { Queue } from 'bullmq';
@@ -20,6 +21,7 @@ export class SystemMonitorService {
   constructor(
     @InjectConnection() private readonly connection: Connection,
     @InjectQueue(QUEUE_NAMES.WEBHOOKS) private readonly webhooksQueue: Queue,
+    private readonly config: ConfigService,
     private readonly retellClient: RetellClient,
     private readonly notificationsService: NotificationsService,
     @InjectModel(AgentInstance.name)
@@ -51,6 +53,9 @@ export class SystemMonitorService {
   }
 
   private async checkRedis(): Promise<void> {
+    if (!this.isRedisRequired()) {
+      return;
+    }
     try {
       const client = await this.webhooksQueue.client;
       await client.ping();
@@ -179,5 +184,15 @@ export class SystemMonitorService {
         dedupeWindowSeconds: 30 * 60,
       });
     }
+  }
+
+  private isRedisRequired(): boolean {
+    const queueFlags = [
+      this.config.get<string>('AGENT_DEPLOYMENT_QUEUE_ENABLED', 'false'),
+      this.config.get<string>('QUEUE_WEBHOOKS_ENABLED', 'false'),
+      this.config.get<string>('QUEUE_EMAIL_ENABLED', 'false'),
+      this.config.get<string>('QUEUE_NOTIFICATIONS_ENABLED', 'false'),
+    ];
+    return queueFlags.some((value) => value?.trim().toLowerCase() === 'true');
   }
 }

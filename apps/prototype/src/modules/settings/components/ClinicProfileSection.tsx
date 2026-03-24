@@ -23,7 +23,7 @@ const LOCALE_OPTIONS = [
   { value: 'en-GB', label: 'English (GB)' },
   { value: 'es', label: 'Spanish' },
   { value: 'fr', label: 'French' },
-  { value: 'ar-SA', label: 'Arabic' },
+  { value: 'ar', label: 'Arabic' },
 ];
 
 export function ClinicProfileSection({ settings, onChange }: ClinicProfileSectionProps) {

@@ -52,6 +52,16 @@ export class AuthController {
     const user =
       typeof raw.toObject === 'function' ? raw.toObject() : { ...raw };
     delete user.passwordHash;
+    const tenantId =
+      typeof req.user?.tenantId === 'string'
+        ? req.user.tenantId
+        : typeof req.tenantId === 'string'
+          ? req.tenantId
+          : undefined;
+    const tenantRole =
+      typeof req.user?.tenantRole === 'string' ? req.user.tenantRole : undefined;
+    if (tenantId) user.tenantId = tenantId;
+    if (tenantRole) user.tenantRole = tenantRole;
     return user;
   }
 

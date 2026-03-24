@@ -47,6 +47,8 @@ export interface Call {
   summary?: string;
   /** Backend outcome: booked | escalated | failed | info_only | unknown. Set by API adapter. */
   outcome?: string;
+  /** Backend sentiment label. Set by API adapter for compatibility with existing views. */
+  sentiment?: string;
   /** Agent instance ID. Set by API adapter for filtering. */
   agentId?: string;
 }

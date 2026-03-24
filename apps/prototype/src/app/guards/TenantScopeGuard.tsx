@@ -12,7 +12,7 @@ export function TenantScopeGuard() {
   const { id } = useParams<{ id: string }>();
   if (!user) return <Navigate to="/login" replace />;
   if (user.role === 'ADMIN') return <Outlet />;
-  if (user.role !== 'ADMIN' && user.tenantId && id && id !== user.tenantId) {
+  if (user.tenantId && id && id !== user.tenantId) {
     return <Navigate to={`/tenants/${user.tenantId}`} replace />;
   }
   return <Outlet />;

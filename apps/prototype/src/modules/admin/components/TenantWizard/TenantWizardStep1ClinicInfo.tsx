@@ -6,7 +6,7 @@ import { PopoverSelect } from '../../../../shared/ui';
 
 const PLAN_OPTIONS = ['STARTER', 'PRO', 'ENTERPRISE'];
 const TIMEZONE_OPTIONS = ['UTC', 'America/New_York', 'Europe/London', 'Asia/Karachi'];
-const LOCALE_OPTIONS = ['en-US', 'en-GB', 'ar-SA'];
+const LOCALE_OPTIONS = ['en-US', 'en-GB', 'ar'];
 
 const inputClass =
   'w-full px-4 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)] focus:border-transparent text-sm';

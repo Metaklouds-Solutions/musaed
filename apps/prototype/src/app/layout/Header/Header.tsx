@@ -27,7 +27,7 @@ const THEME_STORAGE_KEY = 'clinic-crm-theme';
 export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShortcutsHelp }: HeaderProps) {
   const { t } = useTranslation();
   useSession(); // SessionProvider required for UserMenu
-  const { items: notifications, unreadCount, markAsRead, clearNotifications, bellPulse } = useNotifications();
+  const { items: notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications, bellPulse } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isBellAnimating, setIsBellAnimating] = useState(false);
   const openNotifications = useCallback(() => setNotificationsOpen(true), []);
@@ -101,6 +101,7 @@ export function Header({ theme, onThemeToggle, onOpenCommandPalette, onOpenShort
           onClose={closeNotifications}
           items={notifications}
           onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
           onClearAll={clearNotifications}
         />
         <UserMenu

@@ -11,7 +11,9 @@ import { tenantsAdapter, agentsAdapter, supportAdapter, searchAdapter } from '..
 import { useAsyncData } from '../../shared/hooks/useAsyncData';
 import { cn } from '@/lib/utils';
 
-function isIconComponent(x: unknown): x is React.ComponentType<{ className?: string }> {
+function isIconComponent(
+  x: unknown,
+): x is React.ComponentType<{ className?: string; size?: number; strokeWidth?: number }> {
   return typeof x === 'function';
 }
 
@@ -20,7 +22,7 @@ export interface CommandItem {
   label: string;
   path?: string;
   meta?: string;
-  icon?: React.ReactNode;
+  icon?: unknown;
 }
 
 function flattenNav(
@@ -75,11 +77,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     []
   );
   const { data: agents } = useAsyncData(
-    async () => {
-      if (!open) return [];
-      const result = await agentsAdapter.list({ page: 1, limit: 50 });
-      return result.data;
-    },
+    () => (open ? agentsAdapter.listVoiceAgents() : []),
     [open],
     []
   );

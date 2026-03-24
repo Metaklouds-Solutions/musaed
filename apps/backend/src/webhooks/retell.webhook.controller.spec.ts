@@ -9,7 +9,6 @@ import * as crypto from 'crypto';
 
 describe('RetellWebhookController', () => {
   let controller: RetellWebhookController;
-  let webhooksService: WebhooksService;
 
   const mockWebhookQueue = {
     isEnabled: jest.fn().mockReturnValue(false),
@@ -40,9 +39,7 @@ describe('RetellWebhookController', () => {
     json: jest.fn().mockReturnThis(),
   } as unknown as Response;
 
-  beforeEach(async () => {
-    jest.clearAllMocks();
-    mockWebhookQueue.isEnabled.mockReturnValue(false);
+  async function createController(overrides: Record<string, string> = {}) {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RetellWebhookController],
       providers: [
@@ -58,6 +55,7 @@ describe('RetellWebhookController', () => {
                 RETELL_WEBHOOK_SECRET: secret,
                 RETELL_WEBHOOK_SECRET_LEGACY: '',
                 WEBHOOK_TIMESTAMP_MAX_AGE_SEC: '0',
+                ...overrides,
               };
               return defaults[key] ?? def ?? '';
             }),
@@ -66,8 +64,13 @@ describe('RetellWebhookController', () => {
       ],
     }).compile();
 
-    controller = module.get<RetellWebhookController>(RetellWebhookController);
-    webhooksService = module.get<WebhooksService>(WebhooksService);
+    return module.get<RetellWebhookController>(RetellWebhookController);
+  }
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    mockWebhookQueue.isEnabled.mockReturnValue(false);
+    controller = await createController();
   });
 
   it('accepts valid signature', async () => {
@@ -116,33 +119,26 @@ describe('RetellWebhookController', () => {
       .update(rawBody)
       .digest('hex');
 
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [RetellWebhookController],
-      providers: [
-        { provide: WebhooksService, useValue: mockWebhooksService },
-        { provide: WebhookQueueService, useValue: mockWebhookQueue },
-        { provide: MetricsService, useValue: mockMetrics },
-        {
-          provide: ConfigService,
-          useValue: {
-            get: jest.fn((key: string, def?: string) => {
-              const defaults: Record<string, string> = {
-                NODE_ENV: 'production',
-                RETELL_WEBHOOK_SECRET: secret,
-                RETELL_WEBHOOK_SECRET_LEGACY: legacySecret,
-                WEBHOOK_TIMESTAMP_MAX_AGE_SEC: '0',
-              };
-              return defaults[key] ?? def ?? '';
-            }),
-          },
-        },
-      ],
-    }).compile();
-
-    const ctrl = module.get<RetellWebhookController>(RetellWebhookController);
+    const ctrl = await createController({
+      NODE_ENV: 'production',
+      RETELL_WEBHOOK_SECRET_LEGACY: legacySecret,
+    });
     const req = { body: Buffer.from(rawBody, 'utf8') } as unknown as Request;
     const result = await ctrl.handleWebhook(req, mockRes, legacySig, undefined);
     expect(result).toEqual({ received: true });
     expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
+  });
+
+  it('requires timestamp header when replay protection is enabled', async () => {
+    controller = await createController({
+      WEBHOOK_TIMESTAMP_MAX_AGE_SEC: '600',
+    });
+    const req = {
+      body: Buffer.from(rawBody, 'utf8'),
+    } as unknown as Request;
+
+    await expect(
+      controller.handleWebhook(req, mockRes, validSignature, undefined),
+    ).rejects.toThrow('Missing webhook timestamp');
   });
 });

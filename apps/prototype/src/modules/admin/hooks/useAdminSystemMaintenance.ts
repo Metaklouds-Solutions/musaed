@@ -3,10 +3,22 @@ import { maintenanceAdapter, MAINTENANCE_CHANGED } from '../../../adapters';
 
 /** Maintenance mode hook with global status subscription and toggle action. */
 export function useAdminSystemMaintenance() {
-  const [maintenance, setMaintenance] = useState(() => maintenanceAdapter.getStatus());
+  const [maintenance, setMaintenance] = useState<{ enabled: boolean; message: string }>(
+    { enabled: false, message: '' },
+  );
 
   useEffect(() => {
-    const handler = () => setMaintenance(maintenanceAdapter.getStatus());
+    Promise.resolve(maintenanceAdapter.getStatus())
+      .then((value) => setMaintenance(value))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      Promise.resolve(maintenanceAdapter.getStatus())
+        .then((value) => setMaintenance(value))
+        .catch(() => undefined);
+    };
     window.addEventListener(MAINTENANCE_CHANGED, handler);
     return () => window.removeEventListener(MAINTENANCE_CHANGED, handler);
   }, []);

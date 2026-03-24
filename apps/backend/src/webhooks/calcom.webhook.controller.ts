@@ -70,7 +70,12 @@ export class CalcomWebhookController {
       }
     }
 
-    const payload = req.body instanceof Buffer ? JSON.parse(rawBody) : req.body;
+    let payload: unknown;
+    try {
+      payload = req.body instanceof Buffer ? JSON.parse(rawBody) : req.body;
+    } catch {
+      throw new BadRequestException('Invalid Cal.com webhook payload');
+    }
     if (!payload || typeof payload !== 'object') {
       throw new BadRequestException('Invalid Cal.com webhook payload');
     }

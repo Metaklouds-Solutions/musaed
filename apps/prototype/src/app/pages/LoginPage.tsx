@@ -8,6 +8,7 @@ import FloatingLines from '../../components/FloatingLines';
 import { Button } from '../../shared/ui';
 import { api, setTokens } from '../../lib/apiClient';
 import type { User as UserType } from '../../shared/types';
+import { normalizeAuthUser } from '../../lib/authUser';
 
 interface LoginResponse {
   accessToken: string;
@@ -67,16 +68,12 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
 
       try {
         const data = await api.post<LoginResponse>('/auth/login', { email, password });
+        const normalizedUser = normalizeAuthUser(data.user);
+        if (!normalizedUser) {
+          throw new Error('Login response did not include a valid user.');
+        }
         setTokens(data.accessToken, data.refreshToken);
-        loginWithTokens(data.accessToken, data.refreshToken, {
-          id: String(data.user.id),
-          email: data.user.email,
-          name: data.user.name,
-          role: data.user.role,
-          avatarUrl: data.user.avatarUrl,
-          tenantId: data.user.tenantId,
-          tenantRole: data.user.tenantRole,
-        });
+        loginWithTokens(data.accessToken, data.refreshToken, normalizedUser);
       } catch (err: unknown) {
         const message = err && typeof err === 'object' && 'message' in err ? String((err as { message: string }).message) : 'Login failed. Please try again.';
         setError(message);

@@ -47,6 +47,12 @@ export class CreateTenantDto {
   @MaxLength(100)
   timezone?: string;
 
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  locale?: string;
+
   @IsMongoId()
   @IsOptional()
   templateId?: string;

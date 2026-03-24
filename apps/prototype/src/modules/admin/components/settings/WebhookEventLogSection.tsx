@@ -2,7 +2,7 @@
  * Webhook event log. Table of webhook calls with status, timestamp, retry option.
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   Table,
   TableHeader,
@@ -41,6 +41,10 @@ function StatusBadge({ status }: { status: WebhookEventStatus }) {
 /** Renders webhook delivery log with retry action for failed events. */
 export function WebhookEventLogSection() {
   const { events, retryingId, retryWebhook } = useAdminWebhookEvents();
+  const isApiMode = events.every(
+    (event) => event.status === 'success' && event.statusCode === 200 && event.retryCount === 0,
+  );
+  const origin = getWebhookPublicOrigin();
 
   const handleRetry = useCallback((id: string) => {
     retryWebhook(id);

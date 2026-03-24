@@ -5,13 +5,14 @@
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { LottiePlayer, LOTTIE_ASSETS } from '../LottiePlayer';
+import type { LottieAnimationData } from '../LottiePlayer';
 
 interface EmptyStateProps {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: ReactNode;
   /** Optional Lottie animation URL (shows instead of icon when provided) */
-  lottieSrc?: string;
+  lottieSrc?: string | LottieAnimationData;
   children?: ReactNode;
   className?: string;
 }

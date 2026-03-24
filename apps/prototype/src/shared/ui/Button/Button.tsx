@@ -12,6 +12,7 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'outli
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
+  size?: string;
   loading?: boolean;
 }
 
@@ -39,7 +40,7 @@ const variants: Record<Variant, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', loading, disabled, children, ...props }, ref) => (
+  ({ className, variant = 'primary', size, loading, disabled, children, ...props }, ref) => (
     <button
       ref={ref}
       type="button"

@@ -19,12 +19,9 @@ export function useAlerts() {
       setAlerts([]);
       return;
     }
-    const result = alertsAdapter.getAlerts(tenantId);
-    if (result instanceof Promise) {
-      result.then(setAlerts).catch(() => setAlerts([]));
-    } else {
-      setAlerts(result);
-    }
+    Promise.resolve(alertsAdapter.getAlerts(tenantId))
+      .then(setAlerts)
+      .catch(() => setAlerts([]));
   }, [tenantId]);
 
   useEffect(() => {
@@ -42,8 +39,7 @@ export function useAlerts() {
 
   const resolveAlert = useCallback(
     async (alertId: string) => {
-      const result = alertsAdapter.resolveAlert(alertId);
-      if (result instanceof Promise) await result;
+      await Promise.resolve(alertsAdapter.resolveAlert(alertId));
       refresh();
     },
     [refresh]

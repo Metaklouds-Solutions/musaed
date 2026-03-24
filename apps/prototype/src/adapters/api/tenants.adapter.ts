@@ -3,6 +3,7 @@
  */
 
 import { api } from '../../lib/apiClient';
+import { normalizeEntityId } from '../../lib/entityId';
 import type {
   TenantDetail,
   AdminTenantRow,
@@ -120,6 +121,10 @@ function readString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null;
 }
 
+function readId(value: unknown): string | null {
+  return normalizeEntityId(value);
+}
+
 function readNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
@@ -189,18 +194,13 @@ function toAgentInstanceSummary(
   fallbackTenantId: string,
 ): AgentInstanceSummary {
   const channelsEnabled = normalizeChannels(agent.channelsEnabled, agent.channel);
-  const tenantId =
-    typeof agent.tenantId === 'string'
-      ? agent.tenantId
-      : agent.tenantId && typeof agent.tenantId === 'object'
-        ? readString((agent.tenantId as Record<string, unknown>)._id) ?? fallbackTenantId
-        : fallbackTenantId;
+  const tenantId = readId(agent.tenantId) ?? fallbackTenantId;
   const tenantName =
     agent.tenantId && typeof agent.tenantId === 'object'
       ? readString((agent.tenantId as Record<string, unknown>).name)
       : null;
   return {
-    id: readString(agent._id) ?? '',
+    id: readId(agent._id) ?? '',
     tenantId,
     tenantName,
     name: readString(agent.name) ?? '',
@@ -243,18 +243,13 @@ export const tenantsAdapter = {
 
       const counts = new Map<string, number>();
       for (const agent of agentsResp.data ?? []) {
-        const rawTenantId =
-          typeof agent.tenantId === 'string'
-            ? agent.tenantId
-            : agent.tenantId && typeof agent.tenantId === 'object'
-              ? readString((agent.tenantId as Record<string, unknown>)._id)
-              : null;
+        const rawTenantId = readId(agent.tenantId);
         if (!rawTenantId) continue;
         counts.set(rawTenantId, (counts.get(rawTenantId) ?? 0) + 1);
       }
 
       return (resp.data ?? []).map((tenant) => {
-        const id = readString(tenant._id) ?? '';
+        const id = readId(tenant._id) ?? '';
         const agentCount = counts.get(id) ?? readNumber(tenant.agentCount) ?? 0;
         const owner =
           tenant.ownerId && typeof tenant.ownerId === 'object'
@@ -276,7 +271,7 @@ export const tenantsAdapter = {
         if (dynamicStep >= 3 && (isActive || hasPlan)) dynamicStep = 4;
 
         return {
-          id: readString(tenant._id) ?? '',
+          id,
           name: readString(tenant.name) ?? '',
           plan:
           tenant.planId && typeof tenant.planId === 'object'
@@ -319,7 +314,7 @@ export const tenantsAdapter = {
         }
       } else {
         t = await api.get<TenantApiResponse>('/tenant/settings').catch(() => null);
-        scopedTenantId = readString(me?.tenantId) ?? readString(t?._id) ?? id;
+        scopedTenantId = readId(me?.tenantId) ?? readId(t?._id) ?? id;
       }
       const owner = t && t.ownerId && typeof t.ownerId === 'object' ? t.ownerId : {};
       const settingsRes = await api
@@ -422,7 +417,7 @@ export const tenantsAdapter = {
       const hasDeployedAgent = summaries.some((summary) => {
         if (summary.deployedAt) return true;
         if (summary.status === 'active' || summary.status === 'partially_deployed') return true;
-        const source = agents.find((a) => readString(a._id) === summary.id);
+        const source = agents.find((a) => readId(a._id) === summary.id);
         return Boolean(source && typeof source.retellAgentId === 'string' && source.retellAgentId.trim().length > 0);
       });
       const hasFirstCall = (calls.total ?? 0) > 0 || (calls.data?.length ?? 0) > 0;
@@ -430,7 +425,7 @@ export const tenantsAdapter = {
       const ownerLastLoginAt = readString((owner as Record<string, unknown>).lastLoginAt);
       const meLastLoginAt = readString(me?.lastLoginAt);
       // In tenant portal, trust the active authenticated session as login completion.
-      const hasTenantSession = !isAdmin && Boolean(readString(me?._id) ?? readString(me?.id) ?? readString(me?.email));
+      const hasTenantSession = !isAdmin && Boolean(readId(me?._id) ?? readId(me?.id) ?? readString(me?.email));
       const hasOwnerLogin =
         (ownerStatus === 'active' && Boolean(ownerLastLoginAt)) ||
         Boolean(meLastLoginAt) ||
@@ -465,7 +460,7 @@ export const tenantsAdapter = {
       });
 
       return {
-        id: readString(t?._id) ?? readString(me?.tenantId) ?? id,
+        id: readId(t?._id) ?? readId(me?.tenantId) ?? id,
         profile: {
           clinicName:
             readString(t?.name) ??
@@ -571,7 +566,7 @@ export const tenantsAdapter = {
     try {
       const resp = await api.get<TenantListApiResponse>('/admin/tenants?page=1&limit=100');
       return (resp.data ?? []).map((tenant) => ({
-        id: readString(tenant._id) ?? '',
+        id: readId(tenant._id) ?? '',
         name: readString(tenant.name) ?? '',
         plan:
           tenant.planId && typeof tenant.planId === 'object'
@@ -589,7 +584,7 @@ export const tenantsAdapter = {
   async getPlatformAgents(): Promise<AgentTemplateOption[]> {
     const resp = await api.get<{ data?: AgentTemplateApiResponse[] }>('/admin/templates?page=1&limit=100');
     return (resp.data ?? []).map((template) => {
-      const id = readString(template._id) ?? '';
+      const id = readId(template._id) ?? '';
       const channels = normalizeChannels(template.supportedChannels, template.channel);
       templateChannelsCache.set(id, channels);
       const channelLabel = channels.join(' + ');
@@ -623,6 +618,7 @@ export const tenantsAdapter = {
       ownerEmail: data.ownerEmail,
       ownerName: data.ownerName,
       timezone: data.timezone,
+      locale: data.locale,
     };
     // Only include planId if it looks like a valid MongoId (24 hex chars)
     if (data.plan && /^[a-f0-9]{24}$/i.test(data.plan)) {
@@ -643,11 +639,11 @@ export const tenantsAdapter = {
       inviteSetupUrl?: string;
     };
     const wrappedTenant = createdRecord.tenant;
-    const tenant = wrappedTenant ?? created;
+    const tenant = wrappedTenant ?? createdRecord;
     const inviteSetupUrl =
       readString(createdRecord.inviteSetupUrl) ?? undefined;
     return {
-      id: readString(tenant._id) ?? '',
+      id: readId(tenant._id) ?? '',
       name: readString(tenant.name) ?? data.name,
       plan: data.plan,
       inviteSetupUrl,
@@ -678,7 +674,7 @@ export const tenantsAdapter = {
       const t = await api.get<TenantApiResponse>(`/admin/tenants/${id}`);
       if (!t) return null;
       return {
-        id: readString(t._id) ?? id,
+        id: readId(t._id) ?? id,
         name: readString(t.name) ?? '',
         plan:
           t.planId && typeof t.planId === 'object'

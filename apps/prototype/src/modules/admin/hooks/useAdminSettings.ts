@@ -26,21 +26,15 @@ export function useAdminSettings() {
   const savedTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const load = settingsAdapter.getAdminSettings();
-    if (load instanceof Promise) {
-      load.then((s) => setSettings(s)).catch(() => {});
-    } else {
-      setSettings(load);
-    }
+    Promise.resolve(settingsAdapter.getAdminSettings())
+      .then((s) => setSettings(s))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    const load = reportsAdapter.getScheduledReportConfig();
-    if (load instanceof Promise) {
-      load.then((c) => setScheduledConfig(c)).catch(() => {});
-    } else {
-      setScheduledConfig(load);
-    }
+    Promise.resolve(reportsAdapter.getScheduledReportConfig())
+      .then((c) => setScheduledConfig(c))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -52,10 +46,10 @@ export function useAdminSettings() {
   }, []);
 
   const save = useCallback(async () => {
-    const saveSettings = settingsAdapter.saveAdminSettings(settings);
-    if (saveSettings instanceof Promise) await saveSettings;
-    const setReports = reportsAdapter.setScheduledReportConfig(scheduledConfig);
-    if (setReports instanceof Promise) await setReports;
+    await Promise.resolve(settingsAdapter.saveAdminSettings(settings));
+    await Promise.resolve(
+      reportsAdapter.setScheduledReportConfig(scheduledConfig),
+    );
     setSaved(true);
     if (savedTimerRef.current !== null) {
       window.clearTimeout(savedTimerRef.current);

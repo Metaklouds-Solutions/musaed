@@ -1,6 +1,7 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
+import { ConfigService } from '@nestjs/config';
 import { Connection } from 'mongoose';
 import { Queue } from 'bullmq';
 import { RetellClient } from '../retell/retell.client';
@@ -25,6 +26,7 @@ export class HealthController {
   constructor(
     @InjectConnection() private readonly connection: Connection,
     @InjectQueue(QUEUE_NAMES.WEBHOOKS) private readonly webhooksQueue: Queue,
+    private readonly config: ConfigService,
     private readonly retellClient: RetellClient,
     private readonly deploymentMetrics: AgentDeploymentMetricsService,
   ) {}
@@ -33,6 +35,7 @@ export class HealthController {
   async check() {
     const dbState = this.connection.readyState;
     const dbUp = dbState === 1;
+    const redisRequired = this.isRedisRequired();
 
     const redisStatus = await this.checkRedis();
 
@@ -41,7 +44,7 @@ export class HealthController {
 
     const retellOk = retellProbe.skipped ? true : retellProbe.reachable;
 
-    const isHealthy = dbUp && redisStatus.up && retellOk;
+    const isHealthy = dbUp && retellOk && (redisRequired ? redisStatus.up : true);
 
     return {
       status: isHealthy ? 'ok' : 'degraded',
@@ -52,6 +55,7 @@ export class HealthController {
           state: DB_STATES[dbState] ?? 'unknown',
         },
         redis: {
+          required: redisRequired,
           status: redisStatus.up ? 'up' : 'down',
           latencyMs: redisStatus.latencyMs,
           error: redisStatus.error,
@@ -72,6 +76,16 @@ export class HealthController {
   }
 
   private static readonly REDIS_TIMEOUT_MS = 3000;
+
+  private isRedisRequired(): boolean {
+    const queueFlags = [
+      this.config.get<string>('AGENT_DEPLOYMENT_QUEUE_ENABLED', 'false'),
+      this.config.get<string>('QUEUE_WEBHOOKS_ENABLED', 'false'),
+      this.config.get<string>('QUEUE_EMAIL_ENABLED', 'false'),
+      this.config.get<string>('QUEUE_NOTIFICATIONS_ENABLED', 'false'),
+    ];
+    return queueFlags.some((value) => value?.trim().toLowerCase() === 'true');
+  }
 
   private async checkRedis(): Promise<{
     up: boolean;

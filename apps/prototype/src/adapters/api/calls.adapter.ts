@@ -5,6 +5,7 @@
 import type { Call } from '../../shared/types';
 import type { DateRangeFilter } from '../local/calls.adapter';
 import { api } from '../../lib/apiClient';
+import { normalizeEntityId } from '../../lib/entityId';
 
 interface CallsApiResponse {
   data: unknown[];
@@ -45,23 +46,9 @@ function resolveCustomerId(
 }
 
 function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
-  const tenantId = c.tenantId as { _id?: string } | string | undefined;
-  const tenantIdStr =
-    typeof tenantId === 'object' && tenantId && '_id' in tenantId
-      ? String(tenantId._id)
-      : typeof tenantId === 'string'
-        ? tenantId
-        : String(c._id ?? '');
-
-  const agentInstanceId = c.agentInstanceId as { _id?: string } | string | undefined;
-  const agentIdStr =
-    typeof agentInstanceId === 'object' && agentInstanceId && '_id' in agentInstanceId
-      ? String(agentInstanceId._id)
-      : typeof agentInstanceId === 'string'
-        ? agentInstanceId
-        : '';
-
-  const callId = String(c.callId ?? c._id ?? '');
+  const tenantIdStr = normalizeEntityId(c.tenantId) ?? normalizeEntityId(c._id) ?? '';
+  const agentIdStr = normalizeEntityId(c.agentInstanceId) ?? '';
+  const callId = normalizeEntityId(c.callId) ?? normalizeEntityId(c._id) ?? '';
   const outcome = String(c.outcome ?? 'unknown');
   const sentiment = c.sentiment as string | null | undefined;
   const metadata = c.metadata as Record<string, unknown> | null | undefined;
@@ -74,7 +61,7 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
       : null;
 
   return {
-    id: String(c._id ?? ''),
+    id: normalizeEntityId(c._id) ?? callId,
     callId: typeof c.callId === 'string' ? c.callId : undefined,
     tenantId: tenantIdStr,
     customerId: resolveCustomerId(metadata, callId),
@@ -84,7 +71,7 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
     transcript: typeof c.transcript === 'string' ? c.transcript : '',
     escalationFlag,
     bookingCreated,
-    bookingId: c.bookingId ? String(c.bookingId) : undefined,
+    bookingId: normalizeEntityId(c.bookingId) ?? undefined,
     createdAt: String(c.createdAt ?? ''),
     agentVersion: c.agentVersion as string | undefined,
     recordingUrl: typeof c.recordingUrl === 'string' ? c.recordingUrl : undefined,

@@ -22,8 +22,16 @@ export class QueueModule {
           useFactory: (config: ConfigService) => {
             const redisUrl = config.get<string>('REDIS_URL');
             const nodeEnv = config.get<string>('NODE_ENV', 'development');
+            const queueEnabled =
+              config.get<string>('AGENT_DEPLOYMENT_QUEUE_ENABLED', 'false') ===
+                'true' ||
+              config.get<string>('QUEUE_WEBHOOKS_ENABLED', 'false') ===
+                'true' ||
+              config.get<string>('QUEUE_EMAIL_ENABLED', 'false') === 'true' ||
+              config.get<string>('QUEUE_NOTIFICATIONS_ENABLED', 'false') ===
+                'true';
             if (!redisUrl) {
-              if (nodeEnv === 'production') {
+              if (nodeEnv === 'production' && queueEnabled) {
                 throw new Error(
                   'REDIS_URL must be set in production for BullMQ queues. Set REDIS_URL or disable queue features.',
                 );

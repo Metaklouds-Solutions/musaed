@@ -11,7 +11,7 @@ export type SidebarVariant = 'glass-expanded' | 'minimal-compact';
 interface SidebarItemProps {
   to: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
   variant?: SidebarVariant;
   onClick?: () => void;
   badgeCount?: number;

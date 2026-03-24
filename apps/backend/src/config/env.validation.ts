@@ -15,6 +15,9 @@ const booleanString = (defaultValue: 'true' | 'false') =>
     .optional()
     .default(defaultValue);
 
+const isStrictTrue = (value: unknown) =>
+  typeof value === 'string' && value.trim().toLowerCase() === 'true';
+
 /**
  * Joi validation schema for environment variables.
  * Enforces that required secrets are present at startup so the app
@@ -124,4 +127,56 @@ export const envValidationSchema = Joi.object({
 
   // ── Metrics ───────────────────────────────────────────────────────────
   METRICS_API_KEY: Joi.string().optional().allow(''),
-}).options({ allowUnknown: true, stripUnknown: false });
+  // ── Cal.com ───────────────────────────────────────────────────────────
+  CALCOM_WEBHOOK_SECRET: Joi.string().optional().allow(''),
+})
+  .custom((env, helpers) => {
+    const nodeEnv =
+      typeof env.NODE_ENV === 'string'
+        ? env.NODE_ENV.trim().toLowerCase()
+        : 'development';
+    if (nodeEnv !== 'production') {
+      return env;
+    }
+
+    if (
+      typeof env.RETELL_WEBHOOK_SECRET !== 'string' ||
+      env.RETELL_WEBHOOK_SECRET.trim().length === 0
+    ) {
+      return helpers.error('any.custom', {
+        message: 'RETELL_WEBHOOK_SECRET is required in production',
+      });
+    }
+
+    if (
+      typeof env.CALCOM_WEBHOOK_SECRET !== 'string' ||
+      env.CALCOM_WEBHOOK_SECRET.trim().length === 0
+    ) {
+      return helpers.error('any.custom', {
+        message: 'CALCOM_WEBHOOK_SECRET is required in production',
+      });
+    }
+
+    const queueFlags = [
+      env.AGENT_DEPLOYMENT_QUEUE_ENABLED,
+      env.QUEUE_WEBHOOKS_ENABLED,
+      env.QUEUE_EMAIL_ENABLED,
+      env.QUEUE_NOTIFICATIONS_ENABLED,
+    ];
+    const queueEnabled = queueFlags.some(isStrictTrue);
+    if (
+      queueEnabled &&
+      (typeof env.REDIS_URL !== 'string' || env.REDIS_URL.trim().length === 0)
+    ) {
+      return helpers.error('any.custom', {
+        message:
+          'REDIS_URL is required in production when queue features are enabled',
+      });
+    }
+
+    return env;
+  })
+  .messages({
+    'any.custom': '{{#message}}',
+  })
+  .options({ allowUnknown: true, stripUnknown: false });

@@ -4,7 +4,6 @@ import {
   Req,
   Res,
   Headers,
-  HttpCode,
   HttpStatus,
   Logger,
   ForbiddenException,
@@ -72,13 +71,18 @@ export class RetellWebhookController {
     @Headers('x-retell-signature') signature?: string,
     @Headers('x-retell-timestamp') timestampHeader?: string,
   ) {
+    if (this.timestampMaxAgeSec > 0 && !timestampHeader) {
+      throw new ForbiddenException('Missing webhook timestamp');
+    }
+
     if (this.webhookSecret) {
       if (!signature) {
         throw new ForbiddenException('Missing webhook signature');
       }
 
-      if (this.timestampMaxAgeSec > 0 && timestampHeader) {
-        const ts = parseInt(timestampHeader, 10);
+      if (this.timestampMaxAgeSec > 0) {
+        const timestampValue = timestampHeader ?? '';
+        const ts = parseInt(timestampValue, 10);
         if (!Number.isFinite(ts)) {
           throw new ForbiddenException('Invalid webhook timestamp');
         }
@@ -130,13 +134,13 @@ export class RetellWebhookController {
         req.body instanceof Buffer
           ? JSON.parse(req.body.toString('utf8'))
           : req.body;
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid JSON payload');
     }
 
-    console.log('RETELL EVENT:', body.event);
-    console.log('RETELL METADATA:', body.metadata);
-    console.log('RETELL CALL METADATA:', body.call?.metadata);
+    this.logger.debug(
+      `Retell payload parsed: event=${body.event ?? 'unknown'} metadataKeys=${this.listObjectKeys(body.metadata).join(',') || 'none'} callMetadataKeys=${this.listObjectKeys(body.call?.metadata).join(',') || 'none'}`,
+    );
 
     const eventType = body.event;
     this.metrics.recordWebhookReceived('retell');
@@ -192,5 +196,12 @@ export class RetellWebhookController {
       eventType,
     );
     return { received: true };
+  }
+
+  private listObjectKeys(value: unknown): string[] {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return [];
+    }
+    return Object.keys(value as Record<string, unknown>).sort();
   }
 }

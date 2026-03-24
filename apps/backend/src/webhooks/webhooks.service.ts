@@ -341,10 +341,9 @@ export class WebhooksService {
     }
 
     if (existing) {
-      console.log('UPSERT CALL SESSION');
-      console.log('callId:', callId);
-      console.log('tenantId:', '(existing record)');
-      console.log('agentInstanceId:', '(existing record)');
+      this.logger.debug(
+        `Upserting Retell call session for existing record: callId=${normalizedCallId}`,
+      );
       await this.callSessionModel.updateOne(
         { callId: normalizedCallId },
         {
@@ -365,10 +364,9 @@ export class WebhooksService {
       return;
     }
 
-    console.log('UPSERT CALL SESSION');
-    console.log('callId:', callId);
-    console.log('tenantId:', context.tenantId.toString());
-    console.log('agentInstanceId:', context.agentInstanceId.toString());
+    this.logger.debug(
+      `Upserting Retell call session: callId=${normalizedCallId} tenantId=${context.tenantId.toString()} agentInstanceId=${context.agentInstanceId.toString()}`,
+    );
 
     await this.callSessionModel.updateOne(
       { callId: normalizedCallId },

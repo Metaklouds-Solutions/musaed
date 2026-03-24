@@ -44,6 +44,8 @@ export interface AdminTenantRow {
   id: string;
   name: string;
   plan: string;
+  status?: 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'ONBOARDING';
+  inviteSetupUrl?: string;
 }
 
 /** Template option used by onboarding step for agent deployment. */
@@ -87,7 +89,7 @@ export interface TenantListRow {
   id: string;
   name: string;
   plan: string;
-  status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED';
+  status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'ONBOARDING';
   agentCount: number;
   mrr: number;
   callsThisMonth: number;
@@ -203,6 +205,7 @@ export interface AgentVoiceConfig {
   fillerWords: boolean;
   interruptionSensitivity: string;
   ambientSound: boolean;
+  language?: string;
 }
 
 /** Agent chat config. */
@@ -233,6 +236,7 @@ export interface AgentLlmConfig {
   customPromptEnabled: boolean;
   languageDetection: string;
   fallbackLanguage: string;
+  provider?: string;
 }
 
 /** Agent skill with enabled/priority. */
@@ -281,6 +285,9 @@ export interface AgentSyncInfo {
   lastWebhookEvent: string;
   webhookStatus: string;
   autoSync: string;
+  lastSync?: string;
+  status?: string;
+  message?: string;
 }
 
 /** Full agent detail for AgentDetailPage. */

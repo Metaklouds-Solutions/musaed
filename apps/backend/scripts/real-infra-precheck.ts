@@ -57,7 +57,19 @@ function optionalEnv(name: string): 'set' | 'empty' {
   return 'empty';
 }
 
-async function main(): Promise<void> {
+function createTimeoutSignal(timeoutMs: number): {
+  signal: AbortSignal;
+  clear: () => void;
+} {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return {
+    signal: controller.signal,
+    clear: () => clearTimeout(timer),
+  };
+}
+
+async function main(): Promise<number> {
   console.log('=== Real infrastructure precheck (Agents 1–2) ===\n');
   console.log(`Health URL: ${BASE}/health\n`);
 
@@ -72,24 +84,27 @@ async function main(): Promise<void> {
 
   if (!envOk) {
     console.error('\n[FAIL] Required env vars missing. Fix .env before smoke test.');
-    process.exit(1);
+    return 1;
   }
 
   let res: Response;
+  const timeout = createTimeoutSignal(10_000);
   try {
     res = await fetch(`${BASE.replace(/\/$/, '')}/health`, {
-      signal: AbortSignal.timeout(10_000),
+      signal: timeout.signal,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error(`[FAIL] GET /health unreachable: ${msg}`);
     console.error('       Start the API (npm run start:dev) or set SMOKE_BASE_URL to your public API.');
-    process.exit(1);
+    timeout.clear();
+    return 1;
   }
+  timeout.clear();
 
   if (!res.ok) {
     console.error(`[FAIL] GET /health HTTP ${res.status}`);
-    process.exit(1);
+    return 1;
   }
 
   const body = (await res.json()) as HealthBody;
@@ -103,24 +118,24 @@ async function main(): Promise<void> {
 
   if (db !== 'up') {
     console.error('[FAIL] Database check is not up');
-    process.exit(1);
+    return 1;
   }
 
   if (redis !== 'up') {
     console.error('[FAIL] Redis check is not up (ECONNREFUSED or timeout). Fix REDIS_URL / Redis.');
     if (body.checks?.redis?.error) console.error(`       ${body.checks.redis.error}`);
-    process.exit(1);
+    return 1;
   }
 
   if (retell !== 'up' && retell !== 'skipped') {
     console.error('[FAIL] Retell check is not up or skipped');
-    process.exit(1);
+    return 1;
   }
 
   const allowDegraded = process.env.ALLOW_DEGRADED_HEALTH === 'true';
   if (status !== 'ok' && !allowDegraded) {
     console.error(`[FAIL] Overall health status is "${status}" (expected ok). Set ALLOW_DEGRADED_HEALTH=true to allow degraded.`);
-    process.exit(1);
+    return 1;
   }
 
   if (status === 'degraded' && allowDegraded) {
@@ -128,7 +143,14 @@ async function main(): Promise<void> {
   }
 
   console.log('\n[PASSED] Precheck: env + GET /health');
-  process.exit(0);
+  return 0;
 }
 
-void main();
+void main()
+  .then((code) => {
+    process.exitCode = code;
+  })
+  .catch((e) => {
+    console.error('[FAIL]', e instanceof Error ? e.message : String(e));
+    process.exitCode = 1;
+  });

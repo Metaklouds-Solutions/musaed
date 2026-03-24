@@ -503,16 +503,29 @@ export const agentsAdapter = {
           : tenantId ?? '';
 
       // Parse Retell config
-      const customConfig = agent.configSnapshot || {};
+      const customConfig =
+        agent.configSnapshot && typeof agent.configSnapshot === 'object'
+          ? (agent.configSnapshot as Record<string, unknown>)
+          : {};
       const voiceConfig = { ...DEFAULT_VOICE_CONFIG };
-      if (customConfig.voice_id) voiceConfig.voiceId = customConfig.voice_id;
-      if (customConfig.voice_temperature) voiceConfig.stability = customConfig.voice_temperature;
+      if (typeof customConfig.voice_id === 'string') {
+        voiceConfig.voiceId = customConfig.voice_id;
+      }
+      if (typeof customConfig.voice_temperature === 'number') {
+        voiceConfig.stability = customConfig.voice_temperature;
+      }
       if (customConfig.ambient_sound) voiceConfig.ambientSound = true;
-      if (customConfig.language) voiceConfig.language = customConfig.language;
+      if (typeof customConfig.language === 'string') {
+        voiceConfig.language = customConfig.language;
+      }
       
       const llmConfig = { ...DEFAULT_LLM_CONFIG };
-      if (customConfig.llm_websocket_url) llmConfig.provider = customConfig.llm_websocket_url;
-      if (customConfig.general_prompt) llmConfig.systemPrompt = customConfig.general_prompt;
+      if (typeof customConfig.llm_websocket_url === 'string') {
+        llmConfig.provider = customConfig.llm_websocket_url;
+      }
+      if (typeof customConfig.general_prompt === 'string') {
+        llmConfig.systemPrompt = customConfig.general_prompt;
+      }
 
       return {
         id,
@@ -533,6 +546,7 @@ export const agentsAdapter = {
         abTest: DEFAULT_AB_TEST,
         recentRuns: [] as AgentRunRow[],
         syncInfo: {
+          ...DEFAULT_SYNC_INFO,
           lastSync: readStringOrNull(agent.lastSyncedAt) ?? '',
           status: 'synced',
           message: 'Synced successfully with Retell.',

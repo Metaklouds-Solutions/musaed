@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import type { Session, User } from '../../shared/types';
 import { setTokens, clearTokens, getAccessToken, getRefreshToken, saveUser } from '../../lib/apiClient';
 import { primeTenantSettingsCaches } from '../../adapters/api/tenantSettingsCache';
+import { normalizeAuthUser } from '../../lib/authUser';
 import { SESSION_IDLE_TIMEOUT_MS, SESSION_WARNING_BEFORE_MS } from './sessionConfig';
 
 const ACTIVITY_THROTTLE_MS = 10_000;
@@ -124,16 +125,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
 
         const userData = await res.json();
-        if (!userData?._id) return null;
-        return {
-          id: userData._id,
-          email: userData.email,
-          name: userData.name,
-          role: userData.role,
-          avatarUrl: userData.avatarUrl,
-          tenantId: userData.tenantId,
-          tenantRole: userData.tenantRole,
-        };
+        return normalizeAuthUser(userData);
       } catch {
         return null;
       }
