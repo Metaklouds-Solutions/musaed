@@ -45,10 +45,10 @@ export function TenantActivityTab({ tickets }: TenantActivityTabProps) {
   const viewBasePath = isAdmin && id ? `/admin/tenants/${id}/calls` : '/calls';
 
   const { calls, callsLoading, getCustomerName } = useTenantCallsTabData();
-  const { runs, loading: runsLoading } = useTenantRunsTabData();
+  const { runs, loading: runsLoading, error: runsError } = useTenantRunsTabData();
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
-  const { data: events } = useAsyncData(
+  const { data: events, error: runEventsError } = useAsyncData(
     () =>
       selectedRunId
         ? runsAdapter.getRunEvents(selectedRunId, id ?? undefined)
@@ -98,7 +98,11 @@ export function TenantActivityTab({ tickets }: TenantActivityTabProps) {
             Agent Runs
           </CardHeader>
           <CardBody className="p-0">
-            {runsLoading ? (
+            {runsError ? (
+              <p className="px-4 py-6 text-sm text-red-600" role="alert">
+                {runsError.message}
+              </p>
+            ) : runsLoading ? (
               <TableSkeleton rows={5} cols={7} minWidth="min-w-[640px]" />
             ) : runs.length > 0 ? (
               <RunsTable runs={runs} onViewRun={handleViewRun} variant="plain" />
@@ -166,7 +170,13 @@ export function TenantActivityTab({ tickets }: TenantActivityTabProps) {
           onClose={handleCloseModal}
         />
         <div className="p-5">
-          <RunEventsViewer events={events} />
+          {runEventsError ? (
+            <p className="text-sm text-red-600" role="alert">
+              {runEventsError.message}
+            </p>
+          ) : (
+            <RunEventsViewer events={events} />
+          )}
         </div>
       </Modal>
     </motion.div>

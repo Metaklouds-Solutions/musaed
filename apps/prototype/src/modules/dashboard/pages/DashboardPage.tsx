@@ -7,7 +7,7 @@ import { useState, useMemo } from 'react';
 
 const HEADER_ANIMATION = { duration: 0.3 };
 import { motion } from 'motion/react';
-import { PageHeader, EmptyState, LottiePlayer, LOTTIE_ASSETS, SkeletonCard } from '../../../shared/ui';
+import { PageHeader, EmptyState, SkeletonCard } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { TenantKpiCards } from '../components/TenantKpiCards';
@@ -15,8 +15,7 @@ import { RecentCallsTable } from '../components/RecentCallsTable';
 import { ConversionFunnel } from '../components/ConversionFunnel';
 import { TrendChart } from '../components/TrendChart';
 import { useDashboard } from '../hooks';
-import { ArrowRight, Bell, LayoutDashboard, Users } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { LayoutDashboard } from 'lucide-react';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -80,12 +79,8 @@ export function DashboardPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={HEADER_ANIMATION}
-        className="mb-6 relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[linear-gradient(135deg,var(--bg-elevated)_0%,var(--bg-subtle)_100%)] p-6 shadow-[var(--shadow-card)]"
+        className="mb-6 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-6"
       >
-        <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[var(--ds-primary)]/10 blur-2xl pointer-events-none" />
-        <div className="absolute top-0 right-0 w-32 h-32 opacity-20 pointer-events-none -translate-y-8 translate-x-8">
-          <LottiePlayer src={LOTTIE_ASSETS.chart} width={128} height={128} loop />
-        </div>
         <PageHeader
           title="Dashboard"
           description="Clinic command center: calls, agent, and conversion."
@@ -95,22 +90,6 @@ export function DashboardPage() {
             <p className="text-[var(--text-secondary)] text-sm">
               {getGreeting()}, {displayName}
             </p>
-            <Link
-              to="/tenants/me"
-              className="inline-flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-primary-hover)] transition-colors w-fit"
-            >
-              <Users size={14} aria-hidden="true" />
-              View tenant profile
-              <ArrowRight size={12} aria-hidden="true" />
-            </Link>
-            <Link
-              to="/alerts"
-              className="inline-flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-primary-hover)] transition-colors w-fit"
-            >
-              <Bell size={14} aria-hidden="true" />
-              View alerts
-              <ArrowRight size={12} aria-hidden="true" />
-            </Link>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />

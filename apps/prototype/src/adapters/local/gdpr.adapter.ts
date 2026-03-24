@@ -45,7 +45,7 @@ export const gdprAdapter = {
    * Export user data (GDPR Art 20 - data portability).
    * Downloads JSON with profile and 2FA status.
    */
-  exportUserData(user: User): void {
+  async exportUserData(user: User): Promise<void> {
     const data = {
       exportedAt: new Date().toISOString(),
       type: 'user_data_export',
@@ -74,7 +74,7 @@ export const gdprAdapter = {
    * Export customer data (GDPR - for tenant on behalf of customer).
    * Downloads JSON with customer, calls, bookings.
    */
-  exportCustomerData(customerId: string, tenantId: string | undefined): void {
+  async exportCustomerData(customerId: string, tenantId: string | undefined): Promise<void> {
     const customer = seedCustomers.find(
       (c) => c.id === customerId && (tenantId == null || c.tenantId === tenantId)
     );
@@ -111,7 +111,7 @@ export const gdprAdapter = {
    * Delete user data (GDPR Art 17 - right to erasure).
    * Clears 2FA; caller must logout.
    */
-  deleteUserData(userId: string, onLogout: () => void): void {
+  async deleteUserData(userId: string, onLogout: () => void): Promise<void> {
     twoFactorAdapter.disable(userId);
     onLogout();
   },
@@ -120,7 +120,7 @@ export const gdprAdapter = {
    * Delete customer data (GDPR - soft delete for prototype).
    * Customer is hidden from lists; calls/bookings remain but customer ref is anonymized in export.
    */
-  deleteCustomerData(customerId: string, _tenantId: string | undefined): void {
+  async deleteCustomerData(customerId: string, _tenantId: string | undefined): Promise<void> {
     const ids = getDeletedCustomerIds();
     ids.add(customerId);
     setDeletedCustomerIds(ids);

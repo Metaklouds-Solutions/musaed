@@ -3,29 +3,53 @@
  * Layout-only; data from useAdminOverview (adapter).
  */
 
+import * as React from 'react';
 import { motion } from 'motion/react';
 import { PageHeader } from '../../../shared/ui';
+import { DateRangePicker, type DateRange } from '../../../components/DateRangePicker';
 import { AdminKpiCards } from '../components/AdminKpiCards';
 import { AdminRecentTenants } from '../components/AdminRecentTenants';
 import { AdminSupportSnapshot } from '../components/AdminSupportSnapshot';
 import { AdminRecentCalls } from '../components/AdminRecentCalls';
-import { AdminSystemHealth } from '../components/AdminSystemHealth';
 import { AdminOverviewSkeleton } from '../components/AdminOverviewSkeleton';
 import { useAdminOverview } from '../hooks';
-import { AlertTriangle, CheckCircle2, Radio } from 'lucide-react';
 
 const HEADER_ANIMATION = { duration: 0.3 };
 
-function getSignalTone(status: 'healthy' | 'warning' | 'empty') {
-  if (status === 'warning') return 'warning';
-  if (status === 'healthy') return 'positive';
-  return 'neutral';
+function getInitialRange(): DateRange {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(end.getDate() - 6);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
 }
 
-/** Admin dashboard page. Platform pulse, tenants, support, calls, health. */
+function isWithinRange(dateString: string, range: DateRange): boolean {
+  const t = new Date(dateString).getTime();
+  if (Number.isNaN(t)) return false;
+  return t >= range.start.getTime() && t <= range.end.getTime();
+}
+
+function getDisplayName(name?: string | null, email?: string | null): string {
+  if (name && name.trim().length > 0) return name.trim();
+  if (email && email.includes('@')) return email.split('@')[0];
+  return 'Admin';
+}
+
+/** Admin dashboard page. Platform pulse, tenants, support, calls. */
 export function AdminOverviewPage() {
-  const { signal, health, kpis, recentTenants, supportSnapshot, recentCalls, loading } = useAdminOverview();
-  const tone = getSignalTone(signal.status ?? 'empty');
+  const { user, kpis, recentTenants, supportSnapshot, recentCalls, loading } = useAdminOverview();
+  const [dateRange, setDateRange] = React.useState<DateRange>(getInitialRange);
+  const filteredRecentCalls = React.useMemo(
+    () => recentCalls.filter((call) => isWithinRange(call.startedAt, dateRange)),
+    [recentCalls, dateRange]
+  );
+  const filteredRecentTenants = React.useMemo(
+    () => recentTenants.filter((tenant) => isWithinRange(tenant.createdAt, dateRange)),
+    [recentTenants, dateRange]
+  );
+  const adminName = getDisplayName(user?.name, user?.email);
 
   if (loading) {
     return <AdminOverviewSkeleton />;
@@ -37,49 +61,35 @@ export function AdminOverviewPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={HEADER_ANIMATION}
-        className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-6"
+        className="rounded-[var(--radius-card)] panel-soft p-6"
       >
-        <PageHeader title="Admin Dashboard" description="Platform pulse, tenants, and system health" />
-      </motion.header>
-
-      <section
-        className={`rounded-[var(--radius-card)] border p-4 ${
-          tone === 'warning'
-            ? 'border-[var(--warning)]/40 bg-[color-mix(in_srgb,var(--warning)_8%,var(--bg-elevated))]'
-            : tone === 'positive'
-              ? 'border-emerald-500/30 bg-[color-mix(in_srgb,emerald_8%,var(--bg-elevated))]'
-              : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)]/90'
-        }`}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div
-              className={`mt-0.5 rounded-full p-2 ${
-                tone === 'warning'
-                  ? 'bg-[var(--warning)]/15 text-[var(--warning)]'
-                  : tone === 'positive'
-                    ? 'bg-emerald-500/15 text-emerald-400'
-                    : 'bg-[var(--ds-primary)]/15 text-[var(--ds-primary)]'
-              }`}
-            >
-              {tone === 'warning' ? <AlertTriangle size={16} /> : tone === 'positive' ? <CheckCircle2 size={16} /> : <Radio size={16} />}
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">{signal.reason ?? 'No signal'}</h2>
-            </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <PageHeader title="Admin Dashboard" description="Platform pulse, tenants, and system health" />
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Welcome back, <span className="font-semibold text-[var(--text-primary)]">{adminName}</span>. Here is today&apos;s platform snapshot.
+            </p>
           </div>
-          <AdminSystemHealth health={health} />
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            mode="apply"
+            presets={['7d', '30d', 'month', 'custom']}
+            aria-label="Filter admin dashboard date range"
+            className="w-full md:w-auto"
+          />
         </div>
-      </section>
+      </motion.header>
 
       <AdminKpiCards kpis={kpis} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AdminRecentTenants tenants={recentTenants} />
-        <AdminRecentCalls calls={recentCalls} />
+        <AdminRecentTenants tenants={filteredRecentTenants} />
+        <AdminRecentCalls calls={filteredRecentCalls} />
       </div>
 
       <AdminSupportSnapshot snapshot={supportSnapshot} />
     </div>
   );
 }
+

@@ -175,6 +175,24 @@
             "destination_node_id": "node-first-visit-check"
           },
           {
+            "condition": "إلغاء موعد",
+            "id": "edge-start-to-cancel",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يريد إلغاء موعد أو حجز قائم مثل: أبغى ألغي الموعد، أبغى أكنسل، ألغي الحجز، ما أبغى الموعد"
+            },
+            "destination_node_id": "node-cancel-collect-email"
+          },
+          {
+            "condition": "إعادة جدولة موعد",
+            "id": "edge-start-to-reschedule",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يريد تغيير أو إعادة جدولة موعد قائم مثل: أبغى أغيّر الموعد، أبغى أأجل الموعد، تغيير موعد، إعادة جدولة"
+            },
+            "destination_node_id": "node-reschedule-collect-email"
+          },
+          {
             "condition": "سؤال عام",
             "id": "edge-start-to-general",
             "transition_condition": {
@@ -218,7 +236,8 @@
             "transition_condition": {
               "type": "prompt",
               "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة بقول: شكراً أو مع السلامة أو باي أو خلاص أو يعطيك العافية أو ما قصرت أو تسلم أو الله يجزاك خير أو انتهينا أو لا في شيء ثاني. تأكدي أن المتصل أنهى طلبه فعلاً وليس في منتصف تسجيل أو حجز نشط."
-            }
+            },
+            "destination_node_id": "node-end-call"
           }
         ],
         "id": "node-confirm-booking-complete",
@@ -250,7 +269,8 @@
             "transition_condition": {
               "type": "prompt",
               "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة بقول: شكراً أو مع السلامة أو باي أو خلاص أو يعطيك العافية أو ما قصرت أو تسلم أو الله يجزاك خير أو انتهينا أو لا في شيء ثاني. تأكدي أن المتصل أنهى طلبه فعلاً وليس في منتصف تسجيل أو حجز نشط."
-            }
+            },
+            "destination_node_id": "node-end-call"
           }
         ],
         "id": "node-update-contact",
@@ -324,7 +344,8 @@
             "transition_condition": {
               "type": "prompt",
               "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة بقول: شكراً أو مع السلامة أو باي أو خلاص أو يعطيك العافية أو ما قصرت أو تسلم أو الله يجزاك خير أو انتهينا أو لا في شيء ثاني. تأكدي أن المتصل أنهى طلبه فعلاً وليس في منتصف تسجيل أو حجز نشط."
-            }
+            },
+            "destination_node_id": "node-end-call"
           }
         ],
         "id": "node-transfer-announce",
@@ -356,7 +377,8 @@
             "transition_condition": {
               "type": "prompt",
               "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة بقول: شكراً أو مع السلامة أو باي أو خلاص أو يعطيك العافية أو ما قصرت أو تسلم أو الله يجزاك خير أو انتهينا أو لا في شيء ثاني. تأكدي أن المتصل أنهى طلبه فعلاً وليس في منتصف تسجيل أو حجز نشط."
-            }
+            },
+            "destination_node_id": "node-end-call"
           }
         ],
         "id": "node-transfer-failed",
@@ -787,7 +809,7 @@
         },
         "instruction": {
           "type": "prompt",
-          "text": "تبغى دكتور معين أو أرشح لك واحد بناءً على أعراضك؟ استخدمي قاعدة المعارف للعثور على الطبيب والوقت المتاح. إذا كان الوقت المطلوب غير متاح، قولي: 'هذا الوقت مو متاح' واذكري السبب (مثلاً 'العيادة تقفل الساعة 10 مساءً') ثم اقترحي وقتين بديلين. إذا لم يكن هناك موعد مؤكد متاح ووافق على قائمة الانتظار، قولي: 'هذا مو موعد مؤكد. راح نتواصل معك على الواتساب والرسائل النصية عند توفر موعد'."
+          "text": "تبغى دكتور معين أو أرشح لك واحد بناءً على أعراضك؟ استخدمي قاعدة المعارف لتحديد التخصص والطبيب المناسب. بعد ما يحدد المتصل التاريخ والوقت المفضل، استخدمي أداة get_available_slots للتحقق من المواعيد المتوفرة فعلياً في النظام. إذا كان الوقت المطلوب غير متاح، قولي: 'هذا الوقت مو متاح' واذكري السبب واقترحي الأوقات المتوفرة من نتائج الأداة. إذا لم يكن هناك موعد مؤكد متاح ووافق على قائمة الانتظار، قولي: 'هذا مو موعد مؤكد. راح نتواصل معك على الواتساب والرسائل النصية عند توفر موعد'."
         }
       },
       {
@@ -829,7 +851,7 @@
         },
         "instruction": {
           "type": "prompt",
-          "text": "اذكري جميع تفاصيل الحجز في جملة واحدة: اسم الطبيب، اليوم، التاريخ الكامل، والوقت. مثال: 'حجزت لك مع الدكتورة سارة يوم الأحد 15 يونيو، الساعة 5 مساءً. تأكد؟' انتظري تأكيد واضح من المستخدم قبل المتابعة."
+          "text": "اذكري جميع تفاصيل الحجز في جملة واحدة: اسم الطبيب، اليوم، التاريخ الكامل، والوقت. مثال: 'حجزت لك مع الدكتورة سارة يوم الأحد 15 يونيو، الساعة 5 مساءً. تأكد؟' انتظري تأكيد واضح من المستخدم. بعد التأكيد، استخدمي أداة book_meeting فوراً لتسجيل الموعد في النظام. أرسلي الإيميل والاسم الأول واسم العائلة والوقت المؤكد بصيغة ISO 8601 (مثل '2025-06-15T17:00:00'). إذا نجح الحجز، انتقلي لمعلومات ما بعد الحجز. إذا فشل، أخبري المتصل وحاولي وقت بديل."
         }
       },
       {
@@ -917,6 +939,225 @@
         }
       },
       {
+        "name": "Cancel: Collect Email",
+        "id": "node-cancel-collect-email",
+        "type": "conversation",
+        "edges": [
+          {
+            "condition": "تم الإلغاء",
+            "id": "edge-cancel-done",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "تم إلغاء الموعد بنجاح بعد استخدام أداة cancel_booking"
+            },
+            "destination_node_id": "node-cancel-confirm"
+          },
+          {
+            "condition": "لا يوجد موعد",
+            "id": "edge-cancel-not-found",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "لم يتم العثور على موعد مرتبط بالإيميل المقدم أو فشلت عملية الإلغاء"
+            },
+            "destination_node_id": "node-anything-else"
+          },
+          {
+            "condition": "حالة طارئة",
+            "id": "edge-emergency-cancel",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يذكر حالة طارئة خطيرة"
+            },
+            "destination_node_id": "node-emergency"
+          },
+          {
+            "condition": "إنهاء المكالمة",
+            "id": "edge-end-node-cancel",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة"
+            },
+            "destination_node_id": "node-end-call"
+          }
+        ],
+        "display_position": {
+          "x": 1100,
+          "y": 3500
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "المتصل يريد إلغاء موعد. اطلبي إيميله للبحث عن الحجز: 'تمام، عطيني إيميلك عشان ألقى الحجز'. بعد ما يعطيك الإيميل، أكدي الإيميل بتهجئته ثم استخدمي أداة cancel_booking لإلغاء الموعد. إذا نجح الإلغاء، أخبري المتصل: 'تم إلغاء موعدك'. إذا لم يُعثر على حجز، قولي: 'ما لقيت حجز على هذا الإيميل، ممكن تتأكد من الإيميل؟'"
+        }
+      },
+      {
+        "name": "Reschedule: Collect Email",
+        "id": "node-reschedule-collect-email",
+        "type": "conversation",
+        "edges": [
+          {
+            "condition": "الإيميل تم جمعه",
+            "id": "edge-reschedule-email-done",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل قدم إيميله ويريد تحديد وقت جديد للموعد"
+            },
+            "destination_node_id": "node-reschedule-new-time"
+          },
+          {
+            "condition": "لا يوجد موعد",
+            "id": "edge-reschedule-not-found",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "لم يتم العثور على موعد مرتبط بالإيميل المقدم"
+            },
+            "destination_node_id": "node-anything-else"
+          },
+          {
+            "condition": "حالة طارئة",
+            "id": "edge-emergency-reschedule-email",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يذكر حالة طارئة خطيرة"
+            },
+            "destination_node_id": "node-emergency"
+          },
+          {
+            "condition": "إنهاء المكالمة",
+            "id": "edge-end-node-reschedule-email",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة"
+            },
+            "destination_node_id": "node-end-call"
+          }
+        ],
+        "display_position": {
+          "x": 1100,
+          "y": 4500
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "المتصل يريد تغيير موعده. اطلبي إيميله للبحث عن الحجز: 'أكيد، عطيني إيميلك عشان ألقى موعدك الحالي'. أكدي الإيميل بتهجئته. إذا لم يُعثر على حجز، قولي: 'ما لقيت حجز على هذا الإيميل، ممكن تتأكد؟'"
+        }
+      },
+      {
+        "name": "Reschedule: New Time",
+        "id": "node-reschedule-new-time",
+        "type": "conversation",
+        "edges": [
+          {
+            "condition": "تمت إعادة الجدولة",
+            "id": "edge-reschedule-done",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "تمت إعادة جدولة الموعد بنجاح باستخدام أداة reschedule_booking"
+            },
+            "destination_node_id": "node-reschedule-confirm"
+          },
+          {
+            "condition": "الوقت غير متاح",
+            "id": "edge-reschedule-unavailable",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "الوقت الجديد غير متاح ويحتاج المتصل لاختيار وقت بديل"
+            },
+            "destination_node_id": "node-reschedule-new-time"
+          },
+          {
+            "condition": "حالة طارئة",
+            "id": "edge-emergency-reschedule-time",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يذكر حالة طارئة خطيرة"
+            },
+            "destination_node_id": "node-emergency"
+          },
+          {
+            "condition": "إنهاء المكالمة",
+            "id": "edge-end-node-reschedule-time",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة"
+            },
+            "destination_node_id": "node-end-call"
+          }
+        ],
+        "display_position": {
+          "x": 1650,
+          "y": 4500
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "المتصل يريد تغيير موعده لوقت جديد. اسألي: 'متى تبغى الموعد الجديد؟'. بعد ما يحدد التاريخ والوقت، استخدمي أداة get_available_slots للتأكد من توفر الوقت. إذا كان متاحاً، أكدي التفاصيل مع المتصل: 'الموعد الجديد يوم [اليوم] [التاريخ] الساعة [الوقت]، تأكد؟'. بعد التأكيد، استخدمي أداة reschedule_booking مع الإيميل والوقت الجديد بصيغة ISO 8601. إذا الوقت مو متاح، قولي: 'هذا الوقت مو متاح' واقترحي البدائل من نتائج الأداة."
+        }
+      },
+      {
+        "name": "Reschedule: Confirm",
+        "id": "node-reschedule-confirm",
+        "type": "conversation",
+        "edges": [
+          {
+            "condition": "استمرار",
+            "id": "edge-reschedule-confirm-next",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "تم إبلاغ المتصل بتفاصيل الموعد الجديد"
+            },
+            "destination_node_id": "node-anything-else"
+          },
+          {
+            "condition": "إنهاء المكالمة",
+            "id": "edge-end-node-reschedule-confirm",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة"
+            },
+            "destination_node_id": "node-end-call"
+          }
+        ],
+        "display_position": {
+          "x": 2200,
+          "y": 4500
+        },
+        "instruction": {
+          "type": "static_text",
+          "text": "تم تغيير موعدك بنجاح. راح توصلك رسالة تأكيد بالموعد الجديد على الإيميل. لا تنسى تجيب الهوية والتأمين وتحضر قبل الموعد بربع ساعة. في شي ثاني أقدر أساعدك فيه؟"
+        }
+      },
+      {
+        "name": "Cancel: Confirm",
+        "id": "node-cancel-confirm",
+        "type": "conversation",
+        "edges": [
+          {
+            "condition": "استمرار",
+            "id": "edge-cancel-confirm-next",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "تم إبلاغ المتصل بإلغاء الموعد"
+            },
+            "destination_node_id": "node-anything-else"
+          },
+          {
+            "condition": "إنهاء المكالمة",
+            "id": "edge-end-node-cancel-confirm",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "المتصل يُعبّر بوضوح عن رغبته في إنهاء المكالمة"
+            },
+            "destination_node_id": "node-end-call"
+          }
+        ],
+        "display_position": {
+          "x": 1650,
+          "y": 3500
+        },
+        "instruction": {
+          "type": "static_text",
+          "text": "تم إلغاء موعدك بنجاح. راح توصلك رسالة تأكيد الإلغاء على الإيميل. في شي ثاني أقدر أساعدك فيه؟"
+        }
+      },
+      {
         "instruction": {
           "type": "prompt",
           "text": "يعطيك العافية. الله يحييك بأي وقت. مع السلامة."
@@ -953,6 +1194,159 @@
     "is_published": false,
     "flex_mode": true,
     "is_transfer_cf": false,
-    "tools": []
+    "tools": [
+      {
+        "tool_id": "get_available_slots",
+        "name": "get_available_slots",
+        "type": "custom",
+        "description": "Check available appointment slots at the clinic for a specific date and time preference. Use this tool when the patient wants to book a new appointment or reschedule, and you need to find real-time available time slots.",
+        "url": "{{API_BASE_URL}}/agents/tools/get_available_slots",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "{{RETELL_TOOL_API_KEY}}"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agent_id": {
+              "type": "string",
+              "const": "{{agent_id}}"
+            },
+            "preferred_date": {
+              "type": "string",
+              "description": "The preferred date in YYYY-MM-DD format, e.g. 2025-06-15"
+            },
+            "preferred_time_window": {
+              "type": "string",
+              "description": "Preferred time window such as 'morning', 'afternoon', 'evening', or a specific range like '09:00-12:00'"
+            },
+            "timezone": {
+              "type": "string",
+              "const": "Asia/Riyadh"
+            }
+          },
+          "required": ["agent_id", "preferred_date", "preferred_time_window", "timezone"]
+        },
+        "speak_during_execution": true,
+        "speak_after_execution": true,
+        "execution_message_description": "Tell the patient naturally that you're checking available appointment slots, e.g. 'لحظة بس، خليني أتأكد من المواعيد المتوفرة'",
+        "timeout_ms": 10000
+      },
+      {
+        "tool_id": "book_meeting",
+        "name": "book_meeting",
+        "type": "custom",
+        "description": "Book a confirmed appointment for the patient after they agreed on a specific time slot and all their personal information (name, phone, email) has been collected and confirmed. Only call this after the patient explicitly confirms the appointment details.",
+        "url": "{{API_BASE_URL}}/agents/tools/book_meeting",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "{{RETELL_TOOL_API_KEY}}"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agent_id": {
+              "type": "string",
+              "const": "{{agent_id}}"
+            },
+            "email": {
+              "type": "string",
+              "description": "Patient's email address"
+            },
+            "confirmed_slot": {
+              "type": "string",
+              "description": "The confirmed appointment date and time in ISO 8601 format, e.g. '2025-06-15T09:00:00'"
+            },
+            "timezone": {
+              "type": "string",
+              "const": "Asia/Riyadh"
+            },
+            "firstName": {
+              "type": "string",
+              "description": "Patient's first name"
+            },
+            "lastName": {
+              "type": "string",
+              "description": "Patient's last name or family name"
+            }
+          },
+          "required": ["agent_id", "email", "confirmed_slot", "timezone"]
+        },
+        "speak_during_execution": true,
+        "speak_after_execution": true,
+        "execution_message_description": "Tell the patient naturally that you're confirming and registering their appointment, e.g. 'تمام، خليني أسجل الموعد الحين'",
+        "timeout_ms": 15000
+      },
+      {
+        "tool_id": "cancel_booking",
+        "name": "cancel_booking",
+        "type": "custom",
+        "description": "Cancel an existing appointment for a patient. Use this when the patient calls to cancel their upcoming appointment. Requires the patient's email address to find the booking.",
+        "url": "{{API_BASE_URL}}/agents/tools/cancel_booking",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "{{RETELL_TOOL_API_KEY}}"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agent_id": {
+              "type": "string",
+              "const": "{{agent_id}}"
+            },
+            "email": {
+              "type": "string",
+              "description": "Patient's email address to find their existing booking"
+            },
+            "reason": {
+              "type": "string",
+              "description": "Reason for cancellation if the patient provides one"
+            }
+          },
+          "required": ["agent_id", "email"]
+        },
+        "speak_during_execution": true,
+        "speak_after_execution": true,
+        "execution_message_description": "Tell the patient naturally that you're processing their cancellation, e.g. 'طيب، خليني ألغي الموعد الحين'",
+        "timeout_ms": 10000
+      },
+      {
+        "tool_id": "reschedule_booking",
+        "name": "reschedule_booking",
+        "type": "custom",
+        "description": "Reschedule an existing appointment to a new time slot. Use this when the patient wants to change their appointment to a different date or time. Requires the patient's email and the new desired time slot.",
+        "url": "{{API_BASE_URL}}/agents/tools/reschedule_booking",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "{{RETELL_TOOL_API_KEY}}"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agent_id": {
+              "type": "string",
+              "const": "{{agent_id}}"
+            },
+            "email": {
+              "type": "string",
+              "description": "Patient's email address to find their existing booking"
+            },
+            "new_slot": {
+              "type": "string",
+              "description": "The new appointment date and time in ISO 8601 format, e.g. '2025-06-15T14:00:00'"
+            },
+            "timezone": {
+              "type": "string",
+              "const": "Asia/Riyadh"
+            }
+          },
+          "required": ["agent_id", "email", "new_slot", "timezone"]
+        },
+        "speak_during_execution": true,
+        "speak_after_execution": true,
+        "execution_message_description": "Tell the patient naturally that you're rescheduling their appointment, e.g. 'أوكيه، خليني أغيّر موعدك الحين'",
+        "timeout_ms": 15000
+      }
+    ]
   }
 }

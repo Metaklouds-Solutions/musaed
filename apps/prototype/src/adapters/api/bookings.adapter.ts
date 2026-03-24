@@ -6,15 +6,56 @@ import { api } from '../../lib/apiClient';
 import type { Booking } from '../../shared/types';
 import type { CalendarAppointment, CalendarAvailability } from '../local/bookings.adapter';
 
-function mapBooking(b: any): Booking {
+function mapBooking(b: {
+  _id: string;
+  tenantId?: string;
+  customerId?: { _id: string; name?: string; email?: string; phone?: string } | string;
+  providerId?: { _id: string; name?: string } | string | null;
+  date?: string | Date;
+  timeSlot?: string;
+  durationMinutes?: number;
+  serviceType?: string;
+  status?: string;
+  createdAt?: string;
+  callId?: string;
+  amount?: number;
+  notes?: string;
+  source?: string;
+}): Booking {
+  const customerId =
+    typeof b.customerId === 'string'
+      ? b.customerId
+      : b.customerId?._id ?? b.customerId ?? '';
+  const customer =
+    typeof b.customerId === 'object' && b.customerId
+      ? b.customerId
+      : null;
+  const provider =
+    typeof b.providerId === 'object' && b.providerId ? b.providerId : null;
+  const date = b.date
+    ? typeof b.date === 'string'
+      ? b.date
+      : (b.date as Date).toISOString().slice(0, 10)
+    : undefined;
   return {
     id: b._id,
-    tenantId: b.tenantId,
-    customerId: typeof b.customerId === 'string' ? b.customerId : b.customerId?._id ?? '',
+    tenantId: b.tenantId ?? '',
+    customerId,
     callId: b.callId ?? undefined,
     amount: b.amount ?? 0,
-    status: b.status,
-    createdAt: b.createdAt,
+    status: b.status ?? 'confirmed',
+    createdAt: b.createdAt ?? new Date().toISOString(),
+    date,
+    timeSlot: b.timeSlot,
+    durationMinutes: b.durationMinutes,
+    serviceType: b.serviceType,
+    providerId: provider?._id ?? (typeof b.providerId === 'string' ? b.providerId : undefined),
+    providerName: provider?.name,
+    customerName: customer?.name,
+    customerEmail: customer?.email ?? undefined,
+    customerPhone: customer?.phone ?? undefined,
+    notes: b.notes ?? undefined,
+    source: b.source,
   };
 }
 
@@ -78,14 +119,19 @@ export const bookingsAdapter = {
     }
   },
 
-  async getBookings(tenantId: string | undefined, filters?: { status?: string; date?: string }): Promise<Booking[]> {
+  async getBookings(
+    tenantId: string | undefined,
+    filters?: { status?: string; date?: string; start?: string; end?: string }
+  ): Promise<Booking[]> {
     try {
       const params: Record<string, string> = { page: '1', limit: '100' };
       if (filters?.status) params.status = filters.status;
       if (filters?.date) params.date = filters.date;
+      if (filters?.start) params.start = filters.start;
+      if (filters?.end) params.end = filters.end;
       const qs = new URLSearchParams(params).toString();
-      const resp = await api.get<{ data: any[] }>(`/tenant/bookings?${qs}`);
-      return (resp.data ?? []).map(mapBooking);
+      const resp = await api.get<{ data: unknown[] }>(`/tenant/bookings?${qs}`);
+      return (resp.data ?? []).map((b) => mapBooking(b as Parameters<typeof mapBooking>[0]));
     } catch {
       return [];
     }
@@ -103,6 +149,26 @@ export const bookingsAdapter = {
   async updateStatus(id: string, status: string): Promise<Booking | null> {
     try {
       const updated = await api.patch<any>(`/tenant/bookings/${id}`, { status });
+      return mapBooking(updated);
+    } catch {
+      return null;
+    }
+  },
+
+  async cancelBooking(id: string): Promise<Booking | null> {
+    return this.updateStatus(id, 'cancelled');
+  },
+
+  async rescheduleBooking(
+    id: string,
+    date: string,
+    timeSlot: string
+  ): Promise<Booking | null> {
+    try {
+      const updated = await api.patch<any>(`/tenant/bookings/${id}`, {
+        date,
+        timeSlot,
+      });
       return mapBooking(updated);
     } catch {
       return null;

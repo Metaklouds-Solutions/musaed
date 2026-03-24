@@ -20,7 +20,7 @@ export function PeakHoursChart({ points }: PeakHoursChartProps) {
   const totalCalls = points.reduce((s, p) => s + p.count, 0);
   if (totalCalls === 0) {
     return (
-      <div className="rounded-xl card-glass p-5 min-h-[180px] flex flex-col items-center justify-center text-[var(--text-muted)]">
+      <div className="rounded-xl card p-5 min-h-[180px] flex flex-col items-center justify-center text-[var(--text-muted)]">
         <Clock className="w-10 h-10 mb-2 opacity-50" aria-hidden />
         <p className="text-sm">No call data for peak hours</p>
       </div>
@@ -28,7 +28,7 @@ export function PeakHoursChart({ points }: PeakHoursChartProps) {
   }
 
   return (
-    <div className="rounded-xl card-glass p-5 min-h-[180px]">
+    <div className="rounded-xl card p-5 min-h-[180px]">
       <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
         <Clock className="w-4 h-4 text-[var(--ds-primary)]" aria-hidden />
         Peak hours

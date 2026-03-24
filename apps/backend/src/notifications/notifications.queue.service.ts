@@ -17,6 +17,8 @@ export interface NotificationFanoutPayload {
   meta?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
   priority?: string;
+  dedupeKey?: string;
+  dedupeWindowSeconds?: number;
 }
 
 @Injectable()

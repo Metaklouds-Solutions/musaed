@@ -1,4 +1,9 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Retell, { APIError } from 'retell-sdk';
 import { RETELL_RETRY_ATTEMPTS } from './retell.constants';
@@ -29,22 +34,44 @@ interface RetellConnectivityResult {
 @Injectable()
 export class RetellClient {
   private readonly logger = new Logger(RetellClient.name);
-  private readonly client: Retell;
+  private readonly client: Retell | null;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.getOrThrow<string>('RETELL_API_KEY');
-    this.client = new Retell({
-      apiKey,
-      maxRetries: RETELL_RETRY_ATTEMPTS,
-    });
+    const apiKey = this.configService.get<string>('RETELL_API_KEY')?.trim();
+    if (!apiKey) {
+      this.logger.warn(
+        'RETELL_API_KEY is not set — Retell API calls will fail until configured.',
+      );
+      this.client = null;
+    } else {
+      this.client = new Retell({
+        apiKey,
+        maxRetries: RETELL_RETRY_ATTEMPTS,
+      });
+    }
+  }
+
+  /** True when the SDK client is initialized (API key present). */
+  isConfigured(): boolean {
+    return this.client !== null;
+  }
+
+  private requireClient(): Retell {
+    if (!this.client) {
+      throw new ServiceUnavailableException(
+        'Retell is not configured. Set RETELL_API_KEY in the environment.',
+      );
+    }
+    return this.client;
   }
 
   /**
    * Creates a Retell conversation flow and returns its identifier.
    */
   async createConversationFlow(flow: JsonRecord): Promise<RetellFlowResponse> {
+    const client = this.requireClient();
     try {
-      const response = await this.client.conversationFlow.create(flow as any);
+      const response = await client.conversationFlow.create(flow as any);
       return { conversation_flow_id: response.conversation_flow_id };
     } catch (error) {
       throw this.handleError(error, 'createConversationFlow');
@@ -55,8 +82,9 @@ export class RetellClient {
    * Creates a Retell chat agent for chat/email channels.
    */
   async createChatAgent(payload: JsonRecord): Promise<RetellAgentResponse> {
+    const client = this.requireClient();
     try {
-      const response = await this.client.chatAgent.create(payload as any);
+      const response = await client.chatAgent.create(payload as any);
       return { agent_id: response.agent_id };
     } catch (error) {
       throw this.handleError(error, 'createChatAgent');
@@ -67,8 +95,9 @@ export class RetellClient {
    * Creates a Retell voice agent.
    */
   async createAgent(payload: JsonRecord): Promise<RetellAgentResponse> {
+    const client = this.requireClient();
     try {
-      const response = await this.client.agent.create(payload as any);
+      const response = await client.agent.create(payload as any);
       return { agent_id: response.agent_id };
     } catch (error) {
       throw this.handleError(error, 'createAgent');
@@ -79,8 +108,9 @@ export class RetellClient {
    * Deletes a Retell voice agent if provider cleanup is required.
    */
   async deleteAgent(agentId: string): Promise<RetellDeleteResponse> {
+    const client = this.requireClient();
     try {
-      await this.client.agent.delete(agentId);
+      await client.agent.delete(agentId);
       return { success: true };
     } catch (error) {
       throw this.handleError(error, 'deleteAgent');
@@ -91,8 +121,9 @@ export class RetellClient {
    * Deletes a Retell chat agent if provider cleanup is required.
    */
   async deleteChatAgent(agentId: string): Promise<RetellDeleteResponse> {
+    const client = this.requireClient();
     try {
-      await this.client.chatAgent.delete(agentId);
+      await client.chatAgent.delete(agentId);
       return { success: true };
     } catch (error) {
       throw this.handleError(error, 'deleteChatAgent');
@@ -105,8 +136,9 @@ export class RetellClient {
   async deleteConversationFlow(
     conversationFlowId: string,
   ): Promise<RetellDeleteResponse> {
+    const client = this.requireClient();
     try {
-      await this.client.conversationFlow.delete(conversationFlowId);
+      await client.conversationFlow.delete(conversationFlowId);
       return { success: true };
     } catch (error) {
       throw this.handleError(error, 'deleteConversationFlow');
@@ -117,8 +149,9 @@ export class RetellClient {
    * Retrieves a specific call by its ID.
    */
   async getCall(callId: string) {
+    const client = this.requireClient();
     try {
-      return await this.client.call.retrieve(callId);
+      return await client.call.retrieve(callId);
     } catch (error) {
       throw this.handleError(error, 'getCall');
     }
@@ -128,8 +161,9 @@ export class RetellClient {
    * Updates call metadata or flags.
    */
   async updateCall(callId: string, payload: any) {
+    const client = this.requireClient();
     try {
-      return await this.client.call.update(callId, payload);
+      return await client.call.update(callId, payload);
     } catch (error) {
       throw this.handleError(error, 'updateCall');
     }
@@ -139,8 +173,9 @@ export class RetellClient {
    * Lists calls matching given criteria.
    */
   async listCalls(filterCriteria?: JsonRecord) {
+    const client = this.requireClient();
     try {
-      return await this.client.call.list(filterCriteria as any);
+      return await client.call.list(filterCriteria as any);
     } catch (error) {
       throw this.handleError(error, 'listCalls');
     }
@@ -150,8 +185,9 @@ export class RetellClient {
    * Creates a new web call, returning the call ID and access token.
    */
   async createWebCall(payload: { agent_id: string; metadata?: any }) {
+    const client = this.requireClient();
     try {
-      return await this.client.call.createWebCall(payload);
+      return await client.call.createWebCall(payload);
     } catch (error) {
       throw this.handleError(error, 'createWebCall');
     }
@@ -161,8 +197,9 @@ export class RetellClient {
    * Retrieves a voice agent by ID.
    */
   async getAgent(agentId: string) {
+    const client = this.requireClient();
     try {
-      return await this.client.agent.retrieve(agentId);
+      return await client.agent.retrieve(agentId);
     } catch (error) {
       throw this.handleError(error, 'getAgent');
     }
@@ -172,8 +209,9 @@ export class RetellClient {
    * Retrieves a chat agent by ID.
    */
   async getChatAgent(agentId: string) {
+    const client = this.requireClient();
     try {
-      return await this.client.chatAgent.retrieve(agentId);
+      return await client.chatAgent.retrieve(agentId);
     } catch (error) {
       throw this.handleError(error, 'getChatAgent');
     }
@@ -183,8 +221,9 @@ export class RetellClient {
    * Creates a new chat.
    */
   async createChat(payload: { agent_id: string; metadata?: any }) {
+    const client = this.requireClient();
     try {
-      return await this.client.chat.create(payload);
+      return await client.chat.create(payload);
     } catch (error) {
       throw this.handleError(error, 'createChat');
     }
@@ -194,8 +233,9 @@ export class RetellClient {
    * Retrieves a chat by ID.
    */
   async getChat(chatId: string) {
+    const client = this.requireClient();
     try {
-      return await this.client.chat.retrieve(chatId);
+      return await client.chat.retrieve(chatId);
     } catch (error) {
       throw this.handleError(error, 'getChat');
     }
@@ -205,8 +245,9 @@ export class RetellClient {
    * Lists chats matching given criteria.
    */
   async listChats(filterCriteria?: JsonRecord) {
+    const client = this.requireClient();
     try {
-      return await this.client.chat.list(filterCriteria as any);
+      return await client.chat.list(filterCriteria as any);
     } catch (error) {
       throw this.handleError(error, 'listChats');
     }
@@ -217,8 +258,9 @@ export class RetellClient {
    * Retell API expects { chat_id, content }.
    */
   async createChatCompletion(chatId: string, content: string) {
+    const client = this.requireClient();
     try {
-      return await this.client.chat.createChatCompletion({
+      return await client.chat.createChatCompletion({
         chat_id: chatId,
         content,
       });
@@ -230,7 +272,16 @@ export class RetellClient {
   /**
    * Probes Retell API network reachability for health checks.
    */
-  async probeConnectivity(): Promise<RetellConnectivityResult> {
+  async probeConnectivity(): Promise<
+    RetellConnectivityResult & { skipped?: boolean }
+  > {
+    if (!this.client) {
+      return {
+        reachable: false,
+        statusCode: null,
+        skipped: true,
+      };
+    }
     try {
       await this.client.agent.list();
       return {

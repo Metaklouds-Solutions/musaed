@@ -86,6 +86,15 @@ interface TenantBookingsApiResponse {
   total?: number;
 }
 
+interface TenantAnalyticsResponse {
+  totalCalls?: number;
+  avgDuration?: number;
+  outcomes?: {
+    booked?: number;
+    escalated?: number;
+  };
+}
+
 interface TenantBillingApiResponse extends Record<string, unknown> {
   tenantId?: string;
   plan?: Record<string, unknown> | string | null;
@@ -133,6 +142,14 @@ function normalizeChannels(rawChannels: unknown, fallbackChannel: unknown): Agen
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function formatAvgDuration(sec: number): string {
+  if (sec <= 0) return '0s';
+  if (sec < 60) return `${sec}s`;
+  const minutes = Math.floor(sec / 60);
+  const seconds = sec % 60;
+  return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
 }
 
 function withTenantScope(path: string, tenantId: string | null, isAdmin: boolean): string {
@@ -343,7 +360,25 @@ export const tenantsAdapter = {
             .get<TenantCallsApiResponse>('/tenant/calls?page=1&limit=1')
             .catch(() => ({ total: 0, data: [] }));
 
-      const [agents, calls, bookings, staff, support, billing] = await Promise.all([
+      const analyticsPromise = isAdmin
+        ? api
+            .get<TenantAnalyticsResponse>(
+              `/admin/calls/analytics?tenantId=${encodeURIComponent(id)}`,
+            )
+            .catch(async (error) => {
+              if (isForbiddenError(error)) {
+                isAdmin = false;
+                return api
+                  .get<TenantAnalyticsResponse>('/tenant/calls/analytics')
+                  .catch(() => null);
+              }
+              return null;
+            })
+        : api
+            .get<TenantAnalyticsResponse>('/tenant/calls/analytics')
+            .catch(() => null);
+
+      const [agents, calls, bookings, staff, support, billing, analytics] = await Promise.all([
         agentsPromise,
         callsPromise,
         api
@@ -366,6 +401,7 @@ export const tenantsAdapter = {
             withTenantScope('/tenant/billing', scopedTenantId, isAdmin),
           )
           .catch(() => ({}) as TenantBillingApiResponse),
+        analyticsPromise,
       ]);
       const normalizedAgents = asArray<TenantAgentApiResponse>(agents);
       const normalizedStaff = asArray<TenantStaffApiResponse>(staff);
@@ -373,6 +409,14 @@ export const tenantsAdapter = {
       const summaries = normalizedAgents.map((agent) =>
         toAgentInstanceSummary(agent, scopedTenantId ?? id),
       );
+      const totalCallsCount = analytics?.totalCalls ?? calls.total ?? 0;
+      const bookedCalls = analytics?.outcomes?.booked ?? bookings.total ?? 0;
+      const escalatedCalls = analytics?.outcomes?.escalated ?? 0;
+      const conversionRate =
+        totalCallsCount > 0
+          ? Math.round((bookedCalls / totalCallsCount) * 1000) / 10
+          : 0;
+      const avgCallDuration = formatAvgDuration(analytics?.avgDuration ?? 0);
 
       const hasAssignedAgent = summaries.length > 0;
       const hasDeployedAgent = summaries.some((summary) => {
@@ -458,11 +502,11 @@ export const tenantsAdapter = {
           { step: 4, title: 'Billing Activated', done: hasBillingActivated },
         ],
         quickStats: {
-          totalCalls: calls.total ?? 0,
-          bookingsCreated: bookings.total ?? 0,
-          escalations: 0,
-          conversionRate: 0,
-          avgCallDuration: '0s',
+          totalCalls: totalCallsCount,
+          bookingsCreated: bookedCalls,
+          escalations: escalatedCalls,
+          conversionRate,
+          avgCallDuration,
           creditsUsed: Number((billing.minutesUsed as number | undefined) ?? 0),
           creditsRemaining: Number((billing.creditBalance as number | undefined) ?? 0),
         },

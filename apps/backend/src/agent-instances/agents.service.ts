@@ -544,18 +544,31 @@ export class AgentsService {
    * Deletes an agent instance: cleans up Retell resources (voice/chat agents and flows),
    * soft-deletes deployments, and marks the instance as deleted.
    * Idempotent: if already deleted, returns successfully (no-op).
+   *
+   * @returns `retellWarnings` lists provider cleanup failures (DB row is still removed).
    */
-  async deleteForAdmin(id: string): Promise<void> {
+  async deleteForAdmin(id: string): Promise<{
+    agentInstanceId: string;
+    retellWarnings: string[];
+  }> {
     const instance = await this.instanceModel.findById(id);
     if (!instance) throw new NotFoundException('Agent instance not found');
     if (instance.status === 'deleted') {
-      return;
+      return { agentInstanceId: id, retellWarnings: [] };
+    }
+
+    const retellWarnings: string[] = [];
+
+    if (!this.retellClient.isConfigured()) {
+      retellWarnings.push(
+        'Retell is not configured (RETELL_API_KEY missing); skipped provider cleanup.',
+      );
     }
 
     const deployments =
       await this.agentDeploymentsService.findByAgentInstance(id);
     for (const deployment of deployments) {
-      if (deployment.retellAgentId) {
+      if (deployment.retellAgentId && this.retellClient.isConfigured()) {
         try {
           if (deployment.channel === 'chat') {
             await this.retellClient.deleteChatAgent(deployment.retellAgentId);
@@ -565,12 +578,17 @@ export class AgentsService {
         } catch (error: unknown) {
           const message =
             error instanceof Error ? error.message : 'Unknown error';
+          const line = `Retell agent delete failed retellAgentId=${deployment.retellAgentId}: ${message}`;
           this.logger.warn(
             `Retell agent delete failed agentInstanceId=${id} retellAgentId=${deployment.retellAgentId} error=${message}`,
           );
+          retellWarnings.push(line);
         }
       }
-      if (deployment.retellConversationFlowId) {
+      if (
+        deployment.retellConversationFlowId &&
+        this.retellClient.isConfigured()
+      ) {
         try {
           await this.retellClient.deleteConversationFlow(
             deployment.retellConversationFlowId,
@@ -578,9 +596,11 @@ export class AgentsService {
         } catch (error: unknown) {
           const message =
             error instanceof Error ? error.message : 'Unknown error';
+          const line = `Retell flow delete failed flowId=${deployment.retellConversationFlowId}: ${message}`;
           this.logger.warn(
             `Retell flow delete failed agentInstanceId=${id} flowId=${deployment.retellConversationFlowId} error=${message}`,
           );
+          retellWarnings.push(line);
         }
       }
     }
@@ -588,6 +608,8 @@ export class AgentsService {
     await this.agentDeploymentsService.softDeleteByAgentInstanceId(id);
     instance.status = 'deleted';
     await instance.save();
+
+    return { agentInstanceId: id, retellWarnings };
   }
 
   async getDeploymentsForTenant(id: string, tenantId: string) {

@@ -171,7 +171,10 @@ export function TenantOverviewTab({ tenant, agents }: TenantOverviewTabProps) {
                   <>
                     <section aria-labelledby="agent-identity-heading">
                       <h3 id="agent-identity-heading" className="sr-only">Agent identity</h3>
-                      <AgentOverviewTab agent={agentDetail} />
+                      <AgentOverviewTab
+                        agent={agentDetail}
+                        status={agents.find((a) => a.id === selectedAgentId)?.status}
+                      />
                     </section>
                     {tenantId && (
                       <section aria-labelledby="agent-analytics-heading" className="pt-4 border-t border-[var(--border-subtle)]/50">

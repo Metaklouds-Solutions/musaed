@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -239,6 +240,7 @@ export class AgentToolsService {
       this.readString(extras.lastName) ?? '',
     );
     const { date, timeSlot } = this.parseConfirmedSlot(confirmedSlot);
+    await this.assertSlotAvailable(context.agent.tenantId, date, timeSlot);
     const booking = await this.bookingModel.create({
       tenantId: context.agent.tenantId,
       customerId: customer._id,
@@ -287,6 +289,152 @@ export class AgentToolsService {
         status: 'queued',
         email,
         meeting_id: meetingId ?? null,
+      },
+    };
+  }
+
+  async cancelBooking(
+    agentId: string,
+    email: string,
+    meetingId?: string,
+  ): Promise<{ result: { meeting_id: string; status: string } }> {
+    const context = await this.getAgentContext(agentId);
+    const tid = context.agent.tenantId;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    let booking: BookingDocument | null = null;
+    if (meetingId && Types.ObjectId.isValid(meetingId)) {
+      booking = await this.bookingModel.findOne({
+        _id: new Types.ObjectId(meetingId),
+        tenantId: tid,
+        status: { $nin: ['cancelled'] },
+      });
+    }
+    if (!booking) {
+      const customer = await this.customerModel.findOne({
+        tenantId: tid,
+        email: normalizedEmail,
+        deletedAt: null,
+      });
+      if (!customer) {
+        throw new NotFoundException('No booking found for this email');
+      }
+      booking = await this.bookingModel
+        .findOne({
+          tenantId: tid,
+          customerId: customer._id,
+          status: { $nin: ['cancelled'] },
+        })
+        .sort({ date: -1, timeSlot: -1 })
+        .limit(1)
+        .exec();
+    }
+    if (!booking) {
+      throw new NotFoundException('No booking found to cancel');
+    }
+
+    await this.bookingModel.updateOne(
+      { _id: booking._id, tenantId: tid },
+      { $set: { status: 'cancelled' } },
+    );
+    await this.customerModel.updateOne(
+      { _id: booking.customerId, tenantId: tid },
+      { $inc: { totalBookings: -1 } },
+    );
+
+    return {
+      result: {
+        meeting_id: booking._id.toString(),
+        status: 'cancelled',
+      },
+    };
+  }
+
+  async rescheduleBooking(
+    agentId: string,
+    email: string,
+    newSlot: string,
+    timezone: string,
+    meetingId?: string,
+  ): Promise<{
+    result: { old_meeting_id: string; new_meeting_id: string; status: string };
+  }> {
+    const context = await this.getAgentContext(agentId);
+    const tid = context.agent.tenantId;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    let oldBooking: BookingDocument | null = null;
+    if (meetingId && Types.ObjectId.isValid(meetingId)) {
+      oldBooking = await this.bookingModel.findOne({
+        _id: new Types.ObjectId(meetingId),
+        tenantId: tid,
+        status: { $nin: ['cancelled'] },
+      });
+    }
+    if (!oldBooking) {
+      const customer = await this.customerModel.findOne({
+        tenantId: tid,
+        email: normalizedEmail,
+        deletedAt: null,
+      });
+      if (!customer) {
+        throw new NotFoundException('No booking found for this email');
+      }
+      oldBooking = await this.bookingModel
+        .findOne({
+          tenantId: tid,
+          customerId: customer._id,
+          status: { $nin: ['cancelled'] },
+        })
+        .sort({ date: -1, timeSlot: -1 })
+        .limit(1)
+        .exec();
+    }
+    if (!oldBooking) {
+      throw new NotFoundException('No booking found to reschedule');
+    }
+
+    const customer = await this.customerModel.findById(oldBooking.customerId);
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    const { date, timeSlot } = this.parseConfirmedSlot(newSlot);
+    await this.assertSlotAvailable(tid, date, timeSlot, oldBooking._id);
+
+    await this.bookingModel.updateOne(
+      { _id: oldBooking._id, tenantId: tid },
+      { $set: { status: 'cancelled' } },
+    );
+    await this.customerModel.updateOne(
+      { _id: customer._id, tenantId: tid },
+      { $inc: { totalBookings: -1 } },
+    );
+
+    const newBooking = await this.bookingModel.create({
+      tenantId: tid,
+      customerId: customer._id,
+      providerId: oldBooking.providerId,
+      locationId: oldBooking.locationId,
+      serviceType: oldBooking.serviceType,
+      date,
+      timeSlot,
+      durationMinutes: oldBooking.durationMinutes ?? 30,
+      status: 'confirmed',
+      notes: `Rescheduled via Retell tool (${timezone})`,
+      reminderSent: false,
+      reminderAt: null,
+    });
+    await this.customerModel.updateOne(
+      { _id: customer._id, tenantId: tid },
+      { $inc: { totalBookings: 1 } },
+    );
+
+    return {
+      result: {
+        old_meeting_id: oldBooking._id.toString(),
+        new_meeting_id: newBooking._id.toString(),
+        status: 'confirmed',
       },
     };
   }
@@ -404,6 +552,26 @@ export class AgentToolsService {
       date,
       timeSlot: timePart && /^\d{2}:\d{2}$/.test(timePart) ? timePart : '09:00',
     };
+  }
+
+  private async assertSlotAvailable(
+    tenantId: Types.ObjectId,
+    date: Date,
+    timeSlot: string,
+    excludeBookingId?: Types.ObjectId,
+  ): Promise<void> {
+    const existingConflict = await this.bookingModel.findOne({
+      tenantId,
+      date: { $gte: this.getStartOfDay(date), $lt: this.getEndOfDay(date) },
+      timeSlot,
+      status: { $nin: ['cancelled'] },
+      ...(excludeBookingId ? { _id: { $ne: excludeBookingId } } : {}),
+    });
+    if (existingConflict) {
+      throw new ConflictException(
+        'The requested slot is no longer available. Please choose another time.',
+      );
+    }
   }
 
   private async findOrCreateRequester(tenantId: string, email: string) {

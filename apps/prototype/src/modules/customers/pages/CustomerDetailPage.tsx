@@ -6,6 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { EmptyState, Button } from '../../../shared/ui';
 import { useCustomerDetail } from '../hooks';
 import { usePiiMask } from '../../../shared/hooks/usePiiMask';
@@ -33,16 +34,24 @@ export function CustomerDetailPage() {
   const { maskName, maskEmail, canViewUnmaskedPII, showUnmasked, toggleUnmasked } = usePiiMask();
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  const handleExportCustomer = useCallback(() => {
-    if (id && customer) {
-      gdprAdapter.exportCustomerData(id, user?.tenantId);
+  const handleExportCustomer = useCallback(async () => {
+    if (!id || !customer) return;
+    try {
+      await gdprAdapter.exportCustomerData(id, user?.tenantId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Export failed';
+      toast.error(message);
     }
   }, [id, customer, user?.tenantId]);
 
-  const handleDeleteCustomer = useCallback(() => {
-    if (id && customer) {
-      gdprAdapter.deleteCustomerData(id, customer.tenantId);
+  const handleDeleteCustomer = useCallback(async () => {
+    if (!id || !customer) return;
+    try {
+      await gdprAdapter.deleteCustomerData(id, customer.tenantId);
       navigate('/customers');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed';
+      toast.error(message);
     }
   }, [id, customer, navigate]);
 

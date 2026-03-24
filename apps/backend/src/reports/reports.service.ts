@@ -463,7 +463,6 @@ export class ReportsService {
     const dateTo = end.toISOString().slice(0, 10);
     const perf = await this.getPerformance(tenantId, dateFrom, dateTo);
     const totalCalls = perf.callMetrics?.totalCalls ?? 0;
-    const totalBookings = perf.totalBookings ?? 0;
     const outcomes = perf.callMetrics?.outcomes ?? {};
     const booked = outcomes.booked ?? 0;
     const escalated = outcomes.escalated ?? 0;
@@ -472,7 +471,8 @@ export class ReportsService {
     const avgDurationMs = perf.callMetrics?.avgDurationMs ?? 0;
     return {
       totalCalls,
-      totalBookings,
+      // Align "Bookings" with outcome-booked for consistent KPI semantics.
+      totalBookings: booked,
       avgDurationSec: avgDurationMs / 1000,
       conversionRate,
       escalationRate,

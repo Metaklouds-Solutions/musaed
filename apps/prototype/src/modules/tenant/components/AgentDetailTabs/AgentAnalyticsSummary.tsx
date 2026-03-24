@@ -70,6 +70,13 @@ export function AgentAnalyticsSummary({
     ([, v]) => v > 0,
   );
   const totalOutcomes = outcomeEntries.reduce((s, [, v]) => s + v, 0);
+  const bookedCount = analytics.outcomes?.booked ?? 0;
+  const effectiveSuccessRate =
+    analytics.successRate != null && analytics.successRate > 0
+      ? analytics.successRate
+      : analytics.totalCalls > 0 && bookedCount > 0
+        ? bookedCount / analytics.totalCalls
+        : null;
 
   const isLoading = analyticsLoading;
   const hasData = analytics.totalCalls > 0;
@@ -108,8 +115,8 @@ export function AgentAnalyticsSummary({
             <StatCard
               label="Success Rate"
               value={
-                analytics.successRate != null
-                  ? `${(analytics.successRate * 100).toFixed(1)}%`
+                effectiveSuccessRate != null
+                  ? `${(effectiveSuccessRate * 100).toFixed(1)}%`
                   : '—'
               }
               className="py-3 px-4 min-w-0"

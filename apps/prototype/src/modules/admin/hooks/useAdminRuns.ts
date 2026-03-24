@@ -10,7 +10,7 @@ export function useAdminRuns() {
   const [page, setPage] = useState(1);
 
   const { data: tenants } = useAsyncData(() => tenantsAdapter.getAllTenants(), [], []);
-  const { data: runs } = useAsyncData(
+  const { data: runs, error: runsError } = useAsyncData(
     () => runsAdapter.listRuns(tenantFilter || undefined),
     [tenantFilter],
     [],
@@ -35,6 +35,7 @@ export function useAdminRuns() {
   return {
     tenants,
     runs,
+    runsError,
     paginatedRuns,
     totalCost,
     totalPages,

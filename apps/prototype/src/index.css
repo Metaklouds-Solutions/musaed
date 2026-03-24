@@ -23,12 +23,14 @@
   --primary-glow: rgba(124, 92, 255, 0.25);
 
   /* Light theme backgrounds */
-  --bg-base: #FFFFFF;
-  --bg-card: #F9FAFB;
-  --bg-elevated: #FFFFFF;
+  --bg-base: #F6F7FB;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FCFCFF;
   --bg-hover: #F3F4F6;
-  --bg-subtle: #F9FAFB;
+  --bg-subtle: #F2F4FA;
   --bg-sidebar: #F5F5F5;
+  --canvas-glow-1: rgba(124, 92, 255, 0.09);
+  --canvas-glow-2: rgba(59, 130, 246, 0.06);
 
   --surface-card: rgba(0, 0, 0, 0.03);
   --surface-glass: rgba(0, 0, 0, 0.04);
@@ -62,11 +64,15 @@
   --radius-input: 12px;
   --radius-nav: 10px;
 
-  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.12);
-  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.18);
+  --shadow-card: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+  --shadow-card-hover: rgba(60, 64, 67, 0.3) 0px 2px 6px 2px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
   --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.35);
-  --shadow-card-glass: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(124, 92, 255, 0.06);
+  --shadow-card-glass: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px, 0 0 0 1px rgba(124, 92, 255, 0.06);
+  --card-border-glow: rgba(80, 130, 255, 0.34);
+  --card-inner-glow: rgba(76, 118, 255, 0.12);
+  --card-surface-top: #FFFFFF;
+  --card-surface-bottom: #F7FAFF;
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -140,6 +146,8 @@
   --bg-hover: rgba(255, 255, 255, 0.05);
   --bg-subtle: #0D1322;
   --bg-sidebar: #0D1322;
+  --canvas-glow-1: rgba(124, 92, 255, 0.14);
+  --canvas-glow-2: rgba(59, 130, 246, 0.08);
 
   --surface-card: rgba(255, 255, 255, 0.03);
   --surface-glass: rgba(255, 255, 255, 0.05);
@@ -157,11 +165,16 @@
   --text-muted: rgba(255, 255, 255, 0.5);
   --text-disabled: rgba(255, 255, 255, 0.4);
 
-  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --shadow-card: rgba(0, 0, 0, 0.4) 0px 1px 2px 0px, rgba(0, 0, 0, 0.25) 0px 1px 3px 1px;
+  --shadow-card-hover: rgba(0, 0, 0, 0.4) 0px 2px 6px 2px, rgba(0, 0, 0, 0.25) 0px 1px 3px 1px;
   --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.5);
   --shadow-button-primary: 0 4px 20px rgba(124, 92, 255, 0.4);
-  --shadow-card-glass: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-card-glass: rgba(0, 0, 0, 0.4) 0px 1px 2px 0px, rgba(0, 0, 0, 0.25) 0px 1px 3px 1px, 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --card-border-glow: rgba(116, 148, 255, 0.4);
+  --card-inner-glow: rgba(83, 126, 255, 0.2);
+  --card-surface-top: #111A35;
+  --card-surface-bottom: #181F3E;
+  --metric-card-bg: #171E3D;
 
   --overlay-bg: rgba(0, 0, 0, 0.6);
   --glass-panel-bg: rgba(13, 19, 34, 0.9);
@@ -202,19 +215,38 @@
 
 /* Enhanced card: glass background, subtle accent, used for modals and key sections */
 .card-glass {
-  background: var(--glass-panel-bg);
+  background:
+    linear-gradient(160deg, var(--card-surface-top) 0%, var(--card-surface-bottom) 100%);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-card-glass);
-  border: 1px solid var(--surface-border-card);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 62%, transparent),
+    inset 0 14px 30px -24px var(--card-inner-glow),
+    var(--shadow-card-glass);
+  border: 1px solid color-mix(in srgb, var(--card-border-glow) 55%, var(--surface-border-card) 45%);
+}
+
+.card-accent {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--card-surface-top) 88%, var(--ds-primary) 12%) 0%,
+    color-mix(in srgb, var(--card-surface-bottom) 92%, var(--ds-primary) 8%) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--ds-primary) 50%, var(--card-border-glow) 50%);
+  box-shadow:
+    inset 0 0 0 1px rgba(124, 92, 255, 0.2),
+    inset 0 16px 34px -26px color-mix(in srgb, var(--ds-primary) 42%, transparent),
+    var(--shadow-card-hover);
 }
 :root:not(.dark) .card-glass {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(124, 92, 255, 0.08);
+  background:
+    linear-gradient(160deg, #FFFFFF 0%, #F6FAFF 100%);
+  border-color: rgba(102, 136, 255, 0.35);
 }
 .dark .card-glass {
-  background: rgba(17, 24, 39, 0.85);
-  border-color: rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(160deg, #101936 0%, #171E3F 100%);
+  border-color: rgba(124, 154, 255, 0.34);
 }
 
 @theme inline {
@@ -326,7 +358,10 @@
   }
 
   body {
-    background: var(--bg-base);
+    background-color: var(--bg-base);
+    background-image:
+      radial-gradient(circle at 8% 0%, var(--canvas-glow-1) 0%, transparent 38%);
+    background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-sans);
     font-size: 14px;
@@ -398,36 +433,91 @@
   }
 
   .card-glass {
-    background: var(--surface-card);
-    border: 1px solid var(--surface-border-card, var(--border-subtle));
+    background: linear-gradient(160deg, var(--card-surface-top) 0%, var(--card-surface-bottom) 100%);
+    border: 1px solid color-mix(in srgb, var(--card-border-glow) 55%, var(--surface-border-card) 45%);
     border-radius: var(--radius-card);
-    padding: 20px;
-    box-shadow: var(--shadow-card);
+    padding: clamp(14px, 1.35vw, 20px);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 62%, transparent),
+      inset 0 14px 30px -24px var(--card-inner-glow),
+      var(--shadow-card);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
       box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .card-glass:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-card-hover);
-    border-color: var(--surface-border, var(--border-subtle));
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 75%, transparent),
+      inset 0 16px 34px -24px color-mix(in srgb, var(--card-inner-glow) 130%, transparent),
+      var(--shadow-card-hover);
+    border-color: color-mix(in srgb, var(--card-border-glow) 72%, var(--surface-border) 28%);
   }
 
   .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
+    background: linear-gradient(160deg, var(--card-surface-top) 0%, var(--card-surface-bottom) 100%);
+    border: 1px solid color-mix(in srgb, var(--card-border-glow) 52%, var(--border-subtle) 48%);
     border-radius: var(--radius-card);
-    padding: 20px;
-    box-shadow: var(--shadow-card);
+    padding: clamp(14px, 1.35vw, 20px);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 58%, transparent),
+      inset 0 12px 26px -20px var(--card-inner-glow),
+      var(--shadow-card);
     transition: border-color 0.2s, background 0.2s, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
       box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .card:hover {
-    border-color: var(--border-default);
-    background: var(--bg-elevated);
+    border-color: color-mix(in srgb, var(--card-border-glow) 72%, var(--border-default) 28%);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-card-hover);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 76%, transparent),
+      inset 0 16px 34px -24px color-mix(in srgb, var(--card-inner-glow) 125%, transparent),
+      var(--shadow-card-hover);
+  }
+
+  /* Compact KPI cards: calmer surface than generic cards for dense metric rows */
+  .metric-card {
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--metric-card-bg) 96%, var(--ds-primary) 4%) 0%,
+      color-mix(in srgb, var(--metric-card-bg) 97%, #000 3%) 100%
+    );
+    border-color: color-mix(in srgb, var(--card-border-glow) 62%, var(--border-subtle) 38%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 54%, transparent),
+      inset 0 10px 20px -16px color-mix(in srgb, var(--card-inner-glow) 90%, transparent),
+      var(--shadow-card);
+  }
+
+  .metric-card:hover {
+    border-color: color-mix(in srgb, var(--card-border-glow) 78%, var(--border-default) 22%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 70%, transparent),
+      inset 0 14px 24px -16px color-mix(in srgb, var(--card-inner-glow) 110%, transparent),
+      var(--shadow-card-hover);
+  }
+
+  /* Nested panels inside cards/charts/lists */
+  .panel-soft {
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--metric-card-bg) 95%, var(--ds-primary) 5%) 0%,
+      color-mix(in srgb, var(--metric-card-bg) 97%, #000 3%) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--card-border-glow) 58%, var(--border-subtle) 42%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 50%, transparent),
+      inset 0 10px 20px -16px color-mix(in srgb, var(--card-inner-glow) 88%, transparent),
+      var(--shadow-card);
+  }
+
+  .panel-soft:hover {
+    border-color: color-mix(in srgb, var(--card-border-glow) 72%, var(--border-default) 28%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--card-border-glow) 68%, transparent),
+      inset 0 12px 24px -16px color-mix(in srgb, var(--card-inner-glow) 108%, transparent),
+      var(--shadow-card-hover);
   }
 
   .btn-primary {
@@ -605,3 +695,9 @@
   --fc-more-link-bg-color: var(--bg-hover);
   --fc-more-link-text-color: var(--text-primary);
 }
+
+.dark .metric-card,
+.dark .panel-soft {
+  background: #171E3D;
+}
+

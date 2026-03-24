@@ -5,6 +5,15 @@ export type BookingDocument = Booking & Document;
 
 @Schema({ timestamps: true, collection: 'bookings' })
 export class Booking {
+  @Prop({ type: String, default: 'internal' })
+  source: string;
+
+  @Prop({ type: String, default: null })
+  provider: string | null;
+
+  @Prop({ type: String, default: null })
+  providerBookingId: string | null;
+
   @Prop({ type: Types.ObjectId, ref: 'Tenant', required: true })
   tenantId: Types.ObjectId;
 
@@ -43,6 +52,9 @@ export class Booking {
 
   @Prop({ type: Date, default: null })
   reminderAt: Date | null;
+
+  @Prop({ type: Date, default: null })
+  providerUpdatedAt: Date | null;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);
@@ -52,3 +64,7 @@ BookingSchema.index({ tenantId: 1, date: 1, status: 1 });
 BookingSchema.index({ tenantId: 1, createdAt: -1 });
 BookingSchema.index({ customerId: 1 });
 BookingSchema.index({ tenantId: 1, status: 1, reminderSent: 1, date: 1 });
+BookingSchema.index(
+  { tenantId: 1, provider: 1, providerBookingId: 1 },
+  { unique: true, sparse: true },
+);

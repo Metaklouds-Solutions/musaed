@@ -203,6 +203,15 @@ export const agentsAdapter = {
     }
   },
 
+  /** Delete agent (local mock). */
+  async delete(
+    agentId: string,
+  ): Promise<{ agentInstanceId: string; retellWarnings: string[] }> {
+    const idx = assignedAgents.findIndex((item) => item.id === agentId);
+    if (idx >= 0) assignedAgents.splice(idx, 1);
+    return { agentInstanceId: agentId, retellWarnings: [] };
+  },
+
   /** Update agent (e.g. name). */
   async updateAgent(agentId: string, data: { name?: string }): Promise<void> {
     const existing = assignedAgents.find((item) => item.id === agentId);

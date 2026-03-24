@@ -5,7 +5,6 @@
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { PageHeader, EmptyState, TableFilters, Button, TableSkeleton, LOTTIE_ASSETS, Pagination } from '../../../shared/ui';
-import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList, useCallsExport } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
@@ -29,10 +28,9 @@ const PAGE_SIZE = 20;
 
 /** Tenant calls list: table-first log with filters, export, and pagination. */
 export function CallsPage() {
-  const ready = useDelayedReady();
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
-  const { user, calls, customerMap } = useCallsList(dateRangeFilter);
+  const { user, calls, customerMap, isLoading } = useCallsList(dateRangeFilter);
   const { exportCallsCsv } = useCallsExport();
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -78,13 +76,22 @@ export function CallsPage() {
     );
   }
 
-  if (!ready) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <PageHeader title="Calls" description="AI call logs and conversion." />
+          <PageHeader title="Calls" description="AI call logs with filtering and export." />
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="h-10 w-[200px] rounded-lg bg-[var(--bg-subtle)] animate-pulse" aria-hidden />
+            <div className="h-10 w-24 rounded-lg bg-[var(--bg-subtle)] animate-pulse" aria-hidden />
+          </div>
         </div>
-        <TableSkeleton rows={8} cols={6} />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="h-9 w-20 rounded-md bg-[var(--bg-subtle)] animate-pulse" aria-hidden />
+          <div className="h-9 w-24 rounded-md bg-[var(--bg-subtle)] animate-pulse" aria-hidden />
+          <div className="h-9 w-20 rounded-md bg-[var(--bg-subtle)] animate-pulse" aria-hidden />
+        </div>
+        <TableSkeleton rows={10} cols={7} minWidth="min-w-[720px]" />
       </div>
     );
   }

@@ -25,6 +25,7 @@ async function bootstrap() {
 
   app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
   app.use('/webhooks/retell', express.raw({ type: 'application/json' }));
+  app.use('/webhooks/calcom', express.raw({ type: 'application/json' }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
@@ -51,7 +52,13 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api', {
-    exclude: ['health', 'metrics', 'webhooks/stripe', 'webhooks/retell'],
+    exclude: [
+      'health',
+      'metrics',
+      'webhooks/stripe',
+      'webhooks/retell',
+      'webhooks/calcom',
+    ],
   });
 
   app.useGlobalPipes(

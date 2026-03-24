@@ -161,6 +161,8 @@ export class SystemMonitorService {
       message: payload.message,
       metadata: payload.metadata,
       priority: payload.priority,
+      dedupeKey: `${payload.type}:${key}`,
+      dedupeWindowSeconds: 30 * 60,
     });
 
     if (payload.tenantId) {
@@ -173,6 +175,8 @@ export class SystemMonitorService {
         message: payload.message,
         metadata: payload.metadata,
         priority: payload.priority,
+        dedupeKey: `${payload.type}:${key}`,
+        dedupeWindowSeconds: 30 * 60,
       });
     }
   }

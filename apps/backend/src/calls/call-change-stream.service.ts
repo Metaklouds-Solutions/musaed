@@ -16,7 +16,10 @@ import { NotificationsService } from '../notifications/notifications.service';
 @Injectable()
 export class CallChangeStreamService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CallChangeStreamService.name);
-  private stream: { on: (event: string, fn: (...args: unknown[]) => void) => void; close: () => Promise<void> } | null = null;
+  private stream: {
+    on: (event: string, fn: (...args: unknown[]) => void) => void;
+    close: () => Promise<void>;
+  } | null = null;
   private restarting = false;
 
   constructor(
@@ -39,7 +42,10 @@ export class CallChangeStreamService implements OnModuleInit, OnModuleDestroy {
     const stream = this.callSessionModel.watch(
       [{ $match: { operationType: 'insert' } }],
       { fullDocument: 'default' },
-    ) as { on: (event: string, fn: (...args: unknown[]) => void) => void; close: () => Promise<void> };
+    ) as {
+      on: (event: string, fn: (...args: unknown[]) => void) => void;
+      close: () => Promise<void>;
+    };
     this.stream = stream;
 
     stream.on('change', (change: Record<string, unknown>) => {

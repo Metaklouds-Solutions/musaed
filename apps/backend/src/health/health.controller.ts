@@ -39,7 +39,9 @@ export class HealthController {
     const retellProbe = await this.retellClient.probeConnectivity();
     const metrics = this.deploymentMetrics.getSnapshot();
 
-    const isHealthy = dbUp && redisStatus.up && retellProbe.reachable;
+    const retellOk = retellProbe.skipped ? true : retellProbe.reachable;
+
+    const isHealthy = dbUp && redisStatus.up && retellOk;
 
     return {
       status: isHealthy ? 'ok' : 'degraded',
@@ -55,7 +57,11 @@ export class HealthController {
           error: redisStatus.error,
         },
         retell: {
-          status: retellProbe.reachable ? 'up' : 'down',
+          status: retellProbe.skipped
+            ? 'skipped'
+            : retellProbe.reachable
+              ? 'up'
+              : 'down',
           statusCode: retellProbe.statusCode,
         },
       },

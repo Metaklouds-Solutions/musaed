@@ -3,12 +3,17 @@ import { RetellClient } from './retell.client';
 import { RetellApiException } from './retell.errors';
 import { APIError } from 'retell-sdk';
 
+function mockConfig(key: string): string | undefined {
+  if (key === 'RETELL_API_KEY') return 'retell_test_key';
+  return undefined;
+}
+
 describe('RetellClient', () => {
   let client: RetellClient;
 
   beforeEach(() => {
     client = new RetellClient({
-      getOrThrow: jest.fn().mockReturnValue('retell_test_key'),
+      get: jest.fn().mockImplementation(mockConfig),
     } as unknown as ConfigService);
   });
 

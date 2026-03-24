@@ -8,11 +8,11 @@ export function useTenantRunsTabData() {
   const { id } = useParams<{ id: string }>();
   const tenantId = id ?? undefined;
 
-  const { data: runs, loading } = useAsyncData(
+  const { data: runs, loading, error } = useAsyncData(
     () => runsAdapter.listRuns(tenantId),
     [tenantId],
     [] as AdminRunRow[],
   );
 
-  return { runs, loading };
+  return { runs, loading, error };
 }

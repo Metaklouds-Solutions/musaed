@@ -327,8 +327,12 @@ export const agentsAdapter = {
     await api.post(`/admin/agents/${agentId}/unassign`);
   },
 
-  async delete(agentId: string): Promise<void> {
-    await api.delete(`/admin/agents/${agentId}`);
+  async delete(
+    agentId: string,
+  ): Promise<{ agentInstanceId: string; retellWarnings: string[] }> {
+    return api.delete<{ agentInstanceId: string; retellWarnings: string[] }>(
+      `/admin/agents/${agentId}`,
+    );
   },
 
   async updateAgent(agentId: string, data: { name?: string }): Promise<void> {

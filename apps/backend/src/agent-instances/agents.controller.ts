@@ -218,8 +218,10 @@ export class AgentsAdminController {
     return this.agentsService.findById(id);
   }
 
+  /**
+   * Deletes agent instance and attempts Retell cleanup. Returns `retellWarnings` if provider delete failed.
+   */
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id', ParseObjectIdPipe) id: string) {
     return this.agentsService.deleteForAdmin(id);
   }

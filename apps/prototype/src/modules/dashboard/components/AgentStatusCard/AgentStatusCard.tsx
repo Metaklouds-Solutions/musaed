@@ -48,7 +48,7 @@ export function AgentStatusCard({ agent }: AgentStatusCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.05 }}
-      className="relative overflow-hidden rounded-[var(--radius-card)] card-glass p-5"
+      className="relative overflow-hidden rounded-[var(--radius-card)] card-accent p-5"
     >
       <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-[var(--ds-primary)]/10 blur-2xl pointer-events-none" />
       <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Agent Status</h2>

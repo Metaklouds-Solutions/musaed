@@ -238,7 +238,7 @@ export class CallsService {
     totalCalls: number;
     conversationRate: number;
     avgDuration: number;
-    successRate: number;
+    successRate: number | undefined;
     avgCost: number | null;
     avgLatency: number | null;
     disconnectionReasons: Record<string, number>;
@@ -298,22 +298,14 @@ export class CallsService {
                       { $eq: ['$callSuccessful', true] },
                       1,
                       {
-                        $cond: [
-                          { $eq: ['$callSuccessful', false] },
-                          0,
-                          null,
-                        ],
+                        $cond: [{ $eq: ['$callSuccessful', false] }, 0, null],
                       },
                     ],
                   },
                 },
                 successRateCount: {
                   $sum: {
-                    $cond: [
-                      { $in: ['$callSuccessful', [true, false]] },
-                      1,
-                      0,
-                    ],
+                    $cond: [{ $in: ['$callSuccessful', [true, false]] }, 1, 0],
                   },
                 },
                 sumCost: { $sum: { $ifNull: ['$callCost', 0] } },
@@ -409,9 +401,7 @@ export class CallsService {
     const disconnectionReasons: Record<string, number> = {};
     for (const row of disconnectionReasonsArr) {
       const key =
-        row._id == null || row._id === ''
-          ? 'unknown'
-          : String(row._id);
+        row._id == null || row._id === '' ? 'unknown' : String(row._id);
       disconnectionReasons[key] = (disconnectionReasons[key] ?? 0) + row.count;
     }
 
@@ -419,7 +409,7 @@ export class CallsService {
     const avgDurationSec =
       durationCount > 0 ? Math.round(sumDurationMs / durationCount / 1000) : 0;
     const successRate =
-      successRateCount > 0 ? successRateSum / successRateCount : 0;
+      successRateCount > 0 ? successRateSum / successRateCount : undefined;
     const avgCost = costCount > 0 ? sumCost / costCount : null;
     const avgLatency = latencyCount > 0 ? sumLatency / latencyCount : null;
 
@@ -494,7 +484,7 @@ export class CallsService {
 
       const transcriptObject = callDataRecord['transcript_object'];
       const callAnalysis = this.isRecord(callDataRecord['call_analysis'])
-        ? (callDataRecord['call_analysis'] as JsonRecord)
+        ? callDataRecord['call_analysis']
         : null;
 
       const updateData: Partial<CallSession> = {
@@ -521,10 +511,10 @@ export class CallsService {
       }
 
       const latency = this.isRecord(callDataRecord['latency'])
-        ? (callDataRecord['latency'] as JsonRecord)
+        ? callDataRecord['latency']
         : null;
-      const e2e = this.isRecord(latency?.['e2e']) ? latency!['e2e'] : null;
-      const p50 = this.readNumber(this.isRecord(e2e) ? (e2e as JsonRecord)['p50'] : undefined);
+      const e2e = this.isRecord(latency?.['e2e']) ? latency['e2e'] : null;
+      const p50 = this.readNumber(this.isRecord(e2e) ? e2e['p50'] : undefined);
       if (p50 !== null) {
         updateData.latencyE2e = p50;
       }
@@ -533,7 +523,9 @@ export class CallsService {
         this.readString(callDataRecord['call_type']) ?? undefined;
 
       if (callAnalysis) {
-        const callSuccessfulVal = this.readBoolean(callAnalysis['call_successful']);
+        const callSuccessfulVal = this.readBoolean(
+          callAnalysis['call_successful'],
+        );
         if (callSuccessfulVal !== null) {
           updateData.callSuccessful = callSuccessfulVal;
         }
@@ -618,7 +610,7 @@ export class CallsService {
     if (!this.isRecord(value)) {
       return null;
     }
-    const record = value as JsonRecord;
+    const record = value;
     return (
       this.readNumber(record['combined_cost']) ??
       this.readNumber(record['total']) ??
@@ -701,7 +693,7 @@ export class CallsService {
           for (const callData of calls) {
             const callRecord = this.isRecord(callData) ? callData : {};
             const callAnalysis = this.isRecord(callRecord['call_analysis'])
-              ? (callRecord['call_analysis'] as JsonRecord)
+              ? callRecord['call_analysis']
               : null;
             const transcriptObj = callRecord['transcript_object'];
 
@@ -767,9 +759,9 @@ export class CallsService {
             }
 
             const latency = this.isRecord(callRecord['latency'])
-              ? (callRecord['latency'] as JsonRecord)
+              ? callRecord['latency']
               : null;
-            const e2e = this.isRecord(latency?.['e2e']) ? latency!['e2e'] : null;
+            const e2e = this.isRecord(latency?.['e2e']) ? latency['e2e'] : null;
             const p50 = this.readNumber(
               this.isRecord(e2e) ? e2e['p50'] : undefined,
             );

@@ -15,7 +15,8 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import type { Session, User } from '../../shared/types';
-import { setTokens, clearTokens, getAccessToken, getRefreshToken, saveUser, getSavedUser } from '../../lib/apiClient';
+import { setTokens, clearTokens, getAccessToken, getRefreshToken, saveUser } from '../../lib/apiClient';
+import { primeTenantSettingsCaches } from '../../adapters/api/tenantSettingsCache';
 import { SESSION_IDLE_TIMEOUT_MS, SESSION_WARNING_BEFORE_MS } from './sessionConfig';
 
 const ACTIVITY_THROTTLE_MS = 10_000;
@@ -144,21 +145,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           login(user);
           return;
         }
-        // API failed (server restarted, token expired, etc.) — try cached user
-        const cached = getSavedUser();
-        if (cached && cached.id && cached.email && cached.role) {
-          login({
-            id: String(cached.id),
-            email: String(cached.email),
-            name: String(cached.name ?? ''),
-            role: String(cached.role),
-            avatarUrl: cached.avatarUrl ? String(cached.avatarUrl) : undefined,
-            tenantId: cached.tenantId ? String(cached.tenantId) : undefined,
-            tenantRole: cached.tenantRole ? String(cached.tenantRole) : undefined,
-          });
-        } else {
-          clearTokens();
-        }
+        // Token restore failed: clear stale auth state to avoid repeated 401 loops.
+        clearTokens();
       })
       .finally(() => {
         setRestoring(false);
@@ -181,6 +169,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setLastActivityAt(now);
     }
   }, []);
+
+  useEffect(() => {
+    if (import.meta.env.VITE_DATA_MODE !== 'api') return;
+    const tid = session?.user?.tenantId;
+    if (!tid) return;
+    const token = getAccessToken();
+    if (!token) return;
+    void fetch(`${BASE_URL}/tenant/settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: unknown) => {
+        if (data) primeTenantSettingsCaches(tid, data);
+      })
+      .catch(() => {});
+  }, [session?.user?.tenantId]);
 
   useEffect(() => {
     if (!session) return;

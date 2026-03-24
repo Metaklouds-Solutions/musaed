@@ -25,6 +25,7 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly fromEmail: string;
   private readonly frontendUrl: string;
+  private readonly isProduction: boolean;
   private primaryTransporter: nodemailer.Transporter | null = null;
   private fallbackTransporter: nodemailer.Transporter | null = null;
   private readonly rateLimitPerRecipient: number;
@@ -40,17 +41,20 @@ export class EmailService {
       'FRONTEND_URL',
       'http://localhost:5173',
     );
+    this.isProduction = this.config.get<string>('NODE_ENV', 'development') === 'production';
     const limit = this.config.get<string>('EMAIL_RATE_LIMIT_PER_RECIPIENT');
     this.rateLimitPerRecipient = limit
       ? parseInt(limit, 10)
       : DEFAULT_RATE_LIMIT_PER_RECIPIENT;
 
-    const primaryUser =
-      this.config.get<string>('SMTP_PRIMARY_USER') ??
-      this.config.get<string>('SMTP_USER');
-    const primaryPass =
-      this.config.get<string>('SMTP_PRIMARY_PASS') ??
-      this.config.get<string>('SMTP_PASS');
+    const primaryUser = this.getConfiguredValue(
+      'SMTP_PRIMARY_USER',
+      'SMTP_USER',
+    );
+    const primaryPass = this.getConfiguredValue(
+      'SMTP_PRIMARY_PASS',
+      'SMTP_PASS',
+    );
     if (primaryUser && primaryPass) {
       this.primaryTransporter = nodemailer.createTransport({
         service: 'gmail',
@@ -84,6 +88,16 @@ export class EmailService {
     }
   }
 
+  private getConfiguredValue(...keys: string[]): string | null {
+    for (const key of keys) {
+      const value = this.config.get<string>(key);
+      if (value !== undefined && value !== null && value !== '') {
+        return value;
+      }
+    }
+    return null;
+  }
+
   /** Validates fallback transport on startup; logs warning if verification fails. */
   private verifyFallbackTransport(): void {
     if (!this.fallbackTransporter) return;
@@ -112,6 +126,22 @@ export class EmailService {
     return setupUrl;
   }
 
+  /**
+   * Sends a one-off SMTP connectivity test (admin diagnostics; not queued).
+   *
+   * @param to - Verified recipient address
+   * @param subject - Email subject line
+   */
+  async sendSmtpTestEmail(to: string, subject: string): Promise<void> {
+    const msg: EmailMessage = {
+      to,
+      from: this.fromEmail,
+      subject,
+      html: '<p>SMTP test message from Clinic CRM backend.</p>',
+    };
+    await this.sendInternal(msg);
+  }
+
   async sendPasswordResetEmail(
     to: string,
     name: string,
@@ -137,6 +167,58 @@ export class EmailService {
     await this.enqueueOrSend(
       'appointment_reminder',
       { to, customerName, appointmentDate: dateStr, timeSlot },
+      msg,
+    );
+  }
+
+  /**
+   * Sends booking cancellation email to the patient.
+   */
+  async sendBookingCancellation(
+    to: string,
+    customerName: string,
+    appointmentDate: string,
+    timeSlot: string,
+    clinicName: string,
+  ): Promise<void> {
+    const msg = this.buildBookingCancellationMessage(
+      to,
+      customerName,
+      appointmentDate,
+      timeSlot,
+      clinicName,
+    );
+    await this.enqueueOrSend(
+      'booking_cancellation',
+      { to, customerName, appointmentDate, timeSlot, clinicName },
+      msg,
+    );
+  }
+
+  /**
+   * Sends booking reschedule email to the patient.
+   */
+  async sendBookingReschedule(
+    to: string,
+    customerName: string,
+    oldDate: string,
+    oldTime: string,
+    newDate: string,
+    newTime: string,
+    clinicName: string,
+  ): Promise<void> {
+    const msg = this.buildBookingRescheduleMessage(
+      to,
+      customerName,
+      oldDate,
+      oldTime,
+      newDate,
+      newTime,
+      clinicName,
+    );
+    await this.enqueueOrSend(
+      'booking_reschedule',
+      { to, customerName, oldDate, oldTime, newDate, newTime, clinicName },
       msg,
     );
   }
@@ -175,6 +257,19 @@ export class EmailService {
     this.checkRateLimit(msg.to);
 
     if (!this.primaryTransporter && !this.fallbackTransporter) {
+      const misconfiguredSmtpError = new Error(
+        'SMTP is not configured. Set SMTP_USER and SMTP_PASS (or SMTP_PRIMARY_USER and SMTP_PRIMARY_PASS) before sending email in production.',
+      );
+      if (this.isProduction) {
+        this.logger.error({
+          event: 'email_failed',
+          to: msg.to,
+          subject: msg.subject,
+          error: misconfiguredSmtpError.message,
+        });
+        if (type && this.metrics) this.metrics.recordEmailFailed(type);
+        throw misconfiguredSmtpError;
+      }
       this.logger.log({
         event: 'email_sent',
         to: msg.to,
@@ -265,6 +360,32 @@ export class EmailService {
         payload.timeSlot,
       );
     }
+    if (
+      type === 'booking_cancellation' &&
+      this.isBookingCancellationPayload(payload)
+    ) {
+      return this.buildBookingCancellationMessage(
+        payload.to,
+        payload.customerName,
+        payload.appointmentDate,
+        payload.timeSlot,
+        payload.clinicName,
+      );
+    }
+    if (
+      type === 'booking_reschedule' &&
+      this.isBookingReschedulePayload(payload)
+    ) {
+      return this.buildBookingRescheduleMessage(
+        payload.to,
+        payload.customerName,
+        payload.oldDate,
+        payload.oldTime,
+        payload.newDate,
+        payload.newTime,
+        payload.clinicName,
+      );
+    }
     throw new Error(`Unknown or invalid email type: ${type}`);
   }
 
@@ -300,6 +421,36 @@ export class EmailService {
       typeof q.customerName === 'string' &&
       typeof q.appointmentDate === 'string' &&
       typeof q.timeSlot === 'string'
+    );
+  }
+
+  private isBookingCancellationPayload(
+    p: unknown,
+  ): p is EmailJobPayloadMap['booking_cancellation'] {
+    if (typeof p !== 'object' || p === null) return false;
+    const q = p as Record<string, unknown>;
+    return (
+      typeof q.to === 'string' &&
+      typeof q.customerName === 'string' &&
+      typeof q.appointmentDate === 'string' &&
+      typeof q.timeSlot === 'string' &&
+      typeof q.clinicName === 'string'
+    );
+  }
+
+  private isBookingReschedulePayload(
+    p: unknown,
+  ): p is EmailJobPayloadMap['booking_reschedule'] {
+    if (typeof p !== 'object' || p === null) return false;
+    const q = p as Record<string, unknown>;
+    return (
+      typeof q.to === 'string' &&
+      typeof q.customerName === 'string' &&
+      typeof q.oldDate === 'string' &&
+      typeof q.oldTime === 'string' &&
+      typeof q.newDate === 'string' &&
+      typeof q.newTime === 'string' &&
+      typeof q.clinicName === 'string'
     );
   }
 
@@ -385,6 +536,62 @@ export class EmailService {
           <h2>Appointment Reminder</h2>
           <p>Hi ${safeName}, this is a reminder that you have an appointment on ${safeDate} at ${safeSlot}.</p>
           <p style="color: #666; font-size: 14px;">Please arrive a few minutes early. If you need to reschedule, contact the clinic.</p>
+          <p style="color: #999; font-size: 12px;">— The MUSAED Team</p>
+        </div>
+      `,
+    };
+  }
+
+  private buildBookingCancellationMessage(
+    to: string,
+    customerName: string,
+    appointmentDate: string,
+    timeSlot: string,
+    clinicName: string,
+  ): EmailMessage {
+    const safeName = this.escapeHtml(customerName);
+    const safeDate = this.escapeHtml(appointmentDate);
+    const safeSlot = this.escapeHtml(timeSlot);
+    const safeClinic = this.escapeHtml(clinicName);
+    return {
+      to,
+      from: this.fromEmail,
+      subject: `Appointment cancelled: ${appointmentDate} at ${timeSlot}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Appointment Cancelled</h2>
+          <p>Hi ${safeName}, your appointment on ${safeDate} at ${safeSlot} has been cancelled.</p>
+          <p style="color: #666; font-size: 14px;">Please contact ${safeClinic} to rebook at a time that works for you.</p>
+          <p style="color: #999; font-size: 12px;">— The MUSAED Team</p>
+        </div>
+      `,
+    };
+  }
+
+  private buildBookingRescheduleMessage(
+    to: string,
+    customerName: string,
+    oldDate: string,
+    oldTime: string,
+    newDate: string,
+    newTime: string,
+    clinicName: string,
+  ): EmailMessage {
+    const safeName = this.escapeHtml(customerName);
+    const safeOldDate = this.escapeHtml(oldDate);
+    const safeOldTime = this.escapeHtml(oldTime);
+    const safeNewDate = this.escapeHtml(newDate);
+    const safeNewTime = this.escapeHtml(newTime);
+    const safeClinic = this.escapeHtml(clinicName);
+    return {
+      to,
+      from: this.fromEmail,
+      subject: `Appointment rescheduled: ${newDate} at ${newTime}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Appointment Rescheduled</h2>
+          <p>Hi ${safeName}, your appointment has been moved from ${safeOldDate} at ${safeOldTime} to ${safeNewDate} at ${safeNewTime}.</p>
+          <p style="color: #666; font-size: 14px;">If this does not work for you, please contact ${safeClinic} to arrange another time.</p>
           <p style="color: #999; font-size: 12px;">— The MUSAED Team</p>
         </div>
       `,

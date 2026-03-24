@@ -90,6 +90,21 @@ export class NotificationsController {
     return { ok: true, deleted };
   }
 
+  @Delete('dedupe')
+  async dedupe(
+    @Request() req: AuthenticatedRequest,
+    @Query('days') days?: string,
+  ) {
+    const userId = req.user._id.toString();
+    const parsed = Number.parseInt(days ?? '30', 10);
+    const lookbackDays = Number.isFinite(parsed) && parsed > 0 ? parsed : 30;
+    const deleted = await this.notificationsService.cleanupDuplicatesForUser(
+      userId,
+      lookbackDays,
+    );
+    return { ok: true, deleted, lookbackDays };
+  }
+
   @Delete(':id')
   async delete(
     @Param('id', ParseObjectIdPipe) id: string,

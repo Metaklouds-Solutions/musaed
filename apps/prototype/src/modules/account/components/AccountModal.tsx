@@ -32,20 +32,29 @@ export function AccountModal() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  const handleExportMyData = useCallback(() => {
-    if (user) {
-      gdprAdapter.exportUserData(user);
+  const handleExportMyData = useCallback(async () => {
+    if (!user) return;
+    try {
+      await gdprAdapter.exportUserData(user);
       closeModal();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Export failed';
+      toast.error(message);
     }
   }, [user, closeModal]);
 
-  const handleDeleteAccount = useCallback(() => {
+  const handleDeleteAccount = useCallback(async () => {
     if (!user) return;
-    gdprAdapter.deleteUserData(user.id, () => {
-      closeModal();
-      logout();
-      navigate('/login');
-    });
+    try {
+      await gdprAdapter.deleteUserData(user.id, () => {
+        closeModal();
+        logout();
+        navigate('/login');
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed';
+      toast.error(message);
+    }
   }, [user, closeModal, logout, navigate]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -66,8 +75,9 @@ export function AccountModal() {
       setPasswordSaved(true);
       toast.success('Password updated successfully');
       setTimeout(() => setPasswordSaved(false), 2000);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to update password');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to update password';
+      toast.error(message);
     } finally {
       setIsSavingPassword(false);
     }

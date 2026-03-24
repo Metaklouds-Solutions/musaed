@@ -348,27 +348,35 @@ async function seed() {
 
     // ── Clinics Voice Template (Arabic clinic reception) ──
     console.log('🤖 Seeding Clinics Voice Template...');
-    const existingClinicsTemplate = await AgentTemplate.findOne({
-      slug: 'clinics-voice-template',
-      deletedAt: null,
-    });
-    if (!existingClinicsTemplate) {
-      const clinicsTemplatePath = path.resolve(
-        process.cwd(),
-        'templates',
-        'clinics-voice-template.json',
+    const clinicsTemplatePath = path.resolve(
+      process.cwd(),
+      'templates',
+      'clinics-voice-template.json',
+    );
+    let clinicsFlow: Record<string, unknown> | null = null;
+    try {
+      const raw = await import('node:fs/promises').then((fs) =>
+        fs.readFile(clinicsTemplatePath, 'utf8'),
       );
-      let clinicsFlow: Record<string, unknown> | null = null;
-      try {
-        const raw = await import('node:fs/promises').then((fs) =>
-          fs.readFile(clinicsTemplatePath, 'utf8'),
-        );
-        clinicsFlow = JSON.parse(raw) as Record<string, unknown>;
-      } catch {
-        clinicsFlow = null;
-      }
+      clinicsFlow = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      clinicsFlow = null;
+    }
 
-      if (clinicsFlow && clinicsFlow.conversationFlow && clinicsFlow.voice_id) {
+    if (clinicsFlow && clinicsFlow.conversationFlow && clinicsFlow.voice_id) {
+      const existingClinicsTemplate = await AgentTemplate.findOne({
+        slug: 'clinics-voice-template',
+        deletedAt: null,
+      });
+      if (existingClinicsTemplate) {
+        existingClinicsTemplate.flowTemplate = clinicsFlow;
+        existingClinicsTemplate.version =
+          (existingClinicsTemplate.version ?? 0) + 1;
+        await existingClinicsTemplate.save();
+        console.log(
+          `   🔄 Updated Clinics Voice Template (v${String(existingClinicsTemplate.version)})\n`,
+        );
+      } else {
         await AgentTemplate.create({
           name: 'Clinics Voice Template',
           slug: 'clinics-voice-template',
@@ -382,42 +390,48 @@ async function seed() {
           version: 1,
         });
         console.log('   ✅ Seeded Clinics Voice Template\n');
-      } else {
-        console.log(
-          '   ⚠️  templates/clinics-voice-template.json not found or invalid, skipping\n',
-        );
       }
     } else {
-      console.log('   ⏭️  Clinics Voice Template already exists, skipping\n');
+      console.log(
+        '   ⚠️  templates/clinics-voice-template.json not found or invalid, skipping\n',
+      );
     }
 
     // ── Single-Prompt Agent Template (Iron & Blade barber booking) ──
     console.log('🤖 Seeding Single-Prompt Agent Template...');
-    const existingSinglePromptTemplate = await AgentTemplate.findOne({
-      slug: 'single-prompt-agent',
-      deletedAt: null,
-    });
-    if (!existingSinglePromptTemplate) {
-      const singlePromptPath = path.resolve(
-        process.cwd(),
-        'templates',
-        'single-prompt-agent.json',
+    const singlePromptPath = path.resolve(
+      process.cwd(),
+      'templates',
+      'single-prompt-agent.json',
+    );
+    let singlePromptFlow: Record<string, unknown> | null = null;
+    try {
+      const raw = await import('node:fs/promises').then((fs) =>
+        fs.readFile(singlePromptPath, 'utf8'),
       );
-      let singlePromptFlow: Record<string, unknown> | null = null;
-      try {
-        const raw = await import('node:fs/promises').then((fs) =>
-          fs.readFile(singlePromptPath, 'utf8'),
-        );
-        singlePromptFlow = JSON.parse(raw) as Record<string, unknown>;
-      } catch {
-        singlePromptFlow = null;
-      }
+      singlePromptFlow = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      singlePromptFlow = null;
+    }
 
-      if (
-        singlePromptFlow &&
-        singlePromptFlow.response_engine &&
-        singlePromptFlow.retellLlmData
-      ) {
+    if (
+      singlePromptFlow &&
+      singlePromptFlow.response_engine &&
+      singlePromptFlow.retellLlmData
+    ) {
+      const existingSinglePromptTemplate = await AgentTemplate.findOne({
+        slug: 'single-prompt-agent',
+        deletedAt: null,
+      });
+      if (existingSinglePromptTemplate) {
+        existingSinglePromptTemplate.flowTemplate = singlePromptFlow;
+        existingSinglePromptTemplate.version =
+          (existingSinglePromptTemplate.version ?? 0) + 1;
+        await existingSinglePromptTemplate.save();
+        console.log(
+          `   🔄 Updated Single-Prompt Agent Template (v${String(existingSinglePromptTemplate.version)})\n`,
+        );
+      } else {
         await AgentTemplate.create({
           name: 'Single-Prompt Agent',
           slug: 'single-prompt-agent',
@@ -431,14 +445,10 @@ async function seed() {
           version: 1,
         });
         console.log('   ✅ Seeded Single-Prompt Agent Template\n');
-      } else {
-        console.log(
-          '   ⚠️  templates/single-prompt-agent.json not found or invalid, skipping\n',
-        );
       }
     } else {
       console.log(
-        '   ⏭️  Single-Prompt Agent Template already exists, skipping\n',
+        '   ⚠️  templates/single-prompt-agent.json not found or invalid, skipping\n',
       );
     }
 

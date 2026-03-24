@@ -52,7 +52,10 @@ export const locationsAdapter = {
     return loadAll().filter((l) => l.tenantId === tenantId);
   },
 
-  create(location: Omit<Location, 'id' | 'tenantId'>, tenantId: string): Location {
+  async create(
+    location: Omit<Location, 'id' | 'tenantId'>,
+    tenantId: string,
+  ): Promise<Location> {
     const all = loadAll();
     const created: Location = {
       ...location,
@@ -64,19 +67,24 @@ export const locationsAdapter = {
     return created;
   },
 
-  update(id: string, patch: Partial<Omit<Location, 'id' | 'tenantId'>>): Location | null {
+  async update(
+    id: string,
+    patch: Partial<Omit<Location, 'id' | 'tenantId'>>,
+    tenantId: string,
+  ): Promise<Location | null> {
     const all = loadAll();
-    const idx = all.findIndex((l) => l.id === id);
+    const idx = all.findIndex((l) => l.id === id && l.tenantId === tenantId);
     if (idx < 0) return null;
     all[idx] = { ...all[idx], ...patch };
     saveAll(all);
     return all[idx];
   },
 
-  remove(id: string): boolean {
-    const all = loadAll().filter((l) => l.id !== id);
-    if (all.length === loadAll().length) return false;
-    saveAll(all);
+  async remove(id: string, tenantId: string): Promise<boolean> {
+    const all = loadAll();
+    const next = all.filter((l) => !(l.id === id && l.tenantId === tenantId));
+    if (next.length === all.length) return false;
+    saveAll(next);
     return true;
   },
 };

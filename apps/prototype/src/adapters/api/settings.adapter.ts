@@ -3,6 +3,7 @@
  */
 
 import { api } from '../../lib/apiClient';
+import { primeTenantSettingsCaches } from './tenantSettingsCache';
 
 export interface AdminUser {
   id: string;
@@ -102,6 +103,9 @@ export const settingsAdapter = {
           appointmentReminders?: { advanceMinutes?: number; channel?: string };
         };
       }>('/tenant/settings');
+      if (tenantId) {
+        primeTenantSettingsCaches(tenantId, data);
+      }
       const bh = data.settings?.businessHours;
       const businessHours = typeof bh === 'string' ? bh : defaultTenantSettings.businessHours;
       return {

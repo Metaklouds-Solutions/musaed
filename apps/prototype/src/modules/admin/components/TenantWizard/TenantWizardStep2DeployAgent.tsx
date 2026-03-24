@@ -43,7 +43,7 @@ export function TenantWizardStep2DeployAgent({
       </div>
       <div className="space-y-2">
         {templatesLoading && (
-          <p className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 p-4 text-sm text-[var(--text-muted)]">
+          <p className="rounded-xl panel-soft p-4 text-sm text-[var(--text-muted)]">
             Loading templates...
           </p>
         )}
@@ -60,7 +60,7 @@ export function TenantWizardStep2DeployAgent({
           </div>
         )}
         {showEmpty && (
-          <p className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 p-4 text-sm text-[var(--text-muted)]">
+          <p className="rounded-xl panel-soft p-4 text-sm text-[var(--text-muted)]">
             No templates available. Run the seed script to add templates.
           </p>
         )}

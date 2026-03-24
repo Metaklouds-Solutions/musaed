@@ -557,6 +557,56 @@ export class WebhooksService {
     });
   }
 
+  /**
+   * Lists recent processed webhook events (dedupe ledger) for admin dashboards.
+   *
+   * @param limit - Max rows (1–100)
+   * @param skip - Pagination offset
+   */
+  async listProcessedEvents(
+    limit: number,
+    skip: number,
+  ): Promise<{
+    data: Array<{
+      eventId: string;
+      source: string;
+      eventType: string;
+      processedAt: string;
+    }>;
+    total: number;
+  }> {
+    const safeLimit = Math.min(100, Math.max(1, Math.floor(limit)));
+    const safeSkip = Math.max(0, Math.floor(skip));
+    const [raw, total] = await Promise.all([
+      this.processedEventModel
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(safeSkip)
+        .limit(safeLimit)
+        .lean(),
+      this.processedEventModel.countDocuments(),
+    ]);
+    const data = raw.map((doc) => {
+      const d = doc as {
+        eventId?: string;
+        source?: string;
+        eventType?: string;
+        createdAt?: Date;
+        processedAt?: Date;
+      };
+      const at = d.processedAt ?? d.createdAt ?? new Date();
+      const processedAt =
+        at instanceof Date ? at.toISOString() : new Date(String(at)).toISOString();
+      return {
+        eventId: d.eventId ?? '',
+        source: d.source ?? '',
+        eventType: d.eventType ?? '',
+        processedAt,
+      };
+    });
+    return { data, total };
+  }
+
   private deriveOutcome(summary?: string): string {
     const normalized = (summary ?? '').toLowerCase();
     if (

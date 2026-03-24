@@ -18,6 +18,14 @@ describe('WebhooksService', () => {
     findOne: jest.fn(),
     updateOne: jest.fn(),
   };
+  const runModelMock = {
+    findOneAndUpdate: jest.fn().mockResolvedValue({
+      _id: new Types.ObjectId(),
+    }),
+  };
+  const runEventModelMock = {
+    create: jest.fn().mockResolvedValue(undefined),
+  };
 
   const configEnabled = {
     get: jest.fn().mockReturnValue('true'),
@@ -33,6 +41,8 @@ describe('WebhooksService', () => {
       agentModelMock as never,
       processedEventModelMock as never,
       callSessionModelMock as never,
+      runModelMock as never,
+      runEventModelMock as never,
     );
   });
 
@@ -41,7 +51,7 @@ describe('WebhooksService', () => {
       event: 'call_started',
       call_id: 'call_123',
     });
-    expect(value).toBe('call_123:call_started');
+    expect(value).toBe('call_123-call_started');
   });
 
   it('upserts call session for call_started event', async () => {
@@ -90,6 +100,8 @@ describe('WebhooksService', () => {
       agentModelMock as never,
       processedEventModelMock as never,
       callSessionModelMock as never,
+      runModelMock as never,
+      runEventModelMock as never,
     );
 
     await disabledService.handleRetellCallStarted({

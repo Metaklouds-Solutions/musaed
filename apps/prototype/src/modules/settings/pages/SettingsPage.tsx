@@ -1,5 +1,5 @@
 /**
- * Tenant settings page. Tab switcher: Profile | Team | Availability | Notifications | Integrations | Agent | Support.
+ * Tenant settings page. Tab switcher: Profile | Availability | Notifications | Integrations | Agent | Support.
  * Relevant sections grouped into tabs (like Admin Settings).
  */
 
@@ -13,7 +13,6 @@ import {
   NotificationsSection,
   ProviderAvailabilitySection,
   CustomPromptsSection,
-  TeamSection,
   SupportSection,
 } from '../components';
 import { settingsAdapter } from '../../../adapters';
@@ -28,16 +27,14 @@ import {
   Plug,
   Bot,
   Construction,
-  UserPlus,
   Headphones,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type SettingsTab = 'profile' | 'team' | 'availability' | 'notifications' | 'integrations' | 'agent' | 'support';
+type SettingsTab = 'profile' | 'availability' | 'notifications' | 'integrations' | 'agent' | 'support';
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: 'profile', label: 'Profile', icon: Building2 },
-  { id: 'team', label: 'Team', icon: UserPlus },
   { id: 'availability', label: 'Availability', icon: CalendarRange },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'integrations', label: 'Integrations', icon: Plug },
@@ -159,18 +156,6 @@ export function SettingsPage() {
             className="space-y-8 max-w-3xl"
           >
             <ClinicProfileSection settings={settings} onChange={setSettings} />
-          </motion.div>
-        )}
-        {activeTab === 'team' && (
-          <motion.div
-            key="team"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-8 w-full"
-          >
-            <TeamSection />
           </motion.div>
         )}
         {activeTab === 'availability' && (

@@ -28,7 +28,7 @@ export function CallHistory({ calls }: CallHistoryProps) {
   if (calls.length === 0) {
     return (
       <div
-        className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5"
+        className="rounded-[var(--radius-card)] card p-5"
         style={{ minHeight: '100px' }}
       >
         <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3">
@@ -40,7 +40,7 @@ export function CallHistory({ calls }: CallHistoryProps) {
   }
   return (
     <div
-      className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5"
+      className="rounded-[var(--radius-card)] card p-5"
       style={{ minHeight: '100px' }}
     >
       <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">

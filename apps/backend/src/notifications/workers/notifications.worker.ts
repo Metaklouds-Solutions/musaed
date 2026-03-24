@@ -29,6 +29,8 @@ export class NotificationsProcessor extends WorkerHost {
       meta,
       metadata,
       priority,
+      dedupeKey,
+      dedupeWindowSeconds,
     } = job.data;
 
     this.logger.log(
@@ -49,6 +51,8 @@ export class NotificationsProcessor extends WorkerHost {
           meta,
           metadata,
           priority,
+          dedupeKey,
+          dedupeWindowSeconds,
         });
       this.logger.debug({
         event: 'notification_fanout_completed',

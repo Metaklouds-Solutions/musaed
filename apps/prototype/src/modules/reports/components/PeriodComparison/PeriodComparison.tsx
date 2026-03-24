@@ -50,7 +50,7 @@ export function PeriodComparison({ current, previous, label }: PeriodComparisonP
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-[var(--radius-card)] card-glass p-5"
+      className="rounded-[var(--radius-card)] card p-5"
     >
       <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">
         Period comparison
@@ -71,7 +71,7 @@ export function PeriodComparison({ current, previous, label }: PeriodComparisonP
           return (
             <div
               key={key}
-              className="rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 min-w-0 overflow-hidden"
+              className="rounded-lg panel-soft p-4 min-w-0 overflow-hidden"
             >
               <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide truncate">
                 {l}
@@ -109,3 +109,4 @@ export function PeriodComparison({ current, previous, label }: PeriodComparisonP
     </motion.div>
   );
 }
+

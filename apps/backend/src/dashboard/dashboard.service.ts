@@ -236,7 +236,11 @@ export class DashboardService {
     dateFrom?: string,
     dateTo?: string,
   ): Promise<TenantDashboardSummaryDto> {
-    const analytics = await this.getCallsAnalyticsForRange(tenantId, dateFrom, dateTo);
+    const analytics = await this.getCallsAnalyticsForRange(
+      tenantId,
+      dateFrom,
+      dateTo,
+    );
     const [callsToday, totalBookings] = await Promise.all([
       this.callSessionModel.countDocuments({
         tenantId: new Types.ObjectId(tenantId),
@@ -245,7 +249,9 @@ export class DashboardService {
           $lte: new Date(),
         },
       }),
-      this.bookingModel.countDocuments(this.buildBookingRangeFilter(tenantId, dateFrom, dateTo)),
+      this.bookingModel.countDocuments(
+        this.buildBookingRangeFilter(tenantId, dateFrom, dateTo),
+      ),
     ]);
 
     const totalCalls = analytics.totalCalls;
@@ -260,7 +266,8 @@ export class DashboardService {
           : failed > 0
             ? 'failed'
             : '—';
-    const minutesUsed = totalCalls > 0 ? (analytics.avgDuration * totalCalls) / 60 : 0;
+    const minutesUsed =
+      totalCalls > 0 ? (analytics.avgDuration * totalCalls) / 60 : 0;
     const signal = this.buildTenantSignal({
       totalCalls,
       totalBookings,
@@ -498,7 +505,10 @@ export class DashboardService {
         { $match: match },
         { $group: { _id: '$outcome', count: { $sum: 1 } } },
       ]),
-      this.callSessionModel.aggregate<{ totalCalls: number; avgDuration: number }>([
+      this.callSessionModel.aggregate<{
+        totalCalls: number;
+        avgDuration: number;
+      }>([
         { $match: match },
         {
           $group: {
@@ -543,7 +553,9 @@ export class DashboardService {
     const from = dateFrom
       ? this.startOfDay(new Date(dateFrom))
       : this.startOfDaysAgo(6);
-    const to = dateTo ? this.endOfDay(new Date(dateTo)) : this.endOfDay(new Date());
+    const to = dateTo
+      ? this.endOfDay(new Date(dateTo))
+      : this.endOfDay(new Date());
     filter.date = { $gte: from, $lte: to };
     return filter;
   }
@@ -563,7 +575,8 @@ export class DashboardService {
     if (args.totalCalls > 0 && args.recentRows === 0) {
       return {
         status: 'warning',
-        reason: 'Aggregate call counts exist, but recent call rows are missing.',
+        reason:
+          'Aggregate call counts exist, but recent call rows are missing.',
       };
     }
 

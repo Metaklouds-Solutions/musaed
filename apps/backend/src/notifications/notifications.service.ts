@@ -29,6 +29,8 @@ export interface CreateNotificationInput {
   metadata?: Record<string, unknown>;
   meta?: Record<string, unknown>; // backward compatibility
   priority?: string; // backward compatibility
+  dedupeKey?: string;
+  dedupeWindowSeconds?: number;
 }
 
 export interface NotificationFilters {
@@ -60,6 +62,18 @@ export class NotificationsService {
    * Create a single notification and emit via WebSocket.
    */
   async create(input: CreateNotificationInput): Promise<NotificationDocument> {
+    const duplicate = await this.findRecentDuplicate(input);
+    if (duplicate) return duplicate;
+    const dedupeMeta = input.dedupeKey ? { dedupeKey: input.dedupeKey } : {};
+    const mergedMeta = {
+      ...(input.meta ?? input.metadata ?? {}),
+      ...dedupeMeta,
+    };
+    const mergedMetadata = {
+      ...(input.metadata ?? input.meta ?? {}),
+      ...dedupeMeta,
+    };
+
     const doc = await this.notificationModel.create({
       userId: new Types.ObjectId(input.userId),
       tenantId: input.tenantId ? new Types.ObjectId(input.tenantId) : null,
@@ -69,8 +83,8 @@ export class NotificationsService {
       title: input.title,
       message: input.message,
       link: input.link ?? '',
-      meta: input.meta ?? input.metadata ?? {},
-      metadata: input.metadata ?? input.meta ?? {},
+      meta: mergedMeta,
+      metadata: mergedMetadata,
       read: false,
       priority: input.priority ?? 'normal',
     });
@@ -119,6 +133,8 @@ export class NotificationsService {
         meta: data.meta ?? data.metadata,
         metadata: data.metadata ?? data.meta,
         priority: data.priority,
+        dedupeKey: data.dedupeKey,
+        dedupeWindowSeconds: data.dedupeWindowSeconds,
       });
       if (jobId) {
         this.logger.debug({
@@ -150,6 +166,8 @@ export class NotificationsService {
     meta?: Record<string, unknown>;
     metadata?: Record<string, unknown>;
     priority?: string;
+    dedupeKey?: string;
+    dedupeWindowSeconds?: number;
   }): Promise<NotificationDocument> {
     return this.create({
       userId: payload.userId,
@@ -163,6 +181,8 @@ export class NotificationsService {
       metadata: payload.metadata ?? payload.meta,
       meta: payload.meta,
       priority: payload.priority,
+      dedupeKey: payload.dedupeKey,
+      dedupeWindowSeconds: payload.dedupeWindowSeconds,
     });
   }
 
@@ -183,9 +203,35 @@ export class NotificationsService {
       meta?: Record<string, unknown>;
       metadata?: Record<string, unknown>;
       priority?: string;
+      dedupeKey?: string;
+      dedupeWindowSeconds?: number;
     },
   ): Promise<number> {
     if (userIds.length === 0) return 0;
+    if (data.dedupeKey) {
+      let created = 0;
+      for (const userId of userIds) {
+        const before = await this.getUnreadCount(userId);
+        await this.createFromQueue({
+          userId,
+          tenantId: data.tenantId,
+          type: data.type,
+          source: data.source,
+          severity: data.severity,
+          title: data.title,
+          message: data.message,
+          link: data.link,
+          meta: data.meta,
+          metadata: data.metadata,
+          priority: data.priority,
+          dedupeKey: data.dedupeKey,
+          dedupeWindowSeconds: data.dedupeWindowSeconds,
+        });
+        const after = await this.getUnreadCount(userId);
+        if (after > before) created += 1;
+      }
+      return created;
+    }
 
     const docs = userIds.map((userId) => ({
       userId: new Types.ObjectId(userId),
@@ -369,6 +415,73 @@ export class NotificationsService {
     return result.deletedCount ?? 0;
   }
 
+  /**
+   * Removes duplicate notifications for a user while keeping the newest row in each duplicate group.
+   * Duplicate key: type + source + title + message + dedupeKey (if present).
+   */
+  async cleanupDuplicatesForUser(
+    userId: string,
+    lookbackDays = 30,
+  ): Promise<number> {
+    const since = new Date(Date.now() - Math.max(1, lookbackDays) * 86_400_000);
+    const userObjectId = new Types.ObjectId(userId);
+
+    const groups = await this.notificationModel.aggregate<{
+      idsToDelete: Types.ObjectId[];
+      duplicateCount: number;
+    }>([
+      {
+        $match: {
+          userId: userObjectId,
+          createdAt: { $gte: since },
+        },
+      },
+      {
+        $addFields: {
+          dedupeKey: {
+            $ifNull: ['$meta.dedupeKey', '$metadata.dedupeKey'],
+          },
+        },
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $group: {
+          _id: {
+            type: '$type',
+            source: '$source',
+            title: '$title',
+            message: '$message',
+            dedupeKey: '$dedupeKey',
+          },
+          ids: { $push: '$_id' },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $match: { count: { $gt: 1 } },
+      },
+      {
+        $project: {
+          duplicateCount: { $subtract: ['$count', 1] },
+          idsToDelete: {
+            $slice: ['$ids', 1, { $subtract: ['$count', 1] }],
+          },
+        },
+      },
+    ]);
+
+    const idsToDelete = groups.flatMap((g) => g.idsToDelete);
+    if (idsToDelete.length === 0) return 0;
+
+    const result = await this.notificationModel.deleteMany({
+      _id: { $in: idsToDelete },
+      userId: userObjectId,
+    });
+    return result.deletedCount ?? 0;
+  }
+
   private mapPriorityToSeverity(
     priority?: string,
   ): 'critical' | 'important' | 'normal' | 'info' {
@@ -452,5 +565,25 @@ export class NotificationsService {
         return '';
       })(),
     };
+  }
+
+  private async findRecentDuplicate(
+    input: CreateNotificationInput,
+  ): Promise<NotificationDocument | null> {
+    const key = input.dedupeKey?.trim();
+    if (!key) return null;
+    const windowSeconds = Math.max(10, input.dedupeWindowSeconds ?? 300);
+    const since = new Date(Date.now() - windowSeconds * 1000);
+    return this.notificationModel
+      .findOne({
+        userId: new Types.ObjectId(input.userId),
+        type: input.type,
+        title: input.title,
+        message: input.message,
+        source: input.source ?? 'system',
+        createdAt: { $gte: since },
+        $or: [{ 'meta.dedupeKey': key }, { 'metadata.dedupeKey': key }],
+      })
+      .sort({ createdAt: -1 });
   }
 }

@@ -16,7 +16,10 @@ import {
   SupportTicketDocument,
 } from '../support/schemas/support-ticket.schema';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
-import { CallSession, CallSessionDocument } from '../calls/schemas/call-session.schema';
+import {
+  CallSession,
+  CallSessionDocument,
+} from '../calls/schemas/call-session.schema';
 
 @Injectable()
 export class AdminService {
@@ -87,7 +90,11 @@ export class AdminService {
 
   async getDashboardSummary() {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const sevenDaysAgo = new Date(todayStart);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
@@ -129,7 +136,9 @@ export class AdminService {
         .limit(5)
         .populate('tenantId', 'name')
         .populate('agentInstanceId', 'name')
-        .select('_id tenantId agentInstanceId outcome durationMs startedAt createdAt')
+        .select(
+          '_id tenantId agentInstanceId outcome durationMs startedAt createdAt',
+        )
         .lean(),
       this.getCallsAnalytics(sevenDaysAgo, now),
       this.bookingModel.countDocuments({
@@ -169,7 +178,9 @@ export class AdminService {
 
     const supportSnapshot = {
       openCount: typedSupportRows.length,
-      criticalCount: typedSupportRows.filter((ticket) => ticket.priority === 'critical').length,
+      criticalCount: typedSupportRows.filter(
+        (ticket) => ticket.priority === 'critical',
+      ).length,
       oldestWaitingDays: typedSupportRows.reduce((max, ticket) => {
         const createdAt = this.toDate(ticket.createdAt);
         if (Number.isNaN(createdAt.getTime())) return max;
@@ -181,8 +192,10 @@ export class AdminService {
     const totalCalls = analytics.totalCalls;
     const booked = analytics.outcomes.booked;
     const escalated = analytics.outcomes.escalated;
-    const aiMinutesUsed = totalCalls > 0 ? (totalCalls * analytics.avgDuration) / 60 : 0;
-    const estimatedCostUsd = totalCalls > 0 ? (totalCalls * analytics.avgDuration * 0.05) / 60 : 0;
+    const aiMinutesUsed =
+      totalCalls > 0 ? (totalCalls * analytics.avgDuration) / 60 : 0;
+    const estimatedCostUsd =
+      totalCalls > 0 ? (totalCalls * analytics.avgDuration * 0.05) / 60 : 0;
     const webhookStatus = supportSnapshot.criticalCount > 0 ? 'degraded' : 'ok';
 
     return {
@@ -234,7 +247,9 @@ export class AdminService {
           id: tenantId,
           name: tenant.name ?? '',
           plan:
-            tenant.planId && typeof tenant.planId === 'object' && 'name' in tenant.planId
+            tenant.planId &&
+            typeof tenant.planId === 'object' &&
+            'name' in tenant.planId
               ? String(tenant.planId.name ?? '—')
               : '—',
           status:
@@ -252,11 +267,15 @@ export class AdminService {
       recentCalls: typedRecentCalls.map((call) => ({
         id: String(call._id),
         tenantId:
-          call.tenantId && typeof call.tenantId === 'object' && '_id' in call.tenantId
+          call.tenantId &&
+          typeof call.tenantId === 'object' &&
+          '_id' in call.tenantId
             ? String(call.tenantId._id)
             : '',
         tenantName:
-          call.tenantId && typeof call.tenantId === 'object' && 'name' in call.tenantId
+          call.tenantId &&
+          typeof call.tenantId === 'object' &&
+          'name' in call.tenantId
             ? String(call.tenantId.name ?? '—')
             : '—',
         agentName:
@@ -288,7 +307,10 @@ export class AdminService {
         { $match: { startedAt: { $gte: from, $lte: to } } },
         { $group: { _id: '$outcome', count: { $sum: 1 } } },
       ]),
-      this.callSessionModel.aggregate<{ totalCalls: number; avgDuration: number }>([
+      this.callSessionModel.aggregate<{
+        totalCalls: number;
+        avgDuration: number;
+      }>([
         { $match: { startedAt: { $gte: from, $lte: to } } },
         {
           $group: {
@@ -343,16 +365,22 @@ export class AdminService {
       };
     }
 
-    if (args.activeTenants > 0 && args.calls7d === 0 && args.recentCalls === 0) {
+    if (
+      args.activeTenants > 0 &&
+      args.calls7d === 0 &&
+      args.recentCalls === 0
+    ) {
       return {
         status: 'warning',
-        reason: 'Active tenants exist, but no recent call activity reached the admin dashboard.',
+        reason:
+          'Active tenants exist, but no recent call activity reached the admin dashboard.',
       };
     }
 
     return {
       status: 'healthy',
-      reason: 'Tenant, call, and support activity are flowing into the admin dashboard.',
+      reason:
+        'Tenant, call, and support activity are flowing into the admin dashboard.',
     };
   }
 

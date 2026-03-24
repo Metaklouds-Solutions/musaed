@@ -59,6 +59,19 @@ export interface Booking {
   amount: number;
   status: string;
   createdAt: string;
+  /** Appointment date (ISO string). */
+  date?: string;
+  /** Time slot (HH:mm). */
+  timeSlot?: string;
+  durationMinutes?: number;
+  serviceType?: string;
+  providerId?: string;
+  providerName?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  notes?: string;
+  source?: string;
 }
 
 export interface Alert {

@@ -78,7 +78,8 @@ export const reportsAdapter = {
       const escalationRate = totalCalls > 0 ? (escalated / totalCalls) * 100 : 0;
       return {
         totalCalls,
-        totalBookings: data.totalBookings ?? 0,
+        // Keep bookings metric consistent with conversion/outcomes source.
+        totalBookings: booked,
         avgDurationSec: (cm.avgDurationMs ?? 0) / 1000,
         conversionRate,
         escalationRate,

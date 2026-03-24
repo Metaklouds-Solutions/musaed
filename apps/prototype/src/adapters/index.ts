@@ -23,6 +23,7 @@ import * as localAudit from './local/audit.adapter';
 import * as localSearch from './local/search.adapter';
 import * as localSettings from './local/settings.adapter';
 import * as localFeatureFlags from './local/featureFlags.adapter';
+import * as apiFeatureFlags from './api/featureFlags.adapter';
 import * as localWebhooks from './local/webhooks.adapter';
 import * as localABTest from './local/abTest.adapter';
 import * as localTwoFactor from './local/twoFactor.adapter';
@@ -33,8 +34,16 @@ import * as localSoftDelete from './local/softDelete.adapter';
 import * as localMaintenance from './local/maintenance.adapter';
 import * as apiMaintenance from './api/maintenance.adapter';
 import * as localGdpr from './local/gdpr.adapter';
+import * as apiGdpr from './api/gdpr.adapter';
 import * as localTools from './local/tools.adapter';
 import * as localSkills from './local/skills.adapter';
+import * as apiWebhooks from './api/webhooks.adapter';
+import * as apiAbTest from './api/abTest.adapter';
+import * as apiTwoFactor from './api/twoFactor.adapter';
+import * as apiLocations from './api/locations.adapter';
+import * as apiPms from './api/pms.adapter';
+import * as apiStaffProfile from './api/staffProfile.adapter';
+import * as apiSoftDelete from './api/softDelete.adapter';
 import * as apiDashboard from './api/dashboard.adapter';
 import * as apiAdmin from './api/admin.adapter';
 import * as apiCalls from './api/calls.adapter';
@@ -88,19 +97,31 @@ export const runsAdapter = isLocal ? localRuns.runsAdapter : apiRuns.runsAdapter
 export const exportAdapter = isLocal ? localExport.exportAdapter : apiExport.exportAdapter;
 export const auditAdapter = (isLocal ? localAudit.auditAdapter : apiAudit.auditAdapter) as typeof localAudit.auditAdapter;
 export const searchAdapter = (isLocal ? localSearch.searchAdapter : apiSearch.searchAdapter) as typeof localSearch.searchAdapter;
-export const featureFlagsAdapter = localFeatureFlags.featureFlagsAdapter;
-export const webhooksAdapter = localWebhooks.webhooksAdapter;
-export const abTestAdapter = localABTest.abTestAdapter;
-export const twoFactorAdapter = localTwoFactor.twoFactorAdapter;
-export const locationsAdapter = localLocations.locationsAdapter;
-export const pmsAdapter = localPms.pmsAdapter;
-export const staffProfileAdapter = localStaffProfile.staffProfileAdapter;
-export const softDeleteAdapter = localSoftDelete.softDeleteAdapter;
+export const featureFlagsAdapter = isLocal
+  ? localFeatureFlags.featureFlagsAdapter
+  : apiFeatureFlags.featureFlagsAdapter;
+export const FEATURE_FLAGS_CHANGED = isLocal
+  ? localFeatureFlags.FEATURE_FLAGS_CHANGED
+  : apiFeatureFlags.FEATURE_FLAGS_CHANGED;
+export const webhooksAdapter = isLocal ? localWebhooks.webhooksAdapter : apiWebhooks.webhooksAdapter;
+export const abTestAdapter = isLocal ? localABTest.abTestAdapter : apiAbTest.abTestAdapter;
+export const twoFactorAdapter = isLocal ? localTwoFactor.twoFactorAdapter : apiTwoFactor.twoFactorAdapter;
+export const locationsAdapter = isLocal ? localLocations.locationsAdapter : apiLocations.locationsAdapter;
+export const pmsAdapter = isLocal ? localPms.pmsAdapter : apiPms.pmsAdapter;
+export const staffProfileAdapter = isLocal
+  ? localStaffProfile.staffProfileAdapter
+  : apiStaffProfile.staffProfileAdapter;
+export const softDeleteAdapter = isLocal ? localSoftDelete.softDeleteAdapter : apiSoftDelete.softDeleteAdapter;
+export const SOFT_DELETE_CHANGED = isLocal
+  ? localSoftDelete.SOFT_DELETE_CHANGED
+  : apiSoftDelete.SOFT_DELETE_CHANGED;
 export const maintenanceAdapter = isLocal ? localMaintenance.maintenanceAdapter : apiMaintenance.maintenanceAdapter;
 export const MAINTENANCE_CHANGED = isLocal ? localMaintenance.MAINTENANCE_CHANGED : apiMaintenance.MAINTENANCE_CHANGED;
-export const gdprAdapter = localGdpr.gdprAdapter;
+export const gdprAdapter = isLocal ? localGdpr.gdprAdapter : apiGdpr.gdprAdapter;
 export const toolsAdapter = localTools.toolsAdapter;
 export const skillsAdapter = localSkills.skillsAdapter;
+
+export { primeTenantSettingsCaches } from './api/tenantSettingsCache';
 
 export type { DashboardMetrics, FunnelStage, TrendPoint } from '../shared/types';
 export type { AdminPulseKpis, AdminHealth } from '../shared/types';
@@ -109,3 +130,4 @@ export type { ScheduledReportConfig } from './local/reports.adapter';
 export type { CalendarAppointment, CalendarAvailability } from './local/bookings.adapter';
 export type { FeatureFlags, FeatureFlagKey } from './local/featureFlags.adapter';
 export type { ABTestConfig } from './local/abTest.adapter';
+export type { WebhookEvent, WebhookEventStatus } from './types/webhook-events';

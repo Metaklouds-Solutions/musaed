@@ -85,6 +85,11 @@ export const envValidationSchema = Joi.object({
     .optional()
     .default(10),
 
+  /** When true, allows POST /api/test-email (admin JWT + SMTP test). Default false. */
+  ENABLE_TEST_EMAIL: booleanString('false'),
+  /** Optional default recipient for test-email when body omits `to`. */
+  TEST_EMAIL_RECIPIENT: Joi.string().optional().allow(''),
+
   // ── Frontend URL ─────────────────────────────────────────────────────
   FRONTEND_URL: Joi.string().optional().default('http://localhost:5173'),
 

@@ -159,7 +159,7 @@ export function AdminSupportPage() {
         </div>
 
         {/* Meta bar skeleton */}
-        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/60 p-3 flex flex-wrap items-center gap-2">
+        <div className="rounded-xl panel-soft p-3 flex flex-wrap items-center gap-2">
           <Skeleton className="h-4 w-20 rounded-md" />
           <Skeleton className="h-5 w-14 rounded-full" />
           <Skeleton className="h-5 w-16 rounded-full" />
@@ -386,3 +386,4 @@ export function AdminSupportPage() {
     </div>
   );
 }
+

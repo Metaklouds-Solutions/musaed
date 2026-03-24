@@ -108,8 +108,8 @@ export function GlobalSearch({ className, placeholder, onOpenCommandPalette }: G
           'relative flex items-center w-full rounded-full h-8 sm:h-9',
           'px-2.5 sm:px-3',
           'bg-(var(--header-search-bg))',
-          'shadow-[var(--header-search-shadow)]',
-          'focus-within:shadow-(var(--header-search-shadow-focus)) focus-within:ring-2 focus-within:ring-[var(--ds-primary)]/20',
+          'shadow-(var(--header-search-shadow-focus))',
+          'ring-2 ring-[var(--ds-primary)]/20',
           'transition-shadow duration-200'
         )}
       >

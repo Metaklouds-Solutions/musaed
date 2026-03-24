@@ -31,6 +31,18 @@ export class TenantSettings {
     default: () => ({ advanceMinutes: 60, channel: 'email' }),
   })
   appointmentReminders?: AppointmentRemindersConfig;
+
+  /** A/B test UI config (agent version split). */
+  @Prop({ type: Object, default: {} })
+  abTest: Record<string, unknown>;
+
+  /** PMS connection stub / metadata until full integration. */
+  @Prop({ type: Object, default: {} })
+  pms: Record<string, unknown>;
+
+  /** Per-user provider availability matrix (userId → slots). */
+  @Prop({ type: Object, default: {} })
+  providerAvailability: Record<string, unknown>;
 }
 
 @Schema({ timestamps: true, collection: 'tenants' })

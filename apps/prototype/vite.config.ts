@@ -13,6 +13,18 @@ import { defineConfig, loadEnv } from 'vite';
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  if (mode === 'production') {
+    if (env.VITE_DATA_MODE !== 'api') {
+      throw new Error(
+        'Production build requires VITE_DATA_MODE=api. Set it in .env.production so the app uses real API adapters, not local mocks.',
+      );
+    }
+    if (!env.VITE_API_URL?.trim()) {
+      throw new Error(
+        'Production build requires VITE_API_URL (e.g. https://api.example.com/api).',
+      );
+    }
+  }
   return {
     plugins: [
       react(),

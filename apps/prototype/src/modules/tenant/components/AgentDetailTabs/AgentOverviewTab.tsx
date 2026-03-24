@@ -1,6 +1,6 @@
 /**
- * Agent detail Overview tab: identity, sync status, voice, and language.
- * Responsive layout: stacked on mobile, grid on larger screens.
+ * Agent detail Overview tab: identity, channel, live status, sync, voice, language.
+ * Live status and Voice/Language shown only when data is available.
  */
 
 import { motion } from 'motion/react';
@@ -10,6 +10,8 @@ import type { AgentDetailFull } from '../../../../shared/types';
 
 interface AgentOverviewTabProps {
   agent: AgentDetailFull;
+  /** Optional live status (active/paused/archived) from tenant agent. Shown when provided. */
+  status?: string;
 }
 
 interface InfoRowProps {
@@ -26,23 +28,41 @@ function InfoRow({ label, value }: InfoRowProps) {
   );
 }
 
-/** Renders core agent identity, sync state, voice, and language. */
-export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
+const EMPTY_PLACEHOLDER = '—';
+
+/** Renders core agent identity, sync state, channel, live status. Voice/Language only when present. */
+export function AgentOverviewTab({ agent, status }: AgentOverviewTabProps) {
   const language =
     agent.chatConfig.status !== 'Not Configured' && agent.chatConfig.languages?.length
       ? agent.chatConfig.languages.join(', ')
-      : '—';
+      : '';
+  const hasLanguage = !!language && language !== EMPTY_PLACEHOLDER;
+  const voice = agent.voiceConfig?.voiceName?.trim() || '';
+  const hasVoice = !!voice && voice !== EMPTY_PLACEHOLDER;
+  const statusLower = status?.toLowerCase() ?? '';
+  const isActive = statusLower === 'active';
+  const statusLabel = statusLower === 'active' ? 'Active' : statusLower === 'paused' ? 'Paused' : statusLower === 'archived' ? 'Archived' : status || 'Inactive';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="rounded-lg bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)]/50 overflow-hidden"
+      className="rounded-lg panel-soft overflow-hidden"
     >
       <dl className="px-4 sm:px-5">
         <InfoRow label="Name" value={agent.name} />
         <InfoRow label="Channel" value={<span className="capitalize">{agent.channel}</span>} />
+        {status !== undefined && (
+          <InfoRow
+            label="Live status"
+            value={
+              <Badge status={isActive ? 'active' : statusLower === 'archived' ? 'inactive' : 'pending'}>
+                {statusLabel}
+              </Badge>
+            }
+          />
+        )}
         <InfoRow
           label="Retell Agent ID"
           value={
@@ -68,9 +88,10 @@ export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
             </Badge>
           }
         />
-        <InfoRow label="Voice" value={agent.voiceConfig.voiceName} />
-        <InfoRow label="Language" value={language} />
+        {hasVoice && <InfoRow label="Voice" value={voice} />}
+        {hasLanguage && <InfoRow label="Language" value={language} />}
       </dl>
     </motion.div>
   );
 }
+

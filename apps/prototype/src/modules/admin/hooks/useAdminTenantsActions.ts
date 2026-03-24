@@ -4,8 +4,8 @@ import type { TenantListRow } from '../../../shared/types';
 
 /** Admin tenants actions hook for archive and CSV export operations. */
 export function useAdminTenantsActions() {
-  const archiveTenant = useCallback((tenantId: string) => {
-    softDeleteAdapter.softDeleteTenant(tenantId);
+  const archiveTenant = useCallback(async (tenantId: string) => {
+    await Promise.resolve(softDeleteAdapter.softDeleteTenant(tenantId));
   }, []);
 
   const toExportRows = useCallback(

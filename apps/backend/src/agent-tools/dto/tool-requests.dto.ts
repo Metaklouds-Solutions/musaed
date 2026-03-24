@@ -101,6 +101,34 @@ export class ResendInviteDto extends AgentIdDto {
   meeting_id?: string;
 }
 
+export class CancelBookingDto extends AgentIdDto {
+  @IsEmail()
+  email: string;
+
+  @IsMongoId()
+  @IsOptional()
+  meeting_id?: string;
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
+}
+
+export class RescheduleBookingDto extends AgentIdDto {
+  @IsEmail()
+  email: string;
+
+  @IsMongoId()
+  @IsOptional()
+  meeting_id?: string;
+
+  @IsString()
+  new_slot: string;
+
+  @IsString()
+  timezone: string;
+}
+
 export class InvokeSkillDto extends AgentIdDto {
   @IsObject()
   @IsOptional()

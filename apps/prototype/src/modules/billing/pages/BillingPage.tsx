@@ -22,7 +22,7 @@ function ModernStatCard({ label, value, trend, icon }: {
 
   return (
     <div 
-      className="group relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 transition-all duration-300 ease-out hover:shadow-lg hover:shadow-[var(--border-subtle)]/10 hover:-translate-y-1"
+      className="group metric-card relative overflow-hidden rounded-[var(--radius-card)] p-5 transition-all duration-300 ease-out hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -66,7 +66,7 @@ function CreditsSection({ onBuy }: { onBuy: () => void }) {
 
   return (
     <section 
-      className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--border-subtle)]/5"
+      className="relative overflow-hidden rounded-[var(--radius-card)] panel-soft p-6 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -143,11 +143,11 @@ function BillingSkeleton() {
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {skeletonKeys.map((key) => (
-          <div key={key} className="h-24 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)]" />
+          <div key={key} className="h-24 metric-card rounded-[var(--radius-card)]" />
         ))}
       </div>
       
-      <div className="h-32 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)]" />
+      <div className="h-32 panel-soft rounded-[var(--radius-card)]" />
     </div>
   );
 }
@@ -169,7 +169,7 @@ export function BillingPage() {
     return (
       <div className="space-y-6">
         <PageHeader title="Billing" description="Plan, credits, and usage" />
-        <div className="flex items-center gap-3 p-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)]/50">
+        <div className="flex items-center gap-3 p-4 rounded-[var(--radius-card)] panel-soft">
           <div className="w-8 h-8 rounded-full bg-[var(--text-muted)]/10 flex items-center justify-center">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--text-muted)]">
               <circle cx="12" cy="12" r="10" />

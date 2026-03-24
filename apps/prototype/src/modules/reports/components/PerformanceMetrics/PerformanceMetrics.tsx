@@ -32,7 +32,7 @@ const metricConfig: Array<{
 /** Renders top-level performance KPIs for calls, conversion, and sentiment. */
 export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
   return (
-    <div className="rounded-[var(--radius-card)] card-glass p-5">
+    <div className="rounded-[var(--radius-card)] card-accent p-5">
       <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">
         Agent performance
       </h3>
@@ -50,7 +50,7 @@ export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 min-w-0 overflow-hidden"
+              className="rounded-lg panel-soft p-4 min-w-0 overflow-hidden"
             >
               <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide truncate">
                 {label}

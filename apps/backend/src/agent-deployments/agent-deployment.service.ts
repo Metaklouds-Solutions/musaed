@@ -23,6 +23,7 @@ import {
 import { RetellClient } from '../retell/retell.client';
 import { AgentDeploymentsService } from './agent-deployments.service';
 import { processFlowTemplate } from './utils/flow-processor';
+import { injectStandardTools } from './utils/standard-booking-tools';
 import { AuditService } from '../audit/audit.service';
 import { AgentDeploymentMetricsService } from './agent-deployment-metrics.service';
 
@@ -176,10 +177,10 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     for (const deployment of deployments) {
       if (deployment.retellAgentId) {
         try {
-          if (deployment.channel === 'chat') {
-            await this.retellClient.deleteChatAgent(deployment.retellAgentId);
-          } else {
+          if (deployment.channel === 'voice') {
             await this.retellClient.deleteAgent(deployment.retellAgentId);
+          } else {
+            await this.retellClient.deleteChatAgent(deployment.retellAgentId);
           }
         } catch (error: unknown) {
           const message =
@@ -383,7 +384,11 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     });
 
     try {
-      const processedFlow = processFlowTemplate(templateFlow, {
+      const flowWithStandardTools = injectStandardTools(
+        templateFlow,
+        apiBaseUrl,
+      );
+      const processedFlow = processFlowTemplate(flowWithStandardTools, {
         tenantId,
         agentInstanceId: instanceId,
         apiBaseUrl,
@@ -461,17 +466,19 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         `Channel deployment failed: instance=${instanceId} channel=${channel} error=${message}`,
       );
       if (createdRetellAgentId) {
-        await this.retellClient
-          .deleteAgent(createdRetellAgentId)
-          .catch((cleanupError: unknown) => {
-            const cleanupMessage =
-              cleanupError instanceof Error
-                ? cleanupError.message
-                : 'Unknown cleanup error';
-            this.logger.warn(
-              `Retell agent rollback failed: instance=${instanceId} channel=${channel} agentId=${createdRetellAgentId} error=${cleanupMessage}`,
-            );
-          });
+        const deleteCreatedAgent =
+          channel === 'voice'
+            ? this.retellClient.deleteAgent(createdRetellAgentId)
+            : this.retellClient.deleteChatAgent(createdRetellAgentId);
+        await deleteCreatedAgent.catch((cleanupError: unknown) => {
+          const cleanupMessage =
+            cleanupError instanceof Error
+              ? cleanupError.message
+              : 'Unknown cleanup error';
+          this.logger.warn(
+            `Retell agent rollback failed: instance=${instanceId} channel=${channel} agentId=${createdRetellAgentId} error=${cleanupMessage}`,
+          );
+        });
       }
       if (createdConversationFlowId) {
         await this.retellClient

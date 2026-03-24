@@ -35,6 +35,8 @@ export class BookingsController {
     @Query('limit') limit?: string,
     @Query('date') date?: string,
     @Query('status') status?: string,
+    @Query('start') start?: string,
+    @Query('end') end?: string,
   ) {
     const tenantId = requireTenantId(req);
     const pagination = parsePagination({ page, limit });
@@ -42,6 +44,8 @@ export class BookingsController {
       ...pagination,
       date,
       status,
+      start,
+      end,
     });
   }
 
@@ -50,6 +54,15 @@ export class BookingsController {
   create(@Request() req: AuthenticatedRequest, @Body() dto: CreateBookingDto) {
     const tenantId = requireTenantId(req);
     return this.bookingsService.create(tenantId, dto);
+  }
+
+  @Get(':id')
+  findOne(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    const tenantId = requireTenantId(req);
+    return this.bookingsService.findOneForTenant(id, tenantId);
   }
 
   @Patch(':id')

@@ -56,14 +56,14 @@ export function CallReplayViewer({ transcript }: CallReplayViewerProps) {
 
   if (segments.length === 0) {
     return (
-      <div className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+      <div className="rounded-[var(--radius-card)] card p-5">
         <p className="text-sm text-[var(--text-muted)]">No transcript</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+    <div className="rounded-[var(--radius-card)] card p-5">
       <div className="flex items-center justify-between gap-4 mb-4">
         <h3 className="text-base font-semibold text-[var(--text-primary)]">Call Replay</h3>
         <div className="flex items-center gap-2">

@@ -57,6 +57,19 @@ export function TwoFactorSetup({ userId, userEmail, onComplete, onCancel }: TwoF
     }
   }, [code, userId, secret, onComplete]);
 
+  if (import.meta.env.VITE_DATA_MODE === 'api') {
+    return (
+      <div className="rounded-xl border border-[var(--border-subtle)] p-6 space-y-4">
+        <p className="text-sm text-[var(--text-muted)]">
+          Authenticator setup is not available while the API does not enforce TOTP. Use a strong password instead.
+        </p>
+        <Button variant="secondary" onClick={onCancel}>
+          Back
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

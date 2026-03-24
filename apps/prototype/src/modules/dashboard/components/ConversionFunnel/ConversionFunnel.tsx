@@ -15,7 +15,7 @@ interface ConversionFunnelProps {
 export function ConversionFunnel({ stages }: ConversionFunnelProps) {
   if (stages.length === 0) {
     return (
-      <Card className="p-5 min-h-[140px]">
+      <Card className="p-5 min-h-[140px] metric-card">
         <EmptyState
           icon={GitBranch}
           title="No funnel data"
@@ -29,7 +29,7 @@ export function ConversionFunnel({ stages }: ConversionFunnelProps) {
   const max = Math.max(...stages.map((s) => s.count), 1);
 
   return (
-    <Card className="p-5 min-h-[140px]">
+    <Card className="p-5 min-h-[140px] metric-card">
       <h3 className="text-[var(--typography-subheading)] font-semibold text-[var(--text-primary)] mb-4">
         Conversion funnel
       </h3>

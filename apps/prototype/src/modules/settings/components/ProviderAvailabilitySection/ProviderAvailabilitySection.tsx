@@ -49,8 +49,9 @@ export function ProviderAvailabilitySection({ tenantId, onSaved }: ProviderAvail
     [staffList]
   );
   const profiles = useMemo(
-    () => (tenantId ? staffProfileAdapter.getProfiles(tenantId) : []),
-    [tenantId]
+    () =>
+      tenantId ? staffProfileAdapter.getProfiles(tenantId, staff.map((s) => s.userId)) : [],
+    [tenantId, staff]
   );
 
   const profileMap = useMemo(() => {

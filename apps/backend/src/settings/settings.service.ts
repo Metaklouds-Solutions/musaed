@@ -43,6 +43,10 @@ export class SettingsService {
       update['settings.locations'] = dto.locations;
     if (dto.appointmentReminders !== undefined)
       update['settings.appointmentReminders'] = dto.appointmentReminders;
+    if (dto.abTest !== undefined) update['settings.abTest'] = dto.abTest;
+    if (dto.pms !== undefined) update['settings.pms'] = dto.pms;
+    if (dto.providerAvailability !== undefined)
+      update['settings.providerAvailability'] = dto.providerAvailability;
 
     const tenant = await this.tenantModel.findOneAndUpdate(
       { _id: tenantId, deletedAt: null },

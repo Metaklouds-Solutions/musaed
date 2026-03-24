@@ -6,7 +6,12 @@ import { QUEUE_NAMES, DEFAULT_JOB_OPTIONS } from '../queue/queue.constants';
 import { getRedisConnectionOptions } from '../queue/queue.config';
 
 /** Email job types. */
-export type EmailJobType = 'invite' | 'password_reset' | 'appointment_reminder';
+export type EmailJobType =
+  | 'invite'
+  | 'password_reset'
+  | 'appointment_reminder'
+  | 'booking_cancellation'
+  | 'booking_reschedule';
 
 /** Payloads per email type. */
 export type EmailJobPayloadMap = {
@@ -18,11 +23,48 @@ export type EmailJobPayloadMap = {
     appointmentDate: string;
     timeSlot: string;
   };
+  booking_cancellation: {
+    to: string;
+    customerName: string;
+    appointmentDate: string;
+    timeSlot: string;
+    clinicName: string;
+  };
+  booking_reschedule: {
+    to: string;
+    customerName: string;
+    oldDate: string;
+    oldTime: string;
+    newDate: string;
+    newTime: string;
+    clinicName: string;
+  };
 };
 
 export type EmailJobPayload = {
   [K in EmailJobType]: { type: K; payload: EmailJobPayloadMap[K] };
 }[EmailJobType];
+
+function parseBooleanEnv(
+  value: string | undefined,
+  defaultValue = false,
+): boolean {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+  switch (value.trim().toLowerCase()) {
+    case 'true':
+    case '1':
+    case 'yes':
+      return true;
+    case 'false':
+    case '0':
+    case 'no':
+      return false;
+    default:
+      return defaultValue;
+  }
+}
 
 @Injectable()
 export class EmailQueueService {
@@ -31,8 +73,9 @@ export class EmailQueueService {
 
   constructor(private config: ConfigService) {
     const redisUrl = this.config.get<string>('REDIS_URL');
-    const enabled =
-      this.config.get<string>('QUEUE_EMAIL_ENABLED', 'false') === 'true';
+    const enabled = parseBooleanEnv(
+      this.config.get<string>('QUEUE_EMAIL_ENABLED', 'false'),
+    );
     if (redisUrl && enabled) {
       this.queue = new Queue<EmailJobPayload>(QUEUE_NAMES.EMAIL, {
         connection: getRedisConnectionOptions(redisUrl),

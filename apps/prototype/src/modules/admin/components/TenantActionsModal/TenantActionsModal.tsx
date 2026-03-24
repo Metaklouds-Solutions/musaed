@@ -181,7 +181,7 @@ export function TenantActionsModal({
             <button
               type="button"
               onClick={() => setStep('assign')}
-              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
+              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl panel-soft hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
             >
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--ds-primary)]/10 text-[var(--ds-primary)]">
@@ -198,7 +198,7 @@ export function TenantActionsModal({
             <button
               type="button"
               onClick={() => setStep('rename')}
-              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
+              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl panel-soft hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
             >
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600">
@@ -215,7 +215,7 @@ export function TenantActionsModal({
             <button
               type="button"
               onClick={() => setStep('enable-disable')}
-              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
+              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl panel-soft hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
             >
               <div className="flex items-center gap-3">
                 <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${isSuspended ? 'bg-green-500/10 text-green-600' : 'bg-orange-500/10 text-orange-600'}`}>
@@ -236,7 +236,7 @@ export function TenantActionsModal({
             <button
               type="button"
               onClick={goToTenantDetail}
-              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
+              className="w-full flex items-center justify-between gap-3 p-4 rounded-xl panel-soft hover:bg-[var(--bg-hover)]/60 transition-colors text-left group"
             >
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600">

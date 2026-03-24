@@ -4,10 +4,12 @@ import {
   AgentIdDto,
   AvailableSlotsDto,
   BookMeetingDto,
+  CancelBookingDto,
   CreateTicketDto,
   InvokeSkillDto,
   LeadDto,
   PastTicketsDto,
+  RescheduleBookingDto,
   ResendInviteDto,
 } from './dto/tool-requests.dto';
 
@@ -108,6 +110,34 @@ export class AgentToolsController {
     return this.toolsService.resendInvite(
       body.agent_id,
       body.email,
+      body.meeting_id,
+    );
+  }
+
+  @Post('tools/cancel_booking')
+  cancelBooking(
+    @Body() body: CancelBookingDto,
+    @Headers() headers: ToolHeaders,
+  ) {
+    this.validateApiKey(headers);
+    return this.toolsService.cancelBooking(
+      body.agent_id,
+      body.email,
+      body.meeting_id,
+    );
+  }
+
+  @Post('tools/reschedule_booking')
+  rescheduleBooking(
+    @Body() body: RescheduleBookingDto,
+    @Headers() headers: ToolHeaders,
+  ) {
+    this.validateApiKey(headers);
+    return this.toolsService.rescheduleBooking(
+      body.agent_id,
+      body.email,
+      body.new_slot,
+      body.timezone,
       body.meeting_id,
     );
   }

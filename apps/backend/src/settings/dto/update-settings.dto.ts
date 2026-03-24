@@ -29,6 +29,18 @@ export class UpdateSettingsDto {
   @IsOptional()
   appointmentReminders?: { advanceMinutes?: number; channel?: string };
 
+  @IsObject()
+  @IsOptional()
+  abTest?: Record<string, unknown>;
+
+  @IsObject()
+  @IsOptional()
+  pms?: Record<string, unknown>;
+
+  @IsObject()
+  @IsOptional()
+  providerAvailability?: Record<string, unknown>;
+
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsOptional()

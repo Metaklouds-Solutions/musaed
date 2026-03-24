@@ -105,7 +105,7 @@ export function AdminOverviewSkeleton() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/70 p-4"
+              className="rounded-xl panel-soft p-4"
             >
               <Skeleton className="h-3 w-20 rounded" />
               <Skeleton className="mt-2 h-8 w-12 rounded" />

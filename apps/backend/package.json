@@ -9,6 +9,7 @@
     "start:dev": "nest start --watch",
     "start:dev:clean": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-dev-clean.ps1",
     "seed": "ts-node src/db/seed.ts",
+    "redeploy-clinics": "ts-node -r tsconfig-paths/register src/db/redeploy-clinics-agents.ts",
     "test:email-flow": "ts-node test-tenant-invite-flow.ts",
     "clear-db": "node clear-db.js",
     "migrate:agent-deployment-v2": "ts-node src/db/migrate-agent-deployment-v2.ts",
@@ -22,7 +23,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "validate:infra": "ts-node -r dotenv/config scripts/real-infra-precheck.ts",
+    "validate:infra:smoke": "ts-node -r dotenv/config scripts/real-infra-smoke-api.ts"
   },
   "dependencies": {
     "@nestjs/bullmq": "^10.2.3",

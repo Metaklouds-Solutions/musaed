@@ -14,8 +14,24 @@ interface TwoFactorSectionProps {
 }
 
 export function TwoFactorSection({ userId, userEmail }: TwoFactorSectionProps) {
+  const isApiMode = import.meta.env.VITE_DATA_MODE === 'api';
   const [showSetup, setShowSetup] = useState(false);
   const [enabled, setEnabled] = useState(() => twoFactorAdapter.isEnabled(userId));
+
+  if (isApiMode) {
+    return (
+      <div className="rounded-[var(--radius-card)] card-glass p-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="w-5 h-5 text-[var(--ds-primary)]" aria-hidden />
+          <h3 className="font-semibold text-[var(--text-primary)]">Two-Factor Authentication</h3>
+        </div>
+        <p className="text-sm text-[var(--text-muted)]">
+          Server-enforced MFA is not enabled for this deployment. Sign-in is protected by your email and password
+          only. Contact your administrator if you require SSO or hardware keys.
+        </p>
+      </div>
+    );
+  }
 
   const handleSetupComplete = () => {
     setShowSetup(false);

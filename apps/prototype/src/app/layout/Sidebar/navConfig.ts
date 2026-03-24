@@ -12,6 +12,7 @@ import {
   BarChart3,
   CalendarDays,
   Building2,
+  ClipboardList,
 } from 'lucide-react';
 import type { NavItem } from './types';
 
@@ -27,8 +28,9 @@ export const TENANT_NAV: NavItem[] = [
   { to: '/dashboard', label: 'common.dashboard', icon: LayoutDashboard },
   { to: '/tenants/me', label: 'common.clinic', icon: Building2 },
   { to: '/calls', label: 'common.calls', icon: Phone },
+  { to: '/bookings', label: 'common.bookings', icon: ClipboardList },
   { to: '/bookings/calendar', label: 'common.calendar', icon: CalendarDays, featureFlag: 'enableCalendar' },
-  { to: '/reports', label: 'common.reports', icon: BarChart3, featureFlag: 'enableReports' },
+  { to: '/reports', label: 'common.analytics', icon: BarChart3, featureFlag: 'enableReports' },
   { to: '/billing', label: 'common.billing', icon: CreditCard },
   { to: '/settings', label: 'common.settings', icon: Settings },
 ];

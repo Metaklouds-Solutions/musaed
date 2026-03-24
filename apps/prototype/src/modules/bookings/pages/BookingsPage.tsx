@@ -1,18 +1,20 @@
 /**
  * Bookings page. Layout only; data from useBookingsList hook.
- * TableFilters for status.
+ * TableFilters for status. Cancel and Reschedule actions.
  */
 
-import { useMemo, useState } from 'react';
-import { PageHeader, EmptyState, TableFilters, TableSkeleton } from '../../../shared/ui';
+import { useMemo, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { PageHeader, EmptyState, TableFilters, TableSkeleton, Button } from '../../../shared/ui';
 import { useBookingsList } from '../hooks';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { BookingsTable } from '../components/BookingsTable';
 import { ConversionSummary } from '../components/ConversionSummary';
+import { bookingsAdapter } from '../../../adapters';
 import { Calendar } from 'lucide-react';
 
 export function BookingsPage() {
-  const { user, bookings, conversionSummary } = useBookingsList();
+  const { user, bookings, conversionSummary, refetch } = useBookingsList();
   const ready = useDelayedReady();
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
@@ -25,6 +27,22 @@ export function BookingsPage() {
     const set = new Set(bookings.map((b) => b.status));
     return Array.from(set).map((s) => ({ value: s.toLowerCase(), label: s }));
   }, [bookings]);
+
+  const handleCancel = useCallback(
+    async (id: string) => {
+      const result = await bookingsAdapter.cancelBooking(id);
+      if (result !== null) await refetch();
+    },
+    [refetch]
+  );
+
+  const handleReschedule = useCallback(
+    async (id: string, date: string, timeSlot: string) => {
+      const result = await bookingsAdapter.rescheduleBooking(id, date, timeSlot);
+      if (result !== null) await refetch();
+    },
+    [refetch]
+  );
 
   if (!user) {
     return (
@@ -57,10 +75,15 @@ export function BookingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Bookings"
-        description="Booking list and conversion from AI calls."
-      />
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <PageHeader
+          title="Bookings"
+          description="Booking list and conversion from AI calls."
+        />
+        <Link to="/bookings/calendar">
+          <Button variant="secondary">View calendar</Button>
+        </Link>
+      </div>
       <ConversionSummary
         totalBookings={conversionSummary.totalBookings}
         fromCalls={conversionSummary.fromCalls}
@@ -70,7 +93,11 @@ export function BookingsPage() {
         selectedStatus={statusFilter}
         onStatusChange={setStatusFilter}
       />
-      <BookingsTable bookings={filteredBookings} />
+      <BookingsTable
+        bookings={filteredBookings}
+        onCancel={handleCancel}
+        onReschedule={handleReschedule}
+      />
     </div>
   );
 }
