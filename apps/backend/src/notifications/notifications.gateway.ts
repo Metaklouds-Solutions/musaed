@@ -14,7 +14,7 @@ import { Logger } from '@nestjs/common';
     origin: (
       process.env.ALLOWED_ORIGINS ??
       process.env.CORS_ORIGIN ??
-      'http://localhost:5173'
+      'http://localhost:5173,http://localhost:3002'
     )
       .split(',')
       .map((o: string) => o.trim())

@@ -11,7 +11,9 @@ export interface TicketWithDetails extends SupportTicket {
 }
 
 export interface ListTicketsFilters {
+  /** Tenant scope for callers; selects the tenant endpoint when present. */
   tenantId?: string;
+  /** Backend-supported query filters. */
   status?: SupportTicket['status'];
   priority?: SupportTicket['priority'];
 }
@@ -33,6 +35,7 @@ export const supportAdapter = {
   async listTickets(filters?: ListTicketsFilters): Promise<SupportTicket[]> {
     try {
       const params: Record<string, string> = { page: '1', limit: '100' };
+      // The backend only supports status/priority query params here; tenant scope is expressed via the path.
       if (filters?.status) params.status = filters.status;
       if (filters?.priority) params.priority = filters.priority;
       const isAdmin = !filters?.tenantId;

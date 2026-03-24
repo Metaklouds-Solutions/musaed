@@ -1,5 +1,4 @@
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
 import { EmailService } from './email.service';
 
 const sendMailMock = jest.fn().mockResolvedValue(undefined);
@@ -8,9 +7,11 @@ const transporterMock = {
   sendMail: sendMailMock,
   verify: verifyMock,
 };
-const createTransportSpy = jest
-  .spyOn(nodemailer, 'createTransport')
-  .mockReturnValue(transporterMock as never);
+const mockCreateTransport = jest.fn().mockReturnValue(transporterMock as never);
+
+jest.mock('nodemailer', () => ({
+  createTransport: (...args: unknown[]) => mockCreateTransport(...args),
+}));
 
 describe('EmailService', () => {
   const buildConfig = (overrides: Record<string, string> = {}) =>
@@ -28,7 +29,7 @@ describe('EmailService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    createTransportSpy.mockReturnValue(transporterMock as never);
+    mockCreateTransport.mockReturnValue(transporterMock as never);
     sendMailMock.mockResolvedValue(undefined);
     verifyMock.mockResolvedValue(undefined);
   });
@@ -57,8 +58,8 @@ describe('EmailService', () => {
 
     await service.sendInviteEmail('smtp@test.com', 'Fallback', 'tok_fallback');
 
-    expect(createTransportSpy).toHaveBeenCalledTimes(1);
-    expect(createTransportSpy).toHaveBeenCalledWith({
+    expect(mockCreateTransport).toHaveBeenCalledTimes(1);
+    expect(mockCreateTransport).toHaveBeenCalledWith({
       service: 'gmail',
       auth: { user: 'smtp-user@test.app', pass: 'smtp-pass' },
     });
@@ -131,7 +132,7 @@ describe('EmailService', () => {
     await expect(
       service.sendInviteEmail('prod@test.com', 'Prod User', 'prod_tok'),
     ).rejects.toThrow(/SMTP is not configured/);
-    expect(createTransportSpy).not.toHaveBeenCalled();
+    expect(mockCreateTransport).not.toHaveBeenCalled();
   });
 
   it('throws when rate limit exceeded for recipient', async () => {

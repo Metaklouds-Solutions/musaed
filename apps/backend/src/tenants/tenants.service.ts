@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
@@ -31,6 +32,8 @@ import { AgentRolloutService } from '../agent-deployments/agent-rollout.service'
 
 @Injectable()
 export class TenantsService {
+  private readonly logger = new Logger(TenantsService.name);
+
   constructor(
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
     @InjectModel(TenantStaff.name)
@@ -153,9 +156,12 @@ export class TenantsService {
   }
 
   async create(dto: CreateTenantDto, adminUserId?: string) {
+    this.logger.log(
+      `Tenant create requested: name="${dto.name}", slug="${dto.slug}", templateId="${dto.templateId ?? 'none'}", channels="${(dto.channelsEnabled ?? []).join(',') || 'none'}"`,
+    );
+
     const existing = await this.tenantModel.findOne({
       slug: dto.slug,
-      deletedAt: null,
     });
     if (existing) throw new ConflictException('Slug already taken');
 
@@ -240,6 +246,36 @@ export class TenantsService {
         : { joinedAt: new Date() }),
     });
 
+    try {
+      await this.emailService.sendEmail(
+        owner.email,
+        'Welcome',
+        'Your account has been created successfully.',
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send tenant-created welcome email to ${owner.email}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    try {
+      await this.notificationsService.create({
+        userId: owner._id.toString(),
+        tenantId: tenant._id.toString(),
+        type: 'tenant_created',
+        title: 'Tenant Created',
+        message: 'Your account is ready',
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to create tenant-created notification for user ${owner._id.toString()}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
     let inviteSetupUrl: string | undefined;
     if (shouldSendInvite) {
       const token = await this.authService.generateInviteToken(
@@ -296,11 +332,31 @@ export class TenantsService {
         customConfig: {},
       });
       if (this.agentRolloutService.isAutoDeployOnCreateEnabled()) {
-        await this.agentDeploymentService.enqueueDeployment(
-          createdInstance._id.toString(),
-          tenant._id.toString(),
+        try {
+          await this.agentDeploymentService.enqueueDeployment(
+            createdInstance._id.toString(),
+            tenant._id.toString(),
+          );
+          this.logger.log(
+            `Agent auto-deploy triggered for tenantId=${tenant._id.toString()} instanceId=${createdInstance._id.toString()}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Agent auto-deploy failed to enqueue for tenantId=${tenant._id.toString()} instanceId=${createdInstance._id.toString()}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          throw error;
+        }
+      } else {
+        this.logger.warn(
+          `Agent auto-deploy skipped (AGENT_AUTO_DEPLOY_ON_CREATE=false) for tenantId=${tenant._id.toString()} instanceId=${createdInstance._id.toString()}`,
         );
       }
+    } else {
+      this.logger.warn(
+        `Agent auto-deploy skipped because templateId is missing for tenantId=${tenant._id.toString()}`,
+      );
     }
 
     return { tenant, owner, staff, inviteSetupUrl };

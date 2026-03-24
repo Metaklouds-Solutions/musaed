@@ -36,7 +36,9 @@ export class EmailService {
     @Optional() private emailQueue: EmailQueueService | null,
     @Optional() private metrics: MetricsService | null,
   ) {
-    this.fromEmail = this.config.get<string>('SMTP_FROM', 'noreply@musaed.app');
+    this.fromEmail =
+      this.getConfiguredValue('SMTP_FROM', 'GMAIL_SMTP_FROM') ??
+      'noreply@musaed.app';
     this.frontendUrl = this.config.get<string>(
       'FRONTEND_URL',
       'http://localhost:5173',
@@ -50,10 +52,14 @@ export class EmailService {
     const primaryUser = this.getConfiguredValue(
       'SMTP_PRIMARY_USER',
       'SMTP_USER',
+      'GMAIL_SMTP_PRIMARY_USER',
+      'GMAIL_SMTP_USER',
     );
     const primaryPass = this.getConfiguredValue(
       'SMTP_PRIMARY_PASS',
       'SMTP_PASS',
+      'GMAIL_SMTP_PRIMARY_PASS',
+      'GMAIL_SMTP_PASS',
     );
     if (primaryUser && primaryPass) {
       this.primaryTransporter = nodemailer.createTransport({
@@ -70,8 +76,14 @@ export class EmailService {
       );
     }
 
-    const fallbackUser = this.config.get<string>('SMTP_FALLBACK_USER');
-    const fallbackPass = this.config.get<string>('SMTP_FALLBACK_PASS');
+    const fallbackUser = this.getConfiguredValue(
+      'SMTP_FALLBACK_USER',
+      'GMAIL_SMTP_FALLBACK_USER',
+    );
+    const fallbackPass = this.getConfiguredValue(
+      'SMTP_FALLBACK_PASS',
+      'GMAIL_SMTP_FALLBACK_PASS',
+    );
     if (
       fallbackUser &&
       fallbackPass &&
@@ -169,6 +181,61 @@ export class EmailService {
       { to, customerName, appointmentDate: dateStr, timeSlot },
       msg,
     );
+  }
+
+  /**
+   * Simple plain-text email sender for direct transactional messages.
+   */
+  async sendEmail(to: string, subject: string, text: string): Promise<void> {
+    const smtpUser =
+      this.getConfiguredValue(
+        'SMTP_USER',
+        'SMTP_PRIMARY_USER',
+        'GMAIL_SMTP_USER',
+        'GMAIL_SMTP_PRIMARY_USER',
+      ) ??
+      process.env.SMTP_USER ??
+      process.env.GMAIL_SMTP_USER;
+    const smtpPass =
+      this.getConfiguredValue(
+        'SMTP_PASS',
+        'SMTP_PRIMARY_PASS',
+        'GMAIL_SMTP_PASS',
+        'GMAIL_SMTP_PRIMARY_PASS',
+      ) ??
+      process.env.SMTP_PASS ??
+      process.env.GMAIL_SMTP_PASS;
+
+    if (!smtpUser || !smtpPass) {
+      throw new Error('SMTP_USER/SMTP_PASS are missing');
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    try {
+      await transporter.sendMail({
+        from: this.fromEmail,
+        to,
+        subject,
+        text,
+      });
+      this.logger.log(`Simple email sent to ${to} with subject "${subject}"`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send simple email to ${to}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw error;
+    }
   }
 
   /**

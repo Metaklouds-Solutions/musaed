@@ -28,6 +28,8 @@ export const searchAdapter = {
     const q = query.trim();
     if (!q) return [];
 
+    // The backend search endpoint is auth-scoped already; tenant/admin args stay in the signature
+    // for parity with other adapters, but are intentionally not forwarded.
     const params = new URLSearchParams({ q });
     if (types?.length) {
       params.set('types', types.join(','));

@@ -4,9 +4,6 @@
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
-const BACKEND_RETRY_COOLDOWN_MS = 5000;
-
-let backendUnavailableUntil = 0;
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
@@ -107,24 +104,16 @@ export class ApiClientError extends Error implements ApiError {
 function getBackendUnavailableError(): ApiClientError {
   return new ApiClientError(
     0,
-    `Cannot reach API server at ${BASE_URL}. Start backend or set VITE_DATA_MODE=\"local\".`,
+    `Cannot reach API at ${BASE_URL}. Start the backend from the repo: cd apps/backend && npm run start:dev (PORT defaults to 3001). Ensure apps/prototype/.env has VITE_API_URL matching that base (e.g. http://localhost:3001/api). To work without a server, set VITE_DATA_MODE=local (seed/mock data only).`,
   );
 }
 
-function canRetryBackendRequest(): boolean {
-  return Date.now() >= backendUnavailableUntil;
-}
-
 async function guardedFetch(url: string, options: RequestInit): Promise<Response> {
-  if (!canRetryBackendRequest()) {
-    throw getBackendUnavailableError();
-  }
   try {
     return await fetch(url, options);
   } catch (error) {
     // Browser fetch network errors are surfaced as TypeError (e.g. connection refused).
     if (error instanceof TypeError) {
-      backendUnavailableUntil = Date.now() + BACKEND_RETRY_COOLDOWN_MS;
       throw getBackendUnavailableError();
     }
     throw error;

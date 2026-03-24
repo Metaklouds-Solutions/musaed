@@ -19,13 +19,24 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException
+    const isMongoDuplicateKey =
+      typeof exception === 'object' &&
+      exception !== null &&
+      'code' in exception &&
+      (exception as { code?: unknown }).code === 11000;
+
+    const status = isMongoDuplicateKey
+      ? HttpStatus.CONFLICT
+      : exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      exception instanceof HttpException
+    const message = isMongoDuplicateKey
+      ? {
+          message: 'Duplicate value for a unique field',
+          error: 'Conflict',
+        }
+      : exception instanceof HttpException
         ? exception.getResponse()
         : 'Internal server error';
 

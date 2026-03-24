@@ -29,10 +29,14 @@ async function bootstrap() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+  const allowedOriginsEnv = process.env.ALLOWED_ORIGINS?.trim();
+  const corsOriginEnv = process.env.CORS_ORIGIN?.trim();
   const corsOrigins = (
-    process.env.ALLOWED_ORIGINS ??
-    process.env.CORS_ORIGIN ??
-    'http://localhost:5173'
+    (allowedOriginsEnv && allowedOriginsEnv.length > 0
+      ? allowedOriginsEnv
+      : undefined) ??
+    (corsOriginEnv && corsOriginEnv.length > 0 ? corsOriginEnv : undefined) ??
+    'http://localhost:5173,http://localhost:3002'
   )
     .split(',')
     .map((o) => o.trim())
