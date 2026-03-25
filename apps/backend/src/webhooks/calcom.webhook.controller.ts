@@ -11,7 +11,6 @@ import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import * as crypto from 'crypto';
 import { BookingsService } from '../bookings/bookings.service';
-import { WebhooksService } from './webhooks.service';
 import { MetricsService } from '../metrics/metrics.service';
 
 function timingSafeEqual(a: string, b: string): boolean {
@@ -28,7 +27,6 @@ export class CalcomWebhookController {
 
   constructor(
     private readonly bookingsService: BookingsService,
-    private readonly webhooksService: WebhooksService,
     private readonly metrics: MetricsService,
     config: ConfigService,
   ) {
@@ -92,21 +90,12 @@ export class CalcomWebhookController {
       crypto.createHash('sha1').update(rawBody).digest('hex');
 
     this.metrics.recordWebhookReceived('calcom');
-    const isDuplicate = await this.webhooksService.isDuplicateEvent(
-      eventId,
-      'calcom',
-      eventType,
+    this.logger.debug(
+      `Cal.com webhook accepted: event=${eventType}, id=${eventId}`,
     );
-    if (isDuplicate) return { received: true, duplicate: true };
 
     const result = await this.bookingsService.upsertFromCalcomWebhook(
       payload as Record<string, unknown>,
-    );
-
-    await this.webhooksService.recordProcessedEvent(
-      eventId,
-      'calcom',
-      eventType,
     );
     return { received: true, synced: result.processed ?? false, ...result };
   }

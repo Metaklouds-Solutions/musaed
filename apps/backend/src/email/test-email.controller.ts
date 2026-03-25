@@ -32,7 +32,9 @@ export class TestEmailController {
       );
     }
 
-    const defaultTo = this.config.get<string>('TEST_EMAIL_RECIPIENT', '').trim();
+    const defaultTo = this.config
+      .get<string>('TEST_EMAIL_RECIPIENT', '')
+      .trim();
     const to = (dto.to ?? defaultTo).trim();
     if (!to) {
       throw new ForbiddenException(

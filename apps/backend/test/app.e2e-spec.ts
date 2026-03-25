@@ -53,9 +53,7 @@ describe('App (e2e)', () => {
       expect(true).toBe(true);
       return;
     }
-    const res = await request(app.getHttpServer())
-      .get('/health')
-      .expect(200);
+    const res = await request(app.getHttpServer()).get('/health').expect(200);
     expect(res.body).toHaveProperty('status');
     expect(res.body).toHaveProperty('checks');
   });

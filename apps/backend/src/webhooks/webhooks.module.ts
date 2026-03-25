@@ -24,6 +24,7 @@ import { QueueModule } from '../queue/queue.module';
 import { WebhookProcessor } from '../queue/webhook.processor';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { BookingsModule } from '../bookings/bookings.module';
+import { AgentDeploymentsModule } from '../agent-deployments/agent-deployments.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { BookingsModule } from '../bookings/bookings.module';
     ]),
     QueueModule.forRoot(),
     NotificationsModule,
+    AgentDeploymentsModule,
   ],
   controllers: [
     StripeWebhookController,

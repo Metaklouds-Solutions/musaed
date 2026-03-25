@@ -307,7 +307,7 @@ export class DashboardService {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
+      if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
         if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
         if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
@@ -354,7 +354,7 @@ export class DashboardService {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
+      if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
         if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
         if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
@@ -389,7 +389,7 @@ export class DashboardService {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
+      if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
         if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
         if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
@@ -496,7 +496,9 @@ export class DashboardService {
   ) {
     const tid = new Types.ObjectId(tenantId);
     const match: Record<string, unknown> = { tenantId: tid };
-    const from = dateFrom ? this.parseDateStart(dateFrom) : this.startOfDaysAgo(6);
+    const from = dateFrom
+      ? this.parseDateStart(dateFrom)
+      : this.startOfDaysAgo(6);
     const to = dateTo ? this.parseDateEnd(dateTo) : new Date();
     match.startedAt = { $gte: from, $lte: to };
 

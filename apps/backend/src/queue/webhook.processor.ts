@@ -27,54 +27,59 @@ export class WebhookProcessor extends WorkerHost {
       `Processing webhook job: ${source} ${eventType} (${eventId})`,
     );
 
-    const isDuplicate = await this.webhooksService.isDuplicateEvent(
+    const shouldProcess = await this.webhooksService.claimProcessedEvent(
       eventId,
       source,
       eventType,
     );
-    if (isDuplicate) {
+    if (!shouldProcess) {
       this.logger.debug(`Duplicate skipped: ${eventId}`);
       return;
     }
 
-    if (source === 'retell') {
-      const body = payload as unknown as RetellWebhookDto;
-      switch (eventType) {
-        case 'call_started':
-          await this.webhooksService.handleRetellCallStarted(body);
-          break;
-        case 'call_ended':
-          await this.webhooksService.handleRetellCallEnded(body);
-          break;
-        case 'call_analyzed':
-          await this.webhooksService.handleRetellCallAnalyzed(body);
-          break;
-        case 'alert_triggered':
-          await this.webhooksService.handleRetellAlertTriggered(body);
-          break;
-        default:
-          this.logger.log(`Unhandled Retell event: ${eventType}`);
+    try {
+      if (source === 'retell') {
+        const body = payload as unknown as RetellWebhookDto;
+        switch (eventType) {
+          case 'call_started':
+            await this.webhooksService.handleRetellCallStarted(body);
+            break;
+          case 'call_ended':
+            await this.webhooksService.handleRetellCallEnded(body);
+            break;
+          case 'call_analyzed':
+            await this.webhooksService.handleRetellCallAnalyzed(body);
+            break;
+          case 'alert_triggered':
+            await this.webhooksService.handleRetellAlertTriggered(body);
+            break;
+          default:
+            this.logger.log(`Unhandled Retell event: ${eventType}`);
+        }
+      } else if (source === 'stripe') {
+        const data = payload;
+        switch (eventType) {
+          case 'invoice.payment_succeeded':
+            await this.webhooksService.handleInvoicePaid(data);
+            break;
+          case 'invoice.payment_failed':
+            await this.webhooksService.handleInvoiceFailed(data);
+            break;
+          case 'customer.subscription.deleted':
+            await this.webhooksService.handleSubscriptionDeleted(data);
+            break;
+          default:
+            this.logger.log(`Unhandled Stripe event: ${eventType}`);
+        }
+      } else {
+        this.logger.warn(`Unknown webhook source: ${source}`);
       }
-    } else if (source === 'stripe') {
-      const data = payload;
-      switch (eventType) {
-        case 'invoice.payment_succeeded':
-          await this.webhooksService.handleInvoicePaid(data);
-          break;
-        case 'invoice.payment_failed':
-          await this.webhooksService.handleInvoiceFailed(data);
-          break;
-        case 'customer.subscription.deleted':
-          await this.webhooksService.handleSubscriptionDeleted(data);
-          break;
-        default:
-          this.logger.log(`Unhandled Stripe event: ${eventType}`);
-      }
-    } else {
-      this.logger.warn(`Unknown webhook source: ${source}`);
-    }
 
-    await this.webhooksService.recordProcessedEvent(eventId, source, eventType);
+      // Claim is retained after successful processing for dedupe.
+    } catch (error) {
+      await this.webhooksService.releaseProcessedEvent(eventId, source);
+      throw error;
+    }
   }
 
   @OnWorkerEvent('failed')

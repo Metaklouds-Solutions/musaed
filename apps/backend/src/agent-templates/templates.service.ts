@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -14,6 +15,7 @@ import { UpdateTemplateDto } from './dto/update-template.dto';
 import { ImportTemplateDto } from './dto/import-template.dto';
 import { normalizeFlowTemplateUrls } from './template-transform.util';
 import {
+  Channel,
   normalizeSupportedChannels,
   selectDefaultChannel,
   validateFlowTemplateForChannels,
@@ -30,6 +32,13 @@ const FLOW_IMPACTING_FIELDS: Array<keyof UpdateTemplateDto> = [
   'basePrompt',
   'templateVariables',
 ];
+
+const LEGACY_CAPABILITY_TO_CURRENT: Record<string, string> = {
+  basic: 'L1',
+  standard: 'L2',
+  advanced: 'L3',
+  enterprise: 'L4',
+};
 
 @Injectable()
 export class TemplatesService {
@@ -65,8 +74,19 @@ export class TemplatesService {
   }
 
   async create(dto: CreateTemplateDto, userId: string) {
+    const prepared = this.resolveTemplateChannelsAndFlow({
+      channel: dto.channel,
+      supportedChannels: dto.supportedChannels,
+      flowTemplate: dto.flowTemplate,
+      requireFlowTemplate: false,
+    });
+    const capabilityLevel = this.resolveCapabilityLevel(dto.capabilityLevel);
     return this.templateModel.create({
       ...dto,
+      supportedChannels: prepared.supportedChannels,
+      channel: prepared.channel,
+      ...(prepared.flowTemplate ? { flowTemplate: prepared.flowTemplate } : {}),
+      ...(capabilityLevel ? { capabilityLevel } : {}),
       createdBy: new Types.ObjectId(userId),
     });
   }
@@ -80,20 +100,21 @@ export class TemplatesService {
       throw new ConflictException('Template slug already exists');
     }
 
-    const supportedChannels = normalizeSupportedChannels(dto.supportedChannels);
-    const normalizedFlowTemplate = normalizeFlowTemplateUrls(dto.flowTemplate);
-    validateFlowTemplateForChannels(normalizedFlowTemplate, supportedChannels);
-    const channel = selectDefaultChannel(supportedChannels);
+    const prepared = this.resolveTemplateChannelsAndFlow({
+      supportedChannels: dto.supportedChannels,
+      flowTemplate: dto.flowTemplate,
+      requireFlowTemplate: true,
+    });
 
     return this.templateModel.create({
       name: dto.name,
       slug: dto.slug,
       description: dto.description ?? '',
       category: dto.category ?? '',
-      capabilityLevel: dto.capabilityLevel ?? 'L1',
-      supportedChannels,
-      channel,
-      flowTemplate: normalizedFlowTemplate,
+      capabilityLevel: this.resolveCapabilityLevel(dto.capabilityLevel) ?? 'L1',
+      supportedChannels: prepared.supportedChannels,
+      channel: prepared.channel,
+      flowTemplate: prepared.flowTemplate,
       version: 1,
       templateVariables: {
         flowName: dto.flowName ?? '',
@@ -110,27 +131,19 @@ export class TemplatesService {
     if (!existing) throw new NotFoundException('Template not found');
 
     const patch: Partial<UpdateTemplateDto & { version: number }> = { ...dto };
-    const nextSupportedChannels = dto.supportedChannels
-      ? normalizeSupportedChannels(dto.supportedChannels)
-      : normalizeSupportedChannels(existing.supportedChannels);
-    patch.supportedChannels = nextSupportedChannels;
-
-    if (
-      !patch.channel ||
-      !nextSupportedChannels.some((channel) => channel === patch.channel)
-    ) {
-      patch.channel = selectDefaultChannel(nextSupportedChannels);
+    const prepared = this.resolveTemplateChannelsAndFlow({
+      channel: dto.channel ?? existing.channel,
+      supportedChannels: dto.supportedChannels ?? existing.supportedChannels,
+      flowTemplate: dto.flowTemplate ?? existing.flowTemplate,
+      requireFlowTemplate: true,
+    });
+    patch.supportedChannels = prepared.supportedChannels;
+    patch.channel = prepared.channel;
+    if (dto.capabilityLevel !== undefined) {
+      patch.capabilityLevel = this.resolveCapabilityLevel(dto.capabilityLevel);
     }
-
-    const effectiveFlowTemplate = normalizeFlowTemplateUrls(
-      dto.flowTemplate ?? existing.flowTemplate,
-    );
-    validateFlowTemplateForChannels(
-      effectiveFlowTemplate,
-      nextSupportedChannels,
-    );
     if (dto.flowTemplate) {
-      patch.flowTemplate = effectiveFlowTemplate;
+      patch.flowTemplate = prepared.flowTemplate;
     }
 
     if (this.hasFlowImpactingChanges(existing, patch)) {
@@ -168,5 +181,66 @@ export class TemplatesService {
       const nextValue = patch[field];
       return JSON.stringify(existingValue) !== JSON.stringify(nextValue);
     });
+  }
+
+  private resolveTemplateChannelsAndFlow(input: {
+    channel?: string;
+    supportedChannels?: string[];
+    flowTemplate?: Record<string, unknown>;
+    requireFlowTemplate: boolean;
+  }): {
+    flowTemplate?: Record<string, unknown>;
+    supportedChannels: Channel[];
+    channel: Channel;
+  } {
+    const channelsInput =
+      input.supportedChannels ??
+      (typeof input.channel === 'string' && input.channel.length > 0
+        ? [input.channel]
+        : []);
+    if (channelsInput.length === 0) {
+      throw new BadRequestException(
+        'supportedChannels must contain at least one channel',
+      );
+    }
+
+    const supportedChannels = normalizeSupportedChannels(channelsInput);
+    const channel =
+      typeof input.channel === 'string' &&
+      supportedChannels.some((supported) => supported === input.channel)
+        ? (input.channel as Channel)
+        : selectDefaultChannel(supportedChannels);
+
+    if (!input.flowTemplate) {
+      if (input.requireFlowTemplate) {
+        throw new BadRequestException('flowTemplate is required');
+      }
+      return { supportedChannels, channel };
+    }
+
+    const normalizedFlowTemplate = normalizeFlowTemplateUrls(input.flowTemplate);
+    validateFlowTemplateForChannels(normalizedFlowTemplate, supportedChannels);
+    return {
+      flowTemplate: normalizedFlowTemplate,
+      supportedChannels,
+      channel,
+    };
+  }
+
+  private resolveCapabilityLevel(
+    rawValue?: string,
+  ): string | undefined {
+    if (typeof rawValue !== 'string') {
+      return undefined;
+    }
+    const value = rawValue.trim();
+    if (value.length === 0) {
+      return undefined;
+    }
+    const upper = value.toUpperCase();
+    if (upper === 'L1' || upper === 'L2' || upper === 'L3' || upper === 'L4') {
+      return upper;
+    }
+    return LEGACY_CAPABILITY_TO_CURRENT[value.toLowerCase()] ?? value;
   }
 }

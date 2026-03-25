@@ -101,10 +101,24 @@ export class NotificationsService {
         });
       }
     }
-    this.maybeTrimOldNotificationsForUser(input.userId).catch(() => undefined);
+    this.maybeTrimOldNotificationsForUser(input.userId).catch(
+      (error: unknown) => {
+        this.logger.warn(
+          `Failed to trim user notifications userId=${input.userId}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      },
+    );
     if (input.tenantId) {
       this.maybeTrimOldNotificationsForTenant(input.tenantId).catch(
-        () => undefined,
+        (error: unknown) => {
+          this.logger.warn(
+            `Failed to trim tenant notifications tenantId=${input.tenantId}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        },
       );
     }
 

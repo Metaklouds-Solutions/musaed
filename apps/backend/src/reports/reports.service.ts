@@ -630,4 +630,3 @@ export class ReportsService {
     return parsed;
   }
 }
-

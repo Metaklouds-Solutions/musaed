@@ -8,8 +8,6 @@ import {
   seedSkills,
   seedAgentSkills,
   seedTenants,
-  seedAgentDetail,
-  seedTenantDetail,
 } from '../../mock/seedData';
 import type {
   TenantAgentDetail,
@@ -29,86 +27,6 @@ function formatRelative(iso: string): string {
   if (sec < 3600) return `${Math.floor(sec / 60)} min ago`;
   if (sec < 86400) return `${Math.floor(sec / 3600)} hours ago`;
   return `${Math.floor(sec / 86400)} days ago`;
-}
-
-function buildAgentDetailFromRow(
-  tenantId: string,
-  row: { id: string; name: string; channel: string; status: string; voice: string; language: string; lastSynced: string }
-): AgentDetailFull {
-  const channel = row.channel === 'chat' ? 'chat' : row.channel === 'email' ? 'email' : 'voice';
-  return {
-    id: row.id,
-    name: row.name,
-    retellAgentId: row.id,
-    tenantId,
-    tenantName: seedTenantDetail.id === tenantId ? seedTenantDetail.profile.clinicName : tenantName(tenantId),
-    channel,
-    createdAt: '',
-    lastSynced: row.lastSynced,
-    syncStatus: 'In Sync',
-    voiceConfig: {
-      voiceId: '',
-      voiceName: row.voice,
-      gender: '',
-      accent: '',
-      speakingRate: 1,
-      stability: 0.75,
-      similarityBoost: 0.85,
-      fillerWords: true,
-      interruptionSensitivity: 'Medium',
-      ambientSound: false,
-    },
-    chatConfig: {
-      status: channel === 'chat' ? 'Active' : 'Not Configured',
-      channel: channel === 'chat' ? 'Web Chat Widget' : '',
-      widgetEmbed: '',
-      languages: channel === 'chat' ? row.language.split(' + ') : [],
-      fallbackBehavior: '',
-      typingIndicator: false,
-      responseDelay: 0,
-    },
-    emailConfig: {
-      status: 'Not Configured',
-      inboundEmail: '—',
-      autoReply: '—',
-      note: '',
-    },
-    llmConfig: {
-      model: 'GPT-4o',
-      systemPrompt: '',
-      temperature: 0.7,
-      maxTokens: 1024,
-      customPromptEnabled: false,
-      languageDetection: 'Auto',
-      fallbackLanguage: 'English',
-    },
-    skills: [],
-    performance: {
-      totalCalls: 0,
-      avgHandleTime: '—',
-      successfulBookings: 0,
-      escalations: 0,
-      avgSentimentScore: 0,
-      firstCallResolution: 0,
-      interruptionRate: 0,
-      silenceRate: 0,
-    },
-    abTest: {
-      status: 'Inactive',
-      versionA: '',
-      versionB: '',
-      splitPercent: 50,
-      started: '',
-      winnerSoFar: '',
-    },
-    recentRuns: [],
-    syncInfo: {
-      webhookUrl: '',
-      lastWebhookEvent: '',
-      webhookStatus: '—',
-      autoSync: '—',
-    },
-  };
 }
 
 /** In-memory: platform agents assigned/created for tenants. */
@@ -348,7 +266,6 @@ export const agentsAdapter = {
   /** Get all agents assigned to a tenant. Returns TenantAgentRow for TenantDetailPage. */
   getAgentsForTenant(tenantId: string | undefined): TenantAgentRow[] {
     if (!tenantId) return [];
-    if (tenantId === seedTenantDetail.id) return seedTenantDetail.agents;
     const fromVoice = seedVoiceAgents
       .filter((va) => va.tenantId === tenantId)
       .map(
@@ -389,11 +306,6 @@ export const agentsAdapter = {
   /** Get full agent detail for AgentDetailPage (Retell fields, channels, etc). */
   getAgentDetailFull(tenantId: string | undefined, agentId: string): AgentDetailFull | null {
     if (!tenantId || !agentId) return null;
-    if (tenantId === 't_001' && agentId === 'va_001') return { ...seedAgentDetail };
-    if (tenantId === seedTenantDetail.id) {
-      const row = seedTenantDetail.agents.find((a) => a.id === agentId);
-      if (row) return buildAgentDetailFromRow(tenantId, row);
-    }
     const va = seedVoiceAgents.find((a) => a.id === agentId && a.tenantId === tenantId);
     const assigned = assignedAgents.find((a) => a.id === agentId && a.tenantId === tenantId);
     const source = va ?? assigned;

@@ -175,7 +175,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       .then((data: unknown) => {
         if (data) primeTenantSettingsCaches(tid, data);
       })
-      .catch(() => {});
+      .catch((error: unknown) => {
+        console.warn('Failed to prime tenant settings cache', error);
+      });
   }, [session?.user?.tenantId]);
 
   useEffect(() => {

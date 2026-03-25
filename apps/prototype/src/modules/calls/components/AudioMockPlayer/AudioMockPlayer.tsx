@@ -1,53 +1,44 @@
 /**
- * Mock audio player. UI only; no real playback.
+ * Audio placeholder for calls without a recording.
  */
 
-import { useState } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { VolumeX } from 'lucide-react';
 
 interface AudioMockPlayerProps {
   durationSeconds: number;
 }
 
-/** Renders a mock call-audio control with play state and progress indicator. */
+/** Renders an explicit unavailable state instead of fake playback controls. */
 export function AudioMockPlayer({ durationSeconds }: AudioMockPlayerProps) {
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const displayTime = playing ? Math.min(progress, durationSeconds) : 0;
-  const m = Math.floor(displayTime / 60);
-  const s = Math.floor(displayTime % 60);
-  const label = `${m}:${s.toString().padStart(2, '0')} / ${Math.floor(durationSeconds / 60)}:${(durationSeconds % 60).toString().padStart(2, '0')}`;
+  const formatDuration = (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+    const minutes = Math.floor(safeSeconds / 60);
+    const remainingSeconds = safeSeconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div
-      className="rounded-[var(--radius-card)] card-glass p-5 flex items-center gap-4"
+      className="rounded-[var(--radius-card)] card-glass p-5 flex items-start gap-4"
       style={{ minHeight: '80px' }}
     >
-      <button
-        type="button"
-        onClick={() => {
-          setPlaying((p) => !p);
-          if (!playing) setProgress((prev) => Math.min(prev + 1, durationSeconds));
-        }}
-        className="w-12 h-12 rounded-full flex items-center justify-center border border-[var(--border-default)] hover:bg-[var(--bg-hover)] focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2"
-        style={{ color: 'var(--text-primary)' }}
-        aria-label={playing ? 'Pause' : 'Play'}
+      <div
+        className="w-12 h-12 rounded-full flex items-center justify-center border border-[var(--border-default)]"
+        style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}
+        aria-hidden
       >
-        {playing ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
-      </button>
+        <VolumeX size={22} />
+      </div>
       <div className="flex-1 min-w-0">
-        <div
-          className="h-2 rounded-full overflow-hidden border border-[var(--border-subtle)]"
-          style={{ background: 'var(--bg-subtle)' }}
-        >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${(displayTime / durationSeconds) * 100}%`,
-              background: 'var(--primary)',
-            }}
-          />
-        </div>
-        <p className="mt-1 text-xs text-[var(--text-muted)]">{label}</p>
+        <p className="text-sm font-medium text-[var(--text-primary)]">
+          Recording unavailable
+        </p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          No audio recording was captured for this call.
+        </p>
+        <p className="mt-1 text-xs text-[var(--text-muted)]">
+          Call duration: {formatDuration(durationSeconds)}
+        </p>
       </div>
     </div>
   );

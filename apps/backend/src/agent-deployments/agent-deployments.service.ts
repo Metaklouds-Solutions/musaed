@@ -6,6 +6,14 @@ import {
   AgentChannelDeploymentDocument,
 } from './schemas/agent-channel-deployment.schema';
 
+export interface ActiveRetellDeploymentSummary {
+  tenantId: Types.ObjectId;
+  agentInstanceId: Types.ObjectId;
+  channel: string;
+  retellAgentId: string;
+  retellConversationFlowId: string | null;
+}
+
 @Injectable()
 export class AgentDeploymentsService {
   constructor(
@@ -48,6 +56,59 @@ export class AgentDeploymentsService {
       })
       .select('agentInstanceId retellAgentId')
       .lean();
+  }
+
+  async findActiveByAgentInstanceAndChannel(
+    agentInstanceId: string,
+    channel: string,
+    tenantId?: string,
+  ): Promise<ActiveRetellDeploymentSummary | null> {
+    const filter: FilterQuery<AgentChannelDeploymentDocument> = {
+      agentInstanceId: new Types.ObjectId(agentInstanceId),
+      channel,
+      deletedAt: null,
+      status: 'active',
+      retellAgentId: { $ne: null, $exists: true },
+    };
+    if (tenantId) {
+      filter.tenantId = new Types.ObjectId(tenantId);
+    }
+    return this.deploymentModel
+      .findOne(filter)
+      .select(
+        'tenantId agentInstanceId channel retellAgentId retellConversationFlowId',
+      )
+      .lean<ActiveRetellDeploymentSummary>();
+  }
+
+  async findActiveByRetellAgentId(
+    retellAgentId: string,
+  ): Promise<ActiveRetellDeploymentSummary | null> {
+    return this.deploymentModel
+      .findOne({
+        retellAgentId,
+        deletedAt: null,
+        status: 'active',
+      })
+      .select(
+        'tenantId agentInstanceId channel retellAgentId retellConversationFlowId',
+      )
+      .lean<ActiveRetellDeploymentSummary>();
+  }
+
+  async findActiveRetellDeployments(): Promise<
+    ActiveRetellDeploymentSummary[]
+  > {
+    return this.deploymentModel
+      .find({
+        deletedAt: null,
+        status: 'active',
+        retellAgentId: { $ne: null, $exists: true },
+      })
+      .select(
+        'tenantId agentInstanceId channel retellAgentId retellConversationFlowId',
+      )
+      .lean<ActiveRetellDeploymentSummary[]>();
   }
 
   async findByAgentInstance(

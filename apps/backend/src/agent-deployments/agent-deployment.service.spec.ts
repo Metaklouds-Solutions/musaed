@@ -20,7 +20,9 @@ function createMockAgentInstance(overrides?: Partial<Record<string, unknown>>) {
 
 function createConfigMock(apiBaseUrl?: string) {
   return {
-    getOrThrow: jest.fn().mockReturnValue(apiBaseUrl ?? 'http://localhost:3001'),
+    getOrThrow: jest
+      .fn()
+      .mockReturnValue(apiBaseUrl ?? 'http://localhost:3001'),
     get: jest.fn((key: string, def?: string) => {
       if (key === 'API_BASE_URL') {
         return apiBaseUrl ?? def;
@@ -261,7 +263,10 @@ describe('AgentDeploymentService', () => {
   });
 
   it.each([
-    ['http://localhost:3001', 'http://localhost:3001/api/agents/tools/get_available_slots'],
+    [
+      'http://localhost:3001',
+      'http://localhost:3001/api/agents/tools/get_available_slots',
+    ],
     [
       'http://localhost:3001/api',
       'http://localhost:3001/api/agents/tools/get_available_slots',
@@ -301,7 +306,9 @@ describe('AgentDeploymentService', () => {
             .fn()
             .mockResolvedValue({ agent_id: 'agent_standard' }),
           deleteAgent: jest.fn().mockResolvedValue({ success: true }),
-          deleteConversationFlow: jest.fn().mockResolvedValue({ success: true }),
+          deleteConversationFlow: jest
+            .fn()
+            .mockResolvedValue({ success: true }),
         } as never,
         {
           ...createConfigMock(apiBaseUrl),

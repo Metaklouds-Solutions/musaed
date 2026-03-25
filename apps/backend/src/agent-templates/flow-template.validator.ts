@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-type Channel = 'voice' | 'chat' | 'email';
+export type Channel = 'voice' | 'chat' | 'email';
 
 const VALID_CHANNELS: Channel[] = ['voice', 'chat', 'email'];
 const CHANNEL_PRIORITY: Channel[] = ['chat', 'voice', 'email'];
@@ -77,6 +77,11 @@ export function validateFlowTemplateForChannels(
     if (conversationFlow.nodes.length === 0) {
       throw new BadRequestException(
         'flowTemplate.conversationFlow.nodes must not be empty',
+      );
+    }
+    if (!Array.isArray(conversationFlow.tools)) {
+      throw new BadRequestException(
+        'flowTemplate.conversationFlow.tools must be an array',
       );
     }
     if (

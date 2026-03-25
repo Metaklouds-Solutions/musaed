@@ -7,11 +7,11 @@ import {
   BadRequestException,
   HttpStatus,
   Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import Stripe from 'stripe';
-import { WebhooksService } from './webhooks.service';
 import { WebhookQueueService } from '../queue/webhook-queue.service';
 import { MetricsService } from '../metrics/metrics.service';
 
@@ -23,7 +23,6 @@ export class StripeWebhookController {
   private webhookSecretLegacy: string;
 
   constructor(
-    private webhooksService: WebhooksService,
     private webhookQueue: WebhookQueueService,
     private metrics: MetricsService,
     config: ConfigService,
@@ -79,55 +78,50 @@ export class StripeWebhookController {
     }
 
     this.metrics.recordWebhookReceived('stripe');
-    const isDuplicate = await this.webhooksService.isDuplicateEvent(
-      event.id,
-      'stripe',
-      event.type,
-    );
-    if (isDuplicate) {
-      return { received: true, duplicate: true };
-    }
-
-    if (this.webhookQueue.isEnabled()) {
-      const data = event.data.object as unknown as Record<string, unknown>;
-      const jobId = await this.webhookQueue.add({
-        source: 'stripe',
-        eventId: event.id,
-        eventType: event.type,
-        payload: data,
-      });
-      if (jobId) {
-        res.status(HttpStatus.ACCEPTED);
-        return { received: true, queued: true };
-      }
-    }
-
-    this.logger.log(`Stripe event received: ${event.type}`);
 
     const data = event.data.object as unknown as Record<string, unknown>;
+    await this.enqueueOrThrow({
+      source: 'stripe',
+      eventId: event.id,
+      eventType: event.type,
+      payload: data,
+    });
 
-    switch (event.type) {
-      case 'invoice.payment_succeeded':
-        await this.webhooksService.handleInvoicePaid(data);
-        break;
+    res.status(HttpStatus.ACCEPTED);
+    return { received: true, queued: true };
+  }
 
-      case 'invoice.payment_failed':
-        await this.webhooksService.handleInvoiceFailed(data);
-        break;
-
-      case 'customer.subscription.deleted':
-        await this.webhooksService.handleSubscriptionDeleted(data);
-        break;
-
-      default:
-        this.logger.log(`Unhandled event type: ${event.type}`);
+  private async enqueueOrThrow(payload: {
+    source: 'stripe';
+    eventId: string;
+    eventType: string;
+    payload: Record<string, unknown>;
+  }): Promise<string> {
+    if (!this.webhookQueue.isEnabled()) {
+      throw new ServiceUnavailableException(
+        'Stripe webhook queue is unavailable or disabled',
+      );
     }
 
-    await this.webhooksService.recordProcessedEvent(
-      event.id,
-      'stripe',
-      event.type,
-    );
-    return { received: true };
+    try {
+      const jobId = await this.webhookQueue.add(payload);
+      if (!jobId) {
+        throw new ServiceUnavailableException(
+          'Stripe webhook queue is unavailable or disabled',
+        );
+      }
+      return jobId;
+    } catch (error) {
+      this.logger.error(
+        'Stripe webhook enqueue failed',
+        error instanceof Error ? error.stack : String(error),
+      );
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+      throw new ServiceUnavailableException(
+        'Stripe webhook queue is unavailable or disabled',
+      );
+    }
   }
 }

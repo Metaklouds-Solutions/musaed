@@ -21,7 +21,10 @@ import {
   AgentTemplateDocument,
 } from '../agent-templates/schemas/agent-template.schema';
 import { RetellClient } from '../retell/retell.client';
-import { AgentDeploymentsService } from './agent-deployments.service';
+import {
+  AgentDeploymentsService,
+  ActiveRetellDeploymentSummary,
+} from './agent-deployments.service';
 import { processFlowTemplate } from './utils/flow-processor';
 import { injectStandardTools } from './utils/standard-booking-tools';
 import { AuditService } from '../audit/audit.service';
@@ -372,6 +375,12 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
     const instanceId = instance._id.toString();
     let createdRetellAgentId: string | null = null;
     let createdConversationFlowId: string | null = null;
+    const previousActiveDeployment =
+      await this.agentDeploymentsService.findActiveByAgentInstanceAndChannel(
+        instanceId,
+        channel,
+        tenantId,
+      );
 
     await this.agentDeploymentsService.upsertByChannel({
       tenantId,
@@ -452,6 +461,14 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         error: null,
       });
 
+      await this.cleanupPreviousRetellDeployment({
+        previousActiveDeployment,
+        channel,
+        instanceId,
+        newRetellAgentId: agentResponse.agent_id,
+        newConversationFlowId: createdConversationFlowId,
+      });
+
       return {
         channel,
         status: 'active',
@@ -511,6 +528,69 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         retellConversationFlowId: createdConversationFlowId,
         error: message,
       };
+    }
+  }
+
+  private async cleanupPreviousRetellDeployment(params: {
+    previousActiveDeployment: ActiveRetellDeploymentSummary | null;
+    channel: string;
+    instanceId: string;
+    newRetellAgentId: string;
+    newConversationFlowId: string | null;
+  }): Promise<void> {
+    const {
+      previousActiveDeployment,
+      channel,
+      instanceId,
+      newRetellAgentId,
+      newConversationFlowId,
+    } = params;
+
+    if (!previousActiveDeployment) {
+      return;
+    }
+
+    const previousRetellAgentId = previousActiveDeployment.retellAgentId;
+    const previousConversationFlowId =
+      previousActiveDeployment.retellConversationFlowId;
+
+    if (previousRetellAgentId && previousRetellAgentId !== newRetellAgentId) {
+      try {
+        if (channel === 'voice') {
+          await this.retellClient.deleteAgent(previousRetellAgentId);
+        } else {
+          await this.retellClient.deleteChatAgent(previousRetellAgentId);
+        }
+        this.logger.log(
+          `Retell replacement cleanup completed: instance=${instanceId} channel=${channel} agentId=${previousRetellAgentId}`,
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown cleanup error';
+        this.logger.warn(
+          `Retell replacement agent cleanup failed: instance=${instanceId} channel=${channel} agentId=${previousRetellAgentId} error=${message}`,
+        );
+      }
+    }
+
+    if (
+      previousConversationFlowId &&
+      previousConversationFlowId !== newConversationFlowId
+    ) {
+      try {
+        await this.retellClient.deleteConversationFlow(
+          previousConversationFlowId,
+        );
+        this.logger.log(
+          `Retell replacement flow cleanup completed: instance=${instanceId} channel=${channel} flowId=${previousConversationFlowId}`,
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown cleanup error';
+        this.logger.warn(
+          `Retell replacement flow cleanup failed: instance=${instanceId} channel=${channel} flowId=${previousConversationFlowId} error=${message}`,
+        );
+      }
     }
   }
 

@@ -19,6 +19,7 @@ describe('RetellWebhookController', () => {
 
   const mockWebhooksService = {
     getRetellEventId: jest.fn().mockReturnValue('evt_123'),
+    claimProcessedEvent: jest.fn().mockResolvedValue(true),
     isDuplicateEvent: jest.fn().mockResolvedValue(false),
     recordProcessedEvent: jest.fn().mockResolvedValue(undefined),
     handleRetellCallStarted: jest.fn().mockResolvedValue(undefined),
@@ -73,19 +74,52 @@ describe('RetellWebhookController', () => {
     controller = await createController();
   });
 
-  it('accepts valid signature', async () => {
+  it('rejects when the webhook queue is disabled', async () => {
     const req = {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
+
+    await expect(
+      controller.handleWebhook(req, mockRes, validSignature, undefined),
+    ).rejects.toThrow('Retell webhook queue is unavailable or disabled');
+    expect(mockWebhookQueue.add).not.toHaveBeenCalled();
+    expect(mockMetrics.recordWebhookReceived).toHaveBeenCalledWith('retell');
+  });
+
+  it('queues valid events when webhook queue is enabled', async () => {
+    mockWebhookQueue.isEnabled.mockReturnValue(true);
+    mockWebhookQueue.add.mockResolvedValue('job-123');
+    const req = {
+      body: Buffer.from(rawBody, 'utf8'),
+    } as unknown as Request;
+
     const result = await controller.handleWebhook(
       req,
       mockRes,
       validSignature,
       undefined,
     );
-    expect(result).toEqual({ received: true });
+
+    expect(result).toEqual({ received: true, queued: true });
+    expect(mockWebhookQueue.add).toHaveBeenCalledWith({
+      source: 'retell',
+      eventId: 'evt_123',
+      eventType: 'call_started',
+      payload: { event: 'call_started', call_id: 'call_1' },
+    });
     expect(mockMetrics.recordWebhookReceived).toHaveBeenCalledWith('retell');
-    expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
+  });
+
+  it('rejects when enqueue returns no job id', async () => {
+    mockWebhookQueue.isEnabled.mockReturnValue(true);
+    mockWebhookQueue.add.mockResolvedValue(null);
+    const req = {
+      body: Buffer.from(rawBody, 'utf8'),
+    } as unknown as Request;
+
+    await expect(
+      controller.handleWebhook(req, mockRes, validSignature, undefined),
+    ).rejects.toThrow('Retell webhook queue is unavailable or disabled');
   });
 
   it('rejects invalid signature', async () => {
@@ -100,7 +134,6 @@ describe('RetellWebhookController', () => {
         undefined,
       ),
     ).rejects.toThrow('Invalid webhook signature');
-    expect(mockWebhooksService.handleRetellCallStarted).not.toHaveBeenCalled();
   });
 
   it('rejects missing signature when secret is configured', async () => {
@@ -119,14 +152,16 @@ describe('RetellWebhookController', () => {
       .update(rawBody)
       .digest('hex');
 
+    mockWebhookQueue.isEnabled.mockReturnValue(true);
+    mockWebhookQueue.add.mockResolvedValue('job-456');
     const ctrl = await createController({
       NODE_ENV: 'production',
       RETELL_WEBHOOK_SECRET_LEGACY: legacySecret,
     });
     const req = { body: Buffer.from(rawBody, 'utf8') } as unknown as Request;
     const result = await ctrl.handleWebhook(req, mockRes, legacySig, undefined);
-    expect(result).toEqual({ received: true });
-    expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
+    expect(result).toEqual({ received: true, queued: true });
+    expect(mockWebhookQueue.add).toHaveBeenCalled();
   });
 
   it('requires timestamp header when replay protection is enabled', async () => {

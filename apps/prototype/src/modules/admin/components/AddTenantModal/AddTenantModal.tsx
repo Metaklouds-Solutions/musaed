@@ -95,7 +95,13 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
       onSuccess?.({ id: result.id, name: result.name, plan: result.plan });
       toast.success('Tenant created successfully');
       if (result.inviteSetupUrl) {
-        navigator.clipboard.writeText(result.inviteSetupUrl).catch(() => {});
+        navigator.clipboard.writeText(result.inviteSetupUrl).catch((error: unknown) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Failed to copy invite link to clipboard';
+          toast.error(message);
+        });
         toast.info('Invite link copied to clipboard. Check your email (and spam) or paste the link in your browser.', {
           duration: 8000,
         });

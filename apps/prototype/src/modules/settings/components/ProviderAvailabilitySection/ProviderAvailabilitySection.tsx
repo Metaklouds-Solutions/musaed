@@ -17,6 +17,7 @@ import {
   Button,
 } from '../../../../shared/ui';
 import { Save } from 'lucide-react';
+import { toast } from 'sonner';
 import type { StaffProfile } from '../../../../shared/types/entities';
 import { ProviderDayCell } from './ProviderDayCell';
 
@@ -105,20 +106,26 @@ export function ProviderAvailabilitySection({ tenantId, onSaved }: ProviderAvail
     []
   );
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!tenantId) return;
-    for (const prov of providers) {
-      const slots: Array<{ day: string; start: string; end: string }> = [];
-      for (const day of DAYS) {
-        const v = getDraftSlot(prov.userId, day);
-        if (v && v.start && v.end) slots.push({ day, start: v.start, end: v.end });
+    try {
+      for (const prov of providers) {
+        const slots: Array<{ day: string; start: string; end: string }> = [];
+        for (const day of DAYS) {
+          const v = getDraftSlot(prov.userId, day);
+          if (v && v.start && v.end) slots.push({ day, start: v.start, end: v.end });
+        }
+        await staffProfileAdapter.updateProfile(prov.userId, tenantId, slots);
       }
-      staffProfileAdapter.updateProfile(prov.userId, tenantId, slots);
+      setDraft({});
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      onSaved?.();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to save provider availability';
+      toast.error(message);
     }
-    setDraft({});
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    onSaved?.();
   }, [tenantId, providers, draft, getDraftSlot, onSaved]);
 
   if (!tenantId) return null;
@@ -133,7 +140,7 @@ export function ProviderAvailabilitySection({ tenantId, onSaved }: ProviderAvail
           </p>
         </div>
         <Button
-          onClick={handleSave}
+          onClick={() => void handleSave()}
           className="shrink-0 flex items-center gap-2"
           aria-label={saved ? 'Saved' : 'Save availability'}
         >

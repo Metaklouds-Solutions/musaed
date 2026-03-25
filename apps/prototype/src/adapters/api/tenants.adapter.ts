@@ -115,6 +115,15 @@ function isForbiddenError(error: unknown): boolean {
   );
 }
 
+async function safeGet<T>(path: string, fallback: T): Promise<T> {
+  try {
+    return await api.get<T>(path);
+  } catch (error) {
+    console.warn(`[tenants] request failed: ${path}`, error);
+    return fallback;
+  }
+}
+
 const templateChannelsCache = new Map<string, AgentChannel[]>();
 
 function readString(value: unknown): string | null {
@@ -299,7 +308,7 @@ export const tenantsAdapter = {
 
   async getTenantDetailFull(id: string): Promise<TenantDetailFull | null> {
     try {
-      const me = await api.get<Record<string, unknown>>('/auth/me').catch(() => null);
+      const me = await safeGet<Record<string, unknown> | null>('/auth/me', null);
       const role = (readString(me?.role) ?? '').toUpperCase();
       let isAdmin = role === 'ADMIN';
       let scopedTenantId: string | null = id;
@@ -311,13 +320,13 @@ export const tenantsAdapter = {
         } catch (error) {
           if (isForbiddenError(error)) {
             isAdmin = false;
-            t = await api.get<TenantApiResponse>('/tenant/settings').catch(() => null);
+            t = await safeGet<TenantApiResponse | null>('/tenant/settings', null);
           } else {
             t = null;
           }
         }
       } else {
-        t = await api.get<TenantApiResponse>('/tenant/settings').catch(() => null);
+        t = await safeGet<TenantApiResponse | null>('/tenant/settings', null);
         scopedTenantId = readId(me?.tenantId) ?? readId(t?._id) ?? id;
       }
       const owner = t && t.ownerId && typeof t.ownerId === 'object' ? t.ownerId : {};
@@ -327,7 +336,10 @@ export const tenantsAdapter = {
           locale?: string;
           settings?: Record<string, unknown>;
         }>(withTenantScope('/tenant/settings', scopedTenantId, isAdmin))
-        .catch(() => null);
+        .catch((error) => {
+          console.warn('[tenants] tenant settings request failed', error);
+          return null;
+        });
 
       const agentsPromise = isAdmin
         ? api
@@ -335,11 +347,17 @@ export const tenantsAdapter = {
             .catch(async (error) => {
               if (isForbiddenError(error)) {
                 isAdmin = false;
-                return api.get<TenantAgentApiResponse[]>('/tenant/agents').catch(() => [] as TenantAgentApiResponse[]);
+                return safeGet<TenantAgentApiResponse[]>(
+                  '/tenant/agents',
+                  [] as TenantAgentApiResponse[],
+                );
               }
               return [] as TenantAgentApiResponse[];
             })
-        : api.get<TenantAgentApiResponse[]>('/tenant/agents').catch(() => [] as TenantAgentApiResponse[]);
+        : safeGet<TenantAgentApiResponse[]>(
+            '/tenant/agents',
+            [] as TenantAgentApiResponse[],
+          );
 
       const callsPromise = isAdmin
         ? api
@@ -351,13 +369,19 @@ export const tenantsAdapter = {
                 isAdmin = false;
                 return api
                   .get<TenantCallsApiResponse>('/tenant/calls?page=1&limit=1')
-                  .catch(() => ({ total: 0, data: [] }));
+                  .catch((nestedError) => {
+                    console.warn('[tenants] tenant calls fallback failed', nestedError);
+                    return { total: 0, data: [] };
+                  });
               }
               return { total: 0, data: [] } as AdminCallsListApiResponse;
             })
         : api
             .get<TenantCallsApiResponse>('/tenant/calls?page=1&limit=1')
-            .catch(() => ({ total: 0, data: [] }));
+            .catch((error) => {
+              console.warn('[tenants] tenant calls request failed', error);
+              return { total: 0, data: [] };
+            });
 
       const analyticsPromise = isAdmin
         ? api
@@ -369,13 +393,22 @@ export const tenantsAdapter = {
                 isAdmin = false;
                 return api
                   .get<TenantAnalyticsResponse>('/tenant/calls/analytics')
-                  .catch(() => null);
+                  .catch((nestedError) => {
+                    console.warn(
+                      '[tenants] tenant analytics fallback failed',
+                      nestedError,
+                    );
+                    return null;
+                  });
               }
               return null;
             })
         : api
             .get<TenantAnalyticsResponse>('/tenant/calls/analytics')
-            .catch(() => null);
+            .catch((error) => {
+              console.warn('[tenants] tenant analytics request failed', error);
+              return null;
+            });
 
       const [agents, calls, bookings, staff, support, billing, analytics] = await Promise.all([
         agentsPromise,

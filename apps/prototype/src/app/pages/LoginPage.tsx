@@ -25,8 +25,8 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   const { isAuthenticated, user, loginWithTokens, logout, restoring } = useSession();
   const location = useLocation();
   const stateMessage = (location.state as { message?: string } | null)?.message;
-  const [email, setEmail] = useState('admin@musaed.com');
-  const [password, setPassword] = useState('Admin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,12 +38,14 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
   const isTenantAccessBlocked =
     error.toLowerCase().includes('tenant access is disabled') ||
     (error.toLowerCase().includes('disabled') && error.toLowerCase().includes('contact'));
-  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL ?? 'support@example.com';
-  const contactLink = `mailto:${supportEmail}?subject=${encodeURIComponent(
-    'Tenant Access Request',
-  )}&body=${encodeURIComponent(
-    `Name: \nEmail: ${email}\nTenant: \nIssue: Access blocked after disable/delete`,
-  )}`;
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL?.trim() ?? '';
+  const contactLink = supportEmail
+    ? `mailto:${supportEmail}?subject=${encodeURIComponent(
+        'Tenant Access Request',
+      )}&body=${encodeURIComponent(
+        `Name: \nEmail: ${email}\nTenant: \nIssue: Access blocked after disable/delete`,
+      )}`
+    : null;
 
   useEffect(() => {
     if (themeProp == null) {
@@ -165,12 +167,18 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
                   <p className="text-xs text-muted-foreground">
                     If this tenant was disabled or deleted, access remains blocked until an admin re-enables your tenant account.
                   </p>
-                  <a
-                    href={contactLink}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                  >
-                    Contact administrator
-                  </a>
+                  {contactLink ? (
+                    <a
+                      href={contactLink}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    >
+                      Contact administrator
+                    </a>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Contact your administrator to restore access.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

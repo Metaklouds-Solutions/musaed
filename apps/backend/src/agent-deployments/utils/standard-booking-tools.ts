@@ -148,13 +148,11 @@ export const STANDARD_BOOKING_TOOLS: readonly StandardCustomTool[] = [
         agent_id: { type: 'string', const: '{{agent_id}}' },
         email: {
           type: 'string',
-          description:
-            "Patient's email address to find their existing booking",
+          description: "Patient's email address to find their existing booking",
         },
         reason: {
           type: 'string',
-          description:
-            'Reason for cancellation if the patient provides one',
+          description: 'Reason for cancellation if the patient provides one',
         },
       },
       required: ['agent_id', 'email'],
@@ -180,8 +178,7 @@ export const STANDARD_BOOKING_TOOLS: readonly StandardCustomTool[] = [
         agent_id: { type: 'string', const: '{{agent_id}}' },
         email: {
           type: 'string',
-          description:
-            "Patient's email address to find their existing booking",
+          description: "Patient's email address to find their existing booking",
         },
         new_slot: {
           type: 'string',

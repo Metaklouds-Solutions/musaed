@@ -4,6 +4,7 @@
 
 import { featureFlagsAdapter } from '../../../adapters';
 import type { FeatureFlags, FeatureFlagKey } from '../../../adapters/local/featureFlags.adapter';
+import { toast } from 'sonner';
 
 interface FeatureFlagsSectionProps {
   tenantId: string | undefined;
@@ -19,10 +20,18 @@ const ITEMS: { key: FeatureFlagKey; label: string; desc: string }[] = [
 export function FeatureFlagsSection({ tenantId, flags, onChange }: FeatureFlagsSectionProps) {
   if (!tenantId) return null;
 
-  const update = (key: FeatureFlagKey, value: boolean) => {
+  const update = async (key: FeatureFlagKey, value: boolean) => {
+    const previous = { ...flags };
     const next = { ...flags, [key]: value };
     onChange(next);
-    featureFlagsAdapter.setFeatureFlag(tenantId, key, value);
+    try {
+      await featureFlagsAdapter.setFeatureFlag(tenantId, key, value);
+    } catch (error) {
+      onChange(previous);
+      const message =
+        error instanceof Error ? error.message : 'Failed to update feature flag';
+      toast.error(message);
+    }
   };
 
   return (
@@ -49,7 +58,7 @@ export function FeatureFlagsSection({ tenantId, flags, onChange }: FeatureFlagsS
                 <input
                   type="checkbox"
                   checked={flags[key]}
-                  onChange={(e) => update(key, e.target.checked)}
+                  onChange={(e) => void update(key, e.target.checked)}
                   className="sr-only peer"
                 />
                 <span className="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />

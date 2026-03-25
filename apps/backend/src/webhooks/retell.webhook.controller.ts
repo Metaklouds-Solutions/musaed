@@ -8,6 +8,7 @@ import {
   Logger,
   ForbiddenException,
   BadRequestException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
@@ -145,57 +146,50 @@ export class RetellWebhookController {
     const eventType = body.event;
     this.metrics.recordWebhookReceived('retell');
     const eventId = this.webhooksService.getRetellEventId(body);
-    const isDuplicate = await this.webhooksService.isDuplicateEvent(
+
+    await this.enqueueOrThrow({
+      source: 'retell',
       eventId,
-      'retell',
       eventType,
-    );
-    if (isDuplicate) {
-      return { received: true, duplicate: true };
+      payload: body as unknown as Record<string, unknown>,
+    });
+
+    res.status(HttpStatus.ACCEPTED);
+    return { received: true, queued: true };
+  }
+
+  private async enqueueOrThrow(payload: {
+    source: 'retell';
+    eventId: string;
+    eventType: string;
+    payload: Record<string, unknown>;
+  }): Promise<string> {
+    if (!this.webhookQueue.isEnabled()) {
+      throw new ServiceUnavailableException(
+        'Retell webhook queue is unavailable or disabled',
+      );
     }
 
-    if (this.webhookQueue.isEnabled()) {
-      const jobId = await this.webhookQueue.add({
-        source: 'retell',
-        eventId,
-        eventType,
-        payload: body as unknown as Record<string, unknown>,
-      });
-      if (jobId) {
-        res.status(HttpStatus.ACCEPTED);
-        return { received: true, queued: true };
+    try {
+      const jobId = await this.webhookQueue.add(payload);
+      if (!jobId) {
+        throw new ServiceUnavailableException(
+          'Retell webhook queue is unavailable or disabled',
+        );
       }
+      return jobId;
+    } catch (error) {
+      this.logger.error(
+        'Retell webhook enqueue failed',
+        error instanceof Error ? error.stack : String(error),
+      );
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+      throw new ServiceUnavailableException(
+        'Retell webhook queue is unavailable or disabled',
+      );
     }
-
-    this.logger.log(`Retell event received: ${eventType}`);
-
-    switch (eventType) {
-      case 'call_started':
-        await this.webhooksService.handleRetellCallStarted(body);
-        break;
-
-      case 'call_ended':
-        await this.webhooksService.handleRetellCallEnded(body);
-        break;
-
-      case 'call_analyzed':
-        await this.webhooksService.handleRetellCallAnalyzed(body);
-        break;
-
-      case 'alert_triggered':
-        await this.webhooksService.handleRetellAlertTriggered(body);
-        break;
-
-      default:
-        this.logger.log(`Unhandled Retell event: ${eventType}`);
-    }
-
-    await this.webhooksService.recordProcessedEvent(
-      eventId,
-      'retell',
-      eventType,
-    );
-    return { received: true };
   }
 
   private listObjectKeys(value: unknown): string[] {

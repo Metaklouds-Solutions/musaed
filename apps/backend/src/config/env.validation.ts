@@ -157,6 +157,15 @@ export const envValidationSchema = Joi.object({
       });
     }
 
+    if (
+      typeof env.METRICS_API_KEY !== 'string' ||
+      env.METRICS_API_KEY.trim().length === 0
+    ) {
+      return helpers.error('any.custom', {
+        message: 'METRICS_API_KEY is required in production',
+      });
+    }
+
     const queueFlags = [
       env.AGENT_DEPLOYMENT_QUEUE_ENABLED,
       env.QUEUE_WEBHOOKS_ENABLED,

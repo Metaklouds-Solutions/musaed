@@ -2,11 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { AgentDeploymentsService } from '../agent-deployments/agent-deployments.service';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
-import {
-  AgentInstance,
-  AgentInstanceDocument,
-} from '../agent-instances/schemas/agent-instance.schema';
 import {
   ProcessedEvent,
   ProcessedEventDocument,
@@ -41,6 +38,16 @@ interface ResolvedAgentContext {
   tenantId: Types.ObjectId;
   agentInstanceId: Types.ObjectId;
   retellAgentId: string | null;
+  source: 'active-deployment' | 'metadata';
+}
+
+interface UpsertCallSessionResult {
+  applied: boolean;
+  reason?:
+    | 'missing_call_id'
+    | 'stale_status'
+    | 'stale_timestamp'
+    | 'no_context';
 }
 
 @Injectable()
@@ -49,9 +56,8 @@ export class WebhooksService {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly agentDeploymentsService: AgentDeploymentsService,
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
-    @InjectModel(AgentInstance.name)
-    private agentModel: Model<AgentInstanceDocument>,
     @InjectModel(ProcessedEvent.name)
     private processedEventModel: Model<ProcessedEventDocument>,
     @InjectModel(CallSession.name)
@@ -74,6 +80,40 @@ export class WebhooksService {
       source,
     });
     return existing !== null;
+  }
+
+  /**
+   * Atomically claims an event-id for processing.
+   * Returns true when this caller owns processing, false when already claimed.
+   */
+  async claimProcessedEvent(
+    eventId: string,
+    source: string,
+    eventType: string,
+  ): Promise<boolean> {
+    try {
+      await this.processedEventModel.create({ eventId, source, eventType });
+      return true;
+    } catch (err: unknown) {
+      if (
+        err instanceof Error &&
+        'code' in err &&
+        (err as Record<string, unknown>).code === 11000
+      ) {
+        this.logger.debug(
+          `Duplicate ${source} event claim skipped: ${eventId}`,
+        );
+        return false;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Releases a previously claimed event so queue retries can re-process it.
+   */
+  async releaseProcessedEvent(eventId: string, source: string): Promise<void> {
+    await this.processedEventModel.deleteOne({ eventId, source });
   }
 
   /**
@@ -184,12 +224,15 @@ export class WebhooksService {
     if (!this.isCallIngestEnabled()) {
       return;
     }
-    await this.upsertCallSession(payload, {
+    const callSessionResult = await this.upsertCallSession(payload, {
       status: 'started',
       startedAt,
       durationMs: this.readNumber(call.duration_ms),
       transcript: this.readString(call.transcript),
     });
+    if (!callSessionResult.applied) {
+      return;
+    }
     await this.upsertRunFromWebhook(payload, 'running');
   }
 
@@ -205,12 +248,15 @@ export class WebhooksService {
     if (!this.isCallIngestEnabled()) {
       return;
     }
-    await this.upsertCallSession(payload, {
+    const callSessionResult = await this.upsertCallSession(payload, {
       status: 'ended',
       endedAt,
       durationMs: typeof durationMs === 'number' ? durationMs : null,
       transcript: this.readString(call.transcript),
     });
+    if (!callSessionResult.applied) {
+      return;
+    }
     await this.upsertRunFromWebhook(payload, 'completed');
   }
 
@@ -231,7 +277,7 @@ export class WebhooksService {
     if (!this.isCallIngestEnabled()) {
       return;
     }
-    await this.upsertCallSession(payload, {
+    const callSessionResult = await this.upsertCallSession(payload, {
       status: 'analyzed',
       summary: this.readString(summary),
       sentiment: this.readString(sentiment),
@@ -239,6 +285,9 @@ export class WebhooksService {
         this.readString(payload.transcript) ?? this.readString(call.transcript),
       outcome: this.deriveOutcome(summary ?? undefined),
     });
+    if (!callSessionResult.applied) {
+      return;
+    }
     await this.upsertRunFromWebhook(payload, 'completed');
   }
 
@@ -279,7 +328,7 @@ export class WebhooksService {
   private async upsertCallSession(
     payload: RetellWebhookDto,
     patch: Partial<CallSession>,
-  ): Promise<void> {
+  ): Promise<UpsertCallSessionResult> {
     const callId = this.readString(payload.call_id);
     const call = this.readCall(payload);
     const normalizedCallId = callId ?? this.readString(call.call_id);
@@ -287,7 +336,7 @@ export class WebhooksService {
       this.logger.warn(
         'Retell payload missing call_id; skipping call-session upsert',
       );
-      return;
+      return { applied: false, reason: 'missing_call_id' };
     }
 
     const incomingStatus = getIncomingStatusFromEvent(payload.event);
@@ -313,7 +362,7 @@ export class WebhooksService {
           currentStatus,
           message: 'Ignored stale webhook event',
         });
-        return;
+        return { applied: false, reason: 'stale_status' };
       }
 
       const lastEventTs = this.readLastEventTimestamp(existing.metadata);
@@ -328,7 +377,7 @@ export class WebhooksService {
           lastEventTimestamp: lastEventTs,
           message: 'Ignored webhook event with older timestamp',
         });
-        return;
+        return { applied: false, reason: 'stale_timestamp' };
       }
     }
 
@@ -353,7 +402,7 @@ export class WebhooksService {
           },
         },
       );
-      return;
+      return { applied: true };
     }
 
     const context = await this.resolveAgentContext(payload);
@@ -361,7 +410,7 @@ export class WebhooksService {
       this.logger.warn(
         `Unable to resolve tenant/agent context for call ${normalizedCallId}`,
       );
-      return;
+      return { applied: false, reason: 'no_context' };
     }
 
     this.logger.debug(
@@ -385,6 +434,7 @@ export class WebhooksService {
       },
       { upsert: true },
     );
+    return { applied: true };
   }
 
   /** Extracts event timestamp from payload (ms). Returns null if not present. */
@@ -421,6 +471,27 @@ export class WebhooksService {
   ): Promise<ResolvedAgentContext | null> {
     const call = this.readCall(payload);
     const metadata = this.readMetadata(payload, call) ?? {};
+    const retellAgentId =
+      this.readString(payload.agent_id) ?? this.readString(call.agent_id);
+
+    if (retellAgentId) {
+      const activeDeployment =
+        await this.agentDeploymentsService.findActiveByRetellAgentId(
+          retellAgentId,
+        );
+      if (activeDeployment) {
+        this.logger.debug(
+          `Resolved webhook context from active deployment: agentId=${retellAgentId} tenantId=${activeDeployment.tenantId.toString()} agentInstanceId=${activeDeployment.agentInstanceId.toString()}`,
+        );
+        return {
+          tenantId: activeDeployment.tenantId,
+          agentInstanceId: activeDeployment.agentInstanceId,
+          retellAgentId: activeDeployment.retellAgentId,
+          source: 'active-deployment',
+        };
+      }
+    }
+
     const metaTenantId = this.readString(metadata.tenant_id);
     const metaAgentInstanceId = this.readString(metadata.agent_instance_id);
     if (
@@ -429,32 +500,19 @@ export class WebhooksService {
       Types.ObjectId.isValid(metaTenantId) &&
       Types.ObjectId.isValid(metaAgentInstanceId)
     ) {
+      if (retellAgentId) {
+        this.logger.debug(
+          `Resolved webhook context from metadata fallback after missing active deployment: agentId=${retellAgentId} tenantId=${metaTenantId} agentInstanceId=${metaAgentInstanceId}`,
+        );
+      }
       return {
         tenantId: new Types.ObjectId(metaTenantId),
         agentInstanceId: new Types.ObjectId(metaAgentInstanceId),
-        retellAgentId: this.readString(payload.agent_id),
+        retellAgentId,
+        source: 'metadata',
       };
     }
-
-    const retellAgentId =
-      this.readString(payload.agent_id) ?? this.readString(call.agent_id);
-    if (!retellAgentId) {
-      return null;
-    }
-    const agent = await this.agentModel
-      .findOne({ retellAgentId, status: { $ne: 'deleted' } })
-      .select('_id tenantId retellAgentId');
-    if (!agent) {
-      return null;
-    }
-    if (!agent.tenantId) {
-      return null;
-    }
-    return {
-      tenantId: agent.tenantId,
-      agentInstanceId: agent._id,
-      retellAgentId: agent.retellAgentId,
-    };
+    return null;
   }
 
   private readString(value: unknown): string | null {
@@ -594,7 +652,9 @@ export class WebhooksService {
       };
       const at = d.processedAt ?? d.createdAt ?? new Date();
       const processedAt =
-        at instanceof Date ? at.toISOString() : new Date(String(at)).toISOString();
+        at instanceof Date
+          ? at.toISOString()
+          : new Date(String(at)).toISOString();
       return {
         eventId: d.eventId ?? '',
         source: d.source ?? '',

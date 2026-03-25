@@ -24,6 +24,7 @@ import {
 import { AgentRolloutService } from '../agent-deployments/agent-rollout.service';
 import { StartConversationDto } from './dto/start-conversation.dto';
 import { RetellClient } from '../retell/retell.client';
+import { AgentChannelDeploymentDocument } from '../agent-deployments/schemas/agent-channel-deployment.schema';
 
 @Injectable()
 export class AgentsService {
@@ -275,19 +276,13 @@ export class AgentsService {
     });
     if (!instance) throw new NotFoundException('Agent instance not found');
 
-    if (instance.retellAgentId) {
+    const activeDeployment = await this.resolveSyncDeployment(instance, tenantId);
+    if (activeDeployment?.retellAgentId) {
       try {
-        let retellData;
-        if (
-          instance.channel === 'voice' ||
-          instance.channelsEnabled.includes('voice')
-        ) {
-          retellData = await this.retellClient.getAgent(instance.retellAgentId);
-        } else {
-          retellData = await this.retellClient.getChatAgent(
-            instance.retellAgentId,
-          );
-        }
+        const retellData =
+          activeDeployment.channel === 'chat'
+            ? await this.retellClient.getChatAgent(activeDeployment.retellAgentId)
+            : await this.retellClient.getAgent(activeDeployment.retellAgentId);
         instance.configSnapshot = {
           ...instance.configSnapshot,
           ...retellData,
@@ -295,9 +290,13 @@ export class AgentsService {
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         this.logger.warn(
-          `Failed to sync Retell config for agent ${id}: ${errMsg}`,
+          `Failed to sync Retell config for agent ${id} via deployment ${activeDeployment._id.toString()}: ${errMsg}`,
         );
       }
+    } else {
+      this.logger.warn(
+        `Skipping Retell config sync for agent ${id}: no active Retell deployment found`,
+      );
     }
 
     instance.lastSyncedAt = new Date();
@@ -310,19 +309,13 @@ export class AgentsService {
     const instance = await this.instanceModel.findById(id);
     if (!instance) throw new NotFoundException('Agent instance not found');
 
-    if (instance.retellAgentId) {
+    const activeDeployment = await this.resolveSyncDeployment(instance);
+    if (activeDeployment?.retellAgentId) {
       try {
-        let retellData;
-        if (
-          instance.channel === 'voice' ||
-          instance.channelsEnabled.includes('voice')
-        ) {
-          retellData = await this.retellClient.getAgent(instance.retellAgentId);
-        } else {
-          retellData = await this.retellClient.getChatAgent(
-            instance.retellAgentId,
-          );
-        }
+        const retellData =
+          activeDeployment.channel === 'chat'
+            ? await this.retellClient.getChatAgent(activeDeployment.retellAgentId)
+            : await this.retellClient.getAgent(activeDeployment.retellAgentId);
         instance.configSnapshot = {
           ...instance.configSnapshot,
           ...retellData,
@@ -330,9 +323,13 @@ export class AgentsService {
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         this.logger.warn(
-          `Failed to sync Retell config for agent ${id}: ${errMsg}`,
+          `Failed to sync Retell config for agent ${id} via deployment ${activeDeployment._id.toString()}: ${errMsg}`,
         );
       }
+    } else {
+      this.logger.warn(
+        `Skipping Retell config sync for agent ${id}: no active Retell deployment found`,
+      );
     }
 
     instance.lastSyncedAt = new Date();
@@ -775,5 +772,39 @@ export class AgentsService {
       }
     }
     return sanitized;
+  }
+
+  private async resolveSyncDeployment(
+    instance: AgentInstanceDocument,
+    tenantId?: string,
+  ): Promise<AgentChannelDeploymentDocument | null> {
+    const deployments = await this.agentDeploymentsService.findByAgentInstance(
+      instance._id.toString(),
+      tenantId,
+    );
+    const active = deployments.filter(
+      (deployment) =>
+        deployment.status === 'active' &&
+        deployment.deletedAt == null &&
+        Boolean(deployment.retellAgentId),
+    );
+    if (active.length === 0) {
+      return null;
+    }
+
+    const preferredChannelOrder: string[] = [];
+    if (instance.channel) preferredChannelOrder.push(instance.channel);
+    for (const channel of instance.channelsEnabled) {
+      if (!preferredChannelOrder.includes(channel)) {
+        preferredChannelOrder.push(channel);
+      }
+    }
+    preferredChannelOrder.push('voice', 'chat');
+
+    for (const channel of preferredChannelOrder) {
+      const match = active.find((deployment) => deployment.channel === channel);
+      if (match) return match;
+    }
+    return active[0] ?? null;
   }
 }

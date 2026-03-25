@@ -21,8 +21,29 @@ export class CreateTemplateDto {
   @MaxLength(2000)
   description?: string;
 
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsOptional()
+  @MaxLength(120)
+  slug?: string;
+
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  category?: string;
+
   @IsIn(['voice', 'chat', 'email'])
   channel: string;
+
+  @IsArray()
+  @IsIn(['voice', 'chat', 'email'], { each: true })
+  @IsOptional()
+  supportedChannels?: string[];
+
+  @IsObject()
+  @IsOptional()
+  flowTemplate?: Record<string, unknown>;
 
   @IsObject()
   @IsOptional()
@@ -39,6 +60,22 @@ export class CreateTemplateDto {
   @IsObject()
   @IsOptional()
   llmConfig?: Record<string, unknown>;
+
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @MaxLength(50)
+  @IsIn([
+    'basic',
+    'standard',
+    'advanced',
+    'enterprise',
+    'L1',
+    'L2',
+    'L3',
+    'L4',
+  ])
+  capabilityLevel?: string;
 
   @IsString()
   @IsOptional()

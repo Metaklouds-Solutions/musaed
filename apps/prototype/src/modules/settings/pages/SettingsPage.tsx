@@ -6,6 +6,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 import { PageHeader, Button } from '../../../shared/ui';
 import {
   AppointmentRemindersSection,
@@ -78,7 +79,13 @@ export function SettingsPage() {
   useEffect(() => {
     Promise.resolve(settingsAdapter.getTenantSettings(tenantId))
       .then((s) => setSettings(s))
-      .catch(() => {});
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load clinic settings';
+        toast.error(message);
+      });
   }, [tenantId]);
 
   const handleSave = useCallback(async () => {

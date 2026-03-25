@@ -16,16 +16,19 @@ export const pmsAdapter = {
     return getCachedPms(tenantId);
   },
 
-  connect(provider: PmsProvider, tenantId?: string): PmsConnectionConfig {
+  async connect(
+    provider: PmsProvider,
+    tenantId?: string,
+  ): Promise<PmsConnectionConfig> {
     const config: PmsConnectionConfig = { provider, status: 'connected', lastSyncAt: undefined };
     if (tenantId) {
       setCachedPms(tenantId, config);
-      void api.patch('/tenant/settings', { pms: config }).catch(() => {});
+      await api.patch('/tenant/settings', { pms: config });
     }
     return config;
   },
 
-  disconnect(tenantId?: string): PmsConnectionConfig {
+  async disconnect(tenantId?: string): Promise<PmsConnectionConfig> {
     const current = tenantId ? getCachedPms(tenantId) : null;
     const config: PmsConnectionConfig = {
       provider: current?.provider && isPmsProvider(current.provider) ? current.provider : 'athena',
@@ -34,7 +37,7 @@ export const pmsAdapter = {
     };
     if (tenantId) {
       setCachedPms(tenantId, config);
-      void api.patch('/tenant/settings', { pms: config }).catch(() => {});
+      await api.patch('/tenant/settings', { pms: config });
     }
     return config;
   },
@@ -48,7 +51,7 @@ export const pmsAdapter = {
     const next = { ...config, lastSyncAt };
     if (tenantId) {
       setCachedPms(tenantId, next);
-      await api.patch('/tenant/settings', { pms: next }).catch(() => {});
+      await api.patch('/tenant/settings', { pms: next });
     }
     return { success: true, synced: 0 };
   },

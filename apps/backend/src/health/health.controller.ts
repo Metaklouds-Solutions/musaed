@@ -40,14 +40,19 @@ export class HealthController {
     /** Avoid touching Bull/ioredis when no queue feature needs Redis (prevents connection churn / log spam locally). */
     const redisStatus = redisRequired
       ? await this.checkRedis()
-      : { up: true as const, latencyMs: null, error: undefined as string | undefined };
+      : {
+          up: true as const,
+          latencyMs: null,
+          error: undefined as string | undefined,
+        };
 
     const retellProbe = await this.retellClient.probeConnectivity();
     const metrics = this.deploymentMetrics.getSnapshot();
 
     const retellOk = retellProbe.skipped ? true : retellProbe.reachable;
 
-    const isHealthy = dbUp && retellOk && (redisRequired ? redisStatus.up : true);
+    const isHealthy =
+      dbUp && retellOk && (redisRequired ? redisStatus.up : true);
 
     return {
       status: isHealthy ? 'ok' : 'degraded',

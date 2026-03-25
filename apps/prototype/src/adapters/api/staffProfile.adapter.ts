@@ -48,10 +48,14 @@ export const staffProfileAdapter = {
     });
   },
 
-  updateProfile(userId: string, tenantId: string, availability: AvailabilitySlot[]): void {
+  async updateProfile(
+    userId: string,
+    tenantId: string,
+    availability: AvailabilitySlot[],
+  ): Promise<void> {
     const pa = { ...getCachedProviderAvailability(tenantId) };
     pa[userId] = { availability };
     setCachedProviderAvailability(tenantId, pa);
-    void api.patch('/tenant/settings', { providerAvailability: pa }).catch(() => {});
+    await api.patch('/tenant/settings', { providerAvailability: pa });
   },
 };

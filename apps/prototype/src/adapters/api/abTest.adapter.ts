@@ -11,7 +11,10 @@ export const abTestAdapter = {
     return { ...getCachedAbTest(tenantId) };
   },
 
-  setConfig(tenantId: string, config: Partial<ABTestConfig>): void {
+  async setConfig(
+    tenantId: string,
+    config: Partial<ABTestConfig>,
+  ): Promise<void> {
     const current = this.getConfig(tenantId);
     const next: ABTestConfig = {
       ...current,
@@ -22,6 +25,6 @@ export const abTestAdapter = {
       ),
     };
     setCachedAbTest(tenantId, next);
-    void api.patch('/tenant/settings', { abTest: next }).catch(() => {});
+    await api.patch('/tenant/settings', { abTest: next });
   },
 };

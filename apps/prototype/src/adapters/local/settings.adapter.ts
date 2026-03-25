@@ -69,10 +69,7 @@ export interface TenantSettings {
 }
 
 const defaultAdminSettings: AdminSettings = {
-  adminUsers: [
-    { id: 'admin_1', email: 'admin@example.com', role: 'Platform Admin', lastActive: '2026-02-27T10:00:00Z' },
-    { id: 'admin_2', email: 'support@example.com', role: 'Support', lastActive: '2026-02-26T15:30:00Z' },
-  ],
+  adminUsers: [],
   integrations: [
     { id: 'retell', name: 'Retell API', status: 'connected', config: { apiKey: '••••••••••••' } },
     { id: 'webhooks', name: 'Webhooks', status: 'connected' },

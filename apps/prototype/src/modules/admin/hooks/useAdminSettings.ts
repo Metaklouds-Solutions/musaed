@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { settingsAdapter, reportsAdapter } from '../../../adapters';
 import type { AdminSettings } from '../../../adapters/local/settings.adapter';
 import type { ScheduledReportConfig } from '../../../adapters/local/reports.adapter';
@@ -28,13 +29,25 @@ export function useAdminSettings() {
   useEffect(() => {
     Promise.resolve(settingsAdapter.getAdminSettings())
       .then((s) => setSettings(s))
-      .catch(() => {});
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load admin settings';
+        toast.error(message);
+      });
   }, []);
 
   useEffect(() => {
     Promise.resolve(reportsAdapter.getScheduledReportConfig())
       .then((c) => setScheduledConfig(c))
-      .catch(() => {});
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load scheduled report settings';
+        toast.error(message);
+      });
   }, []);
 
   useEffect(() => {

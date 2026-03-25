@@ -59,7 +59,9 @@ export class AuthController {
           ? req.tenantId
           : undefined;
     const tenantRole =
-      typeof req.user?.tenantRole === 'string' ? req.user.tenantRole : undefined;
+      typeof req.user?.tenantRole === 'string'
+        ? req.user.tenantRole
+        : undefined;
     if (tenantId) user.tenantId = tenantId;
     if (tenantRole) user.tenantRole = tenantRole;
     return user;

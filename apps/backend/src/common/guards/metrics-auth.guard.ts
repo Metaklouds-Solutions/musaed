@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
@@ -17,13 +18,22 @@ import { safeEqual } from '../helpers/timing-safe-equal';
 @Injectable()
 export class MetricsAuthGuard implements CanActivate {
   private readonly apiKey: string;
+  private readonly nodeEnv: string;
 
   constructor(config: ConfigService) {
     this.apiKey = config.get<string>('METRICS_API_KEY', '').trim();
+    this.nodeEnv = config.get<string>('NODE_ENV', 'development').trim();
   }
 
   canActivate(context: ExecutionContext): boolean {
-    if (this.apiKey.length === 0) return true;
+    if (this.apiKey.length === 0) {
+      if (this.nodeEnv === 'production') {
+        throw new ServiceUnavailableException(
+          'Metrics endpoint is disabled: METRICS_API_KEY is not configured',
+        );
+      }
+      return true;
+    }
 
     const request = context.switchToHttp().getRequest<Request>();
 

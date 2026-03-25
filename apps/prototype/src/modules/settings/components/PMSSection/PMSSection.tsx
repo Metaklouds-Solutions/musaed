@@ -7,6 +7,7 @@ import { PopoverSelect, Button } from '../../../../shared/ui';
 import { pmsAdapter } from '../../../../adapters';
 import type { PmsProvider, PmsConnectionConfig } from '../../../../adapters/local/pms.adapter';
 import { Plug, RefreshCw, Link2, Unlink } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PROVIDER_OPTIONS = [
   { value: 'athena', label: 'Athena Health' },
@@ -33,15 +34,27 @@ export function PMSSection({ tenantId }: PMSSectionProps) {
   );
   const [syncing, setSyncing] = useState(false);
 
-  const handleConnect = useCallback(() => {
+  const handleConnect = useCallback(async () => {
     if (!tenantId) return;
     const provider = toPmsProvider(config?.provider ?? 'athena');
-    setConfig(pmsAdapter.connect(provider, tenantId));
+    try {
+      setConfig(await pmsAdapter.connect(provider, tenantId));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to connect PMS';
+      toast.error(message);
+    }
   }, [tenantId, config?.provider]);
 
-  const handleDisconnect = useCallback(() => {
+  const handleDisconnect = useCallback(async () => {
     if (!tenantId) return;
-    setConfig(pmsAdapter.disconnect(tenantId));
+    try {
+      setConfig(await pmsAdapter.disconnect(tenantId));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to disconnect PMS';
+      toast.error(message);
+    }
   }, [tenantId]);
 
   const handleSync = useCallback(
@@ -49,10 +62,18 @@ export function PMSSection({ tenantId }: PMSSectionProps) {
       if (!tenantId || config?.status !== 'connected') return;
       setSyncing(true);
       const fn = type === 'patients' ? pmsAdapter.syncPatients : pmsAdapter.syncAppointments;
-      fn(tenantId).then(() => {
-        setConfig(pmsAdapter.getConfig(tenantId));
-        setSyncing(false);
-      });
+      fn(tenantId)
+        .then(() => {
+          setConfig(pmsAdapter.getConfig(tenantId));
+        })
+        .catch((error) => {
+          const message =
+            error instanceof Error ? error.message : `Failed to sync ${type}`;
+          toast.error(message);
+        })
+        .finally(() => {
+          setSyncing(false);
+        });
     },
     [tenantId, config?.status]
   );
@@ -89,7 +110,7 @@ export function PMSSection({ tenantId }: PMSSectionProps) {
         <div className="flex flex-wrap items-center gap-3">
           {isConnected ? (
             <>
-              <Button onClick={handleDisconnect} variant="outline" aria-label="Disconnect PMS">
+              <Button onClick={() => void handleDisconnect()} variant="outline" aria-label="Disconnect PMS">
                 <Unlink size={16} aria-hidden />
                 Disconnect
               </Button>
@@ -113,7 +134,7 @@ export function PMSSection({ tenantId }: PMSSectionProps) {
               </Button>
             </>
           ) : (
-            <Button onClick={handleConnect} aria-label="Connect PMS">
+            <Button onClick={() => void handleConnect()} aria-label="Connect PMS">
               <Link2 size={16} aria-hidden />
               Connect
             </Button>

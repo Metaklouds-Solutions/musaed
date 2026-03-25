@@ -3,12 +3,12 @@ import { Types } from 'mongoose';
 import { WebhooksService } from './webhooks.service';
 
 describe('WebhooksService', () => {
+  const agentDeploymentsServiceMock = {
+    findActiveByRetellAgentId: jest.fn().mockResolvedValue(null),
+  };
   const tenantModelMock = {
     findOne: jest.fn(),
     findById: jest.fn(),
-  };
-  const agentModelMock = {
-    findOne: jest.fn(),
   };
   const processedEventModelMock = {
     create: jest.fn(),
@@ -35,10 +35,13 @@ describe('WebhooksService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    agentDeploymentsServiceMock.findActiveByRetellAgentId.mockResolvedValue(
+      null,
+    );
     service = new WebhooksService(
       configEnabled,
+      agentDeploymentsServiceMock as never,
       tenantModelMock as never,
-      agentModelMock as never,
       processedEventModelMock as never,
       callSessionModelMock as never,
       runModelMock as never,
@@ -62,12 +65,12 @@ describe('WebhooksService', () => {
         lean: jest.fn().mockResolvedValue(null),
       }),
     });
-    agentModelMock.findOne.mockReturnValue({
-      select: jest.fn().mockResolvedValue({
-        _id: agentId,
-        tenantId,
-        retellAgentId: 'retell_agent_1',
-      }),
+    agentDeploymentsServiceMock.findActiveByRetellAgentId.mockResolvedValue({
+      _id: new Types.ObjectId(),
+      tenantId,
+      agentInstanceId: agentId,
+      retellAgentId: 'retell_agent_1',
+      channel: 'voice',
     });
     callSessionModelMock.updateOne.mockResolvedValue({ acknowledged: true });
 
@@ -96,8 +99,8 @@ describe('WebhooksService', () => {
       {
         get: jest.fn().mockReturnValue('false'),
       } as unknown as ConfigService,
+      agentDeploymentsServiceMock as never,
       tenantModelMock as never,
-      agentModelMock as never,
       processedEventModelMock as never,
       callSessionModelMock as never,
       runModelMock as never,
@@ -118,12 +121,12 @@ describe('WebhooksService', () => {
     const agentId = new Types.ObjectId();
 
     beforeEach(() => {
-      agentModelMock.findOne.mockReturnValue({
-        select: jest.fn().mockResolvedValue({
-          _id: agentId,
-          tenantId,
-          retellAgentId: 'retell_agent_1',
-        }),
+      agentDeploymentsServiceMock.findActiveByRetellAgentId.mockResolvedValue({
+        _id: new Types.ObjectId(),
+        tenantId,
+        agentInstanceId: agentId,
+        retellAgentId: 'retell_agent_1',
+        channel: 'voice',
       });
       callSessionModelMock.updateOne.mockResolvedValue({ acknowledged: true });
     });

@@ -43,7 +43,8 @@ export class EmailService {
       'FRONTEND_URL',
       'http://localhost:5173',
     );
-    this.isProduction = this.config.get<string>('NODE_ENV', 'development') === 'production';
+    this.isProduction =
+      this.config.get<string>('NODE_ENV', 'development') === 'production';
     const limit = this.config.get<string>('EMAIL_RATE_LIMIT_PER_RECIPIENT');
     this.rateLimitPerRecipient = limit
       ? parseInt(limit, 10)
@@ -542,7 +543,7 @@ export class EmailService {
     return {
       to,
       from: this.fromEmail,
-      subject: "Complete your MUSAED account setup",
+      subject: 'Complete your MUSAED account setup',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Your workspace is ready, ${safeName}</h2>

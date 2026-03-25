@@ -11,7 +11,6 @@ import {
   seedTenantSettings,
   seedPlatformAgents,
   seedTenantListRows,
-  seedTenantDetail,
   seedCredits,
   seedCalls,
   seedBookings,
@@ -100,7 +99,6 @@ export const tenantsAdapter = {
   /** Get full tenant detail for TenantDetailPage. Returns null for soft-deleted or unknown. */
   getTenantDetailFull(id: string): TenantDetailFull | null {
     if (softDeleteAdapter.isTenantDeleted(id)) return null;
-    if (id === seedTenantDetail.id) return { ...seedTenantDetail };
     const tenant = seedTenants.find((t) => t.id === id);
     if (!tenant) return null;
     const planRow = seedTenantPlans.find((p) => p.tenantId === id);

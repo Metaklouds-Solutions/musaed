@@ -28,25 +28,28 @@ export const featureFlagsAdapter = {
     return { ...getCachedFeatureFlags(tenantId) };
   },
 
-  setFeatureFlag(tenantId: string, key: FeatureFlagKey, value: boolean): void {
+  async setFeatureFlag(
+    tenantId: string,
+    key: FeatureFlagKey,
+    value: boolean,
+  ): Promise<void> {
     const current = this.getFeatureFlags(tenantId);
     const next: FeatureFlags = { ...current, [key]: value };
     setCachedFeatureFlags(tenantId, next);
     dispatchChanged(tenantId);
-    void api
-      .patch('/tenant/settings', {
-        featureFlags: { [key]: value },
-      })
-      .catch(() => {
-        /* caller may show toast via global handler */
-      });
+    await api.patch('/tenant/settings', {
+      featureFlags: { [key]: value },
+    });
   },
 
-  setFeatureFlags(tenantId: string, flags: Partial<FeatureFlags>): void {
+  async setFeatureFlags(
+    tenantId: string,
+    flags: Partial<FeatureFlags>,
+  ): Promise<void> {
     const current = this.getFeatureFlags(tenantId);
     const next: FeatureFlags = { ...current, ...flags };
     setCachedFeatureFlags(tenantId, next);
     dispatchChanged(tenantId);
-    void api.patch('/tenant/settings', { featureFlags: next }).catch(() => {});
+    await api.patch('/tenant/settings', { featureFlags: next });
   },
 };

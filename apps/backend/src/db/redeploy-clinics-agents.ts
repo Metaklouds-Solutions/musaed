@@ -82,7 +82,9 @@ async function redeployClinicsAgents(): Promise<void> {
       }
     }
 
-    console.log('🎉 Redeploy complete. Check deployment status in the dashboard.');
+    console.log(
+      '🎉 Redeploy complete. Check deployment status in the dashboard.',
+    );
   } finally {
     await app.close();
   }

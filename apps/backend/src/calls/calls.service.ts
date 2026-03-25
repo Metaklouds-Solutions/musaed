@@ -6,6 +6,7 @@ import {
   CallSession,
   CallSessionDocument,
 } from './schemas/call-session.schema';
+import { AgentDeploymentsService } from '../agent-deployments/agent-deployments.service';
 import { RetellClient } from '../retell/retell.client';
 
 interface ListCallsQuery {
@@ -26,6 +27,7 @@ export class CallsService {
   constructor(
     @InjectModel(CallSession.name)
     private readonly callSessionModel: Model<CallSessionDocument>,
+    private readonly agentDeploymentsService: AgentDeploymentsService,
     private readonly retellClient: RetellClient,
   ) {}
 
@@ -173,14 +175,24 @@ export class CallsService {
         tenantId: new Types.ObjectId(tenantId),
       });
 
-    if (!instance || !instance.retellAgentId) {
+    if (!instance) {
+      throw new NotFoundException(
+        'Agent instance not found or missing Retell configuration',
+      );
+    }
+
+    const retellAgentId = await this.resolveWebCallRetellAgentId(
+      instance._id.toString(),
+      tenantId,
+    );
+    if (!retellAgentId) {
       throw new NotFoundException(
         'Agent instance not found or missing Retell configuration',
       );
     }
 
     return this.retellClient.createWebCall({
-      agent_id: instance.retellAgentId,
+      agent_id: retellAgentId,
       metadata: {
         tenant_id: (
           instance.tenantId ?? new Types.ObjectId(tenantId)
@@ -188,6 +200,29 @@ export class CallsService {
         agent_instance_id: instance._id.toString(),
       },
     });
+  }
+
+  private async resolveWebCallRetellAgentId(
+    agentInstanceId: string,
+    tenantId: string,
+  ): Promise<string | null> {
+    const activeDeployment =
+      await this.agentDeploymentsService.findActiveByAgentInstanceAndChannel(
+        agentInstanceId,
+        'voice',
+        tenantId,
+      );
+    if (activeDeployment?.retellAgentId) {
+      this.logger.debug(
+        `Using active deployment Retell agent for web call: agentInstanceId=${agentInstanceId} channel=voice agentId=${activeDeployment.retellAgentId}`,
+      );
+      return activeDeployment.retellAgentId;
+    }
+
+    this.logger.warn(
+      `No active voice deployment with Retell agent found for web call: agentInstanceId=${agentInstanceId} tenantId=${tenantId}`,
+    );
+    return null;
   }
 
   /**
@@ -667,26 +702,28 @@ export class CallsService {
    * Synchronizes all calls from Retell for all active agents.
    */
   async syncAllFromRetell() {
-    const agents = (await this.callSessionModel.db
-      .model('AgentInstance')
-      .find({
-        retellAgentId: { $ne: null },
-        status: { $ne: 'deleted' },
-      })
-      .select('_id retellAgentId tenantId')
-      .limit(1000)
-      .lean()) as unknown as Array<{
-      _id: Types.ObjectId;
-      retellAgentId: string;
-      tenantId: Types.ObjectId;
-    }>;
+    const activeDeployments =
+      await this.agentDeploymentsService.findActiveRetellDeployments();
+    const syncTargets = activeDeployments.map((deployment) => ({
+      agentInstanceId: deployment.agentInstanceId,
+      tenantId: deployment.tenantId,
+      retellAgentId: deployment.retellAgentId,
+      source: 'active-deployment' as const,
+      channel: deployment.channel,
+    }));
+
+    if (activeDeployments.length > 0) {
+      this.logger.log(
+        `Synchronizing Retell calls from ${activeDeployments.length} active channel deployments.`,
+      );
+    }
 
     let totalSynced = 0;
 
-    for (const agent of agents) {
+    for (const target of syncTargets) {
       try {
         const calls = await this.retellClient.listCalls({
-          filter_criteria: { agent_id: [agent.retellAgentId] },
+          filter_criteria: { agent_id: [target.retellAgentId] },
         });
 
         if (calls && Array.isArray(calls)) {
@@ -698,9 +735,9 @@ export class CallsService {
             const transcriptObj = callRecord['transcript_object'];
 
             const updateData: Partial<CallSession> = {
-              tenantId: agent.tenantId,
-              agentInstanceId: agent._id,
-              retellAgentId: agent.retellAgentId,
+              tenantId: target.tenantId,
+              agentInstanceId: target.agentInstanceId,
+              retellAgentId: target.retellAgentId,
               recordingUrl:
                 this.readString(callRecord['recording_url']) ?? undefined,
               transcript:
@@ -784,7 +821,10 @@ export class CallsService {
           }
         }
       } catch (err) {
-        this.logger.error(`Failed to sync calls for agent ${agent._id}`, err);
+        this.logger.error(
+          `Failed to sync calls for agentInstanceId=${target.agentInstanceId.toString()} source=${target.source} channel=${target.channel}`,
+          err,
+        );
       }
     }
 

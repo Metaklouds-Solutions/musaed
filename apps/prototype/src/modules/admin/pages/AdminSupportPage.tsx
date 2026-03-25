@@ -93,26 +93,35 @@ export function AdminSupportPage() {
     if (autoPromotedRef.current === ticket.id) return;
     autoPromotedRef.current = ticket.id;
 
-    updateStatus(ticket.id, 'in_progress')
+    void updateStatus(ticket.id, 'in_progress')
       .then(() => refetchTicket())
       .catch(() => {
         autoPromotedRef.current = null;
+        toast.error('Failed to update ticket status');
       });
   }, [id, ticket, updateStatus, refetchTicket]);
 
   const handleAssign = useCallback(
     async (ticketId: string) => {
-      const ticket = await getTicket(ticketId);
-      assignTicket(ticketId, 'admin');
-      logTicketAssigned(ticketId, ticket?.tenantId);
-      toast.success('Ticket assigned');
+      try {
+        const ticket = await getTicket(ticketId);
+        await assignTicket(ticketId, 'admin');
+        logTicketAssigned(ticketId, ticket?.tenantId);
+        toast.success('Ticket assigned');
+      } catch {
+        toast.error('Failed to assign ticket');
+      }
     },
     [assignTicket, getTicket, logTicketAssigned]
   );
 
   const handleReply = useCallback(
-    (ticketId: string, body: string) => {
-      addMessage(ticketId, 'admin', body);
+    async (ticketId: string, body: string) => {
+      try {
+        await addMessage(ticketId, 'admin', body);
+      } catch {
+        toast.error('Failed to send reply');
+      }
     },
     [addMessage]
   );
@@ -246,13 +255,19 @@ export function AdminSupportPage() {
             )}
             <PopoverSelect
               value={ticket.status}
-              onChange={(v) => { if (isSupportTicketStatus(v)) updateStatus(ticket.id, v); }}
+              onChange={(v) => {
+                if (isSupportTicketStatus(v)) {
+                  void updateStatus(ticket.id, v).catch(() => {
+                    toast.error('Failed to update ticket status');
+                  });
+                }
+              }}
               options={STATUS_OPTIONS}
               title="Status"
               aria-label="Update ticket status"
             />
             {!ticket.assignedTo && (
-              <Button variant="secondary" className="h-8 px-3 text-sm" onClick={() => handleAssign(ticket.id)}>
+              <Button variant="secondary" className="h-8 px-3 text-sm" onClick={() => { void handleAssign(ticket.id); }}>
                 Assign to me
               </Button>
             )}
@@ -261,7 +276,7 @@ export function AdminSupportPage() {
             <TicketChatThread
               messages={ticket.messages}
               currentUserId="admin"
-              onReply={(body) => handleReply(ticket.id, body)}
+              onReply={(body) => { void handleReply(ticket.id, body); }}
             />
           </div>
         </div>
