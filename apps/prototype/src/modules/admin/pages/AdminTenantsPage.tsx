@@ -40,6 +40,7 @@ import { TenantActionsModal } from '../components/TenantActionsModal';
 function statusVariant(status: string): PillTagVariant {
   if (status === 'ACTIVE') return 'status';
   if (status === 'TRIAL') return 'role';
+  if (status === 'ONBOARDING') return 'outcomeFailed';
   return 'outcomeFailed';
 }
 
@@ -80,9 +81,15 @@ export function AdminTenantsPage() {
     setPage(1);
   }, [planFilter, statusFilter, searchQuery]);
   const selection = useTableSelection((t: TenantListRow) => t.id);
+  const clearSelection = selection.clear;
 
   const handleAddSuccess = useCallback(
     (created: { id: string; name: string; plan: string }) => {
+      setSearchQuery('');
+      setPlanFilter(null);
+      setStatusFilter(null);
+      setPage(1);
+      clearSelection();
       addOptimistic({
         id: created.id,
         name: created.name,
@@ -95,9 +102,8 @@ export function AdminTenantsPage() {
         createdAt: new Date().toISOString(),
       });
       setRefreshKey((k) => k + 1);
-      refetchTenants();
     },
-    [addOptimistic, refetchTenants]
+    [addOptimistic, clearSelection]
   );
 
   const handleActionsClick = useCallback((tenant: TenantListRow) => () => {

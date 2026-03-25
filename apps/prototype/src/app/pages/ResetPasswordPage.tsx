@@ -141,6 +141,7 @@ export function ResetPasswordPage() {
               </div>
               <Link
                 to="/login"
+                state={{ message: 'Password updated. Sign in with your new password.' }}
                 className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
               >
                 Go to Sign In

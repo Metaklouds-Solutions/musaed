@@ -34,6 +34,7 @@ export function CallDetailPage() {
   const retellCallId = call?.callId ?? call?.id;
   const { events } = useCallRunEvents(retellCallId, user?.tenantId, canAccessRunEvents);
   const [transcriptMode, setTranscriptMode] = useState<'replay' | 'full'>('replay');
+  const hasValidCustomerId = /^[a-fA-F0-9]{24}$/.test(call?.customerId ?? '');
 
   if (!user) {
     return (
@@ -87,7 +88,7 @@ export function CallDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {!isAdminContext && (
+          {!isAdminContext && hasValidCustomerId && (
             <Link to={`/customers/${call.customerId}`}>
               <Button variant="secondary">View customer</Button>
             </Link>

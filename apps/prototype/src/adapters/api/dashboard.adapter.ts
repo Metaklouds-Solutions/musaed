@@ -111,8 +111,8 @@ export const dashboardAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<FunnelStage[]>(`/tenant/dashboard/funnel?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -124,8 +124,8 @@ export const dashboardAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<TrendPoint[]>(`/tenant/dashboard/trend?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -137,8 +137,8 @@ export const dashboardAdapter = {
     if (!tenantId) return { revenue: 0, aiCost: 0, costSaved: 0, roiPercent: 0, totalMinutes: 0 };
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<RoiMetrics>(`/tenant/dashboard/roi?${params.toString()}`);
       return {
         revenue: data.revenue ?? 0,
@@ -256,8 +256,8 @@ export const dashboardAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams({ limit: String(limit) });
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<TenantRecentCall[]>(`/tenant/dashboard/recent-calls?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -265,3 +265,4 @@ export const dashboardAdapter = {
     }
   },
 };
+

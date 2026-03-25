@@ -146,11 +146,17 @@ export function LoginPage({ theme: themeProp, onThemeToggle }: LoginPageProps) {
             Welcome to MUSAED
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Sign in to your account
+            Sign in to continue to your workspace
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-5">
+          {stateMessage && (
+            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-sm">
+              {stateMessage}
+            </div>
+          )}
+
           {error && (
             <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm space-y-2">
               <p>{error}</p>

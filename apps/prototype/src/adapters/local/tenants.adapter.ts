@@ -55,7 +55,11 @@ export const tenantsAdapter = {
           id: t.id,
           name: profile?.name ?? t.name,
           plan: t.plan,
-          status: (override ?? 'TRIAL') as 'ACTIVE' | 'TRIAL' | 'SUSPENDED',
+          status: (override ?? 'ONBOARDING') as
+            | 'ACTIVE'
+            | 'TRIAL'
+            | 'SUSPENDED'
+            | 'ONBOARDING',
         agentCount: 0,
         mrr: 0,
         callsThisMonth: 0,
@@ -75,7 +79,13 @@ export const tenantsAdapter = {
     const addedOnly = fromAdded.filter((a) => !existingIds.has(a.id));
     let rows = [...addedOnly.reverse(), ...fromSeed];
     if (filters?.status) {
-      rows = rows.filter((t) => t.status === filters.status);
+      if (filters.status === 'TRIAL') {
+        rows = rows.filter(
+          (t) => t.status === 'TRIAL' || t.status === 'ONBOARDING',
+        );
+      } else {
+        rows = rows.filter((t) => t.status === filters.status);
+      }
     }
     if (filters?.plan) {
       rows = rows.filter((t) => t.plan.toLowerCase() === (filters.plan ?? '').toLowerCase());

@@ -66,8 +66,8 @@ export class ReportsService {
 
       if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.date = dateFilter;
       }
 
@@ -104,8 +104,8 @@ export class ReportsService {
       const callMatch: Record<string, unknown> = { tenantId: tid };
       if (dateFrom || dateTo) {
         const createdAtFilter: Record<string, Date> = {};
-        if (dateFrom) createdAtFilter.$gte = new Date(dateFrom);
-        if (dateTo) createdAtFilter.$lte = new Date(dateTo);
+        if (dateFrom) createdAtFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) createdAtFilter.$lte = this.parseDateEnd(dateTo);
         callMatch.createdAt = createdAtFilter;
       }
       const [totalCalls, callOutcomeRows, avgCallDuration] = await Promise.all([
@@ -158,8 +158,8 @@ export class ReportsService {
 
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
+      if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+      if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
       match.date = dateFilter;
     }
 
@@ -181,8 +181,8 @@ export class ReportsService {
     const callMatch: Record<string, unknown> = { tenantId: tid };
     if (dateFrom || dateTo) {
       const createdAtFilter: Record<string, Date> = {};
-      if (dateFrom) createdAtFilter.$gte = new Date(dateFrom);
-      if (dateTo) createdAtFilter.$lte = new Date(dateTo);
+      if (dateFrom) createdAtFilter.$gte = this.parseDateStart(dateFrom);
+      if (dateTo) createdAtFilter.$lte = this.parseDateEnd(dateTo);
       callMatch.createdAt = createdAtFilter;
     }
     const callRows = await this.callSessionModel.aggregate<{
@@ -256,8 +256,8 @@ export class ReportsService {
     };
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
+      if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+      if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
       match.date = dateFilter;
     }
 
@@ -372,8 +372,8 @@ export class ReportsService {
     const match: Record<string, unknown> = { tenantId: tid };
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
+      if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+      if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
       match.createdAt = dateFilter;
     }
     const pipeline: PipelineStage[] = [
@@ -493,8 +493,8 @@ export class ReportsService {
       };
       if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.createdAt = dateFilter;
       }
       const rows = await this.callSessionModel.aggregate<{
@@ -541,8 +541,8 @@ export class ReportsService {
       const match: Record<string, unknown> = { tenantId: tid };
       if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.createdAt = dateFilter;
       }
       const rows = await this.callSessionModel.aggregate<{
@@ -581,8 +581,8 @@ export class ReportsService {
       };
       if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.createdAt = dateFilter;
       }
       const rows = await this.callSessionModel.aggregate<{
@@ -611,4 +611,23 @@ export class ReportsService {
       );
     }
   }
+
+  private parseDateStart(value: string): Date {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return parsed;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      parsed.setHours(0, 0, 0, 0);
+    }
+    return parsed;
+  }
+
+  private parseDateEnd(value: string): Date {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return parsed;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      parsed.setHours(23, 59, 59, 999);
+    }
+    return parsed;
+  }
 }
+

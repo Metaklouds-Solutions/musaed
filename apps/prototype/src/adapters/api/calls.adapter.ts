@@ -34,15 +34,18 @@ function outcomeToFlags(outcome: string | null | undefined): {
   };
 }
 
-/** Resolves customerId from backend; fallback to callId when metadata not available. */
+function isMongoObjectId(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value.trim());
+}
+
+/** Resolves customerId from backend metadata only when it is a valid ObjectId. */
 function resolveCustomerId(
   metadata: Record<string, unknown> | null | undefined,
-  callId: string,
 ): string {
   const meta = metadata ?? {};
   const id = meta.customerId ?? meta.customer_id;
-  if (typeof id === 'string' && id.trim().length > 0) return id.trim();
-  return callId;
+  if (isMongoObjectId(id)) return id.trim();
+  return '';
 }
 
 function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
@@ -64,7 +67,7 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
     id: normalizeEntityId(c._id) ?? callId,
     callId: typeof c.callId === 'string' ? c.callId : undefined,
     tenantId: tenantIdStr,
-    customerId: resolveCustomerId(metadata, callId),
+    customerId: resolveCustomerId(metadata),
     duration: c.durationMs != null ? Math.round(Number(c.durationMs) / 1000) : 0,
     callCost,
     sentimentScore: sentimentToScore(sentiment),

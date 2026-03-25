@@ -117,6 +117,10 @@ export class SystemMonitorService {
   }
 
   private async checkWebhookQueueDepth(): Promise<void> {
+    /** BullMQ queue uses Redis; skip when no queue features are enabled (avoids noisy errors if Redis is down). */
+    if (!this.isRedisRequired()) {
+      return;
+    }
     try {
       const waiting = await this.webhooksQueue.getWaitingCount();
       const delayed = await this.webhooksQueue.getDelayedCount();

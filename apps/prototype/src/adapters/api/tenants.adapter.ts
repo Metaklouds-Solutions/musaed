@@ -165,13 +165,17 @@ function withTenantScope(path: string, tenantId: string | null, isAdmin: boolean
   return `${path}${separator}tenantId=${encodeURIComponent(tenantId)}`;
 }
 
-function toTenantStatus(status: unknown): 'ACTIVE' | 'TRIAL' | 'SUSPENDED' {
+function toTenantStatus(
+  status: unknown,
+): 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'ONBOARDING' {
   const value = readString(status);
-  if (value === 'ACTIVE' || value === 'TRIAL' || value === 'SUSPENDED') {
+  if (
+    value === 'ACTIVE' ||
+    value === 'TRIAL' ||
+    value === 'SUSPENDED' ||
+    value === 'ONBOARDING'
+  ) {
     return value;
-  }
-  if (value === 'ONBOARDING') {
-    return 'TRIAL';
   }
   return 'TRIAL';
 }

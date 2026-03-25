@@ -5,15 +5,15 @@ import FloatingLines from '../../components/FloatingLines';
 const REASON_TEXT: Record<string, { title: string; description: string }> = {
   expired: {
     title: 'Link Expired',
-    description: 'This link has expired. Please contact your administrator to request a new invitation, or use the forgot password option.',
+    description: 'This setup link expired after 48 hours. Ask your administrator to resend your invite, or request a password reset if your account was already activated.',
   },
   used: {
     title: 'Link Already Used',
-    description: 'This link has already been used to set up a password. If you\'ve already activated your account, you can sign in below.',
+    description: 'This setup link was already used. Your account may already be active, so try signing in with your password.',
   },
   invalid: {
     title: 'Invalid Link',
-    description: 'This link is not valid. Please make sure you copied the full URL from your email.',
+    description: 'This link is invalid or incomplete. Open the most recent invite email and use the full link.',
   },
 };
 

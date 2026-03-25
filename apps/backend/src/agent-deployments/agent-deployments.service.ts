@@ -135,6 +135,15 @@ export class AgentDeploymentsService {
     );
   }
 
+  async hardDeleteByTenant(
+    tenantId: string,
+  ): Promise<{ deletedCount: number }> {
+    const result = await this.deploymentModel.deleteMany({
+      tenantId: new Types.ObjectId(tenantId),
+    });
+    return { deletedCount: result.deletedCount ?? 0 };
+  }
+
   async softDeleteByAgentInstanceId(agentInstanceId: string) {
     return this.deploymentModel.updateMany(
       {
@@ -145,5 +154,14 @@ export class AgentDeploymentsService {
         $set: { deletedAt: new Date() },
       },
     );
+  }
+
+  async hardDeleteByAgentInstanceId(
+    agentInstanceId: string,
+  ): Promise<{ deletedCount: number }> {
+    const result = await this.deploymentModel.deleteMany({
+      agentInstanceId: new Types.ObjectId(agentInstanceId),
+    });
+    return { deletedCount: result.deletedCount ?? 0 };
   }
 }

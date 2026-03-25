@@ -152,11 +152,15 @@ export function SetupPasswordPage() {
             Set Up Your Password
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Welcome, {tokenName}! Create a password for <strong>{tokenEmail}</strong>
+            Welcome, {tokenName}! Create a password for <strong>{tokenEmail}</strong> to activate your account.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-5">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+            After this step, you will be signed in automatically and taken to your workspace.
+          </div>
+
           {error && (
             <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               {error}
@@ -196,6 +200,9 @@ export function SetupPasswordPage() {
                 <span className="text-xs text-muted-foreground">{strength.label}</span>
               </div>
             )}
+            <p className="text-xs text-muted-foreground">
+              Use at least 8 characters with uppercase, lowercase, a number, and a symbol.
+            </p>
           </div>
 
           <div className="space-y-2">

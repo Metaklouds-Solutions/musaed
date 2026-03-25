@@ -538,20 +538,24 @@ export class EmailService {
   ): EmailMessage {
     const setupUrl = `${this.frontendUrl}/auth/setup-password?token=${token}`;
     const safeName = this.escapeHtml(name);
+    const safeSetupUrl = this.escapeHtml(setupUrl);
     return {
       to,
       from: this.fromEmail,
-      subject: "You're invited to the Clinic CRM platform",
+      subject: "Complete your MUSAED account setup",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Welcome to MUSAED, ${safeName}!</h2>
-          <p>You have been invited to join the platform. Click the button below to set up your password and activate your account.</p>
+          <h2>Your workspace is ready, ${safeName}</h2>
+          <p>You were invited to MUSAED. To finish onboarding, set your password and activate your account.</p>
           <p style="margin: 30px 0;">
             <a href="${setupUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-              Set Up Your Password
+              Set Password and Sign In
             </a>
           </p>
-          <p style="color: #666; font-size: 14px;">This link will expire in 48 hours. If you did not expect this invitation, you can safely ignore this email.</p>
+          <p style="color: #666; font-size: 14px; margin-bottom: 8px;">This secure link expires in 48 hours and can only be used once.</p>
+          <p style="color: #666; font-size: 14px; margin-top: 0;">If the button does not work, copy and paste this URL into your browser:</p>
+          <p style="color: #444; font-size: 13px; word-break: break-all; background: #f8fafc; padding: 10px; border-radius: 8px;">${safeSetupUrl}</p>
+          <p style="color: #666; font-size: 14px;">If you were not expecting this invite, you can ignore this email.</p>
           <p style="color: #999; font-size: 12px;">— The MUSAED Team</p>
         </div>
       `,

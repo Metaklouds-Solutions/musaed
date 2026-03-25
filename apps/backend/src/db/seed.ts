@@ -294,60 +294,8 @@ async function seed() {
       console.log('   ⏭️  Tenant staff membership already exists, skipping\n');
     }
 
-    // ── Agent Template (seeded from external flow file) ──
-    console.log('🤖 Seeding default agent template...');
-    const existingTemplate = await AgentTemplate.findOne({
-      slug: 'default-chat-voice-template',
-      deletedAt: null,
-    });
-    if (!existingTemplate) {
-      const flowTemplatePath = path.resolve(
-        process.cwd(),
-        '../..',
-        'FLOWTEMPLATES.json',
-      );
-      let parsedTemplate: unknown = null;
-      try {
-        const raw = await import('node:fs/promises').then((fs) =>
-          fs.readFile(flowTemplatePath, 'utf8'),
-        );
-        parsedTemplate = JSON.parse(raw);
-      } catch {
-        parsedTemplate = null;
-      }
-
-      if (Array.isArray(parsedTemplate) && parsedTemplate.length > 0) {
-        const firstItem = parsedTemplate[0] as Record<string, unknown>;
-        const flow = firstItem.flow;
-        if (flow && typeof flow === 'object' && !Array.isArray(flow)) {
-          await AgentTemplate.create({
-            name: 'Default Chat Voice Template',
-            slug: 'default-chat-voice-template',
-            description: 'Seeded from FLOWTEMPLATES.json',
-            category: 'general',
-            channel: 'chat',
-            supportedChannels: ['chat', 'voice'],
-            capabilityLevel: 'L3',
-            flowTemplate: flow,
-            version: 1,
-          });
-          console.log('   ✅ Seeded default agent template\n');
-        } else {
-          console.log(
-            '   ⚠️  FLOWTEMPLATES.json exists but flow payload is invalid, skipping\n',
-          );
-        }
-      } else {
-        console.log(
-          '   ⚠️  FLOWTEMPLATES.json not found or invalid array, skipping\n',
-        );
-      }
-    } else {
-      console.log('   ⏭️  Default agent template already exists, skipping\n');
-    }
-
-    // ── Clinics Voice Template (Arabic clinic reception) ──
-    console.log('🤖 Seeding Clinics Voice Template...');
+    // ── Clinic Voice Template (Arabic clinic reception) ──
+    console.log('🤖 Seeding Clinic Voice Template...');
     const clinicsTemplatePath = path.resolve(
       process.cwd(),
       'templates',
@@ -370,15 +318,16 @@ async function seed() {
       });
       if (existingClinicsTemplate) {
         existingClinicsTemplate.flowTemplate = clinicsFlow;
+        existingClinicsTemplate.name = 'Clinic Voice Template';
         existingClinicsTemplate.version =
           (existingClinicsTemplate.version ?? 0) + 1;
         await existingClinicsTemplate.save();
         console.log(
-          `   🔄 Updated Clinics Voice Template (v${String(existingClinicsTemplate.version)})\n`,
+          `   🔄 Updated Clinic Voice Template (v${String(existingClinicsTemplate.version)})\n`,
         );
       } else {
         await AgentTemplate.create({
-          name: 'Clinics Voice Template',
+          name: 'Clinic Voice Template',
           slug: 'clinics-voice-template',
           description:
             'Arabic clinic reception voice agent: booking, patient info, knowledge base Q&A',
@@ -389,7 +338,7 @@ async function seed() {
           flowTemplate: clinicsFlow,
           version: 1,
         });
-        console.log('   ✅ Seeded Clinics Voice Template\n');
+        console.log('   ✅ Seeded Clinic Voice Template\n');
       }
     } else {
       console.log(
@@ -397,8 +346,60 @@ async function seed() {
       );
     }
 
-    // ── Single-Prompt Agent Template (Iron & Blade barber booking) ──
-    console.log('🤖 Seeding Single-Prompt Agent Template...');
+    // ── Matthew Mendez Assistant (English clinic voice) ──
+    console.log('🤖 Seeding Matthew Mendez Assistant (English)...');
+    const matthewTemplatePath = path.resolve(
+      process.cwd(),
+      'templates',
+      'matthew-mendez-assistant-voice-en.json',
+    );
+    let matthewFlow: Record<string, unknown> | null = null;
+    try {
+      const rawMatthew = await import('node:fs/promises').then((fs) =>
+        fs.readFile(matthewTemplatePath, 'utf8'),
+      );
+      matthewFlow = JSON.parse(rawMatthew) as Record<string, unknown>;
+    } catch {
+      matthewFlow = null;
+    }
+
+    if (matthewFlow && matthewFlow.conversationFlow && matthewFlow.voice_id) {
+      const existingMatthewTemplate = await AgentTemplate.findOne({
+        slug: 'matthew-mendez-assistant-voice-en',
+        deletedAt: null,
+      });
+      if (existingMatthewTemplate) {
+        existingMatthewTemplate.flowTemplate = matthewFlow;
+        existingMatthewTemplate.name = 'Matthew Mendez Assistant (English)';
+        existingMatthewTemplate.version =
+          (existingMatthewTemplate.version ?? 0) + 1;
+        await existingMatthewTemplate.save();
+        console.log(
+          `   🔄 Updated Matthew Mendez Assistant English (v${String(existingMatthewTemplate.version)})\n`,
+        );
+      } else {
+        await AgentTemplate.create({
+          name: 'Matthew Mendez Assistant (English)',
+          slug: 'matthew-mendez-assistant-voice-en',
+          description:
+            'English clinic reception voice agent: booking, patient info, knowledge base Q&A',
+          category: 'clinics',
+          channel: 'voice',
+          supportedChannels: ['voice'],
+          capabilityLevel: 'L3',
+          flowTemplate: matthewFlow,
+          version: 1,
+        });
+        console.log('   ✅ Seeded Matthew Mendez Assistant (English)\n');
+      }
+    } else {
+      console.log(
+        '   ⚠️  templates/matthew-mendez-assistant-voice-en.json not found or invalid, skipping\n',
+      );
+    }
+
+    // ── Single Prompt (barber / single-LLM voice) ──
+    console.log('🤖 Seeding Single Prompt template...');
     const singlePromptPath = path.resolve(
       process.cwd(),
       'templates',
@@ -425,15 +426,16 @@ async function seed() {
       });
       if (existingSinglePromptTemplate) {
         existingSinglePromptTemplate.flowTemplate = singlePromptFlow;
+        existingSinglePromptTemplate.name = 'Single Prompt';
         existingSinglePromptTemplate.version =
           (existingSinglePromptTemplate.version ?? 0) + 1;
         await existingSinglePromptTemplate.save();
         console.log(
-          `   🔄 Updated Single-Prompt Agent Template (v${String(existingSinglePromptTemplate.version)})\n`,
+          `   🔄 Updated Single Prompt (v${String(existingSinglePromptTemplate.version)})\n`,
         );
       } else {
         await AgentTemplate.create({
-          name: 'Single-Prompt Agent',
+          name: 'Single Prompt',
           slug: 'single-prompt-agent',
           description:
             'Iron & Blade barber shop booking assistant: appointments, reschedule, cancel, FAQ',
@@ -444,7 +446,7 @@ async function seed() {
           flowTemplate: singlePromptFlow,
           version: 1,
         });
-        console.log('   ✅ Seeded Single-Prompt Agent Template\n');
+        console.log('   ✅ Seeded Single Prompt\n');
       }
     } else {
       console.log(

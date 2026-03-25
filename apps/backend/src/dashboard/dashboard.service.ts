@@ -307,10 +307,10 @@ export class DashboardService {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
-      if (dateFrom || dateTo) {
+    if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.createdAt = dateFilter;
       }
       const pipeline: PipelineStage[] = [
@@ -354,10 +354,10 @@ export class DashboardService {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
-      if (dateFrom || dateTo) {
+    if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.date = dateFilter;
       }
       const pipeline: PipelineStage[] = [
@@ -389,10 +389,10 @@ export class DashboardService {
     try {
       const tid = new Types.ObjectId(tenantId);
       const match: Record<string, unknown> = { tenantId: tid };
-      if (dateFrom || dateTo) {
+    if (dateFrom || dateTo) {
         const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-        if (dateTo) dateFilter.$lte = new Date(dateTo);
+        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.createdAt = dateFilter;
       }
       const [totalMinutes, bookedCount] = await Promise.all([
@@ -460,8 +460,8 @@ export class DashboardService {
     };
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
-      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-      if (dateTo) dateFilter.$lte = new Date(dateTo);
+      if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+      if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
       match.createdAt = dateFilter;
     }
     const calls = await this.callSessionModel
@@ -496,8 +496,8 @@ export class DashboardService {
   ) {
     const tid = new Types.ObjectId(tenantId);
     const match: Record<string, unknown> = { tenantId: tid };
-    const from = dateFrom ? new Date(dateFrom) : this.startOfDaysAgo(6);
-    const to = dateTo ? new Date(dateTo) : new Date();
+    const from = dateFrom ? this.parseDateStart(dateFrom) : this.startOfDaysAgo(6);
+    const to = dateTo ? this.parseDateEnd(dateTo) : new Date();
     match.startedAt = { $gte: from, $lte: to };
 
     const [grouped, durationAgg] = await Promise.all([
@@ -612,5 +612,19 @@ export class DashboardService {
       59,
       999,
     );
+  }
+
+  private parseDateStart(value: string): Date {
+    const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return new Date(value);
+    return isDateOnly ? this.startOfDay(parsed) : parsed;
+  }
+
+  private parseDateEnd(value: string): Date {
+    const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return new Date(value);
+    return isDateOnly ? this.endOfDay(parsed) : parsed;
   }
 }

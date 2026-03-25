@@ -25,7 +25,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "validate:infra": "ts-node -r dotenv/config scripts/real-infra-precheck.ts",
-    "validate:infra:smoke": "ts-node -r dotenv/config scripts/real-infra-smoke-api.ts"
+    "validate:infra:smoke": "ts-node -r dotenv/config scripts/real-infra-smoke-api.ts",
+    "templates:migrate-canonical": "node scripts/migrate-agent-templates.js"
   },
   "dependencies": {
     "@nestjs/bullmq": "^10.2.3",

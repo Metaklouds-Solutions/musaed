@@ -34,8 +34,8 @@ export const reportsAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<{
         callMetrics?: { totalCalls?: number; outcomes?: Record<string, number> };
       }>(`/tenant/reports/performance?${params.toString()}`);
@@ -63,8 +63,8 @@ export const reportsAdapter = {
     if (!tenantId) return defaultPerformance;
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<{
         totalBookings?: number;
         callMetrics?: { totalCalls?: number; outcomes?: Record<string, number>; avgDurationMs?: number };
@@ -113,8 +113,8 @@ export const reportsAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<ABTestOutcomeRow[]>(`/tenant/reports/outcomes-by-version?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -146,8 +146,8 @@ export const reportsAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<SentimentBucket[]>(`/tenant/reports/sentiment-distribution?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -159,8 +159,8 @@ export const reportsAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<PeakHourPoint[]>(`/tenant/reports/peak-hours?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -172,8 +172,8 @@ export const reportsAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<IntentBucket[]>(`/tenant/reports/intent-distribution?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -185,8 +185,8 @@ export const reportsAdapter = {
     if (!tenantId) return [];
     try {
       const params = new URLSearchParams();
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<OutcomesByDay[]>(`/tenant/reports/outcomes-by-day?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -198,8 +198,8 @@ export const reportsAdapter = {
     if (tenantIds.length === 0) return [];
     try {
       const params = new URLSearchParams({ tenantIds: tenantIds.join(',') });
-      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString().slice(0, 10));
-      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString().slice(0, 10));
+      if (dateRange?.start) params.set('dateFrom', dateRange.start.toISOString());
+      if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<TenantComparisonRow[]>(`/admin/reports/tenant-comparison?${params.toString()}`);
       return Array.isArray(data) ? data : [];
     } catch {
@@ -207,3 +207,4 @@ export const reportsAdapter = {
     }
   },
 };
+

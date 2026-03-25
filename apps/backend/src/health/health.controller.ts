@@ -37,7 +37,10 @@ export class HealthController {
     const dbUp = dbState === 1;
     const redisRequired = this.isRedisRequired();
 
-    const redisStatus = await this.checkRedis();
+    /** Avoid touching Bull/ioredis when no queue feature needs Redis (prevents connection churn / log spam locally). */
+    const redisStatus = redisRequired
+      ? await this.checkRedis()
+      : { up: true as const, latencyMs: null, error: undefined as string | undefined };
 
     const retellProbe = await this.retellClient.probeConnectivity();
     const metrics = this.deploymentMetrics.getSnapshot();

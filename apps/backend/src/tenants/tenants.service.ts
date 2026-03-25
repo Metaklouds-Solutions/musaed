@@ -64,7 +64,14 @@ export class TenantsService {
   }> {
     const { status, search, page = 1, limit = 20 } = query;
     const filter: FilterQuery<TenantDocument> = { deletedAt: null };
-    if (status) filter.status = status;
+    if (status) {
+      // UI "Trial" groups pre-active tenants that are still onboarding in the DB.
+      if (status === 'TRIAL') {
+        filter.status = { $in: ['TRIAL', 'ONBOARDING'] };
+      } else {
+        filter.status = status;
+      }
+    }
     if (search) {
       filter.name = { $regex: search, $options: 'i' };
     }
@@ -250,8 +257,8 @@ export class TenantsService {
     try {
       await this.emailService.sendEmail(
         owner.email,
-        'Welcome',
-        'Your account has been created successfully.',
+        'Your MUSAED workspace is being prepared',
+        `Hi ${owner.name ?? 'there'}, your workspace has been created and is being prepared. You will receive a second email with your secure invite link to set your password and sign in.`,
       );
     } catch (error) {
       this.logger.error(
@@ -432,18 +439,20 @@ export class TenantsService {
   }
 
   async remove(id: string, adminUserId?: string) {
+    const tenant = await this.tenantModel.findOne({
+      _id: id,
+      deletedAt: null,
+    });
+    if (!tenant) throw new NotFoundException('Tenant not found');
+
     await this.agentDeploymentService.cleanupDeploymentsForTenant(id);
 
-    const tenant = await this.tenantModel.findOneAndUpdate(
-      { _id: id, deletedAt: null },
-      { $set: { deletedAt: new Date() } },
-      { new: true },
-    );
-    if (!tenant) throw new NotFoundException('Tenant not found');
-    await this.staffModel.updateMany(
-      { tenantId: tenant._id },
-      { $set: { status: 'disabled' } },
-    );
+    await this.agentInstanceModel.deleteMany({
+      tenantId: tenant._id,
+    });
+    await this.staffModel.deleteMany({ tenantId: tenant._id });
+    await this.tenantModel.deleteOne({ _id: tenant._id });
+
     if (adminUserId) {
       await this.auditService.log(
         'tenant.deleted',

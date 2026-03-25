@@ -204,7 +204,7 @@ export class AgentDeploymentService implements OnModuleInit, OnModuleDestroy {
         }
       }
     }
-    await this.agentDeploymentsService.softDeleteByTenant(tenantId);
+    await this.agentDeploymentsService.hardDeleteByTenant(tenantId);
   }
 
   /**

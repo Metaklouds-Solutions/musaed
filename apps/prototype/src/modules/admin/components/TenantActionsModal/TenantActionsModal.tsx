@@ -76,7 +76,11 @@ export function TenantActionsModal({
       setAgentsLoading(true);
       Promise.resolve(agentsAdapter.list())
         .then((result) => {
-          const list = result as AdminAgentRow[];
+          const list = Array.isArray(result)
+            ? (result as AdminAgentRow[])
+            : Array.isArray((result as { data?: unknown[] })?.data)
+              ? ((result as { data: AdminAgentRow[] }).data ?? [])
+              : [];
           setUnassignedAgents(list.filter((a) => !a.tenantId));
         })
         .finally(() => setAgentsLoading(false));
