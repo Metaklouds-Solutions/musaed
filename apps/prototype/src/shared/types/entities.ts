@@ -28,9 +28,20 @@ export interface Customer {
 
 export interface Call {
   id: string;
+  /** Retell call ID (distinct from MongoDB _id). Used for run lookup. */
+  callId?: string;
   tenantId: string;
   customerId: string;
   duration: number;
+  /** Cost in USD from Retell. Optional until enriched. */
+  callCost?: number | null;
+  /** Raw call lifecycle status from backend call session. */
+  status?: 'started' | 'ended' | 'analyzed' | string;
+  callSuccessful?: boolean | null;
+  disconnectionReason?: string | null;
+  latencyE2e?: number | null;
+  llmTokensTotal?: number | null;
+  llmTokenUsage?: Record<string, unknown> | null;
   sentimentScore: number;
   transcript: string;
   escalationFlag: boolean;
@@ -39,6 +50,14 @@ export interface Call {
   createdAt: string;
   /** A/B test version (e.g. 'A' | 'B') when agent A/B testing is enabled. */
   agentVersion?: string;
+  recordingUrl?: string;
+  summary?: string;
+  /** Backend outcome: booked | escalated | failed | info_only | unknown. Set by API adapter. */
+  outcome?: string;
+  /** Backend sentiment label. Set by API adapter for compatibility with existing views. */
+  sentiment?: string;
+  /** Agent instance ID. Set by API adapter for filtering. */
+  agentId?: string;
 }
 
 export interface Booking {
@@ -49,6 +68,19 @@ export interface Booking {
   amount: number;
   status: string;
   createdAt: string;
+  /** Appointment date (ISO string). */
+  date?: string;
+  /** Time slot (HH:mm). */
+  timeSlot?: string;
+  durationMinutes?: number;
+  serviceType?: string;
+  providerId?: string;
+  providerName?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  notes?: string;
+  source?: string;
 }
 
 export interface Alert {

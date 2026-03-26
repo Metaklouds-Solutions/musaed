@@ -7,16 +7,17 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Zap, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../session/SessionContext';
-import { featureFlagsAdapter } from '../../../adapters';
-import { FEATURE_FLAGS_CHANGED } from '../../../adapters/local/featureFlags.adapter';
+import { featureFlagsAdapter, supportAdapter, FEATURE_FLAGS_CHANGED } from '../../../adapters';
 import type { Role } from '../../../shared/types';
 import { SidebarItem, SidebarGroup } from './components';
 import { isNavGroupItem } from './types';
 import { ADMIN_NAV, TENANT_NAV } from './navConfig';
 import { cn } from '@/lib/utils';
 import { FiSidebar } from 'react-icons/fi';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -81,6 +82,7 @@ function getStoredVariant(): SidebarVariant {
 export function Sidebar() {
   const { t } = useTranslation();
   const { user } = useSession();
+  const location = useLocation();
   const isDesktop = useIsDesktop();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [variant, setVariant] = useState<SidebarVariant>(getStoredVariant);
@@ -106,6 +108,27 @@ export function Sidebar() {
     const translated = translateNavItems(rawItems, t);
     return role === 'ADMIN' ? translated : filterByFeatureFlags(translated, flags);
   }, [role, t, rawItems, flags]);
+  const [supportCountTick, setSupportCountTick] = useState(0);
+  const { data: openSupportCount, refetch: refetchOpenSupportCount } = useAsyncData(
+    () => (role === 'ADMIN' ? supportAdapter.listTickets({ status: 'open' }) : []),
+    [role, supportCountTick],
+    [] as Array<unknown>,
+  );
+  const supportBadgeCount = role === 'ADMIN' ? openSupportCount.length : 0;
+
+  useEffect(() => {
+    if (role !== 'ADMIN') return;
+    const id = window.setInterval(() => {
+      setSupportCountTick((v) => v + 1);
+    }, 7000);
+    return () => window.clearInterval(id);
+  }, [role]);
+
+  useEffect(() => {
+    if (role !== 'ADMIN') return;
+    if (!location.pathname.startsWith('/admin/support')) return;
+    refetchOpenSupportCount();
+  }, [location.pathname, role, refetchOpenSupportCount]);
 
   useEffect(() => {
     const handler = () => setFlagsVersion((v) => v + 1);
@@ -196,6 +219,10 @@ export function Sidebar() {
               icon={item.icon}
               variant={variant}
               onClick={closeMobile}
+              badgeCount={item.to === '/admin/support' ? supportBadgeCount : undefined}
+              badgeTooltip={
+                item.to === '/admin/support' ? `${supportBadgeCount} open support issues` : undefined
+              }
             />
           )
         )}

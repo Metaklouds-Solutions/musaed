@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { TestTube } from 'lucide-react';
 import { abTestAdapter } from '../../../../adapters';
 import type { ABTestConfig } from '../../../../adapters';
+import { toast } from 'sonner';
 
 interface AgentABTestSectionProps {
   tenantId: string | undefined;
@@ -16,10 +17,18 @@ interface AgentABTestSectionProps {
 export function AgentABTestSection({ tenantId, config, onChange }: AgentABTestSectionProps) {
   if (!tenantId) return null;
 
-  const update = (partial: Partial<ABTestConfig>) => {
+  const update = async (partial: Partial<ABTestConfig>) => {
+    const previous = { ...config };
     const next = { ...config, ...partial };
     onChange(next);
-    abTestAdapter.setConfig(tenantId, partial);
+    try {
+      await abTestAdapter.setConfig(tenantId, partial);
+    } catch (error) {
+      onChange(previous);
+      const message =
+        error instanceof Error ? error.message : 'Failed to update A/B test settings';
+      toast.error(message);
+    }
   };
 
   return (
@@ -47,7 +56,7 @@ export function AgentABTestSection({ tenantId, config, onChange }: AgentABTestSe
             <input
               type="checkbox"
               checked={config.enabled}
-              onChange={(e) => update({ enabled: e.target.checked })}
+              onChange={(e) => void update({ enabled: e.target.checked })}
               className="accent-[var(--ds-primary)]"
               aria-label="Enable A/B testing"
             />
@@ -71,7 +80,9 @@ export function AgentABTestSection({ tenantId, config, onChange }: AgentABTestSe
                 min={0}
                 max={100}
                 value={config.splitPercentA}
-                onChange={(e) => update({ splitPercentA: Number(e.target.value) })}
+                onChange={(e) =>
+                  void update({ splitPercentA: Number(e.target.value) })
+                }
                 className="w-full accent-[var(--ds-primary)]"
                 aria-label="Traffic split percentage for version A"
               />
@@ -85,7 +96,7 @@ export function AgentABTestSection({ tenantId, config, onChange }: AgentABTestSe
                 <input
                   type="text"
                   value={config.versionALabel}
-                  onChange={(e) => update({ versionALabel: e.target.value })}
+                  onChange={(e) => void update({ versionALabel: e.target.value })}
                   placeholder="e.g. Current"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)]/30"
                 />
@@ -97,7 +108,7 @@ export function AgentABTestSection({ tenantId, config, onChange }: AgentABTestSe
                 <input
                   type="text"
                   value={config.versionBLabel}
-                  onChange={(e) => update({ versionBLabel: e.target.value })}
+                  onChange={(e) => void update({ versionBLabel: e.target.value })}
                   placeholder="e.g. New"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)]/30"
                 />

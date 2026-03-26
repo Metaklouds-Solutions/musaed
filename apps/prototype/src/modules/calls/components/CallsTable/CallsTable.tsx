@@ -3,6 +3,7 @@
  * Virtualized when 50+ rows. [PHASE-7-VIRTUALIZED-LISTS]
  */
 
+import { Mic } from 'lucide-react';
 import {
   VirtualizedDataTable,
   TableHead,
@@ -38,6 +39,21 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatCost(cost: number | null | undefined): string {
+  if (cost == null || Number.isNaN(cost)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(cost);
+}
+
+function formatLatency(ms: number | null | undefined): string {
+  if (ms == null || Number.isNaN(ms)) return '—';
+  return `${Math.round(ms)}ms`;
+}
+
 /** Renders the calls grid with optional tenant column and virtualized rows. */
 export function CallsTable({
   calls,
@@ -51,13 +67,18 @@ export function CallsTable({
     <VirtualizedDataTable
       items={calls}
       getItemKey={(c) => c.id}
-      minWidth="min-w-[640px]"
+      minWidth="min-w-[720px]"
+      rowsTinted
       header={
         <>
           {showTenant && <TableHead>Tenant</TableHead>}
-          <TableHead>Date</TableHead>
-          <TableHead>Customer</TableHead>
+          <TableHead>Time</TableHead>
           <TableHead>Duration</TableHead>
+          <TableHead>Cost</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Latency</TableHead>
+          <TableHead>Tokens</TableHead>
+          <TableHead>Customer</TableHead>
           <TableHead>Sentiment</TableHead>
           <TableHead>Booking</TableHead>
           <TableHead aria-hidden />
@@ -71,10 +92,31 @@ export function CallsTable({
             </TableCell>
           )}
           <TableCell className="text-[var(--text-secondary)] text-sm">
-            {formatDate(call.createdAt)}
+            <span className="inline-flex items-center gap-1.5">
+              {formatDate(call.createdAt)}
+              {call.recordingUrl && (
+                <Mic
+                  size={14}
+                  className="text-[var(--text-tertiary)] shrink-0"
+                  aria-label="Has recording"
+                />
+              )}
+            </span>
+          </TableCell>
+          <TableCell>{formatDuration(call.duration)}</TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm">
+            {formatCost(call.callCost)}
+          </TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm capitalize">
+            {call.status ?? '—'}
+          </TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm">
+            {formatLatency(call.latencyE2e)}
+          </TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm">
+            {call.llmTokensTotal != null ? Math.round(call.llmTokensTotal).toLocaleString() : '—'}
           </TableCell>
           <TableCell>{getCustomerName(call.customerId)}</TableCell>
-          <TableCell>{formatDuration(call.duration)}</TableCell>
           <TableCell>
             <SentimentBadge score={call.sentimentScore} />
           </TableCell>

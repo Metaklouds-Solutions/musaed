@@ -14,11 +14,12 @@ import {
   AuditLogSection,
   ScheduledReportsSection,
 } from '../components/settings';
-import { useAdminSettings } from '../hooks';
-import { CheckCircle2, Save, Users, Plug, FileText, Webhook, BarChart3, ClipboardList } from 'lucide-react';
+import { HealthDashboardSection } from '../components/HealthDashboardSection';
+import { useAdminSettings, useAdminSystem, useAdminSystemMaintenance } from '../hooks';
+import { CheckCircle2, Save, Users, Plug, FileText, Webhook, BarChart3, ClipboardList, Activity, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type SettingsTab = 'admin-users' | 'integrations' | 'retention' | 'webhooks' | 'reports' | 'audit';
+type SettingsTab = 'admin-users' | 'integrations' | 'retention' | 'webhooks' | 'reports' | 'audit' | 'system';
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Users }[] = [
   { id: 'admin-users', label: 'Admin Users', icon: Users },
@@ -27,6 +28,7 @@ const TABS: { id: SettingsTab; label: string; icon: typeof Users }[] = [
   { id: 'webhooks', label: 'Webhooks', icon: Webhook },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
   { id: 'audit', label: 'Audit', icon: ClipboardList },
+  { id: 'system', label: 'System Health', icon: Activity },
 ];
 
 function getTabId(tab: SettingsTab): string {
@@ -49,6 +51,8 @@ export function AdminSettingsPage() {
     updateRetentionToggle,
     updateRetentionDays,
   } = useAdminSettings();
+  const { systemHealth } = useAdminSystem();
+  const { maintenance, toggleMaintenance } = useAdminSystemMaintenance();
 
   const showSaveButton = activeTab === 'admin-users' || activeTab === 'integrations' || activeTab === 'retention' || activeTab === 'reports';
   const activeIndex = TABS.findIndex((tab) => tab.id === activeTab);
@@ -212,6 +216,37 @@ export function AdminSettingsPage() {
             className="space-y-8 max-w-3xl"
           >
             <AuditLogSection />
+          </motion.div>
+        )}
+        {activeTab === 'system' && (
+          <motion.div
+            key="system"
+            id={getPanelId('system')}
+            role="tabpanel"
+            aria-labelledby={getTabId('system')}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8 max-w-3xl"
+          >
+            <section className="rounded-[var(--radius-card)] card p-5 space-y-4">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">Maintenance mode</h2>
+                <p className="text-sm text-[var(--text-muted)] mb-3">
+                  When enabled, a banner is shown to all users. Use during deployments or planned outages.
+                </p>
+                <Button
+                  variant={maintenance.enabled ? 'danger' : 'secondary'}
+                  className="cursor-pointer flex items-center gap-2"
+                  onClick={toggleMaintenance}
+                >
+                  <Wrench size={16} />
+                  {maintenance.enabled ? 'Disable maintenance mode' : 'Enable maintenance mode'}
+                </Button>
+              </div>
+            </section>
+            <HealthDashboardSection systemHealth={systemHealth} />
           </motion.div>
         )}
       </AnimatePresence>

@@ -5,6 +5,9 @@
 import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { customersAdapter, callsAdapter, bookingsAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
+import type { Customer } from '../../../shared/types';
+import type { Booking } from '../../../shared/types';
 
 export function useCustomerDetail(customerId: string | undefined) {
   const { user } = useSession();
@@ -13,18 +16,31 @@ export function useCustomerDetail(customerId: string | undefined) {
     return user.tenantId;
   }, [user]);
 
-  const customer = useMemo(
+  const { data: customer } = useAsyncData(
     () => (customerId ? customersAdapter.getCustomerById(customerId, tenantId) : undefined),
-    [customerId, tenantId]
+    [customerId, tenantId],
+    undefined as Customer | undefined,
   );
-  const calls = useMemo(() => {
-    const all = callsAdapter.getCalls(tenantId);
-    return customerId ? all.filter((c) => c.customerId === customerId) : [];
-  }, [tenantId, customerId]);
-  const bookings = useMemo(() => {
-    const all = bookingsAdapter.getBookings(tenantId);
-    return customerId ? all.filter((b) => b.customerId === customerId) : [];
-  }, [tenantId, customerId]);
+
+  const { data: calls } = useAsyncData(
+    () =>
+      Promise.resolve(callsAdapter.getCalls(tenantId)).then((all) =>
+        customerId ? all.filter((c) => c.customerId === customerId) : []
+      ),
+    [tenantId, customerId],
+    [],
+  );
+
+  const { data: bookings } = useAsyncData(
+    () => {
+      const allPromise = bookingsAdapter.getBookings(tenantId);
+      return allPromise.then((all) =>
+        customerId ? all.filter((b) => b.customerId === customerId) : []
+      );
+    },
+    [tenantId, customerId],
+    [] as Booking[],
+  );
 
   const timeline = useMemo(() => {
     const items: { date: string; type: 'call' | 'booking'; id: string; label: string }[] = [];

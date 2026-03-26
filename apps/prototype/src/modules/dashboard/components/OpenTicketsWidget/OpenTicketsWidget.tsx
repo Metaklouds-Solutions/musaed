@@ -57,7 +57,7 @@ export function OpenTicketsWidget({ tickets }: OpenTicketsWidgetProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.15 }}
-        className="relative overflow-hidden rounded-[var(--radius-card)] card-glass p-5"
+        className="relative overflow-hidden rounded-[var(--radius-card)] card-accent p-5"
     >
       <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-[var(--warning)]/10 blur-2xl pointer-events-none" />
       <div className="flex items-center justify-between mb-4">
@@ -69,7 +69,7 @@ export function OpenTicketsWidget({ tickets }: OpenTicketsWidgetProps) {
           <Link
             key={t.id}
             to={`/help/tickets/${t.id}`}
-            className="block p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/70 hover:border-[var(--border-default)] hover:bg-[var(--sidebar-item-hover)] hover:shadow-[var(--shadow-elevated)] transition-all"
+            className="block p-3 rounded-xl panel-soft hover:border-[var(--border-default)] hover:bg-[var(--sidebar-item-hover)] hover:shadow-[var(--shadow-elevated)] transition-all"
           >
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-[var(--text-primary)] truncate">{t.title}</p>

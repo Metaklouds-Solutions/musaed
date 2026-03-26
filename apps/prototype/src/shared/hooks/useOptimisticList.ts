@@ -23,7 +23,9 @@ export function useOptimisticList<T>({ items, getKey }: UseOptimisticListOptions
         const patch = patches.get(key);
         return patch ? { ...i, ...patch } : i;
       });
-    return [...base, ...adds];
+    const baseKeys = new Set(base.map(getKey));
+    const newAdds = adds.filter((a) => !baseKeys.has(getKey(a)));
+    return [...base, ...newAdds];
   }, [items, adds, removes, patches, getKey]);
 
   const addOptimistic = useCallback((item: T) => {

@@ -1,9 +1,10 @@
 /**
- * Agent status card: voice, language, last synced.
+ * Agent status card: language, status, last synced. Links to Agent page for details.
  */
 
 import { motion } from 'motion/react';
-import { Bot, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Bot, CheckCircle, ArrowRight } from 'lucide-react';
 import type { TenantAgentStatus } from '../../../../shared/types';
 
 interface AgentStatusCardProps {
@@ -32,6 +33,12 @@ export function AgentStatusCard({ agent }: AgentStatusCardProps) {
       >
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Agent Status</h2>
         <p className="text-sm text-[var(--text-muted)]">No agent assigned yet.</p>
+        <Link
+          to="/reports?tab=agent"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-primary-hover)] transition-colors"
+        >
+          View details <ArrowRight size={12} aria-hidden />
+        </Link>
       </motion.section>
     );
   }
@@ -41,7 +48,7 @@ export function AgentStatusCard({ agent }: AgentStatusCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.05 }}
-      className="relative overflow-hidden rounded-[var(--radius-card)] card-glass p-5"
+      className="relative overflow-hidden rounded-[var(--radius-card)] card-accent p-5"
     >
       <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-[var(--ds-primary)]/10 blur-2xl pointer-events-none" />
       <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Agent Status</h2>
@@ -51,8 +58,7 @@ export function AgentStatusCard({ agent }: AgentStatusCardProps) {
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-[var(--text-primary)]">Voice: {agent.voice}</span>
-            <span className="text-sm text-[var(--text-muted)]">({agent.language})</span>
+            <span className="text-sm text-[var(--text-muted)]">Language: {agent.language}</span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5">
             <CheckCircle
@@ -65,6 +71,12 @@ export function AgentStatusCard({ agent }: AgentStatusCardProps) {
           <p className="text-xs text-[var(--text-muted)]">
             Last synced: {formatRelativeTime(agent.lastSyncedAt)}
           </p>
+          <Link
+            to="/reports?tab=agent"
+            className="inline-flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-primary-hover)] transition-colors mt-2"
+          >
+            View details <ArrowRight size={12} aria-hidden />
+          </Link>
         </div>
       </div>
     </motion.section>

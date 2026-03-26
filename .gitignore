@@ -13,6 +13,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # OS
 .DS_Store
@@ -30,6 +31,12 @@ pnpm-debug.log*
 *.swo
 .cursor/
 .agents/
+
+# Test artifacts with sensitive data
+api-test-results.json
+
+# Temporary debugging scripts (MongoDB, env access)
+tmp-*.js
 
 # Misc
 *.tsbuildinfo

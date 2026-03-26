@@ -47,7 +47,7 @@ function saveOverrides(tenantId: string, overrides: Record<string, { availabilit
 
 export const staffProfileAdapter = {
   /** Get staff profiles for tenant (seed + overrides). Used by calendar/availability. */
-  getProfiles(tenantId: string): StaffProfile[] {
+  getProfiles(tenantId: string, userIds?: string[]): StaffProfile[] {
     const fromSeed = seedStaffProfiles.filter((p) => p.tenantId === tenantId);
     const overrides = loadOverrides(tenantId);
 
@@ -71,6 +71,11 @@ export const staffProfileAdapter = {
         availability: o.availability,
         specialties: [],
       });
+    }
+
+    if (userIds && userIds.length > 0) {
+      const allow = new Set(userIds);
+      return result.filter((p) => allow.has(p.userId));
     }
 
     return result;

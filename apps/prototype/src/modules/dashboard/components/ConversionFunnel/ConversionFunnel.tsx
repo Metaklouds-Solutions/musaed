@@ -3,7 +3,7 @@
  */
 
 import { motion } from 'motion/react';
-import { EmptyState, Card, LOTTIE_ASSETS } from '../../../../shared/ui';
+import { EmptyState, Card, LOTTIE_ASSETS, AnimatedNumber } from '../../../../shared/ui';
 import type { FunnelStage } from '../../../../shared/types';
 import { GitBranch } from 'lucide-react';
 
@@ -15,7 +15,7 @@ interface ConversionFunnelProps {
 export function ConversionFunnel({ stages }: ConversionFunnelProps) {
   if (stages.length === 0) {
     return (
-      <Card className="p-5 min-h-[140px]">
+      <Card className="p-5 min-h-[140px] metric-card">
         <EmptyState
           icon={GitBranch}
           title="No funnel data"
@@ -29,7 +29,7 @@ export function ConversionFunnel({ stages }: ConversionFunnelProps) {
   const max = Math.max(...stages.map((s) => s.count), 1);
 
   return (
-    <Card className="p-5 min-h-[140px]">
+    <Card className="p-5 min-h-[140px] metric-card">
       <h3 className="text-[var(--typography-subheading)] font-semibold text-[var(--text-primary)] mb-4">
         Conversion funnel
       </h3>
@@ -51,7 +51,7 @@ export function ConversionFunnel({ stages }: ConversionFunnelProps) {
                       {dropOff}% drop-off
                     </span>
                   )}
-                  <span className="text-[var(--text-primary)] font-medium tabular-nums">{count}</span>
+                  <span className="text-[var(--text-primary)] font-medium tabular-nums"><AnimatedNumber value={count} /></span>
                 </span>
               </div>
               <div className="h-2 rounded-full overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-subtle)]">

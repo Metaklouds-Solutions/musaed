@@ -28,6 +28,16 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatCost(cost: number | null | undefined): string {
+  if (cost == null || Number.isNaN(cost)) return '—';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(cost);
+}
+
 /** Renders call metadata summary including duration, timestamp, and booking linkage. */
 export function CallMetaPanel({ call, linkedBooking }: CallMetaPanelProps) {
   return (
@@ -52,6 +62,12 @@ export function CallMetaPanel({ call, linkedBooking }: CallMetaPanelProps) {
           </dd>
         </div>
         <div>
+          <dt className="text-[var(--text-muted)]">Status</dt>
+          <dd className="font-medium text-[var(--text-primary)] capitalize">
+            {call.status ?? '—'}
+          </dd>
+        </div>
+        <div>
           <dt className="text-[var(--text-muted)]">Escalation</dt>
           <dd className="font-medium text-[var(--text-primary)]">
             {call.escalationFlag ? (
@@ -69,6 +85,34 @@ export function CallMetaPanel({ call, linkedBooking }: CallMetaPanelProps) {
               : call.bookingCreated
                 ? 'Created'
                 : '—'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[var(--text-muted)]">Call Cost</dt>
+          <dd className="font-medium text-[var(--text-primary)]">{formatCost(call.callCost)}</dd>
+        </div>
+        <div>
+          <dt className="text-[var(--text-muted)]">Latency</dt>
+          <dd className="font-medium text-[var(--text-primary)]">
+            {call.latencyE2e != null ? `${Math.round(call.latencyE2e)}ms` : '—'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[var(--text-muted)]">Disconnection</dt>
+          <dd className="font-medium text-[var(--text-primary)]">
+            {call.disconnectionReason ?? '—'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[var(--text-muted)]">LLM Tokens</dt>
+          <dd className="font-medium text-[var(--text-primary)]">
+            {call.llmTokensTotal != null ? Math.round(call.llmTokensTotal).toLocaleString() : '—'}
+          </dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="text-[var(--text-muted)]">Token Usage (Retell Raw)</dt>
+          <dd className="font-medium text-[var(--text-primary)] break-all">
+            {call.llmTokenUsage ? JSON.stringify(call.llmTokenUsage) : '—'}
           </dd>
         </div>
       </dl>

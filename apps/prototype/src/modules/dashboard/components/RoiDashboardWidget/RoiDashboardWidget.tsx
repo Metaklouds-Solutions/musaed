@@ -5,6 +5,7 @@
 
 import { PieChart, Pie, Cell, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { AnimatedNumber } from '../../../../shared/ui';
 import type { RoiMetrics } from '../../../../shared/types';
 
 interface RoiDashboardWidgetProps {
@@ -48,21 +49,21 @@ export function RoiDashboardWidget({ roi }: RoiDashboardWidgetProps) {
       </div>
       <div className="p-5">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <div className="rounded-xl bg-[var(--bg-elevated)]/70 p-3 border border-[var(--border-subtle)] transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
+          <div className="rounded-xl panel-soft p-3 transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
             <p className="text-xs font-medium text-[var(--text-muted)]">Revenue</p>
-            <p className="text-lg font-bold text-[var(--success)] tabular-nums">{formatCurrency(roi.revenue)}</p>
+            <p className="text-lg font-bold text-[var(--success)] tabular-nums"><AnimatedNumber value={roi.revenue} format={formatCurrency} /></p>
           </div>
-          <div className="rounded-xl bg-[var(--bg-elevated)]/70 p-3 border border-[var(--border-subtle)] transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
+          <div className="rounded-xl panel-soft p-3 transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
             <p className="text-xs font-medium text-[var(--text-muted)]">AI Cost</p>
-            <p className="text-lg font-bold text-[var(--warning)] tabular-nums">{formatCurrency(roi.aiCost)}</p>
+            <p className="text-lg font-bold text-[var(--warning)] tabular-nums"><AnimatedNumber value={roi.aiCost} format={formatCurrency} /></p>
           </div>
-          <div className="rounded-xl bg-[var(--bg-elevated)]/70 p-3 border border-[var(--border-subtle)] transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
+          <div className="rounded-xl panel-soft p-3 transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
             <p className="text-xs font-medium text-[var(--text-muted)]">Cost Saved</p>
-            <p className="text-lg font-bold text-[var(--ds-primary)] tabular-nums">{formatCurrency(roi.costSaved)}</p>
+            <p className="text-lg font-bold text-[var(--ds-primary)] tabular-nums"><AnimatedNumber value={roi.costSaved} format={formatCurrency} /></p>
           </div>
-          <div className="rounded-xl bg-[var(--bg-elevated)]/70 p-3 border border-[var(--border-subtle)] transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
+          <div className="rounded-xl panel-soft p-3 transition-all hover:border-[var(--border-default)] hover:shadow-[var(--shadow-elevated)]">
             <p className="text-xs font-medium text-[var(--text-muted)]">ROI</p>
-            <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{roi.roiPercent}%</p>
+            <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums"><AnimatedNumber value={roi.roiPercent} format={(n) => `${n}%`} /></p>
           </div>
         </div>
 
@@ -101,3 +102,4 @@ export function RoiDashboardWidget({ roi }: RoiDashboardWidgetProps) {
     </div>
   );
 }
+

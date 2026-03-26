@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { PageHeader, StatCard, Button, ViewButton } from '../../../shared/ui';
+import { PageHeader, Button } from '../../../shared/ui';
 import { useBilling } from '../hooks';
 
 function formatCurrency(n: number): string {
@@ -22,7 +22,7 @@ function ModernStatCard({ label, value, trend, icon }: {
 
   return (
     <div 
-      className="group relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 transition-all duration-300 ease-out hover:shadow-lg hover:shadow-[var(--border-subtle)]/10 hover:-translate-y-1"
+      className="group metric-card relative overflow-hidden rounded-[var(--radius-card)] p-5 transition-all duration-300 ease-out hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -66,7 +66,7 @@ function CreditsSection({ onBuy }: { onBuy: () => void }) {
 
   return (
     <section 
-      className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--border-subtle)]/5"
+      className="relative overflow-hidden rounded-[var(--radius-card)] panel-soft p-6 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -87,8 +87,7 @@ function CreditsSection({ onBuy }: { onBuy: () => void }) {
           </div>
           
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-lg">
-            Purchase additional credits to continue using AI call handling. 
-            <span className="block mt-1 text-[var(--text-muted)] text-xs">This is a mock action for demonstration purposes.</span>
+            Purchase additional credits to continue using AI call handling.
           </p>
         </div>
         
@@ -144,24 +143,33 @@ function BillingSkeleton() {
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {skeletonKeys.map((key) => (
-          <div key={key} className="h-24 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)]" />
+          <div key={key} className="h-24 metric-card rounded-[var(--radius-card)]" />
         ))}
       </div>
       
-      <div className="h-32 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-card)]" />
+      <div className="h-32 panel-soft rounded-[var(--radius-card)]" />
     </div>
   );
 }
 
-/** Renders tenant billing overview with usage, credits, and recent activity. */
+/** Renders tenant billing overview with plan, usage, and credits. */
 export function BillingPage() {
-  const { overview, buyCredits } = useBilling();
+  const { overview, loading, buyCredits } = useBilling();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Billing" description="Plan, credits, and usage" />
+        <BillingSkeleton />
+      </div>
+    );
+  }
 
   if (overview == null) {
     return (
       <div className="space-y-6">
         <PageHeader title="Billing" description="Plan, credits, and usage" />
-        <div className="flex items-center gap-3 p-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)]/50">
+        <div className="flex items-center gap-3 p-4 rounded-[var(--radius-card)] panel-soft">
           <div className="w-8 h-8 rounded-full bg-[var(--text-muted)]/10 flex items-center justify-center">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--text-muted)]">
               <circle cx="12" cy="12" r="10" />
@@ -219,69 +227,32 @@ export function BillingPage() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <ModernStatCard 
           label="Current plan" 
-          value={overview.plan} 
+          value={overview.plan ?? '—'} 
           icon={icons.plan}
-          trend={{ value: 12, positive: true }}
         />
         <ModernStatCard 
           label="Minutes used" 
-          value={overview.minutesUsed.toLocaleString()} 
+          value={(overview.minutesUsed ?? 0).toLocaleString()} 
           icon={icons.minutes}
         />
         <ModernStatCard 
           label="Credit balance" 
-          value={overview.creditBalance} 
+          value={overview.creditBalance ?? 0} 
           icon={icons.credits}
-          trend={{ value: 8, positive: true }}
         />
         <ModernStatCard 
           label="Estimated savings" 
-          value={formatCurrency(overview.estimatedSavings)} 
+          value={formatCurrency(overview.estimatedSavings ?? 0)} 
           icon={icons.savings}
-          trend={{ value: 24, positive: true }}
         />
         <ModernStatCard 
           label="Net ROI" 
-          value={`${overview.netROI}%`} 
+          value={`${overview.netROI ?? 0}%`} 
           icon={icons.roi}
-          trend={{ value: 5, positive: overview.netROI > 0 }}
         />
       </section>
 
       <CreditsSection onBuy={buyCredits} />
-      
-      {/* Optional: Recent Activity Section (modern addition) */}
-      <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">Recent Activity</h3>
-          <ViewButton onClick={() => {}}>View all</ViewButton>
-        </div>
-        <div className="space-y-3">
-          {[
-            { action: 'Credits purchased', amount: '+$500', time: '2 hours ago', type: 'credit' },
-            { action: 'Monthly usage deducted', amount: '-$120', time: '1 day ago', type: 'usage' },
-            { action: 'Plan upgraded to Pro', amount: '$0', time: '3 days ago', type: 'plan' }
-          ].map((item) => (
-            <div 
-              key={`${item.action}-${item.time}`}
-              className="flex items-center justify-between p-3 rounded-lg bg-[var(--border-subtle)]/20 hover:bg-[var(--border-subtle)]/40 transition-colors cursor-pointer group"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${item.type === 'credit' ? 'bg-emerald-500' : item.type === 'usage' ? 'bg-rose-500' : 'bg-blue-500'}`} />
-                <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
-                  {item.action}
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className={`text-sm font-medium ${item.amount.startsWith('+') ? 'text-emerald-500' : item.amount.startsWith('-') ? 'text-rose-500' : 'text-[var(--text-muted)]'}`}>
-                  {item.amount}
-                </span>
-                <span className="text-xs text-[var(--text-muted)]">{item.time}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

@@ -11,9 +11,11 @@ export type SidebarVariant = 'glass-expanded' | 'minimal-compact';
 interface SidebarItemProps {
   to: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
   variant?: SidebarVariant;
   onClick?: () => void;
+  badgeCount?: number;
+  badgeTooltip?: string;
 }
 
 const expandedClasses =
@@ -27,8 +29,12 @@ export function SidebarItem({
   icon: Icon,
   variant = 'glass-expanded',
   onClick,
+  badgeCount,
+  badgeTooltip,
 }: SidebarItemProps) {
   const isCompact = variant === 'minimal-compact';
+  const showBadge = typeof badgeCount === 'number' && badgeCount > 0;
+  const displayCount = showBadge ? (badgeCount > 99 ? '99+' : String(badgeCount)) : null;
 
   return (
     <NavLink
@@ -47,13 +53,33 @@ export function SidebarItem({
         )
       }
     >
-      <Icon
-        size={20}
-        aria-hidden
-        className={cn('shrink-0', isCompact && 'mx-auto')}
-        strokeWidth={1.5}
-      />
+      <div className={cn('relative', isCompact && 'mx-auto')}>
+        <Icon
+          size={20}
+          aria-hidden
+          className="shrink-0"
+          strokeWidth={1.5}
+        />
+        {showBadge && isCompact && (
+          <span
+            className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-[var(--ds-primary)] text-white text-[10px] leading-4 text-center font-semibold"
+            title={badgeTooltip ?? `${badgeCount} open issues`}
+            aria-label={badgeTooltip ?? `${badgeCount} open issues`}
+          >
+            {displayCount}
+          </span>
+        )}
+      </div>
       {!isCompact && <span className="font-medium truncate">{label}</span>}
+      {showBadge && !isCompact && (
+        <span
+          className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-[var(--ds-primary)] text-white text-[11px] leading-5 text-center font-semibold"
+          title={badgeTooltip ?? `${badgeCount} open issues`}
+          aria-label={badgeTooltip ?? `${badgeCount} open issues`}
+        >
+          {displayCount}
+        </span>
+      )}
     </NavLink>
   );
 }

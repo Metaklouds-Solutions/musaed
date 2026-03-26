@@ -32,7 +32,12 @@ export const searchAdapter = {
    * For tenant users: only search within their tenantId.
    * For admin: search all.
    */
-  search(query: string, tenantId?: string, isAdmin?: boolean): SearchResult[] {
+  async search(
+    query: string,
+    tenantId?: string,
+    isAdmin?: boolean,
+    _types?: string[],
+  ): Promise<SearchResult[]> {
     const q = query.trim();
     if (!q) return [];
 
@@ -84,8 +89,8 @@ export const searchAdapter = {
     }
 
     // Calls (with customer name)
-    const calls = callsAdapter.getCalls(tenantId);
-    const customers = customersAdapter.getCustomers(tenantId);
+    const calls = await callsAdapter.getCalls(tenantId);
+    const customers = await customersAdapter.getCustomers(tenantId);
     const customerMap = new Map(customers.map((c) => [c.id, c.name]));
     for (const c of calls) {
       const customerName = customerMap.get(c.customerId) ?? c.customerId;

@@ -5,6 +5,8 @@
 import { useMemo } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
 import { customersAdapter } from '../../../adapters';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
+import type { Customer } from '../../../shared/types';
 
 export function useCustomersList() {
   const { user } = useSession();
@@ -13,6 +15,10 @@ export function useCustomersList() {
     return user.tenantId;
   }, [user]);
 
-  const customers = useMemo(() => customersAdapter.getCustomers(tenantId), [tenantId]);
-  return { user, customers };
+  const { data: customers, loading, refetch } = useAsyncData(
+    () => customersAdapter.getCustomers(tenantId),
+    [tenantId],
+    [] as Customer[],
+  );
+  return { user, customers, loading, refetch };
 }

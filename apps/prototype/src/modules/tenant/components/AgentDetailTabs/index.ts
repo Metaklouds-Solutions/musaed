@@ -1,4 +1,5 @@
 export { AgentOverviewTab } from './AgentOverviewTab';
+export { AgentAnalyticsSummary } from './AgentAnalyticsSummary';
 export { AgentLlmTab } from './AgentLlmTab';
 export { AgentSkillsTab } from './AgentSkillsTab';
 export { AgentPerformanceTab } from './AgentPerformanceTab';

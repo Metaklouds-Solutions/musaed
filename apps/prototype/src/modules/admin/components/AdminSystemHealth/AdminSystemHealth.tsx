@@ -1,13 +1,12 @@
 /**
- * Admin dashboard: system health (Retell sync, webhooks).
+ * Admin dashboard: inline health badges (Retell, Webhooks, Uptime).
  */
 
-import { motion } from 'motion/react';
 import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import type { AdminSystemHealthExtended } from '../../../../shared/types';
+import type { AdminHealth } from '../../../../shared/types';
 
 interface AdminSystemHealthProps {
-  health: AdminSystemHealthExtended;
+  health: AdminHealth;
 }
 
 type Status = 'ok' | 'degraded' | 'error';
@@ -33,49 +32,29 @@ function StatusBadge({ status }: { status: Status }) {
   );
 }
 
-/** Renders overall, integration, and platform service health states. */
+function formatUptime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  return `${Math.floor(seconds / 86400)}d`;
+}
+
+/** Renders inline health badges: Retell, Webhooks, Uptime. */
 export function AdminSystemHealth({ health }: AdminSystemHealthProps) {
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
-      className="relative overflow-hidden rounded-[var(--radius-card)] card-glass p-5"
-    >
-      <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-[var(--info)]/10 blur-2xl pointer-events-none" />
-      <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">System Health</h2>
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">Overall</h3>
-          <div className="inline-flex rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5">
-            <StatusBadge status={health.status} />
-          </div>
-        </div>
-        <div>
-          <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">Integrations</h3>
-          <ul className="space-y-2">
-            {health.integrations.map((i) => (
-              <li key={i.name} className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/60 px-3 py-2">
-                <span className="text-sm text-[var(--text-secondary)]">{i.name}</span>
-                <StatusBadge status={i.status} />
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">Platform</h3>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-[var(--text-secondary)]">Retell</span>
-              <StatusBadge status={health.retellSync} />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-[var(--text-secondary)]">Webhooks</span>
-              <StatusBadge status={health.webhooks} />
-            </div>
-          </div>
-        </div>
+    <div className="flex flex-wrap items-center gap-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-[var(--text-muted)]">Retell</span>
+        <StatusBadge status={health.retellSync} />
       </div>
-    </motion.section>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-[var(--text-muted)]">Webhooks</span>
+        <StatusBadge status={health.webhooks} />
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-[var(--text-muted)]">Uptime</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">{formatUptime(health.uptimeSeconds)}</span>
+      </div>
+    </div>
   );
 }

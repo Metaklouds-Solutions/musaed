@@ -13,6 +13,8 @@ const outcomeConfig: Record<OutcomeBreakdownType['outcome'], { label: string; co
   booked: { label: 'Booked', color: 'var(--success)' },
   escalated: { label: 'Escalated', color: 'var(--warning)' },
   failed: { label: 'Failed', color: 'var(--error)' },
+  info_only: { label: 'Info Only', color: 'var(--text-muted)' },
+  unknown: { label: 'Unknown', color: 'var(--text-tertiary)' },
 };
 
 /** Renders booked/escalated/failed outcome distribution bars and totals. */
@@ -21,7 +23,7 @@ export function OutcomeBreakdown({ outcomes }: OutcomeBreakdownProps) {
   const maxCount = Math.max(...outcomes.map((o) => o.count), 1);
 
   return (
-    <div className="rounded-[var(--radius-card)] card-glass p-5">
+    <div className="rounded-[var(--radius-card)] card-accent p-5">
       <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">
         Call outcomes
       </h3>

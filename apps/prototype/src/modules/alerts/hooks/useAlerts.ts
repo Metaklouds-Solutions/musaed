@@ -12,12 +12,16 @@ const SIMULATION_INTERVAL_MS = 20000;
 export function useAlerts() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
-  const [alerts, setAlerts] = useState<Alert[]>(() =>
-    tenantId ? alertsAdapter.getAlerts(tenantId) : []
-  );
+  const [alerts, setAlerts] = useState<Alert[]>([]);
 
   const refresh = useCallback(() => {
-    setAlerts(tenantId ? alertsAdapter.getAlerts(tenantId) : []);
+    if (!tenantId) {
+      setAlerts([]);
+      return;
+    }
+    Promise.resolve(alertsAdapter.getAlerts(tenantId))
+      .then(setAlerts)
+      .catch(() => setAlerts([]));
   }, [tenantId]);
 
   useEffect(() => {
@@ -28,14 +32,14 @@ export function useAlerts() {
     if (tenantId == null) return;
     const id = setInterval(() => {
       alertsAdapter.addSimulatedAlert(tenantId);
-      setAlerts(alertsAdapter.getAlerts(tenantId));
+      refresh();
     }, SIMULATION_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [tenantId]);
+  }, [tenantId, refresh]);
 
   const resolveAlert = useCallback(
-    (alertId: string) => {
-      alertsAdapter.resolveAlert(alertId);
+    async (alertId: string) => {
+      await Promise.resolve(alertsAdapter.resolveAlert(alertId));
       refresh();
     },
     [refresh]

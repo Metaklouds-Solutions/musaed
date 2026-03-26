@@ -7,9 +7,10 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PerformanceMetrics } from '../../../../shared/types/reports';
 
-function formatDuration(sec: number): string {
+function formatDuration(sec: number, compact = false): string {
   const m = Math.floor(sec / 60);
-  const s = sec % 60;
+  const s = Math.round(sec % 60);
+  if (compact && sec < 60) return `${s}s`;
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
@@ -34,7 +35,12 @@ const metricConfig: Array<{
   { key: 'totalBookings', label: 'Bookings', format: (v) => v.toString(), higherIsBetter: true },
   { key: 'conversionRate', label: 'Conversion', format: (v) => `${v}%`, higherIsBetter: true },
   { key: 'escalationRate', label: 'Escalation', format: (v) => `${v}%`, higherIsBetter: false },
-  { key: 'avgDurationSec', label: 'Avg duration', format: formatDuration, higherIsBetter: false },
+  {
+    key: 'avgDurationSec',
+    label: 'Avg duration',
+    format: (v) => formatDuration(v, v < 60),
+    higherIsBetter: false,
+  },
 ];
 
 /** Renders current-vs-previous period KPI deltas with directional indicators. */
@@ -44,13 +50,16 @@ export function PeriodComparison({ current, previous, label }: PeriodComparisonP
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-[var(--radius-card)] card-glass p-5"
+      className="rounded-[var(--radius-card)] card p-5"
     >
       <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">
         Period comparison
       </h3>
       <p className="text-sm text-[var(--text-muted)] mb-4">{label}</p>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      <div
+        className="grid gap-4"
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}
+      >
         {metricConfig.map(({ key, label: l, format, higherIsBetter }) => {
           const curr = current[key];
           const prev = previous[key];
@@ -58,22 +67,26 @@ export function PeriodComparison({ current, previous, label }: PeriodComparisonP
           const change = changePercent(curr, prev);
           const isPositive = change !== null && (higherIsBetter ? change > 0 : change < 0);
           const isNegative = change !== null && (higherIsBetter ? change < 0 : change > 0);
+          const formatted = format(curr);
           return (
             <div
               key={key}
-              className="rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4"
+              className="rounded-lg panel-soft p-4 min-w-0 overflow-hidden"
             >
-              <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+              <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide truncate">
                 {l}
               </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xl font-bold text-[var(--text-primary)] tabular-nums">
-                  {format(curr)}
+              <div className="flex items-center gap-2 mt-1 min-w-0">
+                <span
+                  className="text-base sm:text-lg lg:text-xl font-bold text-[var(--text-primary)] tabular-nums truncate"
+                  title={formatted}
+                >
+                  {formatted}
                 </span>
                 {change !== null && change !== 0 && (
                   <span
                     className={cn(
-                      'flex items-center gap-0.5 text-xs font-medium',
+                      'flex shrink-0 items-center gap-0.5 text-xs font-medium',
                       isPositive && 'text-[var(--success)]',
                       isNegative && 'text-[var(--error)]'
                     )}
@@ -84,7 +97,7 @@ export function PeriodComparison({ current, previous, label }: PeriodComparisonP
                   </span>
                 )}
                 {change === 0 && (
-                  <span className="flex items-center gap-0.5 text-xs text-[var(--text-muted)]">
+                  <span className="flex shrink-0 items-center gap-0.5 text-xs text-[var(--text-muted)]">
                     <Minus size={14} aria-hidden />
                   </span>
                 )}
@@ -96,3 +109,4 @@ export function PeriodComparison({ current, previous, label }: PeriodComparisonP
     </motion.div>
   );
 }
+

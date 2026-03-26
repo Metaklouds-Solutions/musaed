@@ -44,7 +44,7 @@ export function TranscriptViewer({ transcript }: TranscriptViewerProps) {
   if (sentences.length === 0) {
     return (
       <div
-        className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5"
+        className="rounded-[var(--radius-card)] card p-5"
         style={{ minHeight: '120px' }}
       >
         <p className="text-sm text-[var(--text-muted)]">No transcript</p>
@@ -54,7 +54,7 @@ export function TranscriptViewer({ transcript }: TranscriptViewerProps) {
 
   return (
     <div
-      className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5"
+      className="rounded-[var(--radius-card)] card p-5"
       style={{ minHeight: '120px' }}
     >
       <div className="flex items-center justify-between gap-2 mb-3">

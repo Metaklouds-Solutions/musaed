@@ -4,8 +4,8 @@ import type { TenantListRow } from '../../../shared/types';
 
 /** Admin tenants actions hook for archive and CSV export operations. */
 export function useAdminTenantsActions() {
-  const archiveTenant = useCallback((tenantId: string) => {
-    softDeleteAdapter.softDeleteTenant(tenantId);
+  const archiveTenant = useCallback(async (tenantId: string) => {
+    await Promise.resolve(softDeleteAdapter.softDeleteTenant(tenantId));
   }, []);
 
   const toExportRows = useCallback(
@@ -23,9 +23,12 @@ export function useAdminTenantsActions() {
     []
   );
 
-  const exportTenantsCsv = useCallback((rows: Record<string, string | number>[], fileName: string) => {
-    exportAdapter.exportCsv(rows, fileName);
-  }, []);
+  const exportTenantsCsv = useCallback(
+    async (rows: Record<string, string | number>[]) => {
+      await exportAdapter.exportTenantsCsv(rows);
+    },
+    []
+  );
 
   return { archiveTenant, toExportRows, exportTenantsCsv };
 }

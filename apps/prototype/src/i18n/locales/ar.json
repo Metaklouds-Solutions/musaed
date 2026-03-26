@@ -15,9 +15,11 @@
     "dashboard": "لوحة التحكم",
     "calendar": "التقويم",
     "calls": "المكالمات",
+    "bookings": "الحجوزات",
     "agent": "الوكيل",
     "staff": "الموظفون",
     "reports": "التقارير",
+    "analytics": "التحليلات",
     "helpCenter": "مركز المساعدة",
     "billing": "الفواتير",
     "tenants": "المستأجرون",
@@ -32,7 +34,8 @@
     "english": "English",
     "arabic": "العربية",
     "agentSandbox": "ساحة الاختبار للوكيل",
-    "myTenant": "المستأجر الخاص بي"
+    "myTenant": "المستأجر الخاص بي",
+    "clinic": "العيادة"
   },
   "calendar": {
     "title": "التقويم",

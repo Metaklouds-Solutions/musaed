@@ -2,17 +2,25 @@
  * Customers list page. Layout only; data from useCustomersList hook.
  */
 
-import { useMemo, useState } from 'react';
-import { PageHeader, EmptyState, TableFilters, TableSkeleton } from '../../../shared/ui';
+import { useMemo } from 'react';
+import { PageHeader, EmptyState, TableSkeleton, UnifiedFilterBar } from '../../../shared/ui';
 import { useCustomersList } from '../hooks';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
 import { CustomersTable } from '../components/CustomersTable';
 import { Users } from 'lucide-react';
+import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { useUrlQueryState } from '../../../shared/hooks/useUrlQueryState';
 
 export function CustomersPage() {
   const ready = useDelayedReady();
   const { user, customers } = useCustomersList();
-  const [search, setSearch] = useState('');
+  const { state, patchState, resetState } = useUrlQueryState({ q: '' });
+  const search = state.q;
+  const { saved, saveCurrent, apply, deleteFilter } = useSavedFilters({
+    pageKey: 'tenant-customers',
+    currentFilters: { q: search },
+    onApply: (filters) => patchState({ q: typeof filters.q === 'string' ? filters.q : '' }),
+  });
 
   const filteredCustomers = useMemo(() => {
     if (!search.trim()) return customers;
@@ -59,10 +67,15 @@ export function CustomersPage() {
         title="Customers"
         description="Customer list and interaction history."
       />
-      <TableFilters
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search by name or email…"
+      <UnifiedFilterBar
+        query={search}
+        onQueryChange={(q) => patchState({ q })}
+        searchPlaceholder="Search by name or email..."
+        savedFilters={saved}
+        onSaveFilter={saveCurrent}
+        onApplyFilter={apply}
+        onDeleteFilter={deleteFilter}
+        onReset={resetState}
       />
       <CustomersTable customers={filteredCustomers} />
     </div>

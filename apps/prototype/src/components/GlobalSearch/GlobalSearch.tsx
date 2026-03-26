@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, Users, Phone, UserPlus, Headphones, Command } from 'lucide-react';
 import { useSession } from '../../app/session/SessionContext';
 import { searchAdapter, type SearchResult } from '../../adapters';
+import { useAsyncData } from '../../shared/hooks/useAsyncData';
 import { cn } from '@/lib/utils';
 
 const TYPE_ICONS: Record<SearchResult['type'], React.ReactNode> = {
@@ -39,10 +40,17 @@ export function GlobalSearch({ className, placeholder, onOpenCommandPalette }: G
   const tenantId = user?.role === 'ADMIN' ? undefined : user?.tenantId;
   const isAdmin = user?.role === 'ADMIN';
 
-  const results = useMemo(
-    () => searchAdapter.search(query, tenantId, isAdmin),
-    [query, tenantId, isAdmin]
+  const { data: rawResults, loading: resultsLoading } = useAsyncData(
+    async () => {
+      const q = query.trim();
+      if (!q) return [] as SearchResult[];
+      const response = await Promise.resolve(searchAdapter.search(q, tenantId, isAdmin));
+      return Array.isArray(response) ? response : [];
+    },
+    [query, tenantId, isAdmin],
+    [] as SearchResult[],
   );
+  const results = useMemo(() => (Array.isArray(rawResults) ? rawResults : []), [rawResults]);
 
   useEffect(() => {
     setSelected(0);
@@ -100,8 +108,8 @@ export function GlobalSearch({ className, placeholder, onOpenCommandPalette }: G
           'relative flex items-center w-full rounded-full h-8 sm:h-9',
           'px-2.5 sm:px-3',
           'bg-(var(--header-search-bg))',
-          'shadow-[var(--header-search-shadow)]',
-          'focus-within:shadow-(var(--header-search-shadow-focus)) focus-within:ring-2 focus-within:ring-[var(--ds-primary)]/20',
+          'shadow-(var(--header-search-shadow-focus))',
+          'ring-2 ring-[var(--ds-primary)]/20',
           'transition-shadow duration-200'
         )}
       >
@@ -161,7 +169,7 @@ export function GlobalSearch({ className, placeholder, onOpenCommandPalette }: G
         >
           {results.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-(var(--text-muted))">
-              {t('common.noResults', { query })}
+              {resultsLoading ? t('common.loading', 'Loading...') : t('common.noResults', { query })}
             </div>
           ) : (
             results.map((r, i) => (

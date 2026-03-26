@@ -39,7 +39,7 @@ function getServiceStatus(
 /** Renders status cards for core platform services used by admin monitoring. */
 export function HealthDashboardSection({ systemHealth }: HealthDashboardSectionProps) {
   return (
-    <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+    <section className="rounded-[var(--radius-card)] card p-5">
       <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
         Health dashboard
       </h2>
@@ -53,7 +53,7 @@ export function HealthDashboardSection({ systemHealth }: HealthDashboardSectionP
           return (
             <div
               key={key}
-              className="flex items-start gap-3 p-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
+              className="flex items-start gap-3 p-4 rounded-lg panel-soft"
             >
               <div className="p-2 rounded-lg bg-[var(--bg-subtle)]">
                 <Icon size={20} className="text-[var(--text-muted)]" aria-hidden />

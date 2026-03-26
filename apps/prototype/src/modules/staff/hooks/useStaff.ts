@@ -1,23 +1,38 @@
 /**
- * Tenant staff hook. Tenant-scoped list.
+ * Tenant staff hook. Fetches from the centralized adapter (local or API).
  */
 
-import { useMemo, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSession } from '../../../app/session/SessionContext';
-import { staffAdapter } from '../../../adapters/local/staff.adapter';
+import { staffAdapter } from '../../../adapters';
+import type { StaffRow } from '../../../shared/types';
 
 export function useStaff() {
   const { user } = useSession();
-  const [refreshKey, setRefreshKey] = useState(0);
-
   const tenantId = user?.tenantId ?? null;
+  const [staff, setStaff] = useState<StaffRow[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const staff = useMemo(() => {
-    if (!tenantId) return [];
-    return staffAdapter.list(tenantId);
-  }, [tenantId, refreshKey]);
+  const fetchStaff = useCallback(async () => {
+    if (!tenantId) {
+      setStaff([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = staffAdapter.list(tenantId);
+      const data = result instanceof Promise ? await result : result;
+      setStaff(data ?? []);
+    } catch {
+      setStaff([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantId]);
 
-  const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
+  useEffect(() => {
+    fetchStaff();
+  }, [fetchStaff]);
 
-  return { staff, tenantId, refetch };
+  return { staff, tenantId, refetch: fetchStaff, loading };
 }

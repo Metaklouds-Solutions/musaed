@@ -15,9 +15,11 @@
     "dashboard": "Dashboard",
     "calendar": "Calendar",
     "calls": "Calls",
+    "bookings": "Bookings",
     "agent": "Agent",
     "staff": "Staff",
     "reports": "Reports",
+    "analytics": "Analytics",
     "helpCenter": "Help Center",
     "billing": "Billing",
     "tenants": "Tenants",
@@ -32,7 +34,8 @@
     "english": "English",
     "arabic": "العربية",
     "agentSandbox": "Agent Sandbox",
-    "myTenant": "My Tenant"
+    "myTenant": "My Tenant",
+    "clinic": "Clinic"
   },
   "calendar": {
     "title": "Calendar",

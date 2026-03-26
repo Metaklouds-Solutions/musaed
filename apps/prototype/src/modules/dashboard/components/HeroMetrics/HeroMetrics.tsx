@@ -44,11 +44,11 @@ export function HeroMetrics({ metrics, trend = [] }: HeroMetricsProps) {
   const trendDir = deriveTrend(trend);
 
   const cards = [
-    { label: 'Total bookings', value: m.totalBookings, trend: trendDir, sparklineData },
-    { label: 'Conversion rate', value: formatPercent(m.conversionRate), trend: undefined as const, sparklineData: undefined },
-    { label: 'Calls handled', value: m.callsHandled, trend: undefined as const, sparklineData: undefined },
-    { label: 'Escalation rate', value: formatPercent(m.escalationRate), trend: undefined as const, sparklineData: undefined },
-    { label: 'Cost saved', value: formatCurrency(m.costSaved), trend: trendDir, sparklineData },
+    { label: 'Total bookings', value: m.totalBookings, animateValue: m.totalBookings, trend: trendDir, sparklineData },
+    { label: 'Conversion rate', value: formatPercent(m.conversionRate), animateValue: m.conversionRate, decimals: 1, format: formatPercent },
+    { label: 'Calls handled', value: m.callsHandled, animateValue: m.callsHandled },
+    { label: 'Escalation rate', value: formatPercent(m.escalationRate), animateValue: m.escalationRate, decimals: 1, format: formatPercent },
+    { label: 'Cost saved', value: formatCurrency(m.costSaved), animateValue: m.costSaved, format: formatCurrency, trend: trendDir, sparklineData },
   ];
 
   return (
@@ -58,6 +58,9 @@ export function HeroMetrics({ metrics, trend = [] }: HeroMetricsProps) {
           key={card.label}
           label={card.label}
           value={card.value}
+          animateValue={card.animateValue}
+          format={card.format}
+          decimals={card.decimals}
           trend={card.trend}
           sparklineData={card.sparklineData}
         />

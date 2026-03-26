@@ -1,21 +1,22 @@
 /**
- * Tenant settings page. Tab switcher: Profile | Availability | Notifications | Features.
+ * Tenant settings page. Tab switcher: Profile | Availability | Notifications | Integrations | Agent | Support.
  * Relevant sections grouped into tabs (like Admin Settings).
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 import { PageHeader, Button } from '../../../shared/ui';
 import {
   AppointmentRemindersSection,
   ClinicProfileSection,
   NotificationsSection,
-  FeatureFlagsSection,
   ProviderAvailabilitySection,
   CustomPromptsSection,
-  PMSSection,
+  SupportSection,
 } from '../components';
-import { settingsAdapter, featureFlagsAdapter } from '../../../adapters';
+import { settingsAdapter } from '../../../adapters';
 import type { TenantSettings } from '../../../adapters/local/settings.adapter';
 import { useSession } from '../../../app/session/SessionContext';
 import {
@@ -24,13 +25,14 @@ import {
   Building2,
   CalendarRange,
   Bell,
-  Sparkles,
   Plug,
   Bot,
+  Construction,
+  Headphones,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type SettingsTab = 'profile' | 'availability' | 'notifications' | 'integrations' | 'agent' | 'features';
+type SettingsTab = 'profile' | 'availability' | 'notifications' | 'integrations' | 'agent' | 'support';
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: 'profile', label: 'Profile', icon: Building2 },
@@ -38,30 +40,57 @@ const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'integrations', label: 'Integrations', icon: Plug },
   { id: 'agent', label: 'Agent', icon: Bot },
-  { id: 'features', label: 'Features', icon: Sparkles },
+  { id: 'support', label: 'Support', icon: Headphones },
 ];
+
+const VALID_TABS = new Set<string>(TABS.map((t) => t.id));
+
+/** Type-guard to validate a URL search param as a valid tab ID. */
+function isSettingsTab(value: string | null): value is SettingsTab {
+  return value !== null && VALID_TABS.has(value);
+}
 
 export function SettingsPage() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-  const [settings, setSettings] = useState<TenantSettings>(() =>
-    settingsAdapter.getTenantSettings(tenantId)
+  const isAdminReadOnly = (user?.role ?? '').toUpperCase() === 'ADMIN';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    isSettingsTab(tabParam) ? tabParam : 'profile',
   );
-  const [featureFlags, setFeatureFlags] = useState<{ enableReports: boolean; enableCalendar: boolean }>({
-    enableReports: true,
-    enableCalendar: true,
-  });
+
+  const handleTabChange = useCallback(
+    (tab: SettingsTab) => {
+      setActiveTab(tab);
+      setSearchParams(tab === 'profile' ? {} : { tab }, { replace: true });
+    },
+    [setSearchParams],
+  );
+  const defaultSettings: TenantSettings = {
+    timezone: 'Asia/Riyadh',
+    locale: 'ar',
+    businessHours: 'Mon–Fri 9am–5pm',
+    notifications: { emailDigest: true, ticketAlerts: true, bookingReminders: true },
+    appointmentReminders: { advanceMinutes: 60, channel: 'email' },
+  };
+  const [settings, setSettings] = useState<TenantSettings>(defaultSettings);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (tenantId) {
-      setFeatureFlags(featureFlagsAdapter.getFeatureFlags(tenantId));
-    }
+    Promise.resolve(settingsAdapter.getTenantSettings(tenantId))
+      .then((s) => setSettings(s))
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load clinic settings';
+        toast.error(message);
+      });
   }, [tenantId]);
 
-  const handleSave = useCallback(() => {
-    settingsAdapter.saveTenantSettings(settings, tenantId);
+  const handleSave = useCallback(async () => {
+    await Promise.resolve(settingsAdapter.saveTenantSettings(settings, tenantId));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [settings, tenantId]);
@@ -102,7 +131,7 @@ export function SettingsPage() {
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={cn(
                 'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200',
                 activeTab === tab.id
@@ -139,7 +168,7 @@ export function SettingsPage() {
             transition={{ duration: 0.2 }}
             className="space-y-8 w-full"
           >
-            <ProviderAvailabilitySection tenantId={tenantId} />
+            <ProviderAvailabilitySection tenantId={tenantId} readOnly={isAdminReadOnly} />
           </motion.div>
         )}
         {activeTab === 'notifications' && (
@@ -171,7 +200,18 @@ export function SettingsPage() {
             transition={{ duration: 0.2 }}
             className="space-y-8 max-w-3xl"
           >
-            <PMSSection tenantId={tenantId} />
+            <div
+              className={cn(
+                'flex flex-col items-center justify-center gap-3 rounded-2xl border p-12 text-center',
+                'border-[var(--border)] bg-[var(--bg-surface)]'
+              )}
+            >
+              <Construction size={40} className="text-[var(--text-secondary)]" aria-hidden />
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Coming Soon</h3>
+              <p className="max-w-sm text-sm text-[var(--text-secondary)]">
+                PMS integration is under development. Stay tuned for updates.
+              </p>
+            </div>
           </motion.div>
         )}
         {activeTab === 'agent' && (
@@ -186,20 +226,16 @@ export function SettingsPage() {
             <CustomPromptsSection tenantId={tenantId} settings={settings} onChange={setSettings} />
           </motion.div>
         )}
-        {activeTab === 'features' && (
+        {activeTab === 'support' && (
           <motion.div
-            key="features"
+            key="support"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="space-y-8 max-w-3xl"
+            className="space-y-8"
           >
-            <FeatureFlagsSection
-              tenantId={tenantId}
-              flags={featureFlags}
-              onChange={setFeatureFlags}
-            />
+            <SupportSection />
           </motion.div>
         )}
       </AnimatePresence>

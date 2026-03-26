@@ -46,24 +46,44 @@ function getStaffName(userId: string): string {
 }
 
 export const bookingsAdapter = {
-  getBookings(tenantId: string | undefined): Booking[] {
+  async getBookings(
+    tenantId: string | undefined,
+    _filters?: { status?: string; date?: string; start?: string; end?: string }
+  ): Promise<Booking[]> {
     return filterByTenant(seedBookings, tenantId);
   },
   getBookingById(id: string, tenantId: string | undefined): Booking | undefined {
     const bookings = filterByTenant(seedBookings, tenantId);
     return bookings.find((b) => b.id === id);
   },
+  updateStatus(_id: string, _status: string): Promise<Booking | null> {
+    return Promise.resolve(null);
+  },
+  cancelBooking(_id: string): Promise<Booking | null> {
+    return Promise.resolve(null);
+  },
+  rescheduleBooking(
+    _id: string,
+    _date: string,
+    _timeSlot: string
+  ): Promise<Booking | null> {
+    return Promise.resolve(null);
+  },
+  createBooking(_data: Partial<Booking>): Promise<Booking | null> {
+    return Promise.resolve(null);
+  },
 
   /** Appointments for calendar (from bookings). */
-  getCalendarAppointments(
+  async getCalendarAppointments(
     tenantId: string | undefined,
     start: Date,
     end: Date
-  ): CalendarAppointment[] {
+  ): Promise<CalendarAppointment[]> {
     const bookings = filterByTenant(seedBookings, tenantId);
     const startMs = start.getTime();
     const endMs = end.getTime();
-    return bookings
+    return Promise.resolve(
+      bookings
       .map((b) => {
         const d = new Date(b.createdAt);
         const ms = d.getTime();
@@ -81,16 +101,17 @@ export const bookingsAdapter = {
           status: b.status,
         };
       })
-      .filter((a): a is CalendarAppointment => a !== null);
+      .filter((a): a is CalendarAppointment => a !== null)
+    );
   },
 
   /** Availability blocks from staff_profiles (doctor schedules). */
-  getAvailabilitySlots(
+  async getAvailabilitySlots(
     tenantId: string | undefined,
     start: Date,
     end: Date
-  ): CalendarAvailability[] {
-    const profiles = tenantId ? staffProfileAdapter.getProfiles(tenantId) : [];
+  ): Promise<CalendarAvailability[]> {
+    const profiles = tenantId ? await staffProfileAdapter.getProfiles(tenantId) : [];
     const slots: CalendarAvailability[] = [];
     const cur = new Date(start);
     cur.setHours(0, 0, 0, 0);
@@ -120,6 +141,6 @@ export const bookingsAdapter = {
       }
       cur.setDate(cur.getDate() + 1);
     }
-    return slots;
+    return Promise.resolve(slots);
   },
 };

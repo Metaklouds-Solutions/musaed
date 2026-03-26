@@ -2,7 +2,7 @@
  * Webhook event log. Table of webhook calls with status, timestamp, retry option.
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   Table,
   TableHeader,
@@ -14,9 +14,13 @@ import {
   Badge,
   DataTable,
 } from '../../../../shared/ui';
-import type { WebhookEvent, WebhookEventStatus } from '../../../../adapters/local/webhooks.adapter';
+import type { WebhookEventStatus } from '../../../../adapters/types/webhook-events';
 import { RotateCw } from 'lucide-react';
 import { useAdminWebhookEvents } from '../../hooks';
+import {
+  getWebhookPublicOrigin,
+  WEBHOOK_INBOUND_PATHS,
+} from '../../../../lib/webhookPublicUrls';
 
 function formatDate(iso: string): string {
   const parsed = new Date(iso);
@@ -37,6 +41,10 @@ function StatusBadge({ status }: { status: WebhookEventStatus }) {
 /** Renders webhook delivery log with retry action for failed events. */
 export function WebhookEventLogSection() {
   const { events, retryingId, retryWebhook } = useAdminWebhookEvents();
+  const isApiMode = events.every(
+    (event) => event.status === 'success' && event.statusCode === 200 && event.retryCount === 0,
+  );
+  const origin = getWebhookPublicOrigin();
 
   const handleRetry = useCallback((id: string) => {
     retryWebhook(id);
@@ -56,8 +64,21 @@ export function WebhookEventLogSection() {
       <div className="p-4 border-b border-[var(--border-subtle)]">
         <h3 className="font-semibold text-[var(--text-primary)]">Webhook Event Log</h3>
         <p className="text-sm text-[var(--text-muted)] mt-1">
-          Recent webhook calls. Retry failed deliveries.
+          {isApiMode
+            ? 'Successfully processed webhook events (idempotency ledger). Replay is not available — duplicates are ignored by design.'
+            : 'Recent webhook calls. Retry failed deliveries.'}
         </p>
+        <div className="text-xs text-[var(--text-muted)] mt-3 space-y-1">
+          <p>
+            Retell: <code>{origin}{WEBHOOK_INBOUND_PATHS.retell}</code>
+          </p>
+          <p>
+            Stripe: <code>{origin}{WEBHOOK_INBOUND_PATHS.stripe}</code>
+          </p>
+          <p>
+            Cal.com: <code>{origin}{WEBHOOK_INBOUND_PATHS.calcom}</code>
+          </p>
+        </div>
       </div>
       <DataTable minWidth="min-w-[720px]">
         <Table>

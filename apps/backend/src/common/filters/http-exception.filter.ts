@@ -1,0 +1,95 @@
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import { Response, Request } from 'express';
+import * as Sentry from '@sentry/node';
+import type { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
+
+interface BodyParserLikeError {
+  status?: number;
+  type?: string;
+  message?: string;
+}
+
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(GlobalExceptionFilter.name);
+
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    const isMongoDuplicateKey =
+      typeof exception === 'object' &&
+      exception !== null &&
+      'code' in exception &&
+      (exception as { code?: unknown }).code === 11000;
+    const bodyParserError =
+      typeof exception === 'object' && exception !== null
+        ? (exception as BodyParserLikeError)
+        : undefined;
+    const isPayloadTooLarge =
+      bodyParserError?.status === HttpStatus.PAYLOAD_TOO_LARGE ||
+      bodyParserError?.type === 'entity.too.large';
+
+    const status = isPayloadTooLarge
+      ? HttpStatus.PAYLOAD_TOO_LARGE
+      : isMongoDuplicateKey
+      ? HttpStatus.CONFLICT
+      : exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message = isPayloadTooLarge
+      ? {
+          message: 'Request payload too large',
+          error: 'Payload Too Large',
+        }
+      : isMongoDuplicateKey
+      ? {
+          message: 'Duplicate value for a unique field',
+          error: 'Conflict',
+        }
+      : exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
+
+    if (status >= 500) {
+      const errMessage =
+        exception instanceof Error ? exception.message : 'Unknown error';
+      this.logger.error(
+        `${request.method} ${request.url} — ${status} — ${errMessage}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+
+      if (process.env.SENTRY_DSN) {
+        const authReq = request as AuthenticatedRequest;
+        Sentry.withScope((scope) => {
+          scope.setTag('path', request.url);
+          scope.setTag('method', request.method);
+          scope.setTag('status', String(status));
+          const requestId =
+            request.header('x-request-id') ??
+            request.header('x-correlation-id');
+          if (requestId) scope.setTag('requestId', requestId);
+          if (authReq.tenantId) scope.setTag('tenantId', authReq.tenantId);
+          if (authReq.user?._id) scope.setUser({ id: authReq.user._id });
+          Sentry.captureException(exception);
+        });
+      }
+    }
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      ...(typeof message === 'string' ? { message } : message),
+    });
+  }
+}

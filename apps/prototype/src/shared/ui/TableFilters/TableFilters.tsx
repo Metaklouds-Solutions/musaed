@@ -182,6 +182,8 @@ export function TableFilters({
             type="search"
             value={search ?? ''}
             onChange={(e) => onSearchChange(e.target.value)}
+            autoComplete="off"
+            name="tenant-list-search"
             placeholder={searchPlaceholder}
             className={cn(
               'w-full pl-9 pr-4 py-2 rounded-lg text-sm',

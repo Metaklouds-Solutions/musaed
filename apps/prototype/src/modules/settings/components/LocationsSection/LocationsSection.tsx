@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Button } from '../../../../shared/ui';
 import { locationsAdapter } from '../../../../adapters';
 import type { Location } from '../../../../shared/types/entities';
@@ -29,31 +30,40 @@ export function LocationsSection({ tenantId }: LocationsSectionProps) {
     if (tenantId) setLocations(locationsAdapter.getByTenant(tenantId));
   }, [tenantId]);
 
-  const handleAdd = useCallback(() => {
+  const handleAdd = useCallback(async () => {
     if (!tenantId || !newName.trim()) return;
-    locationsAdapter.create(
-      {
-        name: newName.trim(),
-        address: newAddress.trim() || undefined,
-        phone: newPhone.trim() || undefined,
-        hours: newHours.trim() || undefined,
-      },
-      tenantId
-    );
-    setNewName('');
-    setNewAddress('');
-    setNewPhone('');
-    setNewHours('');
-    setAdding(false);
-    refresh();
+    try {
+      await locationsAdapter.create(
+        {
+          name: newName.trim(),
+          address: newAddress.trim() || undefined,
+          phone: newPhone.trim() || undefined,
+          hours: newHours.trim() || undefined,
+        },
+        tenantId
+      );
+      setNewName('');
+      setNewAddress('');
+      setNewPhone('');
+      setNewHours('');
+      setAdding(false);
+      refresh();
+    } catch {
+      toast.error('Could not save location');
+    }
   }, [tenantId, newName, newAddress, newPhone, newHours, refresh]);
 
   const handleRemove = useCallback(
-    (id: string) => {
-      locationsAdapter.remove(id);
-      refresh();
+    async (id: string) => {
+      if (!tenantId) return;
+      try {
+        await locationsAdapter.remove(id, tenantId);
+        refresh();
+      } catch {
+        toast.error('Could not remove location');
+      }
     },
-    [refresh]
+    [refresh, tenantId]
   );
 
   if (!tenantId) return null;
@@ -88,7 +98,7 @@ export function LocationsSection({ tenantId }: LocationsSectionProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleRemove(loc.id)}
+              onClick={() => void handleRemove(loc.id)}
               aria-label={`Remove ${loc.name}`}
             >
               <Trash2 size={16} aria-hidden />

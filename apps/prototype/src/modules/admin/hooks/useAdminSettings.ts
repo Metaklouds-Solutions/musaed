@@ -1,18 +1,54 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { settingsAdapter, reportsAdapter } from '../../../adapters';
 import type { AdminSettings } from '../../../adapters/local/settings.adapter';
 import type { ScheduledReportConfig } from '../../../adapters/local/reports.adapter';
 
+const defaultAdminSettings: AdminSettings = {
+  adminUsers: [],
+  integrations: [],
+  retentionPolicies: [
+    { id: 'rp_1', name: 'Call transcripts', days: 90, enabled: true },
+    { id: 'rp_2', name: 'Audit logs', days: 365, enabled: true },
+  ],
+};
+
 /** Admin settings hook for loading and saving settings and report schedule config. */
 export function useAdminSettings() {
-  const [settings, setSettings] = useState<AdminSettings>(() =>
-    settingsAdapter.getAdminSettings()
-  );
-  const [scheduledConfig, setScheduledConfig] = useState<ScheduledReportConfig>(() =>
-    reportsAdapter.getScheduledReportConfig()
-  );
+  const [settings, setSettings] = useState<AdminSettings>(defaultAdminSettings);
+  const [scheduledConfig, setScheduledConfig] = useState<ScheduledReportConfig>({
+    enabled: false,
+    frequency: 'weekly',
+    recipients: [],
+    dayOfWeek: 1,
+    dayOfMonth: 1,
+  });
   const [saved, setSaved] = useState(false);
   const savedTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    Promise.resolve(settingsAdapter.getAdminSettings())
+      .then((s) => setSettings(s))
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load admin settings';
+        toast.error(message);
+      });
+  }, []);
+
+  useEffect(() => {
+    Promise.resolve(reportsAdapter.getScheduledReportConfig())
+      .then((c) => setScheduledConfig(c))
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load scheduled report settings';
+        toast.error(message);
+      });
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -22,9 +58,11 @@ export function useAdminSettings() {
     };
   }, []);
 
-  const save = useCallback(() => {
-    settingsAdapter.saveAdminSettings(settings);
-    reportsAdapter.setScheduledReportConfig(scheduledConfig);
+  const save = useCallback(async () => {
+    await Promise.resolve(settingsAdapter.saveAdminSettings(settings));
+    await Promise.resolve(
+      reportsAdapter.setScheduledReportConfig(scheduledConfig),
+    );
     setSaved(true);
     if (savedTimerRef.current !== null) {
       window.clearTimeout(savedTimerRef.current);

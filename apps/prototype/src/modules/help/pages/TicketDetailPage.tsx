@@ -8,14 +8,30 @@ import { TicketChatThread } from '../../shared/support';
 import { useHelpCenter } from '../hooks/useHelpCenter';
 import { useSession } from '../../../app/session/SessionContext';
 import { ArrowLeft } from 'lucide-react';
+import { useAsyncData } from '../../../shared/hooks/useAsyncData';
 
 export function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useSession();
   const { getTicket, addMessage } = useHelpCenter(user?.tenantId);
+  const { data: ticket, loading } = useAsyncData(
+    () => (id ? getTicket(id) : null),
+    [id, getTicket],
+    null,
+  );
+  const statusLabel = typeof ticket?.status === 'string' ? ticket.status.replace('_', ' ') : 'open';
 
-  const ticket = id ? getTicket(id) : null;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Ticket" description="Loading…" />
+        <div className="rounded-[var(--radius-card)] card-glass p-8 text-center">
+          <p className="text-[var(--text-muted)] text-sm">Loading ticket…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!id || !ticket) {
     return (
@@ -50,7 +66,7 @@ export function TicketDetailPage() {
         </Button>
         <PageHeader
           title={ticket.title}
-          description={`${ticket.priority} · ${ticket.status.replace('_', ' ')}`}
+          description={`${ticket.priority} · ${statusLabel}`}
         />
       </div>
 
@@ -60,7 +76,7 @@ export function TicketDetailPage() {
             {ticket.priority}
           </Badge>
           <Badge status={ticket.status === 'resolved' ? 'active' : 'pending'}>
-            {ticket.status.replace('_', ' ')}
+            {statusLabel}
           </Badge>
         </div>
         <div className="flex-1 min-h-[300px]">

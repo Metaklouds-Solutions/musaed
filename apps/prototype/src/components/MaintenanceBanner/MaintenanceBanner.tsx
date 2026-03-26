@@ -7,10 +7,26 @@ import { maintenanceAdapter, MAINTENANCE_CHANGED } from '../../adapters';
 import { Wrench } from 'lucide-react';
 
 export function MaintenanceBanner() {
-  const [status, setStatus] = useState(() => maintenanceAdapter.getStatus());
+  const [status, setStatus] = useState<{ enabled: boolean; message: string }>({ enabled: false, message: '' });
 
   useEffect(() => {
-    const handler = () => setStatus(maintenanceAdapter.getStatus());
+    const load = maintenanceAdapter.getStatus();
+    if (load instanceof Promise) {
+      load.then(setStatus);
+    } else {
+      setStatus(load);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      const load = maintenanceAdapter.getStatus();
+      if (load instanceof Promise) {
+        load.then(setStatus);
+      } else {
+        setStatus(load);
+      }
+    };
     window.addEventListener(MAINTENANCE_CHANGED, handler);
     return () => window.removeEventListener(MAINTENANCE_CHANGED, handler);
   }, []);

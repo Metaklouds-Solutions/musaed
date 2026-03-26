@@ -1,27 +1,16 @@
 /**
- * Tenant agent overview page. Status, skills, sync, A/B testing.
+ * Tenant agent overview page. Status and sync.
  */
 
-import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { PageHeader, EmptyState } from '../../../shared/ui';
 import { Bot } from 'lucide-react';
 import { AgentStatusCard } from '../components/AgentStatusCard';
-import { AgentSkillsPanel } from '../components/AgentSkillsPanel';
 import { AgentSyncStatus } from '../components/AgentSyncStatus';
-import { AgentABTestSection } from '../components/AgentABTestSection/AgentABTestSection';
-import { abTestAdapter } from '../../../adapters';
 import { useAgent } from '../hooks';
 
 export function AgentPage() {
-  const { agent, tenantId } = useAgent();
-  const [abConfig, setAbConfig] = useState(() =>
-    tenantId ? abTestAdapter.getConfig(tenantId) : { enabled: false, splitPercentA: 50, versionALabel: 'Version A', versionBLabel: 'Version B' }
-  );
-
-  useEffect(() => {
-    if (tenantId) setAbConfig(abTestAdapter.getConfig(tenantId));
-  }, [tenantId]);
+  const { agent, tenantId, loading } = useAgent();
 
   if (!tenantId) {
     return (
@@ -37,6 +26,16 @@ export function AgentPage() {
   }
 
   if (!agent) {
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          <PageHeader title="Agent" description="Agent overview" />
+          <div className="rounded-[var(--radius-card)] card-glass p-8 text-center">
+            <p className="text-sm text-[var(--text-muted)]">Loading agent...</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="space-y-6">
         <PageHeader title="Agent" description="Agent overview" />
@@ -60,7 +59,7 @@ export function AgentPage() {
       >
         <PageHeader
           title="Agent Overview"
-          description="Voice agent status, skills, and sync"
+          description="Voice agent status and sync"
         />
       </motion.header>
 
@@ -72,22 +71,6 @@ export function AgentPage() {
       >
         <AgentStatusCard agent={agent} />
         <AgentSyncStatus agent={agent} />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <AgentSkillsPanel agent={agent} />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.12 }}
-      >
-        <AgentABTestSection tenantId={tenantId} config={abConfig} onChange={setAbConfig} />
       </motion.div>
     </div>
   );

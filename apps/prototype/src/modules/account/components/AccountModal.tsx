@@ -5,10 +5,12 @@
 
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Modal, ModalHeader } from '../../../shared/ui';
 import { useSession } from '../../../app/session/SessionContext';
 import { useAccountModal } from '../../../app/account/AccountModalContext';
 import { gdprAdapter } from '../../../adapters';
+import { api } from '../../../lib/apiClient';
 import { User, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProfileTab } from './AccountModal/ProfileTab';
@@ -18,7 +20,7 @@ type AccountTab = 'profile' | 'security';
 type SecuritySubTab = 'password' | 'two-factor' | 'session';
 
 export function AccountModal() {
-  const { user, logout } = useSession();
+  const { user, logout, updateUser } = useSession();
   const navigate = useNavigate();
   const { open, closeModal } = useAccountModal();
   const [activeTab, setActiveTab] = useState<AccountTab>('profile');
@@ -27,32 +29,69 @@ export function AccountModal() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  const handleExportMyData = useCallback(() => {
-    if (user) {
-      gdprAdapter.exportUserData(user);
+  const handleExportMyData = useCallback(async () => {
+    if (!user) return;
+    try {
+      await gdprAdapter.exportUserData(user);
       closeModal();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Export failed';
+      toast.error(message);
     }
   }, [user, closeModal]);
 
-  const handleDeleteAccount = useCallback(() => {
+  const handleDeleteAccount = useCallback(async () => {
     if (!user) return;
-    gdprAdapter.deleteUserData(user.id, () => {
-      closeModal();
-      logout();
-      navigate('/login');
-    });
+    try {
+      await gdprAdapter.deleteUserData(user.id, () => {
+        closeModal();
+        logout();
+        navigate('/login');
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed';
+      toast.error(message);
+    }
   }, [user, closeModal, logout, navigate]);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword || !newPassword) return;
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setPasswordSaved(true);
-    setTimeout(() => setPasswordSaved(false), 2000);
+    if (newPassword !== confirmPassword || !newPassword || !currentPassword) {
+      toast.error('Passwords do not match or are empty.');
+      return;
+    }
+    try {
+      setIsSavingPassword(true);
+      await api.post('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordSaved(true);
+      toast.success('Password updated successfully');
+      setTimeout(() => setPasswordSaved(false), 2000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to update password';
+      toast.error(message);
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
+
+  const handleUpdateProfile = async (updates: { name?: string; avatarUrl?: string }) => {
+    try {
+      const updated = await api.patch<{ name: string; avatarUrl?: string }>('/auth/me', updates);
+      updateUser(updated);
+      toast.success('Profile updated successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update profile');
+      throw err;
+    }
   };
 
   if (!user) return null;
@@ -90,7 +129,11 @@ export function AccountModal() {
 
         <div className="flex-1 min-w-0 overflow-y-auto max-h-[calc(90vh-80px)]">
           {activeTab === 'profile' && (
-            <ProfileTab user={user} onExportMyData={handleExportMyData} />
+            <ProfileTab 
+              user={user} 
+              onExportMyData={handleExportMyData} 
+              onUpdateProfile={handleUpdateProfile} 
+            />
           )}
           {activeTab === 'security' && (
             <SecurityTab

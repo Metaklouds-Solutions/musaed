@@ -13,6 +13,18 @@ import { defineConfig, loadEnv } from 'vite';
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  if (mode === 'production') {
+    if (env.VITE_DATA_MODE !== 'api') {
+      throw new Error(
+        'Production build requires VITE_DATA_MODE=api. Set it in .env.production so the app uses real API adapters, not local mocks.',
+      );
+    }
+    if (!env.VITE_API_URL?.trim()) {
+      throw new Error(
+        'Production build requires VITE_API_URL (e.g. https://api.example.com/api).',
+      );
+    }
+  }
   return {
     plugins: [
       react(),
@@ -54,15 +66,16 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
+      /** One React instance so context (e.g. SessionProvider) is shared across the tree. */
+      dedupe: ['react', 'react-dom'],
+    },
+    optimizeDeps: {
+      include: ['socket.io-client'],
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
+      port: Number(env.VITE_PORT) || 3002,
+      strictPort: false,
       hmr: process.env.DISABLE_HMR !== 'true',
-      /**
-       * Allowed hosts for Vite dev server. Add external tunnel hosts here for development access.
-       * This enables serving via "noncancelable-natalie-scripturally.ngrok-free.dev".
-       */
       allowedHosts: ["noncancelable-natalie-scripturally.ngrok-free.dev"],
     },
   };

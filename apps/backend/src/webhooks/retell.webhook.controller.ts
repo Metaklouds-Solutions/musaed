@@ -1,0 +1,233 @@
+import {
+  Controller,
+  Post,
+  Req,
+  Res,
+  Headers,
+  HttpStatus,
+  Logger,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
+import { Request } from 'express';
+import { WebhooksService } from './webhooks.service';
+import { RetellWebhookDto } from './dto/retell-webhook.dto';
+import { WebhookQueueService } from '../queue/webhook-queue.service';
+import { MetricsService } from '../metrics/metrics.service';
+
+/** Maximum age of webhook timestamp in seconds (0 = disabled). */
+const DEFAULT_TIMESTAMP_MAX_AGE_SEC = 0;
+
+/**
+ * Constant-time comparison of two hex strings.
+ * Prevents timing attacks on webhook signature verification.
+ */
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  if (!/^[a-f0-9]+$/i.test(a) || !/^[a-f0-9]+$/i.test(b)) return false;
+  const bufA = Buffer.from(a, 'hex');
+  const bufB = Buffer.from(b, 'hex');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+@Controller('webhooks/retell')
+export class RetellWebhookController {
+  private readonly logger = new Logger(RetellWebhookController.name);
+  private readonly webhookSecret: string;
+  private readonly webhookSecretLegacy: string;
+  private readonly timestampMaxAgeSec: number;
+
+  constructor(
+    private webhooksService: WebhooksService,
+    private webhookQueue: WebhookQueueService,
+    private metrics: MetricsService,
+    config: ConfigService,
+  ) {
+    this.webhookSecret = config.get<string>('RETELL_WEBHOOK_SECRET', '').trim();
+    this.webhookSecretLegacy = config
+      .get<string>('RETELL_WEBHOOK_SECRET_LEGACY', '')
+      .trim();
+    const tsMax = config.get<string>('WEBHOOK_TIMESTAMP_MAX_AGE_SEC');
+    this.timestampMaxAgeSec = tsMax
+      ? parseInt(tsMax, 10)
+      : DEFAULT_TIMESTAMP_MAX_AGE_SEC;
+    if (
+      !Number.isFinite(this.timestampMaxAgeSec) ||
+      this.timestampMaxAgeSec < 0
+    ) {
+      this.timestampMaxAgeSec = DEFAULT_TIMESTAMP_MAX_AGE_SEC;
+    }
+  }
+
+  @Post()
+  async handleWebhook(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('x-retell-signature') signature?: string,
+    @Headers('x-retell-timestamp') timestampHeader?: string,
+  ) {
+    if (this.timestampMaxAgeSec > 0 && !timestampHeader) {
+      throw new ForbiddenException('Missing webhook timestamp');
+    }
+
+    if (this.webhookSecret) {
+      if (!signature) {
+        throw new ForbiddenException('Missing webhook signature');
+      }
+
+      if (this.timestampMaxAgeSec > 0) {
+        const timestampValue = timestampHeader ?? '';
+        const ts = parseInt(timestampValue, 10);
+        if (!Number.isFinite(ts)) {
+          throw new ForbiddenException('Invalid webhook timestamp');
+        }
+        const ageSec = Math.floor(Date.now() / 1000) - ts;
+        if (ageSec < 0 || ageSec > this.timestampMaxAgeSec) {
+          this.logger.warn(
+            `Retell webhook rejected: timestamp outside allowed window (age=${ageSec}s)`,
+          );
+          throw new ForbiddenException('Webhook timestamp expired or invalid');
+        }
+      }
+
+      const rawBody =
+        req.body instanceof Buffer
+          ? req.body.toString('utf8')
+          : JSON.stringify(req.body);
+      const expected = crypto
+        .createHmac('sha256', this.webhookSecret)
+        .update(rawBody)
+        .digest('hex');
+
+      let valid = timingSafeEqualHex(signature, expected);
+      if (!valid && this.webhookSecretLegacy.length > 0) {
+        const expectedLegacy = crypto
+          .createHmac('sha256', this.webhookSecretLegacy)
+          .update(rawBody)
+          .digest('hex');
+        valid = timingSafeEqualHex(signature, expectedLegacy);
+        if (valid) {
+          this.logger.log(
+            'Retell webhook verified with legacy secret (rotation in progress)',
+          );
+        }
+      }
+
+      if (!valid) {
+        this.logger.error('Retell webhook signature verification failed');
+        throw new ForbiddenException('Invalid webhook signature');
+      }
+    } else {
+      this.logger.warn(
+        'RETELL_WEBHOOK_SECRET not configured — skipping signature verification',
+      );
+    }
+
+    let body: RetellWebhookDto;
+    try {
+      body =
+        req.body instanceof Buffer
+          ? JSON.parse(req.body.toString('utf8'))
+          : req.body;
+    } catch {
+      throw new BadRequestException('Invalid JSON payload');
+    }
+
+    this.logger.debug(
+      `Retell payload parsed: event=${body.event ?? 'unknown'} metadataKeys=${this.listObjectKeys(body.metadata).join(',') || 'none'} callMetadataKeys=${this.listObjectKeys(body.call?.metadata).join(',') || 'none'}`,
+    );
+
+    const eventType = body.event;
+    this.metrics.recordWebhookReceived('retell');
+    const eventId = this.webhooksService.getRetellEventId(body);
+
+    const queued = await this.tryEnqueue({
+      source: 'retell',
+      eventId,
+      eventType,
+      payload: body as unknown as Record<string, unknown>,
+    });
+    if (queued) {
+      res.status(HttpStatus.ACCEPTED);
+      return { received: true, queued: true };
+    }
+
+    return this.processInline(body, eventId, eventType);
+  }
+
+  private async tryEnqueue(payload: {
+    source: 'retell';
+    eventId: string;
+    eventType: string;
+    payload: Record<string, unknown>;
+  }): Promise<boolean> {
+    if (!this.webhookQueue.isEnabled()) {
+      return false;
+    }
+
+    try {
+      const jobId = await this.webhookQueue.add(payload);
+      if (jobId) {
+        return true;
+      }
+      this.logger.warn(
+        'Retell webhook queue enabled but add() returned no job id; falling back to inline processing',
+      );
+      return false;
+    } catch (error) {
+      this.logger.error(
+        'Retell webhook enqueue failed',
+        error instanceof Error ? error.stack : String(error),
+      );
+      return false;
+    }
+  }
+
+  private async processInline(
+    body: RetellWebhookDto,
+    eventId: string,
+    eventType: string,
+  ): Promise<Record<string, boolean>> {
+    const isDuplicate = await this.webhooksService.isDuplicateEvent(
+      eventId,
+      'retell',
+      eventType,
+    );
+    if (isDuplicate) {
+      return { received: true, duplicate: true };
+    }
+
+    this.logger.log(`Retell event received: ${eventType}`);
+    switch (eventType) {
+      case 'call_started':
+        await this.webhooksService.handleRetellCallStarted(body);
+        break;
+      case 'call_ended':
+        await this.webhooksService.handleRetellCallEnded(body);
+        break;
+      case 'call_analyzed':
+        await this.webhooksService.handleRetellCallAnalyzed(body);
+        break;
+      case 'alert_triggered':
+        await this.webhooksService.handleRetellAlertTriggered(body);
+        break;
+      default:
+        this.logger.log(`Unhandled Retell event: ${eventType}`);
+    }
+
+    await this.webhooksService.recordProcessedEvent(eventId, 'retell', eventType);
+    return { received: true };
+  }
+
+  private listObjectKeys(value: unknown): string[] {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return [];
+    }
+    return Object.keys(value as Record<string, unknown>).sort();
+  }
+}

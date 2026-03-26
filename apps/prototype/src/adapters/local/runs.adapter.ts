@@ -24,7 +24,7 @@ export const runsAdapter = {
   /**
    * List all runs (cross-tenant). Optional tenant filter.
    */
-  listRuns(tenantId?: string): AdminRunRow[] {
+  async listRuns(tenantId?: string): Promise<AdminRunRow[]> {
     let runs = seedAgentRuns;
     if (tenantId) {
       runs = runs.filter((r) => r.tenantId === tenantId);
@@ -43,14 +43,14 @@ export const runsAdapter = {
   /**
    * Get run by ID.
    */
-  getRun(id: string): AgentRun | null {
+  async getRun(id: string): Promise<AgentRun | null> {
     return seedAgentRuns.find((r) => r.id === id) ?? null;
   },
 
   /**
    * Get run by call ID for tenant call detail (auditor view). Optional tenantId for tenant scoping.
    */
-  getRunByCallId(callId: string, tenantId?: string): AgentRun | null {
+  async getRunByCallId(callId: string, tenantId?: string): Promise<AgentRun | null> {
     let runs = seedAgentRuns.filter((r) => r.callId === callId);
     if (tenantId) runs = runs.filter((r) => r.tenantId === tenantId);
     return runs[0] ?? null;
@@ -59,7 +59,7 @@ export const runsAdapter = {
   /**
    * Get run events for debug console.
    */
-  getRunEvents(runId: string): RunEvent[] {
+  async getRunEvents(runId: string, _tenantId?: string): Promise<RunEvent[]> {
     return seedRunEvents
       .filter((e) => e.runId === runId)
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());

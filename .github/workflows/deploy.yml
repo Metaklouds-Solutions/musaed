@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       prototype: ${{ steps.changes.outputs.prototype }}
+      backend: ${{ steps.changes.outputs.backend }}
       website: ${{ steps.changes.outputs.website }}
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +32,11 @@ jobs:
           filters: |
             prototype:
               - 'apps/prototype/**'
+              - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+            backend:
+              - 'apps/backend/**'
               - 'pnpm-lock.yaml'
               - 'package.json'
               - 'pnpm-workspace.yaml'
@@ -87,6 +93,56 @@ jobs:
             --region ${{ env.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated
+
+  deploy-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY }} --quiet
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "env=prod" >> $GITHUB_OUTPUT
+          else
+            echo "env=uat" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push image
+        working-directory: .
+        run: |
+          IMAGE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/musaed/backend:${{ steps.env.outputs.env }}-${{ github.sha }}"
+          docker build -f apps/backend/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy musaed-backend-${{ steps.env.outputs.env }} \
+            --image ${{ env.IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --no-allow-unauthenticated \
+            --set-env-vars "NODE_ENV=production,SENTRY_ENVIRONMENT=${{ steps.env.outputs.env }},QUEUE_WEBHOOKS_ENABLED=true,QUEUE_EMAIL_ENABLED=true,QUEUE_NOTIFICATIONS_ENABLED=true" \
+            --set-secrets "MONGODB_URI=MONGODB_URI:latest,JWT_SECRET=JWT_SECRET:latest,REDIS_URL=REDIS_URL:latest,RETELL_API_KEY=RETELL_API_KEY:latest,RETELL_TOOL_API_KEY=RETELL_TOOL_API_KEY:latest,RETELL_WEBHOOK_SECRET=RETELL_WEBHOOK_SECRET:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,SMTP_USER=SMTP_USER:latest,SMTP_PASS=SMTP_PASS:latest,CALCOM_WEBHOOK_SECRET=CALCOM_WEBHOOK_SECRET:latest,METRICS_API_KEY=METRICS_API_KEY:latest"
 
   deploy-website:
     needs: detect-changes
