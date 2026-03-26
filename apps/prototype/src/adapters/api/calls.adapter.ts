@@ -16,10 +16,10 @@ interface CallsApiResponse {
 
 /** Maps backend sentiment string to frontend sentimentScore (0–1). */
 function sentimentToScore(sentiment: string | null | undefined): number {
-  const s = (sentiment ?? 'neutral').toLowerCase().trim();
+  const s = (sentiment ?? 'unknown').toLowerCase().trim();
   if (s === 'positive') return 0.8;
   if (s === 'negative') return 0.2;
-  return 0.5; // neutral, unknown, or empty
+  return 0.5; // neutral/unknown
 }
 
 /** Maps backend outcome to bookingCreated and escalationFlag. */
@@ -63,6 +63,17 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
       ? callCostRaw
       : null;
 
+  const latencyRaw = c.latencyE2e;
+  const latencyE2e =
+    latencyRaw != null && typeof latencyRaw === 'number' && !Number.isNaN(latencyRaw)
+      ? latencyRaw
+      : null;
+  const llmTokensRaw = c.llmTokensTotal;
+  const llmTokensTotal =
+    llmTokensRaw != null && typeof llmTokensRaw === 'number' && !Number.isNaN(llmTokensRaw)
+      ? llmTokensRaw
+      : null;
+
   return {
     id: normalizeEntityId(c._id) ?? callId,
     callId: typeof c.callId === 'string' ? c.callId : undefined,
@@ -70,6 +81,16 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
     customerId: resolveCustomerId(metadata),
     duration: c.durationMs != null ? Math.round(Number(c.durationMs) / 1000) : 0,
     callCost,
+    status: typeof c.status === 'string' ? c.status : undefined,
+    callSuccessful: typeof c.callSuccessful === 'boolean' ? c.callSuccessful : null,
+    disconnectionReason:
+      typeof c.disconnectionReason === 'string' ? c.disconnectionReason : null,
+    latencyE2e,
+    llmTokensTotal,
+    llmTokenUsage:
+      c.llmTokenUsage && typeof c.llmTokenUsage === 'object'
+        ? (c.llmTokenUsage as Record<string, unknown>)
+        : null,
     sentimentScore: sentimentToScore(sentiment),
     transcript: typeof c.transcript === 'string' ? c.transcript : '',
     escalationFlag,
@@ -82,7 +103,7 @@ function mapBackendCallToFrontend(c: Record<string, unknown>): Call {
     // Extra properties for compatibility with consumers that use them
     agentId: agentIdStr,
     outcome,
-    sentiment: sentiment ?? 'neutral',
+    sentiment: sentiment ?? 'unknown',
   };
 }
 

@@ -29,16 +29,32 @@ export function TenantKpiCards({ kpis, metrics }: TenantKpiCardsProps) {
     >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Key Metrics</h2>
-        <p className="text-xs text-[var(--text-muted)]">Call flow, bookings, and conversion</p>
+        <p className="text-xs text-[var(--text-muted)]">Call flow, bookings, cost, and quality</p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <TenantKpiCard label="Calls Today" value={kpis.callsToday} animateValue={kpis.callsToday} />
         <TenantKpiCard label="Calls 7d" value={kpis.calls7d} animateValue={kpis.calls7d} />
         <TenantKpiCard label="Booked" value={kpis.appointmentsBooked} animateValue={kpis.appointmentsBooked} trend="up" />
         <TenantKpiCard label="Escalation Rate" value={`${metrics.escalationRate.toFixed(1)}%`} animateValue={metrics.escalationRate} decimals={1} format={(n) => `${n.toFixed(1)}%`} />
         <TenantKpiCard label="Avg Duration" value={formatDuration(kpis.avgDurationSec)} animateValue={kpis.avgDurationSec} format={formatDuration} />
         <TenantKpiCard label="Conversion Rate" value={`${metrics.conversionRate.toFixed(1)}%`} animateValue={metrics.conversionRate} decimals={1} format={(n) => `${n.toFixed(1)}%`} />
+        <TenantKpiCard
+          label="AI Cost"
+          value={`$${(metrics.aiCost ?? 0).toFixed(3)}`}
+          animateValue={metrics.aiCost ?? 0}
+          decimals={3}
+          format={(n) => `$${n.toFixed(3)}`}
+        />
+        <TenantKpiCard
+          label="Avg Latency"
+          value={`${Math.round(metrics.avgLatencyMs ?? 0)}ms`}
+          animateValue={metrics.avgLatencyMs ?? 0}
+          format={(n) => `${Math.round(n)}ms`}
+        />
       </div>
+      <p className="text-xs text-[var(--text-muted)]">
+        Top disconnection reason: <span className="text-[var(--text-secondary)]">{metrics.topDisconnectionReason ?? 'unknown'}</span>
+      </p>
     </motion.section>
   );
 }

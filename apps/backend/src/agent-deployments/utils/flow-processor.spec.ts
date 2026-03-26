@@ -59,4 +59,32 @@ describe('flow-processor', () => {
       }),
     ).toThrow(BadRequestException);
   });
+
+  it('throws when a conversation-flow edge is a self-loop', () => {
+    const source = {
+      conversationFlow: {
+        nodes: [
+          {
+            id: 'node-x',
+            edges: [
+              {
+                id: 'edge-self',
+                destination_node_id: 'node-x',
+              },
+            ],
+          },
+        ],
+        tools: [],
+      },
+      response_engine: { type: 'conversation-flow', version: 2 },
+    } as Record<string, unknown>;
+
+    expect(() =>
+      processFlowTemplate(source, {
+        tenantId: 'tenant_123',
+        agentInstanceId: 'agent_456',
+        apiBaseUrl: 'http://localhost:3001',
+      }),
+    ).toThrow(BadRequestException);
+  });
 });

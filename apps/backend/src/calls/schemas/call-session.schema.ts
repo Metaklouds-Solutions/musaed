@@ -68,6 +68,12 @@ export class CallSession {
   latencyE2e: number | null;
 
   @Prop({ type: Object, default: null })
+  llmTokenUsage: Record<string, unknown> | null;
+
+  @Prop({ type: Number, default: null })
+  llmTokensTotal: number | null;
+
+  @Prop({ type: Object, default: null })
   customAnalysisData: Record<string, unknown> | null;
 
   @Prop({ type: String, default: null })

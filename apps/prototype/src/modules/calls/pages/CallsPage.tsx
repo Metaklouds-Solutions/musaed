@@ -4,12 +4,14 @@
  */
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { PageHeader, EmptyState, TableFilters, Button, TableSkeleton, LOTTIE_ASSETS, Pagination } from '../../../shared/ui';
+import { PageHeader, EmptyState, Button, TableSkeleton, LOTTIE_ASSETS, Pagination, UnifiedFilterBar } from '../../../shared/ui';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import { useCallsList, useCallsExport } from '../hooks';
 import { CallsTable } from '../components/CallsTable';
 import { toast } from 'sonner';
 import { Phone, Download } from 'lucide-react';
+import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { useUrlQueryState } from '../../../shared/hooks/useUrlQueryState';
 
 function getOutcome(call: { bookingCreated: boolean; escalationFlag: boolean }): 'booked' | 'escalated' | 'failed' {
   if (call.bookingCreated) return 'booked';
@@ -28,17 +30,62 @@ const PAGE_SIZE = 20;
 
 /** Tenant calls list: table-first log with filters, export, and pagination. */
 export function CallsPage() {
-  const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
+  const { state, patchState, resetState } = useUrlQueryState({
+    tab: 'all',
+    q: '',
+    from: '',
+    to: '',
+  });
+  const [dateRange, setDateRange] = useState(() => {
+    if (state.from && state.to) {
+      const start = new Date(state.from);
+      const end = new Date(state.to);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+        return { start, end };
+      }
+    }
+    return DEFAULT_RANGE;
+  });
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const { user, calls, customerMap, isLoading } = useCallsList(dateRangeFilter);
   const { exportCallsCsv } = useCallsExport();
-  const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const outcomeFilter = state.tab === 'all' ? null : state.tab;
+  const searchQuery = state.q;
+
+  const { saved, saveCurrent, apply, deleteFilter } = useSavedFilters({
+    pageKey: 'tenant-calls',
+    currentFilters: {
+      tab: state.tab,
+      q: state.q,
+      from: dateRange.start.toISOString(),
+      to: dateRange.end.toISOString(),
+    },
+    onApply: (filters) => {
+      patchState({
+        tab: typeof filters.tab === 'string' ? filters.tab : 'all',
+        q: typeof filters.q === 'string' ? filters.q : '',
+      });
+      if (typeof filters.from === 'string' && typeof filters.to === 'string') {
+        const start = new Date(filters.from);
+        const end = new Date(filters.to);
+        if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+          setDateRange({ start, end });
+        }
+      }
+    },
+  });
 
   const filteredCalls = useMemo(() => {
-    if (!outcomeFilter) return calls;
-    return calls.filter((c) => getOutcome(c) === outcomeFilter);
-  }, [calls, outcomeFilter]);
+    const byOutcome = outcomeFilter ? calls.filter((c) => getOutcome(c) === outcomeFilter) : calls;
+    if (!searchQuery.trim()) return byOutcome;
+    const q = searchQuery.trim().toLowerCase();
+    return byOutcome.filter((c) => {
+      const customer = (customerMap.get(c.customerId) ?? '').toLowerCase();
+      const callId = (c.callId ?? c.id).toLowerCase();
+      return customer.includes(q) || callId.includes(q);
+    });
+  }, [calls, outcomeFilter, searchQuery, customerMap]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCalls.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -51,7 +98,14 @@ export function CallsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [outcomeFilter, dateRange.start, dateRange.end]);
+  }, [outcomeFilter, dateRange.start, dateRange.end, searchQuery]);
+
+  useEffect(() => {
+    patchState({
+      from: dateRange.start.toISOString(),
+      to: dateRange.end.toISOString(),
+    });
+  }, [dateRange.start, dateRange.end, patchState]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -104,7 +158,6 @@ export function CallsPage() {
           description="AI call logs with filtering and export."
         />
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />
           <Button variant="secondary" onClick={handleExport}>
             <Download className="w-4 h-4" aria-hidden />
             Export CSV
@@ -122,17 +175,31 @@ export function CallsPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
-            <TableFilters
-              outcomes={[
-                { value: 'booked', label: 'Booked' },
-                { value: 'escalated', label: 'Escalated' },
-                { value: 'failed', label: 'Failed' },
-              ]}
-              selectedOutcome={outcomeFilter}
-              onOutcomeChange={setOutcomeFilter}
-            />
-          </div>
+          <UnifiedFilterBar
+            tabs={[
+              { value: 'all', label: 'All' },
+              { value: 'booked', label: 'Booked' },
+              { value: 'escalated', label: 'Escalated' },
+              { value: 'failed', label: 'Failed' },
+            ]}
+            activeTab={state.tab}
+            onTabChange={(tab) => patchState({ tab })}
+            query={searchQuery}
+            onQueryChange={(q) => patchState({ q })}
+            searchPlaceholder="Search by customer or call ID..."
+            savedFilters={saved}
+            onSaveFilter={saveCurrent}
+            onApplyFilter={apply}
+            onDeleteFilter={deleteFilter}
+            activeFilterCount={state.tab !== 'all' ? 1 : 0}
+            onReset={() => {
+              resetState();
+              setDateRange(DEFAULT_RANGE);
+            }}
+            rightSlot={
+              <DateRangePicker value={dateRange} onChange={setDateRange} aria-label="Filter by date range" />
+            }
+          />
           {filteredCalls.length === 0 ? (
             <div className="rounded-[var(--radius-card)] card-glass p-6">
               <p className="text-sm text-[var(--text-muted)]">

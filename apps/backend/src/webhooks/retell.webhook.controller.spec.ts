@@ -74,16 +74,26 @@ describe('RetellWebhookController', () => {
     controller = await createController();
   });
 
-  it('rejects when the webhook queue is disabled', async () => {
+  it('falls back to inline processing when the webhook queue is disabled', async () => {
     const req = {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
 
-    await expect(
-      controller.handleWebhook(req, mockRes, validSignature, undefined),
-    ).rejects.toThrow('Retell webhook queue is unavailable or disabled');
+    const result = await controller.handleWebhook(
+      req,
+      mockRes,
+      validSignature,
+      undefined,
+    );
+    expect(result).toEqual({ received: true });
     expect(mockWebhookQueue.add).not.toHaveBeenCalled();
     expect(mockMetrics.recordWebhookReceived).toHaveBeenCalledWith('retell');
+    expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
+    expect(mockWebhooksService.recordProcessedEvent).toHaveBeenCalledWith(
+      'evt_123',
+      'retell',
+      'call_started',
+    );
   });
 
   it('queues valid events when webhook queue is enabled', async () => {
@@ -110,16 +120,21 @@ describe('RetellWebhookController', () => {
     expect(mockMetrics.recordWebhookReceived).toHaveBeenCalledWith('retell');
   });
 
-  it('rejects when enqueue returns no job id', async () => {
+  it('falls back to inline processing when enqueue returns no job id', async () => {
     mockWebhookQueue.isEnabled.mockReturnValue(true);
     mockWebhookQueue.add.mockResolvedValue(null);
     const req = {
       body: Buffer.from(rawBody, 'utf8'),
     } as unknown as Request;
 
-    await expect(
-      controller.handleWebhook(req, mockRes, validSignature, undefined),
-    ).rejects.toThrow('Retell webhook queue is unavailable or disabled');
+    const result = await controller.handleWebhook(
+      req,
+      mockRes,
+      validSignature,
+      undefined,
+    );
+    expect(result).toEqual({ received: true });
+    expect(mockWebhooksService.handleRetellCallStarted).toHaveBeenCalled();
   });
 
   it('rejects invalid signature', async () => {

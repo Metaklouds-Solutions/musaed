@@ -53,6 +53,7 @@ function isSettingsTab(value: string | null): value is SettingsTab {
 export function SettingsPage() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
+  const isAdminReadOnly = (user?.role ?? '').toUpperCase() === 'ADMIN';
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<SettingsTab>(
@@ -167,7 +168,7 @@ export function SettingsPage() {
             transition={{ duration: 0.2 }}
             className="space-y-8 w-full"
           >
-            <ProviderAvailabilitySection tenantId={tenantId} />
+            <ProviderAvailabilitySection tenantId={tenantId} readOnly={isAdminReadOnly} />
           </motion.div>
         )}
         {activeTab === 'notifications' && (

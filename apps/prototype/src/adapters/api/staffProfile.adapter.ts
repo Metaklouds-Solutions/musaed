@@ -8,6 +8,7 @@ import {
   getCachedProviderAvailability,
   setCachedProviderAvailability,
 } from './tenantSettingsCache';
+import { isAdminUser, withTenantScope } from './tenantScope';
 
 type AvailabilitySlot = { day: string; start: string; end: string };
 
@@ -53,9 +54,14 @@ export const staffProfileAdapter = {
     tenantId: string,
     availability: AvailabilitySlot[],
   ): Promise<void> {
+    if (isAdminUser()) {
+      throw new Error('Provider availability is read-only in admin context');
+    }
     const pa = { ...getCachedProviderAvailability(tenantId) };
     pa[userId] = { availability };
     setCachedProviderAvailability(tenantId, pa);
-    await api.patch('/tenant/settings', { providerAvailability: pa });
+    await api.patch(withTenantScope('/tenant/settings', tenantId), {
+      providerAvailability: pa,
+    });
   },
 };

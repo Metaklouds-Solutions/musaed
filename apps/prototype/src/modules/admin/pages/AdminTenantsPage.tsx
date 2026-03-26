@@ -21,7 +21,7 @@ import {
   Button,
   ViewButton,
   PillTag,
-  TableFilters,
+  UnifiedFilterBar,
   BulkActionsBar,
   ConfirmDeleteBar,
   Pagination,
@@ -36,6 +36,8 @@ import type { PillTagVariant } from '../../../shared/ui';
 import { cn } from '@/lib/utils';
 import { AddTenantModal } from '../components/AddTenantModal';
 import { TenantActionsModal } from '../components/TenantActionsModal';
+import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { useUrlQueryState } from '../../../shared/hooks/useUrlQueryState';
 
 function statusVariant(status: string): PillTagVariant {
   if (status === 'ACTIVE') return 'status';
@@ -48,9 +50,14 @@ function statusVariant(status: string): PillTagVariant {
 export function AdminTenantsPage() {
   const ready = useDelayedReady();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [planFilter, setPlanFilter] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { state, patchState, resetState } = useUrlQueryState({
+    plan: '',
+    status: '',
+    q: '',
+  });
+  const planFilter = state.plan || null;
+  const statusFilter = state.status || null;
+  const searchQuery = state.q;
   const { tenants, loading: tenantsLoading, refetch: refetchTenants, plans, statuses } = useAdminTenantList(refreshKey, {
     plan: planFilter,
     status: statusFilter,
@@ -68,6 +75,16 @@ export function AdminTenantsPage() {
   const [processing, setProcessing] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const { saved, saveCurrent, apply, deleteFilter } = useSavedFilters({
+    pageKey: 'admin-tenants',
+    currentFilters: { plan: state.plan, status: state.status, q: state.q },
+    onApply: (filters) =>
+      patchState({
+        plan: typeof filters.plan === 'string' ? filters.plan : '',
+        status: typeof filters.status === 'string' ? filters.status : '',
+        q: typeof filters.q === 'string' ? filters.q : '',
+      }),
+  });
 
   const { items: displayTenants, addOptimistic, patchOptimistic, rollbackPatch } = useOptimisticList<TenantListRow>({
     items: tenants,
@@ -85,9 +102,7 @@ export function AdminTenantsPage() {
 
   const handleAddSuccess = useCallback(
     (created: { id: string; name: string; plan: string }) => {
-      setSearchQuery('');
-      setPlanFilter(null);
-      setStatusFilter(null);
+      patchState({ q: '', plan: '', status: '' });
       setPage(1);
       clearSelection();
       addOptimistic({
@@ -103,7 +118,7 @@ export function AdminTenantsPage() {
       });
       setRefreshKey((k) => k + 1);
     },
-    [addOptimistic, clearSelection]
+    [addOptimistic, clearSelection, patchState]
   );
 
   const handleActionsClick = useCallback((tenant: TenantListRow) => () => {
@@ -237,16 +252,40 @@ export function AdminTenantsPage() {
             ) : (
               <>
                 <div className="p-5 sm:p-6 border-b border-[var(--border-subtle)]/40 space-y-5">
-                  <TableFilters
-                    plans={plans}
-                    selectedPlan={planFilter}
-                    onPlanChange={setPlanFilter}
-                    statuses={statuses}
-                    selectedStatus={statusFilter}
-                    onStatusChange={setStatusFilter}
-                    search={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    searchPlaceholder="Search tenants…"
+                  <UnifiedFilterBar
+                    query={searchQuery}
+                    onQueryChange={(q) => patchState({ q })}
+                    searchPlaceholder="Search tenants..."
+                    fields={[
+                      {
+                        id: 'plan',
+                        label: 'Plan',
+                        value: planFilter ?? '',
+                        options: [
+                          { value: '', label: 'All plans' },
+                          ...plans.map((plan) => ({ value: plan.value, label: plan.label })),
+                        ],
+                      },
+                      {
+                        id: 'status',
+                        label: 'Status',
+                        value: statusFilter ?? '',
+                        options: [
+                          { value: '', label: 'All statuses' },
+                          ...statuses.map((status) => ({ value: status.value, label: status.label })),
+                        ],
+                      },
+                    ]}
+                    onFieldChange={(fieldId, value) => {
+                      if (fieldId === 'plan') patchState({ plan: value });
+                      if (fieldId === 'status') patchState({ status: value });
+                    }}
+                    savedFilters={saved}
+                    onSaveFilter={saveCurrent}
+                    onApplyFilter={apply}
+                    onDeleteFilter={deleteFilter}
+                    activeFilterCount={[planFilter, statusFilter].filter(Boolean).length}
+                    onReset={() => resetState()}
                   />
                   <BulkActionsBar count={selection.selectedSet.size} onClear={selection.clear}>
                     <Button

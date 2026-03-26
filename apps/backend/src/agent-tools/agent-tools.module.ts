@@ -15,7 +15,15 @@ import {
 import { Booking, BookingSchema } from '../bookings/schemas/booking.schema';
 import { Customer, CustomerSchema } from '../customers/schemas/customer.schema';
 import { Tenant, TenantSchema } from '../tenants/schemas/tenant.schema';
+import {
+  TenantStaff,
+  TenantStaffSchema,
+} from '../tenants/schemas/tenant-staff.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import {
+  ProviderAvailability,
+  ProviderAvailabilitySchema,
+} from '../availability/schemas/provider-availability.schema';
 import {
   CallSession,
   CallSessionSchema,
@@ -32,8 +40,10 @@ import { AgentToolsService } from './agent-tools.service';
       { name: Booking.name, schema: BookingSchema },
       { name: Customer.name, schema: CustomerSchema },
       { name: Tenant.name, schema: TenantSchema },
+      { name: TenantStaff.name, schema: TenantStaffSchema },
       { name: User.name, schema: UserSchema },
       { name: CallSession.name, schema: CallSessionSchema },
+      { name: ProviderAvailability.name, schema: ProviderAvailabilitySchema },
     ]),
   ],
   controllers: [AgentToolsController],

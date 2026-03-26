@@ -68,7 +68,7 @@ export class ReportsService {
         const dateFilter: Record<string, Date> = {};
         if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
         if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
-        match.date = dateFilter;
+        match.createdAt = dateFilter;
       }
 
       const pipeline: PipelineStage[] = [
@@ -101,15 +101,10 @@ export class ReportsService {
         tenantId: tid,
         deletedAt: null,
       });
-      const callMatch: Record<string, unknown> = { tenantId: tid };
-      if (dateFrom || dateTo) {
-        const createdAtFilter: Record<string, Date> = {};
-        if (dateFrom) createdAtFilter.$gte = this.parseDateStart(dateFrom);
-        if (dateTo) createdAtFilter.$lte = this.parseDateEnd(dateTo);
-        callMatch.createdAt = createdAtFilter;
-      }
-      const [totalCalls, callOutcomeRows, avgCallDuration] = await Promise.all([
-        this.callSessionModel.countDocuments(callMatch),
+      const callMatch = this.buildCallMatch(tid, dateFrom, dateTo);
+      const [totalCalls, callOutcomeRows, avgCallDuration, avgSentimentScore] =
+        await Promise.all([
+          this.callSessionModel.countDocuments(callMatch),
         this.callSessionModel.aggregate<{ _id: string; count: number }>([
           { $match: callMatch },
           { $group: { _id: '$outcome', count: { $sum: 1 } } },
@@ -118,7 +113,34 @@ export class ReportsService {
           { $match: { ...callMatch, durationMs: { $ne: null } } },
           { $group: { _id: null, value: { $avg: '$durationMs' } } },
         ]),
-      ]);
+          this.callSessionModel.aggregate<{ value: number }>([
+            { $match: callMatch },
+            {
+              $project: {
+                sentimentScore: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: {
+                          $eq: [{ $toLower: { $ifNull: ['$sentiment', ''] } }, 'positive'],
+                        },
+                        then: 1,
+                      },
+                      {
+                        case: {
+                          $eq: [{ $toLower: { $ifNull: ['$sentiment', ''] } }, 'negative'],
+                        },
+                        then: 0,
+                      },
+                    ],
+                    default: 0.5,
+                  },
+                },
+              },
+            },
+            { $group: { _id: null, value: { $avg: '$sentimentScore' } } },
+          ]),
+        ]);
       const callOutcomes: Record<string, number> = {
         unknown: 0,
         booked: 0,
@@ -139,6 +161,7 @@ export class ReportsService {
           totalCalls,
           outcomes: callOutcomes,
           avgDurationMs: avgCallDuration[0]?.value ?? 0,
+          sentimentAvg: avgSentimentScore[0]?.value ?? 0,
         },
       };
     } catch (error) {
@@ -160,14 +183,14 @@ export class ReportsService {
       const dateFilter: Record<string, Date> = {};
       if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
       if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
-      match.date = dateFilter;
+      match.createdAt = dateFilter;
     }
 
     const pipeline: PipelineStage[] = [
       { $match: match },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           byStatus: { $push: '$status' },
         },
       },
@@ -178,13 +201,7 @@ export class ReportsService {
       _id: string;
       byStatus: string[];
     }>(pipeline);
-    const callMatch: Record<string, unknown> = { tenantId: tid };
-    if (dateFrom || dateTo) {
-      const createdAtFilter: Record<string, Date> = {};
-      if (dateFrom) createdAtFilter.$gte = this.parseDateStart(dateFrom);
-      if (dateTo) createdAtFilter.$lte = this.parseDateEnd(dateTo);
-      callMatch.createdAt = createdAtFilter;
-    }
+    const callMatch = this.buildCallMatch(tid, dateFrom, dateTo);
     const callRows = await this.callSessionModel.aggregate<{
       _id: string;
       booked: number;
@@ -195,7 +212,12 @@ export class ReportsService {
       { $match: callMatch },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: { $ifNull: ['$startedAt', '$createdAt'] },
+            },
+          },
           booked: {
             $sum: { $cond: [{ $eq: ['$outcome', 'booked'] }, 1, 0] },
           },
@@ -222,25 +244,40 @@ export class ReportsService {
       ]),
     );
 
-    return results.map((r) => {
-      const booked = r.byStatus.filter(
+    const bookingByDay = new Map(
+      results.map((r) => [
+        r._id,
+        {
+          booked: r.byStatus.filter(
         (s) => s === 'completed' || s === 'confirmed',
-      ).length;
-      const failed = r.byStatus.filter((s) => s === 'no_show').length;
-      const escalated = r.byStatus.filter((s) => s === 'escalated').length;
-      const total = r.byStatus.length;
-      const callMetrics = callsByDay.get(r._id) ?? {
+      ).length,
+          failed: r.byStatus.filter((s) => s === 'no_show').length,
+          escalated: r.byStatus.filter((s) => s === 'escalated').length,
+          total: r.byStatus.length,
+        },
+      ]),
+    );
+
+    const allDays = Array.from(
+      new Set([...bookingByDay.keys(), ...callsByDay.keys()]),
+    ).sort();
+
+    return allDays.map((day) => {
+      const bookingMetrics = bookingByDay.get(day) ?? {
+        booked: 0,
+        escalated: 0,
+        failed: 0,
+        total: 0,
+      };
+      const callMetrics = callsByDay.get(day) ?? {
         booked: 0,
         escalated: 0,
         failed: 0,
         total: 0,
       };
       return {
-        date: r._id,
-        booked,
-        escalated,
-        failed,
-        total,
+        date: day,
+        ...bookingMetrics,
         calls: callMetrics,
       };
     });
@@ -374,7 +411,7 @@ export class ReportsService {
       const dateFilter: Record<string, Date> = {};
       if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
       if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
-      match.createdAt = dateFilter;
+      match.$or = [{ startedAt: dateFilter }, { createdAt: dateFilter }];
     }
     const pipeline: PipelineStage[] = [
       { $match: match },
@@ -476,7 +513,7 @@ export class ReportsService {
       avgDurationSec: avgDurationMs / 1000,
       conversionRate,
       escalationRate,
-      sentimentAvg: 0,
+      sentimentAvg: perf.callMetrics?.sentimentAvg ?? 0,
     };
   }
 
@@ -495,7 +532,7 @@ export class ReportsService {
         const dateFilter: Record<string, Date> = {};
         if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
         if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
-        match.createdAt = dateFilter;
+        match.$or = [{ startedAt: dateFilter }, { createdAt: dateFilter }];
       }
       const rows = await this.callSessionModel.aggregate<{
         _id: string;
@@ -538,19 +575,13 @@ export class ReportsService {
   ): Promise<PeakHourPointDto[]> {
     try {
       const tid = new Types.ObjectId(tenantId);
-      const match: Record<string, unknown> = { tenantId: tid };
-      if (dateFrom || dateTo) {
-        const dateFilter: Record<string, Date> = {};
-        if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
-        if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
-        match.createdAt = dateFilter;
-      }
+      const match = this.buildCallMatch(tid, dateFrom, dateTo);
       const rows = await this.callSessionModel.aggregate<{
         _id: number;
         count: number;
       }>([
         { $match: match },
-        { $project: { hour: { $hour: '$createdAt' } } },
+        { $project: { hour: { $hour: { $ifNull: ['$startedAt', '$createdAt'] } } } },
         { $group: { _id: '$hour', count: { $sum: 1 } } },
         { $sort: { _id: 1 } },
       ]);
@@ -583,7 +614,7 @@ export class ReportsService {
         const dateFilter: Record<string, Date> = {};
         if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
         if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
-        match.createdAt = dateFilter;
+        match.$or = [{ startedAt: dateFilter }, { createdAt: dateFilter }];
       }
       const rows = await this.callSessionModel.aggregate<{
         _id: string;
@@ -628,5 +659,21 @@ export class ReportsService {
       parsed.setHours(23, 59, 59, 999);
     }
     return parsed;
+  }
+
+  private buildCallMatch(
+    tenantId: Types.ObjectId,
+    dateFrom?: string,
+    dateTo?: string,
+  ): Record<string, unknown> {
+    const match: Record<string, unknown> = { tenantId };
+    if (!dateFrom && !dateTo) {
+      return match;
+    }
+    const dateFilter: Record<string, Date> = {};
+    if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
+    if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
+    match.$or = [{ startedAt: dateFilter }, { createdAt: dateFilter }];
+    return match;
   }
 }

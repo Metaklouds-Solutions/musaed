@@ -89,7 +89,7 @@ function TenantDetailSkeleton() {
 
 /** Renders tenant/admin tenant detail tabs with keyboard-accessible navigation. */
 export function TenantDetailPage() {
-  const { tenant, isLoading } = useTenantDetail();
+  const { tenant, tenantId, isLoading, refetch } = useTenantDetail();
   const [activeTab, setActiveTab] = useState<TenantTab>('overview');
   const location = useLocation();
   const isAdmin = location.pathname.includes('/admin/');
@@ -179,12 +179,12 @@ export function TenantDetailPage() {
         )}
         {activeTab === 'team' && (
           <motion.div key="team" id={getPanelId('team')} role="tabpanel" aria-labelledby={getTabId('team')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantTeamTab members={tenant.members} />
+            <TenantTeamTab members={tenant.members} tenantId={tenantId} onChanged={refetch} />
           </motion.div>
         )}
         {activeTab === 'activity' && (
           <motion.div key="activity" id={getPanelId('activity')} role="tabpanel" aria-labelledby={getTabId('activity')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <TenantActivityTab tickets={tenant.tickets} />
+            <TenantActivityTab />
           </motion.div>
         )}
       </AnimatePresence>

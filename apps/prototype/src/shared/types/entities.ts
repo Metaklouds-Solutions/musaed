@@ -35,6 +35,13 @@ export interface Call {
   duration: number;
   /** Cost in USD from Retell. Optional until enriched. */
   callCost?: number | null;
+  /** Raw call lifecycle status from backend call session. */
+  status?: 'started' | 'ended' | 'analyzed' | string;
+  callSuccessful?: boolean | null;
+  disconnectionReason?: string | null;
+  latencyE2e?: number | null;
+  llmTokensTotal?: number | null;
+  llmTokenUsage?: Record<string, unknown> | null;
   sentimentScore: number;
   transcript: string;
   escalationFlag: boolean;

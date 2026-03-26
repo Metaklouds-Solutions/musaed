@@ -34,6 +34,7 @@ function formatDateTime(iso: string): string {
 function getOutcomePillVariant(outcome: TenantRecentCall['outcome']) {
   if (outcome === 'booked') return 'outcomeBooked' as const;
   if (outcome === 'escalated') return 'outcomeEscalated' as const;
+  if (outcome === 'info_only' || outcome === 'unknown') return 'default' as const;
   return 'outcomeFailed' as const;
 }
 

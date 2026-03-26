@@ -1,5 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
+import { validateConversationFlowNoSelfLoopEdges } from './conversation-flow-graph.validator';
+
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 interface JsonObject {
@@ -50,6 +52,7 @@ export function validateFlowTemplate(flow: Record<string, unknown>): void {
         'Invalid flow template: conversationFlow.tools must be an array',
       );
     }
+    validateConversationFlowNoSelfLoopEdges(conversationFlow);
   } else if (!responseEngineType) {
     throw new BadRequestException(
       'Invalid flow template: response_engine.type is required',
@@ -105,6 +108,13 @@ function normalizeApiBaseUrl(rawUrl: string): string {
   }
 }
 
+/**
+ * Merges deploy-time defaults into `conversationFlow.default_dynamic_variables`.
+ *
+ * Retell also injects **system** dynamic variables at runtime (for example `{{call_id}}` on
+ * phone calls per Retell docs). Those are not set here — only tenant and agent identifiers
+ * from this deploy context.
+ */
 function injectDefaultDynamicVariables(
   flow: Record<string, unknown>,
   context: FlowProcessContext,

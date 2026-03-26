@@ -59,6 +59,28 @@ function resolveToolUrl(urlTemplate: string, apiBaseUrl: string): string {
 
 export const STANDARD_BOOKING_TOOLS: readonly StandardCustomTool[] = [
   {
+    tool_id: 'list_providers',
+    name: 'list_providers',
+    type: 'custom',
+    description:
+      'List clinic staff and doctors for this tenant from the live database: each provider_id matches availability and booking tools. Call this early when the patient asks who works at the clinic, which doctors are available, or before offering named providers. day_of_week is 0=Sunday through 6=Saturday.',
+    url: '{{API_BASE_URL}}/agents/tools/list_providers',
+    method: 'POST',
+    headers: { 'x-api-key': '{{RETELL_TOOL_API_KEY}}' },
+    parameters: {
+      type: 'object',
+      properties: {
+        agent_id: { type: 'string', const: '{{agent_id}}' },
+      },
+      required: ['agent_id'],
+    },
+    speak_during_execution: true,
+    speak_after_execution: true,
+    execution_message_description:
+      'Tell the patient you are looking up the care team and schedule in a natural, conversational way.',
+    timeout_ms: 10_000,
+  },
+  {
     tool_id: 'get_available_slots',
     name: 'get_available_slots',
     type: 'custom',
@@ -123,6 +145,11 @@ export const STANDARD_BOOKING_TOOLS: readonly StandardCustomTool[] = [
         lastName: {
           type: 'string',
           description: "Patient's last name or family name",
+        },
+        call_id: {
+          type: 'string',
+          description:
+            'Optional. Retell phone-call session id when available (system variable {{call_id}}). Pass it so the booking links to the call record.',
         },
       },
       required: ['agent_id', 'email', 'confirmed_slot', 'timezone'],

@@ -49,6 +49,11 @@ function formatCost(cost: number | null | undefined): string {
   }).format(cost);
 }
 
+function formatLatency(ms: number | null | undefined): string {
+  if (ms == null || Number.isNaN(ms)) return '—';
+  return `${Math.round(ms)}ms`;
+}
+
 /** Renders the calls grid with optional tenant column and virtualized rows. */
 export function CallsTable({
   calls,
@@ -70,6 +75,9 @@ export function CallsTable({
           <TableHead>Time</TableHead>
           <TableHead>Duration</TableHead>
           <TableHead>Cost</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Latency</TableHead>
+          <TableHead>Tokens</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead>Sentiment</TableHead>
           <TableHead>Booking</TableHead>
@@ -98,6 +106,15 @@ export function CallsTable({
           <TableCell>{formatDuration(call.duration)}</TableCell>
           <TableCell className="text-[var(--text-secondary)] text-sm">
             {formatCost(call.callCost)}
+          </TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm capitalize">
+            {call.status ?? '—'}
+          </TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm">
+            {formatLatency(call.latencyE2e)}
+          </TableCell>
+          <TableCell className="text-[var(--text-secondary)] text-sm">
+            {call.llmTokensTotal != null ? Math.round(call.llmTokensTotal).toLocaleString() : '—'}
           </TableCell>
           <TableCell>{getCustomerName(call.customerId)}</TableCell>
           <TableCell>

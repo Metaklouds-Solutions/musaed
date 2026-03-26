@@ -1,23 +1,11 @@
 /**
- * Bookings table. Date/Time, Patient, Service, Provider, Status, Actions.
- * Cancel and Reschedule buttons with confirmation modals.
+ * Bookings list with responsive rows and action menu.
+ * Keeps cancel/reschedule flows wired to adapter callbacks.
  */
 
-import { useState, useCallback } from 'react';
-import {
-  DataTable,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  ViewButton,
-  PillTag,
-  Button,
-  Modal,
-  ModalHeader,
-} from '../../../../shared/ui';
+import { useCallback, useMemo, useState } from 'react';
+import { MoreHorizontal, Phone } from 'lucide-react';
+import { Button, Modal, ModalHeader, PillTag, ViewButton } from '../../../../shared/ui';
 import type { Booking } from '../../../../shared/types';
 import type { PillTagVariant } from '../../../../shared/ui';
 
@@ -27,20 +15,24 @@ interface BookingsTableProps {
   onReschedule?: (id: string, date: string, timeSlot: string) => Promise<void>;
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
+function formatDateLabel(date: string | undefined): string {
+  if (!date) return '—';
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleDateString('en-US', {
+    weekday: 'short',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
   });
 }
 
-function formatDateTime(date: string | undefined, timeSlot: string | undefined): string {
-  if (!date && !timeSlot) return '—';
-  const d = date ? new Date(date) : null;
-  const dateStr = d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-  const timeStr = timeSlot ?? '';
-  return [dateStr, timeStr].filter(Boolean).join(' at ') || '—';
+function formatTimeLabel(slot?: string): string {
+  if (!slot) return '—';
+  const [h, m] = slot.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return slot;
+  const dt = new Date();
+  dt.setHours(h, m, 0, 0);
+  return dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 function statusToVariant(status: string): PillTagVariant {
@@ -48,30 +40,25 @@ function statusToVariant(status: string): PillTagVariant {
   if (s === 'confirmed') return 'status';
   if (s === 'cancelled') return 'outcomeFailed';
   if (s === 'completed') return 'role';
-  if (s === 'no_show') return 'outcomeEscalated';
+  if (s === 'no_show' || s === 'pending' || s === 'unconfirmed') return 'outcomeEscalated';
   return 'default';
 }
 
-export function BookingsTable({
-  bookings,
-  onCancel,
-  onReschedule,
-}: BookingsTableProps) {
+export function BookingsTable({ bookings, onCancel, onReschedule }: BookingsTableProps) {
+  const [menuId, setMenuId] = useState<string | null>(null);
   const [cancelModal, setCancelModal] = useState<Booking | null>(null);
   const [rescheduleModal, setRescheduleModal] = useState<Booking | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleCancelClick = useCallback((b: Booking) => {
-    setCancelModal(b);
-  }, []);
-
-  const handleRescheduleClick = useCallback((b: Booking) => {
-    setRescheduleModal(b);
-    setRescheduleDate(b.date ?? '');
-    setRescheduleTime(b.timeSlot ?? '09:00');
-  }, []);
+  const sorted = useMemo(() => {
+    return [...bookings].sort((a, b) => {
+      const at = new Date(`${(a.date ?? a.createdAt).slice(0, 10)}T${a.timeSlot ?? '00:00'}:00`).getTime();
+      const bt = new Date(`${(b.date ?? b.createdAt).slice(0, 10)}T${b.timeSlot ?? '00:00'}:00`).getTime();
+      return at - bt;
+    });
+  }, [bookings]);
 
   const handleCancelConfirm = useCallback(async () => {
     if (!cancelModal || !onCancel) return;
@@ -79,6 +66,7 @@ export function BookingsTable({
     try {
       await onCancel(cancelModal.id);
       setCancelModal(null);
+      setMenuId(null);
     } finally {
       setLoading(false);
     }
@@ -90,182 +78,190 @@ export function BookingsTable({
     try {
       await onReschedule(rescheduleModal.id, rescheduleDate, rescheduleTime);
       setRescheduleModal(null);
+      setMenuId(null);
     } finally {
       setLoading(false);
     }
   }, [rescheduleModal, onReschedule, rescheduleDate, rescheduleTime]);
 
-  if (bookings.length === 0) return null;
+  if (sorted.length === 0) {
+    return (
+      <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-6">
+        <h3 className="text-base font-semibold text-[var(--text-primary)]">No bookings in this view</h3>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          Try switching tabs or updating filters to find matching bookings.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <>
-      <DataTable minWidth="min-w-[640px]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date & Time</TableHead>
-              <TableHead>Patient</TableHead>
-              <TableHead>Service</TableHead>
-              <TableHead>Provider</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Linked call</TableHead>
-              {(onCancel || onReschedule) && <TableHead aria-label="Actions" />}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.map((b) => (
-              <TableRow key={b.id}>
-                <TableCell className="font-medium text-[var(--text-primary)] text-sm">
-                  {formatDateTime(b.date ?? b.createdAt, b.timeSlot)}
-                </TableCell>
-                <TableCell className="text-[var(--text-secondary)] text-sm">
-                  {b.customerName ?? '—'}
-                </TableCell>
-                <TableCell className="text-[var(--text-secondary)] text-sm">
-                  {b.serviceType ?? '—'}
-                </TableCell>
-                <TableCell className="text-[var(--text-secondary)] text-sm">
-                  {b.providerName ?? '—'}
-                </TableCell>
-                <TableCell>
-                  <PillTag variant={statusToVariant(b.status)}>{b.status}</PillTag>
-                </TableCell>
-                <TableCell>
-                  {b.callId ? (
-                    <ViewButton to={`/calls/${b.callId}`} aria-label="View call">
-                      View call
-                    </ViewButton>
-                  ) : (
-                    <span className="text-[var(--text-muted)]">—</span>
-                  )}
-                </TableCell>
-                {(onCancel || onReschedule) && (
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {onReschedule && b.status?.toLowerCase() !== 'cancelled' && (
-                        <Button
-                          variant="outline"
-                          className="min-h-8 px-3 py-1.5 text-sm"
-                          onClick={() => handleRescheduleClick(b)}
-                          aria-label={`Reschedule ${b.customerName ?? 'booking'}`}
-                        >
-                          Reschedule
-                        </Button>
-                      )}
-                      {onCancel && b.status?.toLowerCase() !== 'cancelled' && (
-                        <Button
-                          variant="outline"
-                          className="min-h-8 px-3 py-1.5 text-sm border-[var(--error)] text-[var(--error)] hover:bg-[var(--error)]/10"
-                          onClick={() => handleCancelClick(b)}
-                          aria-label={`Cancel ${b.customerName ?? 'booking'}`}
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </DataTable>
+      <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--border-subtle)] text-xs tracking-[0.08em] font-semibold text-[var(--text-muted)] uppercase">
+          Next
+        </div>
+        <div className="divide-y divide-[var(--border-subtle)]">
+          {sorted.map((b) => {
+            const isCancelled = (b.status ?? '').toLowerCase() === 'cancelled';
+            return (
+              <article key={b.id} className="px-4 py-4 sm:px-5 sm:py-5">
+                <div className="grid gap-3 sm:grid-cols-[180px_1fr_auto] sm:items-start">
+                  <div className="space-y-1">
+                    <p className="text-[15px] font-semibold text-[var(--text-primary)]">
+                      {formatDateLabel(b.date ?? b.createdAt)}
+                    </p>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      {formatTimeLabel(b.timeSlot)}
+                      {b.durationMinutes ? ` (${b.durationMinutes}m)` : ''}
+                    </p>
+                  </div>
 
-      {cancelModal && (
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-base font-semibold text-[var(--text-primary)] break-words">
+                        {b.customerName ?? 'Unknown patient'}
+                        {b.providerName ? ` with ${b.providerName}` : ''}
+                      </h4>
+                      <PillTag variant={statusToVariant(b.status)}>{b.status}</PillTag>
+                    </div>
+                    <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                      {b.serviceType ?? 'General Consultation'}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)] inline-flex items-center gap-1">
+                      <Phone size={14} />
+                      {b.customerEmail ?? 'No contact email'}
+                    </p>
+                    {b.callId ? (
+                      <div className="mt-2">
+                        <ViewButton to={`/calls/${b.callId}`}>View session details</ViewButton>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="relative justify-self-end">
+                    <button
+                      type="button"
+                      onClick={() => setMenuId((prev) => (prev === b.id ? null : b.id))}
+                      className="h-10 w-10 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      aria-label="Open booking actions"
+                    >
+                      <MoreHorizontal size={16} className="mx-auto" />
+                    </button>
+                    {menuId === b.id ? (
+                      <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] shadow-lg p-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRescheduleModal(b);
+                            setRescheduleDate(b.date ?? '');
+                            setRescheduleTime(b.timeSlot ?? '09:00');
+                          }}
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-50"
+                          disabled={isCancelled}
+                        >
+                          Reschedule booking
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
+                        >
+                          Request reschedule
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
+                        >
+                          Edit location
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
+                        >
+                          Add guests
+                        </button>
+                        <div className="my-1 border-t border-[var(--border-subtle)]" />
+                        <button
+                          type="button"
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
+                        >
+                          Mark as no-show
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCancelModal(b)}
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--error)] hover:bg-[var(--error)]/10 disabled:opacity-50"
+                          disabled={isCancelled}
+                        >
+                          Cancel event
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {cancelModal ? (
         <Modal
           open={!!cancelModal}
           onClose={() => !loading && setCancelModal(null)}
           title="Cancel appointment"
         >
-          <ModalHeader
-            title="Cancel appointment"
-            onClose={() => !loading && setCancelModal(null)}
-          />
+          <ModalHeader title="Cancel appointment" onClose={() => !loading && setCancelModal(null)} />
           <div className="px-5 py-4 space-y-4">
             <p className="text-[var(--text-secondary)] text-sm">
-              Are you sure you want to cancel the appointment for{' '}
-              <strong className="text-[var(--text-primary)]">
-                {cancelModal.customerName ?? 'this patient'}
-              </strong>{' '}
-              on {formatDateTime(cancelModal.date, cancelModal.timeSlot)}? The patient will
-              receive an email notification.
+              Cancel appointment for <strong className="text-[var(--text-primary)]">{cancelModal.customerName ?? 'this patient'}</strong> on{' '}
+              {formatDateLabel(cancelModal.date ?? cancelModal.createdAt)} at {formatTimeLabel(cancelModal.timeSlot)}?
             </p>
             <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setCancelModal(null)}
-                disabled={loading}
-              >
-                Keep
+              <Button variant="secondary" onClick={() => setCancelModal(null)} disabled={loading}>
+                Keep booking
               </Button>
-              <Button
-                variant="danger"
-                onClick={handleCancelConfirm}
-                loading={loading}
-              >
+              <Button variant="danger" onClick={handleCancelConfirm} loading={loading}>
                 Cancel appointment
               </Button>
             </div>
           </div>
         </Modal>
-      )}
+      ) : null}
 
-      {rescheduleModal && (
+      {rescheduleModal ? (
         <Modal
           open={!!rescheduleModal}
           onClose={() => !loading && setRescheduleModal(null)}
           title="Reschedule appointment"
         >
-          <ModalHeader
-            title="Reschedule appointment"
-            onClose={() => !loading && setRescheduleModal(null)}
-          />
+          <ModalHeader title="Reschedule appointment" onClose={() => !loading && setRescheduleModal(null)} />
           <div className="px-5 py-4 space-y-4">
             <p className="text-[var(--text-secondary)] text-sm">
-              Reschedule for{' '}
-              <strong className="text-[var(--text-primary)]">
-                {rescheduleModal.customerName ?? 'this patient'}
-              </strong>
-              . The patient will receive an email with the new time.
+              Update time for <strong className="text-[var(--text-primary)]">{rescheduleModal.customerName ?? 'this patient'}</strong>.
             </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="reschedule-date"
-                  className="block text-sm font-medium text-[var(--text-secondary)] mb-1"
-                >
-                  Date
-                </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="space-y-1">
+                <span className="text-sm text-[var(--text-secondary)]">Date</span>
                 <input
-                  id="reschedule-date"
                   type="date"
                   value={rescheduleDate}
                   onChange={(e) => setRescheduleDate(e.target.value)}
                   className="w-full rounded-[var(--radius-input)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-3 py-2 text-sm text-[var(--text-primary)]"
                 />
-              </div>
-              <div>
-                <label
-                  htmlFor="reschedule-time"
-                  className="block text-sm font-medium text-[var(--text-secondary)] mb-1"
-                >
-                  Time
-                </label>
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm text-[var(--text-secondary)]">Time</span>
                 <input
-                  id="reschedule-time"
                   type="time"
                   value={rescheduleTime}
                   onChange={(e) => setRescheduleTime(e.target.value)}
                   className="w-full rounded-[var(--radius-input)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-3 py-2 text-sm text-[var(--text-primary)]"
                 />
-              </div>
+              </label>
             </div>
             <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setRescheduleModal(null)}
-                disabled={loading}
-              >
+              <Button variant="secondary" onClick={() => setRescheduleModal(null)} disabled={loading}>
                 Close
               </Button>
               <Button
@@ -274,12 +270,12 @@ export function BookingsTable({
                 loading={loading}
                 disabled={!rescheduleDate || !rescheduleTime}
               >
-                Reschedule
+                Save schedule
               </Button>
             </div>
           </div>
         </Modal>
-      )}
+      ) : null}
     </>
   );
 }

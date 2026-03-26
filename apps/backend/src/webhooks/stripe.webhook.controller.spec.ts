@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { MetricsService } from '../metrics/metrics.service';
 import { WebhookQueueService } from '../queue/webhook-queue.service';
 import { StripeWebhookController } from './stripe.webhook.controller';
+import { WebhooksService } from './webhooks.service';
 
 describe('StripeWebhookController', () => {
   let controller: StripeWebhookController;
@@ -15,6 +16,13 @@ describe('StripeWebhookController', () => {
   };
 
   const mockMetrics = { recordWebhookReceived: jest.fn() };
+  const mockWebhooksService = {
+    isDuplicateEvent: jest.fn().mockResolvedValue(false),
+    recordProcessedEvent: jest.fn().mockResolvedValue(undefined),
+    handleInvoicePaid: jest.fn().mockResolvedValue(undefined),
+    handleInvoiceFailed: jest.fn().mockResolvedValue(undefined),
+    handleSubscriptionDeleted: jest.fn().mockResolvedValue(undefined),
+  };
 
   const secretKey = 'sk_test_123';
   const webhookSecret = 'whsec_test_123';
@@ -38,6 +46,7 @@ describe('StripeWebhookController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StripeWebhookController],
       providers: [
+        { provide: WebhooksService, useValue: mockWebhooksService },
         { provide: WebhookQueueService, useValue: mockWebhookQueue },
         { provide: MetricsService, useValue: mockMetrics },
         {
@@ -67,13 +76,15 @@ describe('StripeWebhookController', () => {
     controller = await createController();
   });
 
-  it('rejects when the webhook queue is disabled', async () => {
+  it('falls back to inline processing when the webhook queue is disabled', async () => {
     const req = { body: Buffer.from(payload, 'utf8') } as unknown as Request;
 
-    await expect(
-      controller.handleWebhook(req, mockRes, signature),
-    ).rejects.toThrow('Stripe webhook queue is unavailable or disabled');
+    const result = await controller.handleWebhook(req, mockRes, signature);
+    expect(result).toEqual({ received: true });
     expect(mockWebhookQueue.add).not.toHaveBeenCalled();
+    expect(mockWebhooksService.handleInvoicePaid).toHaveBeenCalledWith({
+      customer: 'cus_123',
+    });
   });
 
   it('queues valid events when webhook queue is enabled', async () => {
@@ -93,14 +104,16 @@ describe('StripeWebhookController', () => {
     expect(mockMetrics.recordWebhookReceived).toHaveBeenCalledWith('stripe');
   });
 
-  it('rejects when enqueue returns no job id', async () => {
+  it('falls back to inline processing when enqueue returns no job id', async () => {
     mockWebhookQueue.isEnabled.mockReturnValue(true);
     mockWebhookQueue.add.mockResolvedValue(null);
     const req = { body: Buffer.from(payload, 'utf8') } as unknown as Request;
 
-    await expect(
-      controller.handleWebhook(req, mockRes, signature),
-    ).rejects.toThrow('Stripe webhook queue is unavailable or disabled');
+    const result = await controller.handleWebhook(req, mockRes, signature);
+    expect(result).toEqual({ received: true });
+    expect(mockWebhooksService.handleInvoicePaid).toHaveBeenCalledWith({
+      customer: 'cus_123',
+    });
   });
 
   it('rejects invalid signatures', async () => {

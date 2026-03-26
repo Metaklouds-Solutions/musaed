@@ -44,17 +44,23 @@ export const reportsAdapter = {
       const booked = outcomes.booked ?? 0;
       const escalated = outcomes.escalated ?? 0;
       const failed = outcomes.failed ?? 0;
+      const infoOnly = outcomes.info_only ?? 0;
+      const unknown = outcomes.unknown ?? 0;
       const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
       return [
         { outcome: 'booked', count: booked, percentage: pct(booked) },
         { outcome: 'escalated', count: escalated, percentage: pct(escalated) },
         { outcome: 'failed', count: failed, percentage: pct(failed) },
+        { outcome: 'info_only', count: infoOnly, percentage: pct(infoOnly) },
+        { outcome: 'unknown', count: unknown, percentage: pct(unknown) },
       ];
     } catch {
       return [
         { outcome: 'booked', count: 0, percentage: 0 },
         { outcome: 'escalated', count: 0, percentage: 0 },
         { outcome: 'failed', count: 0, percentage: 0 },
+        { outcome: 'info_only', count: 0, percentage: 0 },
+        { outcome: 'unknown', count: 0, percentage: 0 },
       ];
     }
   },
@@ -67,7 +73,12 @@ export const reportsAdapter = {
       if (dateRange?.end) params.set('dateTo', dateRange.end.toISOString());
       const data = await api.get<{
         totalBookings?: number;
-        callMetrics?: { totalCalls?: number; outcomes?: Record<string, number>; avgDurationMs?: number };
+        callMetrics?: {
+          totalCalls?: number;
+          outcomes?: Record<string, number>;
+          avgDurationMs?: number;
+          sentimentAvg?: number;
+        };
       }>(`/tenant/reports/performance?${params.toString()}`);
       const cm = data.callMetrics ?? {};
       const totalCalls = cm.totalCalls ?? 0;
@@ -78,12 +89,11 @@ export const reportsAdapter = {
       const escalationRate = totalCalls > 0 ? (escalated / totalCalls) * 100 : 0;
       return {
         totalCalls,
-        // Keep bookings metric consistent with conversion/outcomes source.
-        totalBookings: booked,
+        totalBookings: data.totalBookings ?? booked,
         avgDurationSec: (cm.avgDurationMs ?? 0) / 1000,
         conversionRate,
         escalationRate,
-        sentimentAvg: 0,
+        sentimentAvg: cm.sentimentAvg ?? 0,
       };
     } catch {
       return defaultPerformance;

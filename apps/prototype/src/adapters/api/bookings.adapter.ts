@@ -5,6 +5,7 @@
 import { api } from '../../lib/apiClient';
 import type { Booking } from '../../shared/types';
 import type { CalendarAppointment, CalendarAvailability } from '../local/bookings.adapter';
+import { withTenantScope } from './tenantScope';
 
 function mapBooking(b: {
   _id: string;
@@ -112,7 +113,9 @@ export const bookingsAdapter = {
         start: start.toISOString(),
         end: end.toISOString(),
       });
-      const data = await api.get<CalendarAvailability[]>(`/tenant/availability?${params.toString()}`);
+      const data = await api.get<CalendarAvailability[]>(
+        withTenantScope(`/tenant/availability?${params.toString()}`, tenantId),
+      );
       return Array.isArray(data) ? data : [];
     } catch {
       return [];

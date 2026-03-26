@@ -15,7 +15,12 @@ interface PeakHoursChartProps {
 export function PeakHoursChart({ points }: PeakHoursChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const maxCount = Math.max(...points.map((p) => p.count), 1);
-  const displayPoints = points;
+  const nonZero = points.filter((p) => p.count > 0);
+  const peakPoint = nonZero.length > 0 ? [...nonZero].sort((a, b) => b.count - a.count)[0] : null;
+  const displayPoints =
+    nonZero.length > 0
+      ? [...nonZero].sort((a, b) => b.count - a.count).slice(0, 8).sort((a, b) => a.hour - b.hour)
+      : points.slice(0, 8);
 
   const totalCalls = points.reduce((s, p) => s + p.count, 0);
   if (totalCalls === 0) {
@@ -33,7 +38,7 @@ export function PeakHoursChart({ points }: PeakHoursChartProps) {
         <Clock className="w-4 h-4 text-[var(--ds-primary)]" aria-hidden />
         Peak hours
       </h3>
-      <div className="flex gap-1 items-end h-24 overflow-x-auto pb-2 -mx-1">
+      <div className="flex gap-2 items-end h-24 pb-2">
         {displayPoints.map((p, i) => {
           const heightPct = (p.count / maxCount) * 100;
           const isHovered = hoveredIndex === i;
@@ -41,7 +46,7 @@ export function PeakHoursChart({ points }: PeakHoursChartProps) {
           return (
             <div
               key={p.hour}
-              className="relative flex-1 min-w-[20px] max-w-[28px] flex flex-col items-center gap-0.5"
+              className="relative flex-1 min-w-0 flex flex-col items-center gap-0.5"
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
@@ -62,12 +67,17 @@ export function PeakHoursChart({ points }: PeakHoursChartProps) {
                 />
               </div>
               <span className="text-[10px] text-[var(--text-muted)]">
-                {p.hour % 3 === 0 ? p.label : ''}
+                {p.label}
               </span>
             </div>
           );
         })}
       </div>
+      {peakPoint && (
+        <p className="mt-3 text-xs text-[var(--text-muted)]">
+          Busiest hour: {peakPoint.label} ({peakPoint.count} calls)
+        </p>
+      )}
     </div>
   );
 }

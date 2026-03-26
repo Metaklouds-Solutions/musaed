@@ -2,10 +2,10 @@
  * Tenant reports page focused on call outcomes and performance.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { BarChart3 } from 'lucide-react';
-import { PageHeader, EmptyState } from '../../../shared/ui';
+import { PageHeader, EmptyState, UnifiedFilterBar } from '../../../shared/ui';
 import { ReportsSkeleton } from '../components/ReportsSkeleton';
 import { DateRangePicker } from '../../../components/DateRangePicker';
 import type { DatePresetKey } from '../../../components/DateRangePicker';
@@ -19,6 +19,8 @@ import { OutcomesOverTimeChart } from '../components/OutcomesOverTimeChart/Outco
 import { IntentAnalyticsChart } from '../components/IntentAnalyticsChart';
 import { useReports } from '../hooks/useReports';
 import { useSession } from '../../../app/session/SessionContext';
+import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { useUrlQueryState } from '../../../shared/hooks/useUrlQueryState';
 
 const DEFAULT_RANGE = (() => {
   const end = new Date();
@@ -33,8 +35,17 @@ const REPORT_PRESETS: DatePresetKey[] = ['today', '7d', '4w', '3m', 'wtd', 'mtd'
 export function ReportsPage() {
   const { user } = useSession();
   const tenantId = user?.tenantId;
-
-  const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
+  const { state, patchState, resetState } = useUrlQueryState({ from: '', to: '' });
+  const [dateRange, setDateRange] = useState(() => {
+    if (state.from && state.to) {
+      const start = new Date(state.from);
+      const end = new Date(state.to);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+        return { start, end };
+      }
+    }
+    return DEFAULT_RANGE;
+  });
   const dateRangeFilter = useMemo(() => ({ start: dateRange.start, end: dateRange.end }), [dateRange]);
   const {
     loading: reportsLoading,
@@ -47,6 +58,29 @@ export function ReportsPage() {
     outcomesByDay,
     intentDistribution,
   } = useReports(tenantId, dateRangeFilter);
+  const { saved, saveCurrent, apply, deleteFilter } = useSavedFilters({
+    pageKey: 'tenant-reports',
+    currentFilters: {
+      from: dateRange.start.toISOString(),
+      to: dateRange.end.toISOString(),
+    },
+    onApply: (filters) => {
+      if (typeof filters.from === 'string' && typeof filters.to === 'string') {
+        const start = new Date(filters.from);
+        const end = new Date(filters.to);
+        if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+          setDateRange({ start, end });
+        }
+      }
+    },
+  });
+
+  useEffect(() => {
+    patchState({
+      from: dateRange.start.toISOString(),
+      to: dateRange.end.toISOString(),
+    });
+  }, [dateRange.start, dateRange.end, patchState]);
 
   if (!tenantId) {
     return (
@@ -66,12 +100,20 @@ export function ReportsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:gap-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <PageHeader
-            title="Analytics"
-            description="Call outcomes and performance insights"
-          />
-          <div className="flex items-center gap-2">
+        <PageHeader
+          title="Analytics"
+          description="Call outcomes and performance insights"
+        />
+        <UnifiedFilterBar
+          savedFilters={saved}
+          onSaveFilter={saveCurrent}
+          onApplyFilter={apply}
+          onDeleteFilter={deleteFilter}
+          onReset={() => {
+            setDateRange(DEFAULT_RANGE);
+            resetState();
+          }}
+          rightSlot={
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}
@@ -79,15 +121,8 @@ export function ReportsPage() {
               presets={REPORT_PRESETS}
               aria-label="Filter by date range"
             />
-            <button
-              type="button"
-              onClick={() => setDateRange(DEFAULT_RANGE)}
-              className="px-2 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
+          }
+        />
       </div>
       <motion.div
         initial={{ opacity: 0, y: 8 }}

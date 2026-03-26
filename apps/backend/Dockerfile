@@ -26,4 +26,4 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 EXPOSE 8080
-CMD ["node", "apps/backend/dist/main.js"]
+CMD ["node", "apps/backend/dist/src/main.js"]

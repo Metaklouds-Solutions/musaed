@@ -26,7 +26,6 @@ const DashboardPage = lazy(() => import('../modules/dashboard').then(m => ({ def
 const CallsPage = lazy(() => import('../modules/calls').then(m => ({ default: m.CallsPage })));
 const CallDetailPage = lazy(() => import('../modules/calls').then(m => ({ default: m.CallDetailPage })));
 const BookingsPage = lazy(() => import('../modules/bookings').then(m => ({ default: m.BookingsPage })));
-const CalendarPage = lazy(() => import('../modules/bookings').then(m => ({ default: m.CalendarPage })));
 const CustomersPage = lazy(() => import('../modules/customers').then(m => ({ default: m.CustomersPage })));
 const CustomerDetailPage = lazy(() => import('../modules/customers').then(m => ({ default: m.CustomerDetailPage })));
 const AlertsPage = lazy(() => import('../modules/alerts').then(m => ({ default: m.AlertsPage })));
@@ -120,7 +119,7 @@ const router = createBrowserRouter([
                   { path: 'help', element: <Navigate to="/settings?tab=support" replace /> },
                   { path: 'help/tickets/:id', element: <PageSuspense><TicketDetailPage /></PageSuspense> },
                   { path: 'bookings', element: <PageSuspense><BookingsPage /></PageSuspense> },
-                  { path: 'bookings/calendar', element: <FeatureFlagGuard flag="enableCalendar"><PageSuspense><CalendarPage /></PageSuspense></FeatureFlagGuard> },
+                  { path: 'bookings/calendar', element: <Navigate to="/bookings" replace /> },
                   { path: 'customers', element: <PageSuspense><CustomersPage /></PageSuspense> },
                   { path: 'customers/:id', element: <PageSuspense><CustomerDetailPage /></PageSuspense> },
                   { path: 'alerts', element: <PageSuspense><AlertsPage /></PageSuspense> },

@@ -10,6 +10,12 @@ import { Response, Request } from 'express';
 import * as Sentry from '@sentry/node';
 import type { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
+interface BodyParserLikeError {
+  status?: number;
+  type?: string;
+  message?: string;
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
@@ -24,14 +30,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       exception !== null &&
       'code' in exception &&
       (exception as { code?: unknown }).code === 11000;
+    const bodyParserError =
+      typeof exception === 'object' && exception !== null
+        ? (exception as BodyParserLikeError)
+        : undefined;
+    const isPayloadTooLarge =
+      bodyParserError?.status === HttpStatus.PAYLOAD_TOO_LARGE ||
+      bodyParserError?.type === 'entity.too.large';
 
-    const status = isMongoDuplicateKey
+    const status = isPayloadTooLarge
+      ? HttpStatus.PAYLOAD_TOO_LARGE
+      : isMongoDuplicateKey
       ? HttpStatus.CONFLICT
       : exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message = isMongoDuplicateKey
+    const message = isPayloadTooLarge
+      ? {
+          message: 'Request payload too large',
+          error: 'Payload Too Large',
+        }
+      : isMongoDuplicateKey
       ? {
           message: 'Duplicate value for a unique field',
           error: 'Conflict',

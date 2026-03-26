@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AgentDeploymentsService } from '../agent-deployments/agent-deployments.service';
+import {
+  AgentInstance,
+  AgentInstanceDocument,
+} from '../agent-instances/schemas/agent-instance.schema';
 import { Tenant, TenantDocument } from '../tenants/schemas/tenant.schema';
 import {
   ProcessedEvent,
@@ -38,7 +42,7 @@ interface ResolvedAgentContext {
   tenantId: Types.ObjectId;
   agentInstanceId: Types.ObjectId;
   retellAgentId: string | null;
-  source: 'active-deployment' | 'metadata';
+  source: 'active-deployment' | 'metadata' | 'legacy-instance';
 }
 
 interface UpsertCallSessionResult {
@@ -58,6 +62,8 @@ export class WebhooksService {
     private readonly configService: ConfigService,
     private readonly agentDeploymentsService: AgentDeploymentsService,
     @InjectModel(Tenant.name) private tenantModel: Model<TenantDocument>,
+    @InjectModel(AgentInstance.name)
+    private agentModel: Model<AgentInstanceDocument>,
     @InjectModel(ProcessedEvent.name)
     private processedEventModel: Model<ProcessedEventDocument>,
     @InjectModel(CallSession.name)
@@ -152,7 +158,17 @@ export class WebhooksService {
       this.readString(payload.call_id) ??
       this.readString(call.call_id) ??
       'unknown';
-    return payload.event_id ?? metadataEventId ?? `${callId}-${payload.event}`;
+    const timestamp =
+      this.readNumber(payload.event_timestamp) ??
+      this.readNumber(metadata?.event_timestamp) ??
+      this.readNumber(metadata?.timestamp) ??
+      this.readNumber(call.event_timestamp) ??
+      Date.now();
+    return (
+      payload.event_id ??
+      metadataEventId ??
+      `${callId}-${payload.event}-${Math.floor(timestamp)}`
+    );
   }
 
   // ─── Stripe ────────────────────────────────────────────────
@@ -224,11 +240,13 @@ export class WebhooksService {
     if (!this.isCallIngestEnabled()) {
       return;
     }
+    const analysis = this.readRecord(call.call_analysis);
     const callSessionResult = await this.upsertCallSession(payload, {
       status: 'started',
       startedAt,
       durationMs: this.readNumber(call.duration_ms),
       transcript: this.readString(call.transcript),
+      ...this.buildCallSessionTelemetryPatch(call, analysis),
     });
     if (!callSessionResult.applied) {
       return;
@@ -248,11 +266,13 @@ export class WebhooksService {
     if (!this.isCallIngestEnabled()) {
       return;
     }
+    const analysis = this.readRecord(call.call_analysis);
     const callSessionResult = await this.upsertCallSession(payload, {
       status: 'ended',
       endedAt,
       durationMs: typeof durationMs === 'number' ? durationMs : null,
       transcript: this.readString(call.transcript),
+      ...this.buildCallSessionTelemetryPatch(call, analysis),
     });
     if (!callSessionResult.applied) {
       return;
@@ -284,6 +304,11 @@ export class WebhooksService {
       transcript:
         this.readString(payload.transcript) ?? this.readString(call.transcript),
       outcome: this.deriveOutcome(summary ?? undefined),
+      ...this.buildCallSessionTelemetryPatch(call, analysis),
+      customAnalysisData: (() => {
+        const custom = this.readRecord(analysis.custom_analysis_data);
+        return Object.keys(custom).length > 0 ? custom : undefined;
+      })(),
     });
     if (!callSessionResult.applied) {
       return;
@@ -355,7 +380,7 @@ export class WebhooksService {
         ? (RETELL_STATUS_ORDER[incomingStatus] ?? -1)
         : -1;
 
-      if (incomingStatus && incomingOrder <= currentOrder) {
+      if (incomingStatus && incomingOrder < currentOrder) {
         this.logger.debug({
           callId,
           incomingStatus,
@@ -381,7 +406,9 @@ export class WebhooksService {
       }
     }
 
+    const mergedMetadata = this.readRecord(existing?.metadata);
     const metadataPatch: Record<string, unknown> = {
+      ...mergedMetadata,
       ...(payload.metadata ?? {}),
       lastEvent: payload.event,
     };
@@ -512,7 +539,30 @@ export class WebhooksService {
         source: 'metadata',
       };
     }
-    return null;
+
+    if (!retellAgentId) {
+      return null;
+    }
+
+    const legacyInstance = await this.agentModel
+      .findOne({
+        retellAgentId,
+        status: { $ne: 'deleted' },
+      })
+      .select('_id tenantId retellAgentId')
+      .lean();
+    if (!legacyInstance?.tenantId) {
+      return null;
+    }
+    this.logger.debug(
+      `Resolved webhook context from legacy instance fallback: agentId=${retellAgentId} tenantId=${legacyInstance.tenantId.toString()} agentInstanceId=${legacyInstance._id.toString()}`,
+    );
+    return {
+      tenantId: legacyInstance.tenantId as Types.ObjectId,
+      agentInstanceId: legacyInstance._id as Types.ObjectId,
+      retellAgentId: legacyInstance.retellAgentId ?? retellAgentId,
+      source: 'legacy-instance',
+    };
   }
 
   private readString(value: unknown): string | null {
@@ -523,6 +573,10 @@ export class WebhooksService {
 
   private readNumber(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  private readBoolean(value: unknown): boolean | null {
+    return typeof value === 'boolean' ? value : null;
   }
 
   private readRecord(value: unknown): Record<string, unknown> {
@@ -579,7 +633,7 @@ export class WebhooksService {
       this.readNumber(llmTokenUsage.average) ??
       this.readNumber(llmTokenUsage.num_requests) ??
       undefined;
-    const cost = this.readNumber(callCost.combined_cost) ?? 0;
+    const cost = this.extractCallCost(callCost) ?? 0;
 
     const run = await this.runModel.findOneAndUpdate(
       { callId, tenantId: context.tenantId },
@@ -611,6 +665,82 @@ export class WebhooksService {
       },
       timestamp: runEventTs,
     });
+  }
+
+  private buildCallSessionTelemetryPatch(
+    call: Record<string, unknown>,
+    analysis: Record<string, unknown>,
+  ): Partial<CallSession> {
+    const patch: Partial<CallSession> = {};
+
+    const callCost = this.extractCallCost(call.call_cost);
+    if (callCost !== null) {
+      patch.callCost = callCost;
+    }
+
+    const disconnectionReason = this.readString(call.disconnection_reason);
+    if (disconnectionReason) {
+      patch.disconnectionReason = disconnectionReason;
+    }
+
+    const latency = this.readRecord(call.latency);
+    const e2e = this.readRecord(latency.e2e);
+    const latencyP50 = this.readNumber(e2e.p50);
+    if (latencyP50 !== null) {
+      patch.latencyE2e = latencyP50;
+    }
+
+    const callSuccessful = this.readBoolean(analysis.call_successful);
+    if (callSuccessful !== null) {
+      patch.callSuccessful = callSuccessful;
+    }
+
+    const tokenUsage = this.readRecord(call.llm_token_usage);
+    if (Object.keys(tokenUsage).length > 0) {
+      patch.llmTokenUsage = tokenUsage;
+      const total = this.extractTokenTotal(tokenUsage);
+      if (total !== null) {
+        patch.llmTokensTotal = total;
+      }
+    }
+
+    return patch;
+  }
+
+  private extractTokenTotal(tokenUsage: Record<string, unknown>): number | null {
+    const keys = [
+      'total',
+      'total_tokens',
+      'prompt_tokens',
+      'completion_tokens',
+      'input_tokens',
+      'output_tokens',
+      'average',
+      'num_requests',
+    ] as const;
+    let sum = 0;
+    let found = false;
+    for (const key of keys) {
+      const value = this.readNumber(tokenUsage[key]);
+      if (value !== null) {
+        sum += value;
+        found = true;
+      }
+    }
+    return found ? sum : null;
+  }
+
+  private extractCallCost(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    const record = this.readRecord(value);
+    return (
+      this.readNumber(record.combined_cost) ??
+      this.readNumber(record.total) ??
+      this.readNumber(record.amount) ??
+      null
+    );
   }
 
   /**

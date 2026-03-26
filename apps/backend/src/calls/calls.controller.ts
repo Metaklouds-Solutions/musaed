@@ -54,6 +54,12 @@ export class TenantCallsController {
     });
   }
 
+  @Get('data-quality')
+  dataQuality(@Request() req: AuthenticatedRequest) {
+    const tenantId = requireTenantId(req);
+    return this.callsService.getTenantDataQuality(tenantId);
+  }
+
   @Post('web-call')
   createWebCall(
     @Request() req: AuthenticatedRequest,

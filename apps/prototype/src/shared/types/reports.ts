@@ -4,7 +4,7 @@
 
 /** Call outcome breakdown for reports. */
 export interface OutcomeBreakdown {
-  outcome: 'booked' | 'escalated' | 'failed' | 'info_only';
+  outcome: 'booked' | 'escalated' | 'failed' | 'info_only' | 'unknown';
   count: number;
   percentage: number;
 }

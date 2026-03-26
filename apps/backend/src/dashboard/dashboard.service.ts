@@ -54,7 +54,7 @@ export interface TenantAgentStatusDto {
 
 export interface TenantRecentCallDto {
   id: string;
-  outcome: 'booked' | 'escalated' | 'failed';
+  outcome: 'booked' | 'escalated' | 'failed' | 'info_only' | 'unknown';
   duration: number;
   createdAt: string;
 }
@@ -78,6 +78,9 @@ export interface TenantDashboardSummaryDto {
     callsHandled: number;
     escalationRate: number;
     costSaved: number;
+    aiCost: number;
+    avgLatencyMs: number;
+    topDisconnectionReason: string;
     aiConfidenceScore: number;
   };
   signal: {
@@ -116,6 +119,9 @@ export class DashboardService {
       failedCallsCount,
       escalatedCallsCount,
       avgCallDuration,
+      avgLatency,
+      totalAiCost,
+      topDisconnection,
       recentBookings,
       openTicketsList,
       staffByRole,
@@ -143,6 +149,25 @@ export class DashboardService {
       this.callSessionModel.aggregate<{ value: number }>([
         { $match: { tenantId: tid, durationMs: { $ne: null } } },
         { $group: { _id: null, value: { $avg: '$durationMs' } } },
+      ]),
+      this.callSessionModel.aggregate<{ value: number }>([
+        { $match: { tenantId: tid, latencyE2e: { $ne: null } } },
+        { $group: { _id: null, value: { $avg: '$latencyE2e' } } },
+      ]),
+      this.callSessionModel.aggregate<{ value: number }>([
+        { $match: { tenantId: tid, callCost: { $ne: null } } },
+        { $group: { _id: null, value: { $sum: '$callCost' } } },
+      ]),
+      this.callSessionModel.aggregate<{ _id: string; count: number }>([
+        { $match: { tenantId: tid } },
+        {
+          $group: {
+            _id: { $ifNull: ['$disconnectionReason', 'unknown'] },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 1 },
       ]),
       this.bookingModel
         .find({ tenantId: tid })
@@ -228,6 +253,12 @@ export class DashboardService {
         ),
       },
       avgCallDurationMs: avgCallDuration[0]?.value ?? 0,
+      avgLatencyMs: avgLatency[0]?.value ?? 0,
+      aiCost: totalAiCost[0]?.value ?? 0,
+      topDisconnectionReason:
+        topDisconnection[0]?._id && topDisconnection[0]._id !== ''
+          ? String(topDisconnection[0]._id)
+          : 'unknown',
     };
   }
 
@@ -244,10 +275,10 @@ export class DashboardService {
     const [callsToday, totalBookings] = await Promise.all([
       this.callSessionModel.countDocuments({
         tenantId: new Types.ObjectId(tenantId),
-        startedAt: {
-          $gte: this.startOfToday(),
-          $lte: new Date(),
-        },
+        $or: [
+          { startedAt: { $gte: this.startOfToday(), $lte: new Date() } },
+          { createdAt: { $gte: this.startOfToday(), $lte: new Date() } },
+        ],
       }),
       this.bookingModel.countDocuments(
         this.buildBookingRangeFilter(tenantId, dateFrom, dateTo),
@@ -292,7 +323,10 @@ export class DashboardService {
         conversionRate: totalCalls > 0 ? (booked / totalCalls) * 100 : 0,
         callsHandled: totalCalls,
         escalationRate: totalCalls > 0 ? (escalated / totalCalls) * 100 : 0,
-        costSaved: minutesUsed * 2,
+        costSaved: analytics.costSaved,
+        aiCost: analytics.aiCost,
+        avgLatencyMs: analytics.avgLatency,
+        topDisconnectionReason: analytics.topDisconnectionReason,
         aiConfidenceScore: 0,
       },
       signal,
@@ -395,7 +429,7 @@ export class DashboardService {
         if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
         match.createdAt = dateFilter;
       }
-      const [totalMinutes, bookedCount] = await Promise.all([
+      const [totalMinutes, bookedCount, realCost] = await Promise.all([
         this.callSessionModel.aggregate<{ total: number }>([
           { $match: { ...match, durationMs: { $ne: null } } },
           {
@@ -406,10 +440,17 @@ export class DashboardService {
           },
         ]),
         this.callSessionModel.countDocuments({ ...match, outcome: 'booked' }),
+        this.callSessionModel.aggregate<{ total: number; count: number }>([
+          { $match: { ...match, callCost: { $ne: null } } },
+          { $group: { _id: null, total: { $sum: '$callCost' }, count: { $sum: 1 } } },
+        ]),
       ]);
       const minutes = totalMinutes[0]?.total ?? 0;
       const revenue = bookedCount * 50;
-      const aiCost = minutes * 0.05;
+      const aiCost =
+        realCost[0]?.count && realCost[0].count > 0
+          ? realCost[0].total
+          : minutes * 0.05;
       const costSaved = minutes * 2;
       const roiPercent = aiCost > 0 ? ((revenue - aiCost) / aiCost) * 100 : 0;
       return { revenue, aiCost, costSaved, roiPercent, totalMinutes: minutes };
@@ -456,34 +497,42 @@ export class DashboardService {
     const tid = new Types.ObjectId(tenantId);
     const match: Record<string, unknown> = {
       tenantId: tid,
-      outcome: { $in: ['booked', 'escalated', 'failed'] },
     };
     if (dateFrom || dateTo) {
       const dateFilter: Record<string, Date> = {};
       if (dateFrom) dateFilter.$gte = this.parseDateStart(dateFrom);
       if (dateTo) dateFilter.$lte = this.parseDateEnd(dateTo);
-      match.createdAt = dateFilter;
+      match.$or = [{ startedAt: dateFilter }, { createdAt: dateFilter }];
     }
     const calls = await this.callSessionModel
       .find(match)
-      .sort({ createdAt: -1 })
+      .sort({ startedAt: -1, createdAt: -1 })
       .limit(limit)
-      .select('_id outcome durationMs createdAt')
+      .select('_id outcome durationMs startedAt createdAt')
       .lean();
     return calls.map((c) => {
       const doc = c as {
         _id?: unknown;
         outcome?: string;
         durationMs?: number;
+        startedAt?: Date;
         createdAt?: Date;
       };
-      const outcome = doc.outcome as 'booked' | 'escalated' | 'failed';
+      const normalizedOutcome: TenantRecentCallDto['outcome'] =
+        doc.outcome === 'booked' ||
+        doc.outcome === 'escalated' ||
+        doc.outcome === 'failed' ||
+        doc.outcome === 'info_only' ||
+        doc.outcome === 'unknown'
+          ? doc.outcome
+          : 'unknown';
+      const timestamp = doc.startedAt ?? doc.createdAt;
       return {
         id: doc._id != null ? String(doc._id) : '',
-        outcome: outcome ?? 'failed',
+        outcome: normalizedOutcome,
         duration: Math.round((doc.durationMs ?? 0) / 1000),
-        createdAt: doc.createdAt
-          ? new Date(doc.createdAt).toISOString()
+        createdAt: timestamp
+          ? new Date(timestamp).toISOString()
           : new Date().toISOString(),
       };
     });
@@ -500,9 +549,12 @@ export class DashboardService {
       ? this.parseDateStart(dateFrom)
       : this.startOfDaysAgo(6);
     const to = dateTo ? this.parseDateEnd(dateTo) : new Date();
-    match.startedAt = { $gte: from, $lte: to };
+    match.$or = [
+      { startedAt: { $gte: from, $lte: to } },
+      { createdAt: { $gte: from, $lte: to } },
+    ];
 
-    const [grouped, durationAgg] = await Promise.all([
+    const [grouped, durationAgg, costAgg, latencyAgg, disconnectionAgg] = await Promise.all([
       this.callSessionModel.aggregate<{ _id: string; count: number }>([
         { $match: match },
         { $group: { _id: '$outcome', count: { $sum: 1 } } },
@@ -519,6 +571,25 @@ export class DashboardService {
             avgDuration: { $avg: '$durationMs' },
           },
         },
+      ]),
+      this.callSessionModel.aggregate<{ totalCost: number }>([
+        { $match: { ...match, callCost: { $ne: null } } },
+        { $group: { _id: null, totalCost: { $sum: '$callCost' } } },
+      ]),
+      this.callSessionModel.aggregate<{ avgLatency: number }>([
+        { $match: { ...match, latencyE2e: { $ne: null } } },
+        { $group: { _id: null, avgLatency: { $avg: '$latencyE2e' } } },
+      ]),
+      this.callSessionModel.aggregate<{ _id: string; count: number }>([
+        { $match: match },
+        {
+          $group: {
+            _id: { $ifNull: ['$disconnectionReason', 'unknown'] },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 1 },
       ]),
     ]);
 
@@ -540,10 +611,23 @@ export class DashboardService {
     return {
       totalCalls: durationAgg[0]?.totalCalls ?? 0,
       avgDuration: Math.round((durationAgg[0]?.avgDuration ?? 0) / 1000),
+      costSaved: costAgg[0]?.totalCost ?? 0,
+      aiCost: costAgg[0]?.totalCost ?? 0,
+      avgLatency: Math.round(latencyAgg[0]?.avgLatency ?? 0),
+      topDisconnectionReason:
+        (disconnectionAgg[0]?._id && disconnectionAgg[0]._id !== '')
+          ? String(disconnectionAgg[0]._id)
+          : 'unknown',
       outcomes,
     };
   }
 
+  /**
+   * Filter for counting bookings in a dashboard range. Uses **createdAt** (when the
+   * booking was recorded), not **date** (appointment day). Filtering on appointment
+   * `date` excluded almost all real bookings because visits are usually in the future,
+   * which made the "Booked" KPI show 0.
+   */
   private buildBookingRangeFilter(
     tenantId: string,
     dateFrom?: string,
@@ -558,7 +642,7 @@ export class DashboardService {
     const to = dateTo
       ? this.endOfDay(new Date(dateTo))
       : this.endOfDay(new Date());
-    filter.date = { $gte: from, $lte: to };
+    filter.createdAt = { $gte: from, $lte: to };
     return filter;
   }
 

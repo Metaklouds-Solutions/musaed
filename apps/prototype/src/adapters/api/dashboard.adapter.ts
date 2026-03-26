@@ -49,7 +49,7 @@ const emptyTenantCallsAnalytics: TenantCallsAnalyticsResponse = {
 
 const defaultMetrics: DashboardMetrics = {
   totalBookings: 0, conversionRate: 0, callsHandled: 0,
-  escalationRate: 0, costSaved: 0, aiConfidenceScore: 0,
+  escalationRate: 0, costSaved: 0, aiCost: 0, avgLatencyMs: 0, topDisconnectionReason: 'unknown', aiConfidenceScore: 0,
 };
 
 const defaultKpis: TenantKpis = {
@@ -86,6 +86,9 @@ export const dashboardAdapter = {
         totalCalls?: number;
         callOutcomes?: { booked?: number; escalated?: number; failed?: number };
         avgCallDurationMs?: number;
+        aiCost?: number;
+        avgLatencyMs?: number;
+        topDisconnectionReason?: string;
       }>('/tenant/dashboard/metrics');
       const totalCalls = data.totalCalls ?? 0;
       const outcomes = data.callOutcomes ?? {};
@@ -100,6 +103,9 @@ export const dashboardAdapter = {
         callsHandled: totalCalls,
         escalationRate: totalCalls > 0 ? (escalated / totalCalls) * 100 : 0,
         costSaved,
+        aiCost: data.aiCost ?? 0,
+        avgLatencyMs: data.avgLatencyMs ?? 0,
+        topDisconnectionReason: data.topDisconnectionReason ?? 'unknown',
         aiConfidenceScore: 0,
       };
     } catch {

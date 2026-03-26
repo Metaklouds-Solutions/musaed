@@ -10,6 +10,9 @@ describe('WebhooksService', () => {
     findOne: jest.fn(),
     findById: jest.fn(),
   };
+  const agentModelMock = {
+    findOne: jest.fn(),
+  };
   const processedEventModelMock = {
     create: jest.fn(),
     findOne: jest.fn().mockResolvedValue(null),
@@ -42,6 +45,7 @@ describe('WebhooksService', () => {
       configEnabled,
       agentDeploymentsServiceMock as never,
       tenantModelMock as never,
+      agentModelMock as never,
       processedEventModelMock as never,
       callSessionModelMock as never,
       runModelMock as never,
@@ -101,6 +105,7 @@ describe('WebhooksService', () => {
       } as unknown as ConfigService,
       agentDeploymentsServiceMock as never,
       tenantModelMock as never,
+      agentModelMock as never,
       processedEventModelMock as never,
       callSessionModelMock as never,
       runModelMock as never,

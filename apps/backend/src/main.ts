@@ -23,11 +23,23 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
-  app.use('/webhooks/retell', express.raw({ type: 'application/json' }));
-  app.use('/webhooks/calcom', express.raw({ type: 'application/json' }));
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ limit: '10mb', extended: true }));
+  const webhookRawLimit = process.env.WEBHOOK_RAW_LIMIT?.trim() || '10mb';
+  const jsonBodyLimit = process.env.HTTP_JSON_BODY_LIMIT?.trim() || '10mb';
+
+  app.use(
+    '/webhooks/stripe',
+    express.raw({ type: 'application/json', limit: webhookRawLimit }),
+  );
+  app.use(
+    '/webhooks/retell',
+    express.raw({ type: 'application/json', limit: webhookRawLimit }),
+  );
+  app.use(
+    '/webhooks/calcom',
+    express.raw({ type: 'application/json', limit: webhookRawLimit }),
+  );
+  app.use(express.json({ limit: jsonBodyLimit }));
+  app.use(express.urlencoded({ limit: jsonBodyLimit, extended: true }));
 
   const allowedOriginsEnv = process.env.ALLOWED_ORIGINS?.trim();
   const corsOriginEnv = process.env.CORS_ORIGIN?.trim();

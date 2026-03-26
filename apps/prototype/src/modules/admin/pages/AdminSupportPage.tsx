@@ -6,13 +6,15 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { PageHeader, Button, Badge, PopoverSelect, Skeleton, EmptyState, Pagination } from '../../../shared/ui';
+import { PageHeader, Button, Badge, PopoverSelect, Skeleton, EmptyState, Pagination, UnifiedFilterBar } from '../../../shared/ui';
 import { useDelayedReady } from '../../../shared/hooks/useDelayedReady';
-import { ArrowLeft, Download, MessageCircle, Search } from 'lucide-react';
+import { ArrowLeft, Download, MessageCircle } from 'lucide-react';
 import { TicketList, TicketChatThread } from '../../shared/support';
 import { useAdminSupport } from '../hooks/useAdminSupport';
 import type { SupportTicket } from '../../../shared/types/entities';
 import { useAsyncData } from '../../../shared/hooks/useAsyncData';
+import { useSavedFilters } from '../../../shared/hooks/useSavedFilters';
+import { useUrlQueryState } from '../../../shared/hooks/useUrlQueryState';
 
 const STATUS_OPTIONS: { value: SupportTicket['status']; label: string }[] = [
   { value: 'open', label: 'Open' },
@@ -68,11 +70,16 @@ export function AdminSupportPage() {
     tenants,
     logTicketAssigned,
     exportTicketsCsv,
-    filters,
     setTenantFilter,
     setStatusFilter,
     setPriorityFilter,
   } = useAdminSupport();
+  const { state, patchState, resetState } = useUrlQueryState({
+    q: '',
+    tenant: '',
+    status: '',
+    priority: '',
+  });
   const [page, setPage] = useState(1);
   const { data: ticket, loading: ticketLoading, refetch: refetchTicket } = useAsyncData(
     () => (id ? getTicket(id) : null),
@@ -126,7 +133,36 @@ export function AdminSupportPage() {
     [addMessage]
   );
 
-  const [search, setSearch] = useState('');
+  const search = state.q;
+  const { saved, saveCurrent, apply, deleteFilter } = useSavedFilters({
+    pageKey: 'admin-support',
+    currentFilters: {
+      q: state.q,
+      tenant: state.tenant,
+      status: state.status,
+      priority: state.priority,
+    },
+    onApply: (savedFilters) => {
+      patchState({
+        q: typeof savedFilters.q === 'string' ? savedFilters.q : '',
+        tenant: typeof savedFilters.tenant === 'string' ? savedFilters.tenant : '',
+        status: typeof savedFilters.status === 'string' ? savedFilters.status : '',
+        priority: typeof savedFilters.priority === 'string' ? savedFilters.priority : '',
+      });
+    },
+  });
+
+  useEffect(() => {
+    setTenantFilter(state.tenant);
+  }, [setTenantFilter, state.tenant]);
+
+  useEffect(() => {
+    setStatusFilter(toStatusFilter(state.status));
+  }, [setStatusFilter, state.status]);
+
+  useEffect(() => {
+    setPriorityFilter(toPriorityFilter(state.priority));
+  }, [setPriorityFilter, state.priority]);
 
   const searchedTickets = useMemo(() => {
     if (!search.trim()) return tickets;
@@ -143,7 +179,7 @@ export function AdminSupportPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [filters.tenantFilter, filters.statusFilter, filters.priorityFilter, search]);
+  }, [state.tenant, state.status, state.priority, search]);
 
   const handleExport = useCallback(() => {
     const rows = searchedTickets.map((t) => ({
@@ -339,49 +375,51 @@ export function AdminSupportPage() {
           Export CSV
         </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" aria-hidden />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tickets…"
-            aria-label="Search tickets"
-            className="w-full h-10 pl-9 pr-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)]/30 focus:border-[var(--ds-primary)]/50 transition-all"
-          />
-        </div>
-        <PopoverSelect
-          value={filters.tenantFilter}
-          onChange={setTenantFilter}
-          options={[
-            { value: '', label: 'All tenants' },
-            ...tenants.map((t) => ({ value: t.id, label: t.name })),
-          ]}
-          title="Tenant"
-          aria-label="Filter by tenant"
-        />
-        <PopoverSelect
-          value={filters.statusFilter}
-          onChange={(v) => setStatusFilter(toStatusFilter(v))}
-          options={[
-            { value: '', label: 'All statuses' },
-            ...STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-          ]}
-          title="Status"
-          aria-label="Filter by status"
-        />
-        <PopoverSelect
-          value={filters.priorityFilter}
-          onChange={(v) => setPriorityFilter(toPriorityFilter(v))}
-          options={[
-            { value: '', label: 'All priorities' },
-            ...PRIORITY_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-          ]}
-          title="Priority"
-          aria-label="Filter by priority"
-        />
-      </div>
+      <UnifiedFilterBar
+        query={search}
+        onQueryChange={(q) => patchState({ q })}
+        searchPlaceholder="Search tickets..."
+        fields={[
+          {
+            id: 'tenant',
+            label: 'Tenant',
+            value: state.tenant,
+            options: [
+              { value: '', label: 'All tenants' },
+              ...tenants.map((tenant) => ({ value: tenant.id, label: tenant.name })),
+            ],
+          },
+          {
+            id: 'status',
+            label: 'Status',
+            value: state.status,
+            options: [
+              { value: '', label: 'All statuses' },
+              ...STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+            ],
+          },
+          {
+            id: 'priority',
+            label: 'Priority',
+            value: state.priority,
+            options: [
+              { value: '', label: 'All priorities' },
+              ...PRIORITY_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+            ],
+          },
+        ]}
+        onFieldChange={(fieldId, value) => {
+          if (fieldId === 'tenant') patchState({ tenant: value });
+          if (fieldId === 'status') patchState({ status: value });
+          if (fieldId === 'priority') patchState({ priority: value });
+        }}
+        savedFilters={saved}
+        onSaveFilter={saveCurrent}
+        onApplyFilter={apply}
+        onDeleteFilter={deleteFilter}
+        activeFilterCount={[state.tenant, state.status, state.priority].filter(Boolean).length}
+        onReset={() => resetState()}
+      />
       <div className="rounded-[var(--radius-card)] card-glass p-4">
         <TicketList
           tickets={paginatedTickets}

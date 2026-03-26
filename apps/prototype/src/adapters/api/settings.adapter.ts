@@ -4,6 +4,7 @@
 
 import { api } from '../../lib/apiClient';
 import { primeTenantSettingsCaches } from './tenantSettingsCache';
+import { isAdminUser, withTenantScope } from './tenantScope';
 
 export interface AdminUser {
   id: string;
@@ -106,7 +107,7 @@ export const settingsAdapter = {
           notifications?: { emailDigest?: boolean; ticketAlerts?: boolean; bookingReminders?: boolean };
           appointmentReminders?: { advanceMinutes?: number; channel?: string };
         };
-      }>('/tenant/settings');
+      }>(withTenantScope('/tenant/settings', tenantId));
       if (tenantId) {
         primeTenantSettingsCaches(tenantId, data);
       }
@@ -138,8 +139,11 @@ export const settingsAdapter = {
     }
   },
 
-  async saveTenantSettings(settings: TenantSettings, _tenantId?: string): Promise<void> {
-    await api.patch('/tenant/settings', {
+  async saveTenantSettings(settings: TenantSettings, tenantId?: string): Promise<void> {
+    if (isAdminUser()) {
+      throw new Error('Tenant settings are read-only in admin context');
+    }
+    await api.patch(withTenantScope('/tenant/settings', tenantId), {
       timezone: settings.timezone,
       locale: settings.locale,
       businessHours: settings.businessHours,

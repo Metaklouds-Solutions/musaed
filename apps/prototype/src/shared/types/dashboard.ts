@@ -9,6 +9,9 @@ export interface DashboardMetrics {
   callsHandled: number;
   escalationRate: number;
   costSaved: number;
+  aiCost?: number;
+  avgLatencyMs?: number;
+  topDisconnectionReason?: string;
   aiConfidenceScore: number;
 }
 
@@ -72,7 +75,7 @@ export interface TenantOpenTicket {
 /** Recent call row for tenant dashboard. */
 export interface TenantRecentCall {
   id: string;
-  outcome: 'booked' | 'escalated' | 'failed';
+  outcome: 'booked' | 'escalated' | 'failed' | 'info_only' | 'unknown';
   duration: number;
   createdAt: string;
 }

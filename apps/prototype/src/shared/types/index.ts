@@ -40,6 +40,14 @@ export type { TenantDetail } from './tenants';
 export type { StaffRow } from './staff';
 export type { TenantAgentDetail } from './agent';
 export type {
+  UnifiedFilterOption,
+  UnifiedFilterField,
+  UnifiedFilterTab,
+  UnifiedSavedView,
+  UnifiedFilterState,
+  UnifiedFilterConfig,
+} from './filters';
+export type {
   AdminPulseKpis,
   AdminHealth,
   AdminAgentRow,

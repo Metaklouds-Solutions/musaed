@@ -507,6 +507,53 @@ export class CallsService {
     };
   }
 
+  async getTenantDataQuality(tenantId: string) {
+    const tid = new Types.ObjectId(tenantId);
+    const totalCalls = await this.callSessionModel.countDocuments({ tenantId: tid });
+    if (totalCalls === 0) {
+      return {
+        totalCalls: 0,
+        missing: { callCost: 0, sentiment: 0, status: 0, llmTokenUsage: 0 },
+        coveragePct: { callCost: 0, sentiment: 0, status: 0, llmTokenUsage: 0 },
+      };
+    }
+
+    const [missingCost, missingSentiment, missingStatus, missingToken] = await Promise.all([
+      this.callSessionModel.countDocuments({ tenantId: tid, callCost: null }),
+      this.callSessionModel.countDocuments({
+        tenantId: tid,
+        $or: [{ sentiment: null }, { sentiment: '' }],
+      }),
+      this.callSessionModel.countDocuments({
+        tenantId: tid,
+        $or: [{ status: null }, { status: '' }],
+      }),
+      this.callSessionModel.countDocuments({
+        tenantId: tid,
+        $or: [{ llmTokenUsage: null }, { llmTokensTotal: null }],
+      }),
+    ]);
+
+    const pct = (missing: number) =>
+      Math.max(0, Math.min(100, ((totalCalls - missing) / totalCalls) * 100));
+
+    return {
+      totalCalls,
+      missing: {
+        callCost: missingCost,
+        sentiment: missingSentiment,
+        status: missingStatus,
+        llmTokenUsage: missingToken,
+      },
+      coveragePct: {
+        callCost: pct(missingCost),
+        sentiment: pct(missingSentiment),
+        status: pct(missingStatus),
+        llmTokenUsage: pct(missingToken),
+      },
+    };
+  }
+
   /**
    * Enriches a call session with real-time data from Retell API (transcript, recording, latency).
    * @param retellCallId The ID of the call in Retell.
@@ -520,6 +567,9 @@ export class CallsService {
       const transcriptObject = callDataRecord['transcript_object'];
       const callAnalysis = this.isRecord(callDataRecord['call_analysis'])
         ? callDataRecord['call_analysis']
+        : null;
+      const llmTokenUsage = this.isRecord(callDataRecord['llm_token_usage'])
+        ? callDataRecord['llm_token_usage']
         : null;
 
       const updateData: Partial<CallSession> = {
@@ -552,6 +602,17 @@ export class CallsService {
       const p50 = this.readNumber(this.isRecord(e2e) ? e2e['p50'] : undefined);
       if (p50 !== null) {
         updateData.latencyE2e = p50;
+      }
+      if (llmTokenUsage) {
+        updateData.llmTokenUsage = llmTokenUsage;
+        const llmTotal =
+          this.readNumber(llmTokenUsage['total']) ??
+          this.readNumber(llmTokenUsage['total_tokens']) ??
+          this.readNumber(llmTokenUsage['average']) ??
+          this.readNumber(llmTokenUsage['num_requests']);
+        if (llmTotal !== null) {
+          updateData.llmTokensTotal = llmTotal;
+        }
       }
 
       updateData.callType =
@@ -687,12 +748,21 @@ export class CallsService {
       if (hasValidTo && parsedTo) {
         dateFilter.$lte = parsedTo;
       }
-      filter[dateField] = dateFilter;
+      if (dateField === 'startedAt') {
+        filter.$or = [{ startedAt: dateFilter }, { createdAt: dateFilter }];
+      } else {
+        filter[dateField] = dateFilter;
+      }
     } else if (options?.defaultLast7Days) {
       const now = new Date();
       const sevenDaysAgo = new Date(now);
       sevenDaysAgo.setDate(now.getDate() - 7);
-      filter[dateField] = { $gte: sevenDaysAgo, $lte: now };
+      const dateFilter = { $gte: sevenDaysAgo, $lte: now };
+      if (dateField === 'startedAt') {
+        filter.$or = [{ startedAt: dateFilter }, { createdAt: dateFilter }];
+      } else {
+        filter[dateField] = dateFilter;
+      }
     }
 
     return filter;
@@ -732,6 +802,9 @@ export class CallsService {
             const callAnalysis = this.isRecord(callRecord['call_analysis'])
               ? callRecord['call_analysis']
               : null;
+            const llmTokenUsage = this.isRecord(callRecord['llm_token_usage'])
+              ? callRecord['llm_token_usage']
+              : null;
             const transcriptObj = callRecord['transcript_object'];
 
             const updateData: Partial<CallSession> = {
@@ -749,8 +822,10 @@ export class CallsService {
                 callRecord['call_status'] === 'ended' ? 'analyzed' : 'started',
             };
 
-            const endTs = this.readNumber(callRecord['end_timestamp']);
-            const startTs = this.readNumber(callRecord['start_timestamp']);
+            const endTsRaw = this.readNumber(callRecord['end_timestamp']);
+            const startTsRaw = this.readNumber(callRecord['start_timestamp']);
+            const endTs = endTsRaw !== null ? (endTsRaw > 1e12 ? endTsRaw : endTsRaw * 1000) : null;
+            const startTs = startTsRaw !== null ? (startTsRaw > 1e12 ? startTsRaw : startTsRaw * 1000) : null;
             if (endTs !== null && startTs !== null) {
               updateData.durationMs = endTs - startTs;
               updateData.startedAt = new Date(startTs);
@@ -804,6 +879,17 @@ export class CallsService {
             );
             if (p50 !== null) {
               updateData.latencyE2e = p50;
+            }
+            if (llmTokenUsage) {
+              updateData.llmTokenUsage = llmTokenUsage;
+              const llmTotal =
+                this.readNumber(llmTokenUsage['total']) ??
+                this.readNumber(llmTokenUsage['total_tokens']) ??
+                this.readNumber(llmTokenUsage['average']) ??
+                this.readNumber(llmTokenUsage['num_requests']);
+              if (llmTotal !== null) {
+                updateData.llmTokensTotal = llmTotal;
+              }
             }
 
             updateData.callType =
